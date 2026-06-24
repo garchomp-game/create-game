@@ -1,0 +1,17 @@
+{
+  "name": "arena-core-pixijs-matter",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "matter-js": "^0.20.0",
+    "pixi.js": "^8.14.3",
+    "vite": "^7.2.7"
+  },
+  "devDependencies": {}
+}

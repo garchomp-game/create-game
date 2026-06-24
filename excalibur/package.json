@@ -1,0 +1,16 @@
+{
+  "name": "arena-core-excalibur",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "excalibur": "^0.32.0",
+    "vite": "^7.2.7"
+  },
+  "devDependencies": {}
+}

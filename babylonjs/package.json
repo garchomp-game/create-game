@@ -1,0 +1,16 @@
+{
+  "name": "arena-core-babylonjs",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@babylonjs/core": "^8.42.1",
+    "vite": "^7.2.7"
+  },
+  "devDependencies": {}
+}
