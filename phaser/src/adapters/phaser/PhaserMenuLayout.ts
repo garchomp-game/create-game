@@ -65,8 +65,8 @@ export function getUpgradeChoiceButtons(
   arenaHeight: number,
 ): UpgradeChoiceButton[] {
   const buttonWidth = 520;
-  const buttonHeight = 58;
-  const gap = 12;
+  const buttonHeight = 72;
+  const gap = 10;
   const totalHeight = choiceCount * buttonHeight + Math.max(0, choiceCount - 1) * gap;
   const x = arenaWidth / 2 - buttonWidth / 2;
   const startY = arenaHeight / 2 - totalHeight / 2 + 34;

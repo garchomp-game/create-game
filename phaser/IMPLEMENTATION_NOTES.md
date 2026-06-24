@@ -332,6 +332,62 @@ Verification after this pass:
 - `npm run build`: passed, with the existing Phaser bundle size warning
 - `npm run test:e2e`: 12 Playwright tests passed, including 7 visual comparisons
 
+### 2026-06-24 v0.2 Batch A: KPI, Death Cause, and HUD
+
+- Started v0.2 under the `Playtest & Balance Foundation` theme.
+- Added `PlayerDamageSource` for contact and enemy-projectile damage.
+- Added source data to simulation-origin `player.damaged` events.
+- Added `damageTakenBySource` and `lastDamageSource` to run stats and result summary.
+- Kept debug `forceDamage` source-less so it remains a generic debug helper.
+- Added result-screen cause text when a real damage source is available.
+- Split HUD rendering into `PhaserHud`.
+- Replaced the dense HUD text block with HP/XP bars, wave/time/score/enemy count, and compact weapon stat labels.
+- Added dev-only `setElapsed()` to the debug API for deterministic visual checks by wave band.
+- Added Wave 2 and Wave 3 HUD visual regression snapshots.
+- Added `balanceProbe` for deterministic balance regression tests across fixed seeds and input models.
+- Added three probe input models: `noInput`, `fixedAimShoot`, and `kiteCollect`.
+- The probe records survival seconds, score/min, kills/min, first damage, first upgrade, wave reached, max enemies, max bullets, max pickups, damage by source, and last damage source.
+- Recorded v0.1/v0.2 Batch A baseline p50 values in `balance.test.ts` with a 20% regression window for key KPIs.
+- Current `kiteCollect` baseline across 5 seeds: survival p50 101.87s, kills/min p50 164.33, score/min p50 2212.89, first damage p50 75.43s, first upgrade p50 7.13s.
+- Added view-only enemy visual metadata to `ViewConfig`, keeping shape and marker choices out of simulation config.
+- Drew enemies with non-color identifiers: chaser circle/ring, brute square/cross, fast diamond/slash, ranged hex/dot.
+- Drew enemy projectiles as stroked diamonds with a bright core so they do not read as player bullets or XP pickups.
+- Added a dev-only enemy visual fixture for deterministic Wave 2 and Wave 3 visual regression frames.
+- Added `SIMULATION_CONFIG_VERSION` for playtest report traceability.
+- Added dev-only `getRunExport()` and `getRunExportJson()` to capture run metadata, result summary, stats, entity counts, runtime, upgrade ranks, and recent events.
+- Added `docs/22-phaser-v02-playtest-template.md` for single-run recording, timeline notes, friction ratings, and 3-run comparison.
+- Added E2E coverage for debug run export metadata and KPI fields.
+- Split wave pressure into four bands: 0s learning, 30s fast/brute priority, 60s ranged introduction, and 90s endurance pressure.
+- Tuned Wave 2 to `spawnInterval 0.78`, `speedMultiplier 1.14`, `maxEnemies 42`.
+- Tuned Wave 3 to `spawnInterval 0.68`, `speedMultiplier 1.22`, `maxEnemies 50`, with lower ranged weight.
+- Kept Wave 4 as the high-pressure all-enemy band at 90s.
+- Added wave-boundary damage tracking to `balanceProbe`.
+- Added a Wave 4 visual regression frame for the new endurance band.
+- Updated balance baseline after wave review: `kiteCollect` survival p50 119.40s, kills/min p50 161.84, score/min p50 2245.73, first damage p50 73.53s, wave reached p50 90s.
+- Added `docs/23-phaser-v02-wave-curve-review.md` for the curve rationale and boundary damage review.
+- Changed `circleRect` so tangent contact is not treated as obstacle overlap, allowing wall-adjacent sliding while still blocking real overlap.
+- Added simulation coverage for vertical and diagonal sliding along obstacle faces.
+- Added dev-only `setObstacleFrictionFixture()` for deterministic obstacle friction checks.
+- Added `obstacleContacts` to debug snapshot and run export so playtest notes can identify actual obstacle overlap.
+- Added E2E coverage for sliding along an obstacle edge through the debug fixture.
+- Added `docs/24-phaser-v02-obstacle-friction-audit.md` with findings and residual risks.
+- Added `upgradePreview` to compute current-vs-after values for every upgrade effect.
+- Updated upgrade buttons to show compact comparison text such as `Move speed: 240 -> 269`.
+- Increased upgrade choice button height so 3 candidates fit with title, description, and preview line.
+- Added unit coverage for upgrade previews and updated upgrade visual regression.
+
+Verification after this pass:
+
+- `npm run test`: 11 files, 67 tests passed
+- `npm run test -- src/simulation/balance.test.ts src/simulation/waveDirector.test.ts src/simulation/difficulty.test.ts`: 10 files, 59 tests passed
+- `npm run test -- src/math/geometry.test.ts src/simulation/stepWorld.test.ts`: 10 files, 62 tests passed
+- `npm run test -- src/simulation/upgradePreview.test.ts`: 11 files, 67 tests passed
+- `npm run typecheck`: passed
+- `npm run build`: passed, with the existing Phaser bundle size warning
+- `npm run test:e2e -- tests/e2e/arena.spec.ts`: 7 Playwright tests passed
+- `npm run test:e2e -- tests/e2e/arena-visual.spec.ts --update-snapshots=all`: 10 Playwright tests passed
+- `npm run test:e2e`: 17 Playwright tests passed
+
 ## 1. phaser
 
 ### Baseline Impression

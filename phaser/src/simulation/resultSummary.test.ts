@@ -15,6 +15,11 @@ describe("createRunResultSummary", () => {
     world.stats.enemiesKilled = 12;
     world.stats.hitsTaken = 3;
     world.stats.damageTaken = 36;
+    world.stats.damageTakenBySource = { contact: 24, projectile: 12 };
+    world.stats.lastDamageSource = {
+      kind: "projectile",
+      projectileId: "enemy-projectile-test",
+    };
     world.stats.weaponMetrics.pulse.shotsFired = 6;
     world.stats.weaponMetrics.pulse.projectilesFired = 6;
     world.stats.weaponMetrics.pulse.hits = 4;
@@ -30,6 +35,11 @@ describe("createRunResultSummary", () => {
       enemiesKilled: 12,
       hitsTaken: 3,
       damageTaken: 36,
+      damageTakenBySource: { contact: 24, projectile: 12 },
+      lastDamageSource: {
+        kind: "projectile",
+        projectileId: "enemy-projectile-test",
+      },
       xpCollected: 0,
       pickupsCollected: 0,
       upgradesChosen: 0,

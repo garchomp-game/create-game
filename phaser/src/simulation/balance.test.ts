@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { SIMULATION_CONFIG } from "../config/gameConfig";
 import { createRandom } from "../math/random";
+import { runBalanceProbe } from "./balanceProbe";
 import { createWorld } from "./createWorld";
 import { stepWorld } from "./stepWorld";
 
@@ -13,6 +14,21 @@ const neutralInput = {
   pausePressed: false,
   quitToTitlePressed: false,
   upgradeChoicePressed: null,
+};
+
+const balanceProbeSeeds = [20260619, 20260620, 20260621, 20260622, 20260623];
+
+const balanceBaseline = {
+  noInputSurvivalP50: 6.77,
+  fixedAimShootSurvivalP50: 6.77,
+  kiteCollectSurvivalP50: 119.4,
+  kiteCollectKillsPerMinuteP50: 161.84,
+  kiteCollectScorePerMinuteP50: 2245.73,
+  kiteCollectFirstDamageP50: 73.53,
+  kiteCollectFirstUpgradeP50: 7.13,
+  kiteCollectWaveReachedP50: 90,
+  kiteCollectMaxEnemiesMax: 29,
+  kiteCollectMaxBulletsMax: 34,
 };
 
 describe("balance simulation", () => {
@@ -55,4 +71,69 @@ describe("balance simulation", () => {
     expect(maxBulletCount).toBeLessThanOrEqual(80);
     expect(spawnEvents).toBeLessThanOrEqual(180);
   });
+
+  it("profiles deterministic balance probes across seeds and input models", () => {
+    const report = runBalanceProbe({
+      config: SIMULATION_CONFIG,
+      seeds: balanceProbeSeeds,
+      durationSeconds: 180,
+      frameRate: 30,
+    });
+
+    expect(report.violations).toEqual([]);
+    expect(report.runs).toHaveLength(15);
+
+    const noInput = report.summary.byModel.noInput;
+    const fixedAimShoot = report.summary.byModel.fixedAimShoot;
+    const kiteCollect = report.summary.byModel.kiteCollect;
+
+    expect(noInput.runs).toBe(5);
+    expect(fixedAimShoot.runs).toBe(5);
+    expect(kiteCollect.runs).toBe(5);
+    expect(kiteCollect.firstDamageAt.count).toBeGreaterThan(0);
+    expect(report.runs.every((run) => run.waveBoundaryDamage.some((entry) => entry.waveStart === 60))).toBe(
+      true,
+    );
+
+    // v0.1/v0.2 Batch A balance baseline. These probes are regression sentries,
+    // not a claim that the input models are correct human play.
+    expectWithinBaseline(noInput.survivalSeconds.p50, balanceBaseline.noInputSurvivalP50);
+    expectWithinBaseline(
+      fixedAimShoot.survivalSeconds.p50,
+      balanceBaseline.fixedAimShootSurvivalP50,
+    );
+    expectWithinBaseline(
+      kiteCollect.survivalSeconds.p50,
+      balanceBaseline.kiteCollectSurvivalP50,
+    );
+    expectWithinBaseline(
+      kiteCollect.killsPerMinute.p50,
+      balanceBaseline.kiteCollectKillsPerMinuteP50,
+    );
+    expectWithinBaseline(
+      kiteCollect.scorePerMinute.p50,
+      balanceBaseline.kiteCollectScorePerMinuteP50,
+    );
+    expectWithinBaseline(
+      kiteCollect.firstDamageAt.p50 ?? 0,
+      balanceBaseline.kiteCollectFirstDamageP50,
+    );
+    expectWithinBaseline(
+      kiteCollect.firstUpgradeAt.p50 ?? 0,
+      balanceBaseline.kiteCollectFirstUpgradeP50,
+    );
+    expectWithinBaseline(
+      kiteCollect.waveStartReached.p50,
+      balanceBaseline.kiteCollectWaveReachedP50,
+    );
+    expectWithinBaseline(kiteCollect.maxEnemies.max, balanceBaseline.kiteCollectMaxEnemiesMax);
+    expectWithinBaseline(kiteCollect.maxBullets.max, balanceBaseline.kiteCollectMaxBulletsMax);
+  });
 });
+
+function expectWithinBaseline(value: number, baseline: number, tolerance = 0.2): void {
+  const lower = baseline * (1 - tolerance);
+  const upper = baseline * (1 + tolerance);
+  expect(value).toBeGreaterThanOrEqual(lower);
+  expect(value).toBeLessThanOrEqual(upper);
+}

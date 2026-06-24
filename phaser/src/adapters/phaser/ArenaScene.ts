@@ -1,6 +1,13 @@
 import Phaser from "phaser";
-import { SIMULATION_CONFIG, VIEW_CONFIG } from "../../config/gameConfig";
+import {
+  SIMULATION_CONFIG,
+  SIMULATION_CONFIG_VERSION,
+  VIEW_CONFIG,
+} from "../../config/gameConfig";
 import type {
+  CircleBody,
+  Enemy,
+  EnemyProjectile,
   EnemyTypeId,
   GameEvent,
   RandomSource,
@@ -13,6 +20,7 @@ import type {
 import { ConsoleLogger } from "../telemetry/ConsoleLogger";
 import { FrameSpikeReporter } from "../telemetry/FrameSpikeReporter";
 import { InMemoryMetrics } from "../telemetry/InMemoryMetrics";
+import { circleRect } from "../../math/geometry";
 import { createRandom } from "../../math/random";
 import { createWorld } from "../../simulation/createWorld";
 import { createRunResultSummary } from "../../simulation/resultSummary";
@@ -275,6 +283,84 @@ export class ArenaScene extends Phaser.Scene {
     this.renderCurrentWorld();
   }
 
+  private setElapsedForDebug(elapsed: number): void {
+    if (!Number.isFinite(elapsed)) return;
+
+    this.world.state.elapsed = Math.max(0, elapsed);
+    this.renderCurrentWorld();
+  }
+
+  private setEnemyVisualFixture(band: "wave2" | "wave3" = "wave3"): void {
+    const enemyLayout: Array<{ typeId: EnemyTypeId; x: number; y: number }> =
+      band === "wave2"
+        ? [
+            { typeId: "chaser", x: 660, y: 205 },
+            { typeId: "brute", x: 745, y: 205 },
+            { typeId: "fast", x: 830, y: 205 },
+          ]
+        : [
+            { typeId: "chaser", x: 620, y: 205 },
+            { typeId: "brute", x: 705, y: 205 },
+            { typeId: "fast", x: 790, y: 205 },
+            { typeId: "ranged", x: 875, y: 205 },
+          ];
+
+    this.world.player.position = { x: 280, y: 390 };
+    this.world.state.lastAim = { x: 0.98, y: -0.2 };
+    this.world.enemies = enemyLayout.map((item, index): Enemy => {
+      const definition = this.simulationConfig.enemies[item.typeId];
+      return {
+        id: `debug-enemy-${index + 1}`,
+        typeId: item.typeId,
+        position: { x: item.x, y: item.y },
+        radius: definition.radius,
+        hp: definition.hp,
+        damage: definition.damage,
+        speed: definition.speed,
+        score: definition.score,
+        xpValue: definition.xpValue,
+        behavior: definition.behavior,
+        attackTimer: definition.ranged ? definition.ranged.attackInterval : 0,
+        enteredArena: true,
+      };
+    });
+
+    const ranged = this.simulationConfig.enemies.ranged.ranged;
+    this.world.enemyProjectiles = band === "wave3" && ranged
+      ? [
+          {
+            id: "debug-enemy-projectile-1",
+            position: { x: 760, y: 295 },
+            velocity: { x: -ranged.projectileSpeed, y: 0 },
+            radius: ranged.projectileRadius,
+            lifetime: ranged.projectileLifetime,
+            damage: ranged.projectileDamage,
+          } satisfies EnemyProjectile,
+        ]
+      : [];
+    this.world.bullets = [];
+    this.world.pickups = [];
+    this.world.nextEnemyId = this.world.enemies.length + 1;
+    this.world.nextEnemyProjectileId = this.world.enemyProjectiles.length + 1;
+    this.renderCurrentWorld();
+  }
+
+  private setObstacleFrictionFixture(): void {
+    const obstacle = this.simulationConfig.obstacles[0];
+    if (!obstacle) return;
+
+    this.world.player.position = {
+      x: obstacle.x - this.simulationConfig.player.radius,
+      y: obstacle.y + obstacle.height / 2,
+    };
+    this.world.state.lastAim = { x: 1, y: 0 };
+    this.world.enemies = [];
+    this.world.bullets = [];
+    this.world.enemyProjectiles = [];
+    this.world.pickups = [];
+    this.renderCurrentWorld();
+  }
+
   private recordForcedEvents(events: GameEvent[]): void {
     updateRunStats(this.world, events);
     this.recordResult({ events, metrics: [] });
@@ -291,6 +377,9 @@ export class ArenaScene extends Phaser.Scene {
 
     window.__ARENA_DEBUG__ = {
       getSnapshot: () => ({
+        configVersion: SIMULATION_CONFIG_VERSION,
+        buildCommit: this.getBuildCommit(),
+        seed: this.simulationConfig.seed,
         status: this.world.state.status,
         elapsed: this.world.state.elapsed,
         hp: this.world.state.hp,
@@ -312,10 +401,13 @@ export class ArenaScene extends Phaser.Scene {
         enemyTypeCounts: this.getEnemyTypeCounts(),
         enemyProjectileCount: this.world.enemyProjectiles.length,
         pickupCount: this.world.pickups.length,
+        obstacleContacts: this.getObstacleContactCounts(),
         feedback: this.feedbackLayer.getSnapshot(),
         audioCues: this.audioRouter.getLastCues(),
         lastEvents: [...this.lastEvents],
       }),
+      getRunExport: () => this.getRunExport(),
+      getRunExportJson: () => JSON.stringify(this.getRunExport(), null, 2),
       forceDamage: (amount: number) => {
         this.forceDamage(amount);
       },
@@ -336,10 +428,53 @@ export class ArenaScene extends Phaser.Scene {
         this.debugPaused = paused;
         this.renderCurrentWorld();
       },
+      setElapsed: (elapsed: number) => {
+        this.setElapsedForDebug(elapsed);
+      },
+      setEnemyVisualFixture: (band: "wave2" | "wave3" = "wave3") => {
+        this.setEnemyVisualFixture(band);
+      },
+      setObstacleFrictionFixture: () => {
+        this.setObstacleFrictionFixture();
+      },
       step: (input: Partial<InputSnapshot> = {}, deltaSeconds = 1 / 60) => {
         this.stepDebugWorld(input, deltaSeconds);
       },
     };
+  }
+
+  private getRunExport() {
+    return {
+      capturedAt: new Date().toISOString(),
+      game: "arena-core-phaser" as const,
+      appVersion: "0.2",
+      configVersion: SIMULATION_CONFIG_VERSION,
+      buildCommit: this.getBuildCommit(),
+      seed: this.simulationConfig.seed,
+      status: this.world.state.status,
+      elapsed: this.world.state.elapsed,
+      wave: { ...getWaveBand(this.simulationConfig, this.world.state.elapsed) },
+      resultSummary: createRunResultSummary(this.world),
+      stats: this.getStatsSnapshot(),
+      counts: {
+        bullets: this.world.bullets.length,
+        enemies: this.world.enemies.length,
+        enemyTypes: this.getEnemyTypeCounts(),
+        enemyProjectiles: this.world.enemyProjectiles.length,
+        pickups: this.world.pickups.length,
+        obstacleContacts: this.getObstacleContactCounts(),
+      },
+      player: { ...this.world.player.position },
+      lastAim: { ...this.world.state.lastAim },
+      pendingUpgradeChoices: [...this.world.progression.pendingUpgradeChoices],
+      upgradeRanks: { ...this.world.progression.upgradeRanks },
+      runtime: { ...this.world.runtime },
+      lastEvents: [...this.lastEvents],
+    };
+  }
+
+  private getBuildCommit(): string {
+    return import.meta.env.VITE_GIT_COMMIT || "unknown";
   }
 
   private getEnemyTypeCounts(): Record<EnemyTypeId, number> {
@@ -352,12 +487,38 @@ export class ArenaScene extends Phaser.Scene {
     );
   }
 
+  private getObstacleContactCounts(): {
+    player: number;
+    enemies: number;
+    bullets: number;
+    enemyProjectiles: number;
+    pickups: number;
+  } {
+    return {
+      player: this.countObstacleContacts([this.world.player]),
+      enemies: this.countObstacleContacts(this.world.enemies),
+      bullets: this.countObstacleContacts(this.world.bullets),
+      enemyProjectiles: this.countObstacleContacts(this.world.enemyProjectiles),
+      pickups: this.countObstacleContacts(this.world.pickups),
+    };
+  }
+
+  private countObstacleContacts(bodies: CircleBody[]): number {
+    return bodies.filter((body) =>
+      this.world.obstacles.some((obstacle) => circleRect(body, obstacle)),
+    ).length;
+  }
+
   private getStatsSnapshot(): WorldState["stats"] {
     return {
       shotsFired: this.world.stats.shotsFired,
       enemiesKilled: this.world.stats.enemiesKilled,
       hitsTaken: this.world.stats.hitsTaken,
       damageTaken: this.world.stats.damageTaken,
+      damageTakenBySource: { ...this.world.stats.damageTakenBySource },
+      lastDamageSource: this.world.stats.lastDamageSource
+        ? { ...this.world.stats.lastDamageSource }
+        : null,
       xpCollected: this.world.stats.xpCollected,
       pickupsCollected: this.world.stats.pickupsCollected,
       upgradesChosen: this.world.stats.upgradesChosen,

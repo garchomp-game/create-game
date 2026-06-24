@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ENEMY_TYPE_IDS, UPGRADE_IDS, WEAPON_TYPE_IDS } from "../domain/types";
 import type {
+  EnemyViewConfig,
   EnemyTypeId,
   SimulationConfig,
   UpgradeId,
@@ -239,6 +240,16 @@ const entityColorSchema = z
   })
   .strict();
 
+const enemyViewSchema: z.ZodType<EnemyViewConfig> = z
+  .object({
+    color: colorNumber,
+    stroke: colorNumber,
+    shape: z.enum(["circle", "square", "diamond", "triangle", "hex"]),
+    mark: z.enum(["ring", "cross", "slash", "dot"]),
+    markColor: colorNumber,
+  })
+  .strict();
+
 export const viewConfigSchema: z.ZodType<ViewConfig> = z
   .object({
     arena: z
@@ -256,13 +267,15 @@ export const viewConfigSchema: z.ZodType<ViewConfig> = z
     enemy: z
       .object(
         Object.fromEntries(
-          ENEMY_TYPE_IDS.map((typeId) => [typeId, entityColorSchema]),
-        ) as Record<EnemyTypeId, typeof entityColorSchema>,
+          ENEMY_TYPE_IDS.map((typeId) => [typeId, enemyViewSchema]),
+        ) as Record<EnemyTypeId, typeof enemyViewSchema>,
       )
       .strict(),
     enemyProjectile: z
       .object({
         color: colorNumber,
+        stroke: colorNumber,
+        core: colorNumber,
       })
       .strict(),
     pickup: z

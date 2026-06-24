@@ -245,6 +245,65 @@ test("debug freeze still accepts restart and records forced damage events", asyn
     .toBe(0);
 });
 
+test("debug run export includes playtest report metadata and KPI data", async ({ page }) => {
+  await page.goto("/");
+  const canvas = page.locator("canvas");
+  await expect(canvas).toHaveCount(1);
+
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.restart();
+    window.__ARENA_DEBUG__?.setElapsed(61);
+    window.__ARENA_DEBUG__?.grantXp(3);
+    window.__ARENA_DEBUG__?.step({ upgradeChoicePressed: 0 }, 1 / 60);
+    window.__ARENA_DEBUG__?.forceDamage(12);
+  });
+
+  const runExport = await page.evaluate(() => window.__ARENA_DEBUG__?.getRunExport());
+  expect(runExport).toBeTruthy();
+  expect(runExport?.game).toBe("arena-core-phaser");
+  expect(runExport?.appVersion).toBe("0.2");
+  expect(runExport?.configVersion).toBe("phaser-v0.2-playtest-foundation");
+  expect(runExport?.buildCommit).toBe("unknown");
+  expect(runExport?.seed).toBe(20260619);
+  expect(runExport?.resultSummary.elapsed).toBeCloseTo(61, 1);
+  expect(runExport?.resultSummary.damageTaken).toBe(12);
+  expect(runExport?.resultSummary.level).toBeGreaterThanOrEqual(2);
+  expect(runExport?.wave.start).toBe(60);
+  expect(runExport?.counts.enemyTypes).toEqual({ chaser: 0, brute: 0, fast: 0, ranged: 0 });
+  expect(runExport?.counts.obstacleContacts.player).toBe(0);
+  expect(new Date(runExport!.capturedAt).toString()).not.toBe("Invalid Date");
+
+  const runExportJson = await page.evaluate(() => window.__ARENA_DEBUG__?.getRunExportJson());
+  const parsedRunExport = JSON.parse(runExportJson!);
+  expect(parsedRunExport.game).toBe(runExport?.game);
+  expect(parsedRunExport.configVersion).toBe(runExport?.configVersion);
+  expect(parsedRunExport.resultSummary.damageTaken).toBe(runExport?.resultSummary.damageTaken);
+});
+
+test("debug obstacle fixture slides along obstacle edges", async ({ page }) => {
+  await page.goto("/");
+  const canvas = page.locator("canvas");
+  await expect(canvas).toHaveCount(1);
+
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.restart();
+    window.__ARENA_DEBUG__?.setObstacleFrictionFixture();
+    window.__ARENA_DEBUG__?.setPaused(true);
+  });
+
+  const before = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+  expect(before?.obstacleContacts.player).toBe(0);
+
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.step({ move: { x: 1, y: 1 } }, 1 / 60);
+  });
+
+  const after = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+  expect(after?.player.x).toBeCloseTo(before!.player.x, 4);
+  expect(after?.player.y).toBeGreaterThan(before!.player.y);
+  expect(after?.obstacleContacts.player).toBe(0);
+});
+
 test("can enter upgrade selection and choose an upgrade", async ({ page }) => {
   await page.goto("/");
   const canvas = page.locator("canvas");

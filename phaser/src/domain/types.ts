@@ -135,6 +135,17 @@ export type SimulationConfig = {
   obstacles: Obstacle[];
 };
 
+export type EnemyViewShape = "circle" | "square" | "diamond" | "triangle" | "hex";
+export type EnemyViewMark = "ring" | "cross" | "slash" | "dot";
+
+export type EnemyViewConfig = {
+  color: number;
+  stroke: number;
+  shape: EnemyViewShape;
+  mark: EnemyViewMark;
+  markColor: number;
+};
+
 export type ViewConfig = {
   arena: {
     background: number;
@@ -147,12 +158,11 @@ export type ViewConfig = {
   bullet: {
     color: number;
   };
-  enemy: Record<EnemyTypeId, {
-    color: number;
-    stroke: number;
-  }>;
+  enemy: Record<EnemyTypeId, EnemyViewConfig>;
   enemyProjectile: {
     color: number;
+    stroke: number;
+    core: number;
   };
   pickup: {
     xpColor: number;
@@ -250,23 +260,36 @@ export type WeaponRunStats = {
   kills: number;
 };
 
+export type PlayerDamageSource =
+  | { kind: "contact"; enemyId: string; enemyType: EnemyTypeId }
+  | { kind: "projectile"; projectileId: string };
+
+export type DamageTakenBySource = {
+  contact: number;
+  projectile: number;
+};
+
 export type RunStats = {
   shotsFired: number;
   enemiesKilled: number;
   hitsTaken: number;
   damageTaken: number;
+  damageTakenBySource: DamageTakenBySource;
+  lastDamageSource: PlayerDamageSource | null;
   xpCollected: number;
   pickupsCollected: number;
   upgradesChosen: number;
   weaponMetrics: Record<WeaponTypeId, WeaponRunStats>;
 };
 
-export type RunResultSummary = RunStats & {
+export type RunResultSummary = Omit<RunStats, "damageTakenBySource" | "lastDamageSource"> & {
   elapsed: number;
   score: number;
   hp: number;
   level: number;
   xp: number;
+  damageTakenBySource: DamageTakenBySource;
+  lastDamageSource: PlayerDamageSource | null;
 };
 
 export type WorldState = {
@@ -342,7 +365,7 @@ export type GameEvent =
       position: Vec2;
       direction: Vec2;
     }
-  | { type: "player.damaged"; damage: number; hpAfter: number }
+  | { type: "player.damaged"; damage: number; hpAfter: number; source?: PlayerDamageSource }
   | { type: "game.over"; score: number; elapsed: number };
 
 export type GameMetric =

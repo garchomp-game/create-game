@@ -14,6 +14,10 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
     } else if (event.type === "player.damaged") {
       world.stats.hitsTaken += 1;
       world.stats.damageTaken += event.damage;
+      if (event.source) {
+        world.stats.damageTakenBySource[event.source.kind] += event.damage;
+        world.stats.lastDamageSource = { ...event.source };
+      }
     } else if (event.type === "pickup.collected") {
       world.stats.pickupsCollected += 1;
       world.stats.xpCollected += event.xpValue;

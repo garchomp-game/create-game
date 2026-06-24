@@ -11,6 +11,11 @@ export function createRunResultSummary(world: WorldState): RunResultSummary {
     enemiesKilled: world.stats.enemiesKilled,
     hitsTaken: world.stats.hitsTaken,
     damageTaken: world.stats.damageTaken,
+    damageTakenBySource: {
+      contact: world.stats.damageTakenBySource.contact,
+      projectile: world.stats.damageTakenBySource.projectile,
+    },
+    lastDamageSource: world.stats.lastDamageSource ? { ...world.stats.lastDamageSource } : null,
     xpCollected: world.stats.xpCollected,
     pickupsCollected: world.stats.pickupsCollected,
     upgradesChosen: world.stats.upgradesChosen,

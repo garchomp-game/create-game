@@ -16,5 +16,5 @@ export function circleRect(circle: CircleBody, rect: Obstacle): boolean {
   const closestY = clamp(circle.position.y, rect.y, rect.y + rect.height);
   const dx = circle.position.x - closestX;
   const dy = circle.position.y - closestY;
-  return dx * dx + dy * dy <= circle.radius * circle.radius;
+  return dx * dx + dy * dy < circle.radius * circle.radius - 0.000001;
 }

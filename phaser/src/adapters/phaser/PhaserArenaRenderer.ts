@@ -1,13 +1,21 @@
 import Phaser from "phaser";
-import type { SimulationConfig, Vec2, ViewConfig, WorldState } from "../../domain/types";
+import type {
+  EnemyViewConfig,
+  PlayerDamageSource,
+  SimulationConfig,
+  Vec2,
+  ViewConfig,
+  WorldState,
+} from "../../domain/types";
 import { formatTime } from "../../format/time";
 import { createRunResultSummary } from "../../simulation/resultSummary";
-import { getWaveBand } from "../../simulation/waveDirector";
+import { createUpgradePreview, formatUpgradePreview } from "../../simulation/upgradePreview";
+import { PhaserHud } from "./PhaserHud";
 import { getMenuButtons, getUpgradeChoiceButtons } from "./PhaserMenuLayout";
 
 export class PhaserArenaRenderer {
   private readonly graphics: Phaser.GameObjects.Graphics;
-  private readonly hud: Phaser.GameObjects.Text;
+  private readonly hud: PhaserHud;
   private readonly statusText: Phaser.GameObjects.Text;
   private readonly menuButtonTexts: Phaser.GameObjects.Text[];
   private readonly upgradeChoiceTexts: Phaser.GameObjects.Text[];
@@ -18,16 +26,7 @@ export class PhaserArenaRenderer {
     private readonly viewConfig: ViewConfig,
   ) {
     this.graphics = scene.add.graphics();
-    this.hud = scene.add
-      .text(18, 16, "", {
-        fontFamily: "Arial, sans-serif",
-        fontSize: "16px",
-        color: "#f8fafc",
-        backgroundColor: "rgba(2, 6, 23, 0.68)",
-        padding: { x: 8, y: 6 },
-        lineSpacing: 4,
-      })
-      .setDepth(10);
+    this.hud = new PhaserHud(scene, simulationConfig);
 
     scene.add
       .text(simulationConfig.arena.width - 18, 16, "Library: Phaser", {
@@ -80,7 +79,7 @@ export class PhaserArenaRenderer {
   render(world: WorldState, pointerWorld: Vec2 | null = null): void {
     const g = this.graphics;
     const { arena } = this.simulationConfig;
-    const { bullet, enemy, enemyProjectile, pickup, player } = this.viewConfig;
+    const { bullet, pickup, player } = this.viewConfig;
 
     g.clear();
     g.fillStyle(this.viewConfig.arena.background, 1);
@@ -120,16 +119,11 @@ export class PhaserArenaRenderer {
     }
 
     for (const item of world.enemyProjectiles) {
-      g.fillStyle(enemyProjectile.color, 1);
-      g.fillCircle(item.position.x, item.position.y, item.radius);
+      this.drawEnemyProjectile(g, item);
     }
 
     for (const item of world.enemies) {
-      const enemyView = enemy[item.typeId];
-      g.fillStyle(enemyView.color, 1);
-      g.fillCircle(item.position.x, item.position.y, item.radius);
-      g.lineStyle(2, enemyView.stroke, 1);
-      g.strokeCircle(item.position.x, item.position.y, item.radius);
+      this.drawEnemy(g, item);
     }
 
     this.drawAimGuide(g, world, pointerWorld);
@@ -141,6 +135,9 @@ export class PhaserArenaRenderer {
     this.hideButtonTexts();
     if (world.state.status === "gameOver") {
       const summary = createRunResultSummary(world);
+      const causeText = summary.lastDamageSource
+        ? `\nCause: ${this.formatDamageSource(summary.lastDamageSource)}`
+        : "";
       g.fillStyle(0x020617, 0.9);
       g.fillRect(0, 0, arena.width, arena.height);
       this.statusText
@@ -151,7 +148,7 @@ export class PhaserArenaRenderer {
             summary.elapsed,
           )}\nLevel: ${summary.level}\nKills: ${summary.enemiesKilled}\nShots: ${
             summary.shotsFired
-          }`,
+          }${causeText}`,
         )
         .setVisible(true);
       this.drawMenuButtons(g, world);
@@ -186,8 +183,7 @@ export class PhaserArenaRenderer {
       this.statusText.setVisible(false);
     }
 
-    this.hud.setVisible(world.state.status !== "title");
-    this.hud.setText(this.formatHud(world));
+    this.hud.render(world);
     this.drawCursor(g, pointerWorld);
   }
 
@@ -239,15 +235,132 @@ export class PhaserArenaRenderer {
     g.fillCircle(x, y, 2);
   }
 
-  private formatHud(world: WorldState): string {
-    const wave = getWaveBand(this.simulationConfig, world.state.elapsed);
-    const waveIndex = this.simulationConfig.waves.findIndex((item) => item.start === wave.start) + 1;
-    const maxHp = this.simulationConfig.player.maxHp + world.runtime.maxHpBonus;
-    return [
-      `HP ${Math.ceil(world.state.hp)}/${maxHp}  LV ${world.progression.level}  XP ${world.progression.xp}/${world.progression.xpToNext}`,
-      `Score ${world.state.score}  Time ${formatTime(world.state.elapsed)}  Wave ${waveIndex}`,
-      `Weapon ${world.state.weaponType}  Enemies ${world.enemies.length}/${wave.maxEnemies}`,
-    ].join("\n");
+  private drawEnemy(
+    g: Phaser.GameObjects.Graphics,
+    enemy: WorldState["enemies"][number],
+  ): void {
+    const view = this.viewConfig.enemy[enemy.typeId];
+    const { x, y } = enemy.position;
+    const r = enemy.radius;
+
+    if (view.shape === "circle") {
+      g.fillStyle(view.color, 1);
+      g.fillCircle(x, y, r);
+      g.lineStyle(2, view.stroke, 1);
+      g.strokeCircle(x, y, r);
+    } else if (view.shape === "square") {
+      g.fillStyle(view.color, 1);
+      g.fillRect(x - r, y - r, r * 2, r * 2);
+      g.lineStyle(2, view.stroke, 1);
+      g.strokeRect(x - r, y - r, r * 2, r * 2);
+    } else if (view.shape === "diamond") {
+      this.drawPolygon(g, [
+        { x, y: y - r * 1.18 },
+        { x: x + r * 1.18, y },
+        { x, y: y + r * 1.18 },
+        { x: x - r * 1.18, y },
+      ], view.color, view.stroke);
+    } else if (view.shape === "triangle") {
+      this.drawPolygon(g, this.getRegularPolygonPoints(x, y, r * 1.25, 3, -Math.PI / 2), view.color, view.stroke);
+    } else {
+      this.drawPolygon(g, this.getRegularPolygonPoints(x, y, r * 1.08, 6, Math.PI / 6), view.color, view.stroke);
+    }
+
+    this.drawEnemyMark(g, enemy, view);
+  }
+
+  private drawEnemyMark(
+    g: Phaser.GameObjects.Graphics,
+    enemy: WorldState["enemies"][number],
+    view: EnemyViewConfig,
+  ): void {
+    const { x, y } = enemy.position;
+    const r = enemy.radius;
+    g.lineStyle(2, view.markColor, 0.95);
+
+    if (view.mark === "ring") {
+      g.strokeCircle(x, y, r * 0.48);
+    } else if (view.mark === "cross") {
+      g.lineBetween(x - r * 0.5, y, x + r * 0.5, y);
+      g.lineBetween(x, y - r * 0.5, x, y + r * 0.5);
+    } else if (view.mark === "slash") {
+      g.lineStyle(3, view.markColor, 0.95);
+      g.lineBetween(x - r * 0.48, y + r * 0.36, x + r * 0.48, y - r * 0.36);
+    } else {
+      g.fillStyle(view.markColor, 1);
+      g.fillCircle(x, y, r * 0.28);
+      g.lineStyle(1, view.stroke, 0.85);
+      g.strokeCircle(x, y, r * 0.28);
+    }
+  }
+
+  private drawEnemyProjectile(
+    g: Phaser.GameObjects.Graphics,
+    projectile: WorldState["enemyProjectiles"][number],
+  ): void {
+    const { x, y } = projectile.position;
+    const r = projectile.radius + 3;
+    const view = this.viewConfig.enemyProjectile;
+    this.drawPolygon(g, [
+      { x, y: y - r },
+      { x: x + r, y },
+      { x, y: y + r },
+      { x: x - r, y },
+    ], view.color, view.stroke);
+    g.lineStyle(1, view.core, 0.95);
+    g.lineBetween(x - r * 0.45, y, x + r * 0.45, y);
+    g.lineBetween(x, y - r * 0.45, x, y + r * 0.45);
+    g.fillStyle(view.core, 1);
+    g.fillCircle(x, y, Math.max(2, projectile.radius * 0.35));
+  }
+
+  private drawPolygon(
+    g: Phaser.GameObjects.Graphics,
+    points: Vec2[],
+    fillColor: number,
+    strokeColor: number,
+  ): void {
+    g.fillStyle(fillColor, 1);
+    this.tracePolygon(g, points);
+    g.fillPath();
+    g.lineStyle(2, strokeColor, 1);
+    this.tracePolygon(g, points);
+    g.strokePath();
+  }
+
+  private tracePolygon(g: Phaser.GameObjects.Graphics, points: Vec2[]): void {
+    const first = points[0];
+    if (!first) return;
+
+    g.beginPath();
+    g.moveTo(first.x, first.y);
+    for (let index = 1; index < points.length; index += 1) {
+      const point = points[index]!;
+      g.lineTo(point.x, point.y);
+    }
+    g.closePath();
+  }
+
+  private getRegularPolygonPoints(
+    x: number,
+    y: number,
+    radius: number,
+    sides: number,
+    rotation: number,
+  ): Vec2[] {
+    return Array.from({ length: sides }, (_, index) => {
+      const angle = rotation + (Math.PI * 2 * index) / sides;
+      return {
+        x: x + Math.cos(angle) * radius,
+        y: y + Math.sin(angle) * radius,
+      };
+    });
+  }
+
+  private formatDamageSource(source: PlayerDamageSource): string {
+    if (source.kind === "contact") return `${source.enemyType} contact`;
+
+    return "enemy projectile";
   }
 
   private drawMenuButtons(g: Phaser.GameObjects.Graphics, world: WorldState): void {
@@ -274,12 +387,15 @@ export class PhaserArenaRenderer {
       const upgradeId = world.progression.pendingUpgradeChoices[button.index]!;
       const upgrade = this.simulationConfig.upgrades[upgradeId];
       const currentRank = world.progression.upgradeRanks[upgradeId];
+      const preview = formatUpgradePreview(
+        createUpgradePreview(world, this.simulationConfig, upgradeId),
+      );
       this.drawButton(g, button.x, button.y, button.width, button.height);
       this.upgradeChoiceTexts[button.index]!
         .setText(
           `${button.index + 1}. ${upgrade.title}  Rank ${currentRank + 1}/${
             upgrade.maxRank
-          }\n${upgrade.description}`,
+          }\n${upgrade.description}\n${preview}`,
         )
         .setPosition(button.x + button.width / 2, button.y + button.height / 2)
         .setVisible(true);

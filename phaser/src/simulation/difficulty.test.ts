@@ -12,14 +12,22 @@ describe("getDifficulty", () => {
 
   it("switches to the middle band at 30 seconds", () => {
     expect(getDifficulty(30)).toEqual({
-      spawnInterval: 0.75,
-      speedMultiplier: 1.18,
-      maxEnemies: 45,
+      spawnInterval: 0.78,
+      speedMultiplier: 1.14,
+      maxEnemies: 42,
     });
   });
 
-  it("switches to the late band at 60 seconds", () => {
+  it("switches to the ranged introduction band at 60 seconds", () => {
     expect(getDifficulty(60)).toEqual({
+      spawnInterval: 0.68,
+      speedMultiplier: 1.22,
+      maxEnemies: 50,
+    });
+  });
+
+  it("switches to the endurance band at 90 seconds", () => {
+    expect(getDifficulty(90)).toEqual({
       spawnInterval: 0.55,
       speedMultiplier: 1.35,
       maxEnemies: 60,

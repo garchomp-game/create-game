@@ -10,11 +10,16 @@ describe("waveDirector", () => {
       maxEnemies: 30,
     });
     expect(getWaveDifficulty(SIMULATION_CONFIG, 30)).toEqual({
-      spawnInterval: 0.75,
-      speedMultiplier: 1.18,
-      maxEnemies: 45,
+      spawnInterval: 0.78,
+      speedMultiplier: 1.14,
+      maxEnemies: 42,
     });
     expect(getWaveDifficulty(SIMULATION_CONFIG, 60)).toEqual({
+      spawnInterval: 0.68,
+      speedMultiplier: 1.22,
+      maxEnemies: 50,
+    });
+    expect(getWaveDifficulty(SIMULATION_CONFIG, 90)).toEqual({
       spawnInterval: 0.55,
       speedMultiplier: 1.35,
       maxEnemies: 60,

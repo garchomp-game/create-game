@@ -71,6 +71,11 @@ export function resolveCombat(
         type: "player.damaged",
         damage: hpBefore - world.state.hp,
         hpAfter: world.state.hp,
+        source: {
+          kind: "contact",
+          enemyId: touchingEnemy.id,
+          enemyType: touchingEnemy.typeId,
+        },
       });
     }
   }
@@ -98,6 +103,10 @@ function resolveEnemyProjectileHits(
       type: "player.damaged",
       damage: hpBefore - world.state.hp,
       hpAfter: world.state.hp,
+      source: {
+        kind: "projectile",
+        projectileId: projectile.id,
+      },
     });
   }
 

@@ -61,6 +61,11 @@
 | `18-phaser-phase5-agent-task-briefs.md` | Phaser Phase 5 Wave Director and Balanceチケットをサブエージェントへ渡すための作業票 |
 | `19-phaser-phase6-agent-task-briefs.md` | Phaser Phase 6 Presentation and UXチケットをサブエージェントへ渡すための作業票 |
 | `20-phaser-phase7-agent-task-briefs.md` | Phaser Phase 7 Screens and Release Shapeチケットをサブエージェントへ渡すための作業票 |
+| `21-phaser-v02-backlog.md` | Phaser v0.2 Playtest & Balance FoundationのPMバックログ、工数ガント、実行順 |
+| `22-phaser-v02-playtest-template.md` | Phaser v0.2の手動プレイ記録、debug export、3ラン比較テンプレート |
+| `23-phaser-v02-wave-curve-review.md` | Phaser v0.2のwave曲線見直し、bench差分、wave境界被弾レビュー |
+| `24-phaser-v02-obstacle-friction-audit.md` | Phaser v0.2の障害物摩擦監査、壁沿い移動テスト、debug接触カウント |
+| `25-phaser-v02-stabilization-report.md` | Phaser v0.2 core完了後の検証結果、candidate判定、残リスク |
 
 ## 実装方針
 

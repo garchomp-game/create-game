@@ -1,6 +1,8 @@
 import type { GameConfig } from "../domain/types";
 import { parseSimulationConfig, parseViewConfig } from "./configSchema";
 
+export const SIMULATION_CONFIG_VERSION = "phaser-v0.2-playtest-foundation";
+
 const rawSimulationConfig = {
   seed: 20260619,
   arena: {
@@ -111,27 +113,40 @@ const rawSimulationConfig = {
     },
     {
       start: 30,
-      spawnInterval: 0.75,
-      speedMultiplier: 1.18,
-      maxEnemies: 45,
+      spawnInterval: 0.78,
+      speedMultiplier: 1.14,
+      maxEnemies: 42,
       spawnBudget: 3,
       enemyWeights: {
         chaser: 1,
-        brute: 0.65,
-        fast: 0.9,
+        brute: 0.55,
+        fast: 0.75,
       },
     },
     {
       start: 60,
+      spawnInterval: 0.68,
+      speedMultiplier: 1.22,
+      maxEnemies: 50,
+      spawnBudget: 3,
+      enemyWeights: {
+        chaser: 0.9,
+        brute: 0.6,
+        fast: 1,
+        ranged: 0.35,
+      },
+    },
+    {
+      start: 90,
       spawnInterval: 0.55,
       speedMultiplier: 1.35,
       maxEnemies: 60,
       spawnBudget: 3,
       enemyWeights: {
-        chaser: 0.8,
+        chaser: 0.75,
         brute: 0.75,
-        fast: 1.15,
-        ranged: 0.65,
+        fast: 1.1,
+        ranged: 0.7,
       },
     },
   ],
@@ -222,22 +237,36 @@ const rawViewConfig = {
     chaser: {
       color: 0xfb7185,
       stroke: 0x7f1d1d,
+      shape: "circle",
+      mark: "ring",
+      markColor: 0xffc4cf,
     },
     brute: {
       color: 0xf97316,
       stroke: 0x7c2d12,
+      shape: "square",
+      mark: "cross",
+      markColor: 0xffedd5,
     },
     fast: {
       color: 0xa3e635,
       stroke: 0x365314,
+      shape: "diamond",
+      mark: "slash",
+      markColor: 0xf7fee7,
     },
     ranged: {
       color: 0xc084fc,
       stroke: 0x581c87,
+      shape: "hex",
+      mark: "dot",
+      markColor: 0xf5d0fe,
     },
   },
   enemyProjectile: {
     color: 0xf472b6,
+    stroke: 0x831843,
+    core: 0xfdf2f8,
   },
   pickup: {
     xpColor: 0x22c55e,

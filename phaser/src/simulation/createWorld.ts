@@ -38,6 +38,8 @@ export function createWorld(config: SimulationConfig): WorldState {
       enemiesKilled: 0,
       hitsTaken: 0,
       damageTaken: 0,
+      damageTakenBySource: { contact: 0, projectile: 0 },
+      lastDamageSource: null,
       xpCollected: 0,
       pickupsCollected: 0,
       upgradesChosen: 0,

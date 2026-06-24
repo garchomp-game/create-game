@@ -45,6 +45,57 @@ test("matches the fixed initial arena frame", async ({ page }) => {
   });
 });
 
+test("matches the fixed wave two HUD frame", async ({ page }) => {
+  await page.goto("/");
+  const canvas = page.locator("canvas");
+  await expect(canvas).toHaveCount(1);
+
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.restart();
+    window.__ARENA_DEBUG__?.setElapsed(31);
+    window.__ARENA_DEBUG__?.setEnemyVisualFixture("wave2");
+    window.__ARENA_DEBUG__?.setPaused(true);
+  });
+
+  await expect(canvas).toHaveScreenshot("arena-wave-two-hud.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("matches the fixed wave three HUD frame", async ({ page }) => {
+  await page.goto("/");
+  const canvas = page.locator("canvas");
+  await expect(canvas).toHaveCount(1);
+
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.restart();
+    window.__ARENA_DEBUG__?.setElapsed(61);
+    window.__ARENA_DEBUG__?.setEnemyVisualFixture("wave3");
+    window.__ARENA_DEBUG__?.setPaused(true);
+  });
+
+  await expect(canvas).toHaveScreenshot("arena-wave-three-hud.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("matches the fixed wave four HUD frame", async ({ page }) => {
+  await page.goto("/");
+  const canvas = page.locator("canvas");
+  await expect(canvas).toHaveCount(1);
+
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.restart();
+    window.__ARENA_DEBUG__?.setElapsed(91);
+    window.__ARENA_DEBUG__?.setEnemyVisualFixture("wave3");
+    window.__ARENA_DEBUG__?.setPaused(true);
+  });
+
+  await expect(canvas).toHaveScreenshot("arena-wave-four-hud.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
 test("matches the fixed shooting frame", async ({ page }) => {
   await page.goto("/");
   const canvas = page.locator("canvas");

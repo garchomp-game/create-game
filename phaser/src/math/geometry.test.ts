@@ -17,10 +17,19 @@ describe("geometry", () => {
     ).toBe(true);
   });
 
-  it("detects circle-rect contact at an edge", () => {
+  it("allows circle-rect tangent contact at an edge", () => {
     expect(
       circleRect(
         { position: { x: 90, y: 50 }, radius: 10 },
+        { id: "rect", x: 100, y: 25, width: 50, height: 50 },
+      ),
+    ).toBe(false);
+  });
+
+  it("detects circle-rect overlap past an edge", () => {
+    expect(
+      circleRect(
+        { position: { x: 91, y: 50 }, radius: 10 },
         { id: "rect", x: 100, y: 25, width: 50, height: 50 },
       ),
     ).toBe(true);

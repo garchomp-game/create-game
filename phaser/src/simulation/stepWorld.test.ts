@@ -217,6 +217,47 @@ describe("stepWorld", () => {
     );
   });
 
+  it("lets the player slide along an obstacle while touching its side", () => {
+    const world = createWorld(GAME_CONFIG);
+    const obstacle = GAME_CONFIG.obstacles[0]!;
+    world.player.position = {
+      x: obstacle.x - GAME_CONFIG.player.radius,
+      y: obstacle.y + obstacle.height / 2,
+    };
+
+    stepWorld(
+      world,
+      { ...neutralInput, move: { x: 0, y: 1 } },
+      1 / 60,
+      createRandom(GAME_CONFIG.seed),
+      GAME_CONFIG,
+    );
+
+    expect(world.player.position.x).toBe(obstacle.x - GAME_CONFIG.player.radius);
+    expect(world.player.position.y).toBeGreaterThan(obstacle.y + obstacle.height / 2);
+  });
+
+  it("slides along an obstacle face when diagonal input pushes into the wall", () => {
+    const world = createWorld(GAME_CONFIG);
+    const obstacle = GAME_CONFIG.obstacles[0]!;
+    const startY = obstacle.y + obstacle.height / 2;
+    world.player.position = {
+      x: obstacle.x - GAME_CONFIG.player.radius,
+      y: startY,
+    };
+
+    stepWorld(
+      world,
+      { ...neutralInput, move: { x: 1, y: 1 } },
+      1 / 60,
+      createRandom(GAME_CONFIG.seed),
+      GAME_CONFIG,
+    );
+
+    expect(world.player.position.x).toBe(obstacle.x - GAME_CONFIG.player.radius);
+    expect(world.player.position.y).toBeGreaterThan(startY);
+  });
+
   it("kills an enemy with a bullet and awards score", () => {
     const world = createWorld(GAME_CONFIG);
     world.enemies.push(createTestEnemy());
@@ -489,7 +530,23 @@ describe("stepWorld", () => {
     expect(world.state.hp).toBe(
       GAME_CONFIG.player.maxHp - GAME_CONFIG.enemies.ranged.ranged!.projectileDamage,
     );
-    expect(result.events).toContainEqual(expect.objectContaining({ type: "player.damaged" }));
+    expect(result.events).toContainEqual(
+      expect.objectContaining({
+        type: "player.damaged",
+        source: {
+          kind: "projectile",
+          projectileId: "enemy-projectile-test",
+        },
+      }),
+    );
+    expect(world.stats.damageTakenBySource.projectile).toBe(
+      GAME_CONFIG.enemies.ranged.ranged!.projectileDamage,
+    );
+    expect(world.stats.damageTakenBySource.contact).toBe(0);
+    expect(world.stats.lastDamageSource).toEqual({
+      kind: "projectile",
+      projectileId: "enemy-projectile-test",
+    });
   });
 
   it("levels up from collected XP and enters upgrade selection", () => {
@@ -652,7 +709,7 @@ describe("stepWorld", () => {
     const world = createWorld(GAME_CONFIG);
     world.enemies.push(createTestEnemy("chaser", { position: { ...world.player.position } }));
 
-    stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+    const result = stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
     const hpAfterFirstHit = world.state.hp;
     stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
 
@@ -660,6 +717,23 @@ describe("stepWorld", () => {
     expect(world.state.hp).toBe(hpAfterFirstHit);
     expect(world.stats.hitsTaken).toBe(1);
     expect(world.stats.damageTaken).toBe(GAME_CONFIG.enemies.chaser.damage);
+    expect(world.stats.damageTakenBySource.contact).toBe(GAME_CONFIG.enemies.chaser.damage);
+    expect(world.stats.damageTakenBySource.projectile).toBe(0);
+    expect(world.stats.lastDamageSource).toEqual({
+      kind: "contact",
+      enemyId: "enemy-test",
+      enemyType: "chaser",
+    });
+    expect(result.events).toContainEqual(
+      expect.objectContaining({
+        type: "player.damaged",
+        source: {
+          kind: "contact",
+          enemyId: "enemy-test",
+          enemyType: "chaser",
+        },
+      }),
+    );
   });
 
   it("emits game over when hp reaches zero", () => {
