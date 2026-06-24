@@ -10,6 +10,7 @@ import type {
   EnemyProjectile,
   EnemyTypeId,
   GameEvent,
+  Pickup,
   RandomSource,
   SimulationConfig,
   StepWorldResult,
@@ -247,7 +248,14 @@ export class ArenaScene extends Phaser.Scene {
     if (xpValue === 0) return;
 
     const events: GameEvent[] = [
-      { type: "pickup.collected", pickupId: "debug-xp", xpValue },
+      {
+        type: "pickup.collected",
+        pickupId: "debug-xp",
+        pickupKind: "xp",
+        xpValue,
+        healValue: 0,
+        hpRecovered: 0,
+      },
     ];
     this.world.progression.xp += xpValue;
     updateLevelProgression(this.world, this.random, this.simulationConfig, events);
@@ -361,6 +369,83 @@ export class ArenaScene extends Phaser.Scene {
     this.renderCurrentWorld();
   }
 
+  private setHealPickupFixture(mode: "damaged" | "full" | "fatal" | "visual" = "damaged"): void {
+    const maxHp = this.simulationConfig.player.maxHp + this.world.runtime.maxHpBonus;
+    const healValue = this.getDebugHealValue();
+
+    this.world.state.status = "playing";
+    this.world.state.damageCooldown = 0;
+    this.world.player.position =
+      mode === "visual" ? { x: 280, y: 390 } : { ...this.world.player.position };
+    this.world.state.lastAim = { x: 1, y: 0 };
+    this.world.enemies = [];
+    this.world.bullets = [];
+    this.world.enemyProjectiles = [];
+    this.world.pickups = [];
+
+    if (mode === "full") {
+      this.world.state.hp = maxHp;
+    } else if (mode === "fatal") {
+      this.world.state.hp = 1;
+    } else {
+      this.world.state.hp = Math.max(1, maxHp - 40);
+    }
+
+    if (mode === "visual") {
+      this.world.state.hp = Math.max(1, maxHp - 32);
+      this.world.pickups = [
+        {
+          id: "debug-xp-pickup",
+          kind: "xp",
+          position: { x: 620, y: 300 },
+          radius: this.simulationConfig.pickup.xpRadius,
+          xpValue: 1,
+          healValue: 0,
+          lifetime: null,
+        },
+        this.createDebugHealPickup("debug-heal-pickup", { x: 665, y: 300 }, healValue),
+      ];
+      this.world.enemies = [this.createDebugEnemy("chaser", { x: 740, y: 300 }, 1)];
+      const ranged = this.simulationConfig.enemies.ranged.ranged;
+      if (ranged) {
+        this.world.enemyProjectiles = [
+          {
+            id: "debug-heal-projectile",
+            position: { x: 705, y: 300 },
+            velocity: { x: 0, y: 0 },
+            radius: ranged.projectileRadius,
+            lifetime: ranged.projectileLifetime,
+            damage: ranged.projectileDamage,
+          },
+        ];
+      }
+    } else {
+      this.world.pickups = [
+        this.createDebugHealPickup(
+          "debug-heal-pickup",
+          { ...this.world.player.position },
+          healValue,
+        ),
+      ];
+    }
+
+    if (mode === "fatal") {
+      const ranged = this.simulationConfig.enemies.ranged.ranged;
+      this.world.enemyProjectiles = [
+        {
+          id: "debug-fatal-projectile",
+          position: { ...this.world.player.position },
+          velocity: { x: 0, y: 0 },
+          radius: ranged?.projectileRadius ?? 6,
+          lifetime: ranged?.projectileLifetime ?? 1,
+          damage: maxHp,
+        },
+      ];
+    }
+
+    this.renderCurrentWorld();
+  }
+
   private recordForcedEvents(events: GameEvent[]): void {
     updateRunStats(this.world, events);
     this.recordResult({ events, metrics: [] });
@@ -437,6 +522,9 @@ export class ArenaScene extends Phaser.Scene {
       setObstacleFrictionFixture: () => {
         this.setObstacleFrictionFixture();
       },
+      setHealPickupFixture: (mode: "damaged" | "full" | "fatal" | "visual" = "damaged") => {
+        this.setHealPickupFixture(mode);
+      },
       step: (input: Partial<InputSnapshot> = {}, deltaSeconds = 1 / 60) => {
         this.stepDebugWorld(input, deltaSeconds);
       },
@@ -447,7 +535,7 @@ export class ArenaScene extends Phaser.Scene {
     return {
       capturedAt: new Date().toISOString(),
       game: "arena-core-phaser" as const,
-      appVersion: "0.2",
+      appVersion: "0.3",
       configVersion: SIMULATION_CONFIG_VERSION,
       buildCommit: this.getBuildCommit(),
       seed: this.simulationConfig.seed,
@@ -521,6 +609,9 @@ export class ArenaScene extends Phaser.Scene {
         : null,
       xpCollected: this.world.stats.xpCollected,
       pickupsCollected: this.world.stats.pickupsCollected,
+      hpRecovered: this.world.stats.hpRecovered,
+      healPickupsCollected: this.world.stats.healPickupsCollected,
+      effectiveHealPickupsCollected: this.world.stats.effectiveHealPickupsCollected,
       upgradesChosen: this.world.stats.upgradesChosen,
       weaponMetrics: {
         pulse: { ...this.world.stats.weaponMetrics.pulse },
@@ -528,5 +619,43 @@ export class ArenaScene extends Phaser.Scene {
         pierce: { ...this.world.stats.weaponMetrics.pierce },
       },
     };
+  }
+
+  private createDebugHealPickup(id: string, position: { x: number; y: number }, healValue: number): Pickup {
+    return {
+      id,
+      kind: "heal",
+      position,
+      radius: this.simulationConfig.pickup.healRadius,
+      xpValue: 0,
+      healValue,
+      lifetime: this.simulationConfig.pickup.healLifetime,
+    };
+  }
+
+  private createDebugEnemy(typeId: EnemyTypeId, position: { x: number; y: number }, index: number): Enemy {
+    const definition = this.simulationConfig.enemies[typeId];
+    return {
+      id: `debug-heal-enemy-${index}`,
+      typeId,
+      position,
+      radius: definition.radius,
+      hp: definition.hp,
+      damage: definition.damage,
+      speed: definition.speed,
+      score: definition.score,
+      xpValue: definition.xpValue,
+      behavior: definition.behavior,
+      attackTimer: definition.ranged ? definition.ranged.attackInterval : 0,
+      enteredArena: true,
+    };
+  }
+
+  private getDebugHealValue(): number {
+    const maxHp = this.simulationConfig.player.maxHp + this.world.runtime.maxHpBonus;
+    return Math.max(
+      this.simulationConfig.pickup.healMinimum,
+      Math.floor(maxHp * this.simulationConfig.pickup.healRatio),
+    );
   }
 }

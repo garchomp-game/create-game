@@ -1,10 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { SIMULATION_CONFIG as GAME_CONFIG } from "../config/gameConfig";
-import type { Bullet, Enemy, EnemyTypeId, WeaponTypeId } from "../domain/types";
+import type {
+  Bullet,
+  Enemy,
+  EnemyTypeId,
+  GameEvent,
+  Pickup,
+  SimulationConfig,
+  Vec2,
+  WeaponTypeId,
+} from "../domain/types";
 import { createRandom } from "../math/random";
 import { createWorld } from "./createWorld";
 import { selectUpgradeChoices } from "./systems/levelSystem";
-import { updatePickups } from "./systems/pickupSystem";
+import { calculateHealDropChance, updatePickups } from "./systems/pickupSystem";
 import { stepWorld } from "./stepWorld";
 import { getWaveBand, selectEnemyTypeForWave } from "./waveDirector";
 
@@ -54,6 +63,67 @@ function createTestBullet(
     pierceRemaining: definition.pierceCount,
     hitEnemyIds: [],
     ...overrides,
+  };
+}
+
+function createTestXpPickup(overrides: Partial<Pickup> = {}): Pickup {
+  return {
+    id: "pickup-test",
+    kind: "xp",
+    position: { x: GAME_CONFIG.player.x, y: GAME_CONFIG.player.y },
+    radius: GAME_CONFIG.pickup.xpRadius,
+    xpValue: 1,
+    healValue: 0,
+    lifetime: null,
+    ...overrides,
+  };
+}
+
+function createTestHealPickup(overrides: Partial<Pickup> = {}): Pickup {
+  return {
+    id: "heal-pickup-test",
+    kind: "heal",
+    position: { x: GAME_CONFIG.player.x, y: GAME_CONFIG.player.y },
+    radius: GAME_CONFIG.pickup.healRadius,
+    xpValue: 0,
+    healValue: 12,
+    lifetime: GAME_CONFIG.pickup.healLifetime,
+    ...overrides,
+  };
+}
+
+function createPickupTestConfig(
+  overrides: Partial<Omit<SimulationConfig["pickup"], "healEnemyMultipliers">> & {
+    healEnemyMultipliers?: Partial<Record<EnemyTypeId, number>>;
+  } = {},
+): SimulationConfig {
+  const { healEnemyMultipliers, ...pickupOverrides } = overrides;
+  return {
+    ...GAME_CONFIG,
+    pickup: {
+      ...GAME_CONFIG.pickup,
+      ...pickupOverrides,
+      healEnemyMultipliers: {
+        ...GAME_CONFIG.pickup.healEnemyMultipliers,
+        ...healEnemyMultipliers,
+      },
+    },
+  };
+}
+
+function createKillEvent(
+  enemyId: string,
+  enemyType: EnemyTypeId = "chaser",
+  position: Vec2 = { x: 540, y: 270 },
+): Extract<GameEvent, { type: "enemy.killed" }> {
+  return {
+    type: "enemy.killed",
+    enemyId,
+    enemyType,
+    weaponType: "pulse",
+    scoreAwarded: GAME_CONFIG.enemies[enemyType].score,
+    xpAwarded: GAME_CONFIG.enemies[enemyType].xpValue,
+    position,
   };
 }
 
@@ -283,7 +353,11 @@ describe("stepWorld", () => {
   });
 
   it("spawns and collects XP pickups from enemy kills", () => {
-    const world = createWorld(GAME_CONFIG);
+    const config = createPickupTestConfig({
+      healDropChance: 0,
+      healDropPityBonus: 0,
+    });
+    const world = createWorld(config);
     world.enemies.push(createTestEnemy());
     world.bullets.push(createTestBullet());
 
@@ -291,14 +365,14 @@ describe("stepWorld", () => {
       world,
       neutralInput,
       1 / 60,
-      createRandom(GAME_CONFIG.seed),
-      GAME_CONFIG,
+      createRandom(config.seed),
+      config,
     );
 
     expect(world.pickups).toHaveLength(1);
-    expect(world.pickups[0]?.xpValue).toBe(GAME_CONFIG.enemies.chaser.xpValue);
+    expect(world.pickups[0]?.xpValue).toBe(config.enemies.chaser.xpValue);
     expect(killResult.events).toContainEqual(
-      expect.objectContaining({ type: "pickup.spawned", xpValue: GAME_CONFIG.enemies.chaser.xpValue }),
+      expect.objectContaining({ type: "pickup.spawned", xpValue: config.enemies.chaser.xpValue }),
     );
 
     world.player.position = { ...world.pickups[0]!.position };
@@ -306,34 +380,90 @@ describe("stepWorld", () => {
       world,
       neutralInput,
       1 / 60,
-      createRandom(GAME_CONFIG.seed),
-      GAME_CONFIG,
+      createRandom(config.seed),
+      config,
     );
 
     expect(world.pickups).toHaveLength(0);
-    expect(world.progression.xp).toBe(GAME_CONFIG.enemies.chaser.xpValue);
+    expect(world.progression.xp).toBe(config.enemies.chaser.xpValue);
     expect(world.stats.pickupsCollected).toBe(1);
-    expect(world.stats.xpCollected).toBe(GAME_CONFIG.enemies.chaser.xpValue);
+    expect(world.stats.xpCollected).toBe(config.enemies.chaser.xpValue);
     expect(collectResult.events).toContainEqual(expect.objectContaining({ type: "pickup.collected" }));
+  });
+
+  it("spawns and collects heal pickups with capped recovery stats", () => {
+    const config = createPickupTestConfig({
+      healDropChance: 1,
+      healDropMaxChance: 1,
+      healDropPityBonus: 0,
+      healEnemyMultipliers: { chaser: 1 },
+    });
+    const world = createWorld(config);
+    world.state.hp = 70;
+    world.enemies.push(createTestEnemy("chaser"));
+    world.bullets.push(createTestBullet());
+
+    const killResult = stepWorld(world, neutralInput, 1 / 60, createRandom(config.seed), config);
+    const healPickup = world.pickups.find((pickup) => pickup.kind === "heal");
+
+    expect(healPickup).toBeTruthy();
+    expect(healPickup?.healValue).toBe(12);
+    expect(killResult.events).toContainEqual(
+      expect.objectContaining({
+        type: "pickup.spawned",
+        pickupKind: "heal",
+        healValue: 12,
+      }),
+    );
+
+    world.player.position = { ...healPickup!.position };
+    const collectResult = stepWorld(world, neutralInput, 1 / 60, createRandom(config.seed), config);
+
+    expect(world.state.hp).toBe(82);
+    expect(world.stats.hpRecovered).toBe(12);
+    expect(world.stats.healPickupsCollected).toBe(1);
+    expect(world.stats.effectiveHealPickupsCollected).toBe(1);
+    expect(collectResult.events).toContainEqual(
+      expect.objectContaining({
+        type: "pickup.collected",
+        pickupKind: "heal",
+        hpRecovered: 12,
+      }),
+    );
+  });
+
+  it("collects full-HP heal pickups without counting effective recovery", () => {
+    const world = createWorld(GAME_CONFIG);
+    world.pickups.push(createTestHealPickup({ position: { ...world.player.position }, healValue: 20 }));
+
+    const result = stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+
+    expect(world.state.hp).toBe(GAME_CONFIG.player.maxHp);
+    expect(world.pickups).toHaveLength(0);
+    expect(world.stats.pickupsCollected).toBe(1);
+    expect(world.stats.healPickupsCollected).toBe(1);
+    expect(world.stats.effectiveHealPickupsCollected).toBe(0);
+    expect(world.stats.hpRecovered).toBe(0);
+    expect(result.events).toContainEqual(
+      expect.objectContaining({
+        type: "pickup.collected",
+        pickupKind: "heal",
+        hpRecovered: 0,
+      }),
+    );
   });
 
   it("magnetizes nearby XP pickups toward the player before collection", () => {
     const world = createWorld(GAME_CONFIG);
     world.pickups.push(
-      {
+      createTestXpPickup({
         id: "near-pickup",
-        kind: "xp",
         position: { x: world.player.position.x + 80, y: world.player.position.y },
-        radius: GAME_CONFIG.pickup.xpRadius,
-        xpValue: 1,
-      },
-      {
+      }),
+      createTestXpPickup({
         id: "far-pickup",
-        kind: "xp",
         position: { x: world.player.position.x + GAME_CONFIG.pickup.magnetRadius + 20, y: world.player.position.y },
-        radius: GAME_CONFIG.pickup.xpRadius,
-        xpValue: 1,
-      },
+      }),
     );
 
     stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
@@ -346,8 +476,123 @@ describe("stepWorld", () => {
     );
   });
 
-  it("keeps spawned pickups out of obstacles when possible", () => {
+  it("magnetizes nearby heal pickups toward the player", () => {
     const world = createWorld(GAME_CONFIG);
+    world.pickups.push(
+      createTestHealPickup({
+        id: "near-heal",
+        position: { x: world.player.position.x + 80, y: world.player.position.y },
+      }),
+    );
+
+    stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+
+    expect(world.pickups.find((pickup) => pickup.id === "near-heal")?.position.x).toBeLessThan(
+      world.player.position.x + 80,
+    );
+  });
+
+  it("expires heal pickups while leaving XP pickups in the world", () => {
+    const world = createWorld(GAME_CONFIG);
+    world.pickups.push(
+      createTestXpPickup({
+        id: "long-lived-xp",
+        position: { x: world.player.position.x + 200, y: world.player.position.y },
+      }),
+      createTestHealPickup({
+        id: "expired-heal",
+        position: { x: world.player.position.x + 230, y: world.player.position.y },
+        lifetime: 0.01,
+      }),
+    );
+
+    const result = stepWorld(world, neutralInput, 0.02, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+
+    expect(world.pickups.map((pickup) => pickup.id)).toEqual(["long-lived-xp"]);
+    expect(result.events).toContainEqual(
+      expect.objectContaining({
+        type: "pickup.expired",
+        pickupId: "expired-heal",
+      }),
+    );
+  });
+
+  it("uses deterministic heal drop rolls without consuming the supplied random stream", () => {
+    const config = createPickupTestConfig({
+      healDropChance: 1,
+      healDropMaxChance: 1,
+      healDropPityBonus: 0,
+      healEnemyMultipliers: { chaser: 1 },
+    });
+    const world = createWorld(config);
+    let randomCalls = 0;
+    const random = () => {
+      randomCalls += 1;
+      return 0.5;
+    };
+    world.enemies.push(createTestEnemy("chaser"));
+    world.bullets.push(createTestBullet());
+
+    stepWorld(world, neutralInput, 1 / 60, random, config);
+
+    expect(randomCalls).toBe(0);
+    expect(world.pickups.some((pickup) => pickup.kind === "heal")).toBe(true);
+    expect(world.runtime.healDropRollIndex).toBe(1);
+  });
+
+  it("does not spawn heal pickups when chance and pity are zero", () => {
+    const config = createPickupTestConfig({
+      healDropChance: 0,
+      healDropPityBonus: 0,
+      healDropMaxChance: 1,
+      healEnemyMultipliers: { chaser: 1 },
+    });
+    const world = createWorld(config);
+    const events: GameEvent[] = [createKillEvent("enemy-no-heal")];
+
+    updatePickups(world, config, events);
+
+    expect(world.pickups.every((pickup) => pickup.kind === "xp")).toBe(true);
+    expect(world.runtime.healDropMissCount).toBe(1);
+    expect(world.runtime.healDropRollIndex).toBe(1);
+  });
+
+  it("applies heal pity threshold, cap, enemy multipliers, and reset", () => {
+    const config = createPickupTestConfig({
+      healDropChance: 0.08,
+      healDropPityThreshold: 2,
+      healDropPityBonus: 0.1,
+      healDropMaxChance: 0.2,
+      healEnemyMultipliers: { brute: 2 },
+    });
+
+    expect(calculateHealDropChance(config, "brute", 0)).toBeCloseTo(0.16);
+    expect(calculateHealDropChance(config, "brute", 2)).toBeCloseTo(0.2);
+
+    const forcedPityConfig = createPickupTestConfig({
+      healDropChance: 0,
+      healDropPityThreshold: 0,
+      healDropPityBonus: 1,
+      healDropMaxChance: 1,
+      healEnemyMultipliers: { chaser: 1 },
+    });
+    const world = createWorld(forcedPityConfig);
+    world.runtime.healDropMissCount = 3;
+    const events: GameEvent[] = [createKillEvent("enemy-pity")];
+
+    updatePickups(world, forcedPityConfig, events);
+
+    expect(world.pickups.some((pickup) => pickup.kind === "heal")).toBe(true);
+    expect(world.runtime.healDropMissCount).toBe(0);
+    expect(world.runtime.healDropRollIndex).toBe(1);
+  });
+
+  it("keeps spawned pickups out of obstacles when possible", () => {
+    const config = createPickupTestConfig({
+      healDropChance: 0,
+      healDropPityBonus: 0,
+    });
+    const world = createWorld(config);
     const events = [
       {
         type: "enemy.killed" as const,
@@ -363,7 +608,7 @@ describe("stepWorld", () => {
       },
     ];
 
-    updatePickups(world, GAME_CONFIG, events);
+    updatePickups(world, config, events);
 
     expect(world.pickups).toHaveLength(1);
     expect(world.obstacles.some((obstacle) => {
@@ -377,7 +622,11 @@ describe("stepWorld", () => {
   });
 
   it("uses arena-wide pickup placement fallback when local candidates are blocked", () => {
-    const world = createWorld(GAME_CONFIG);
+    const config = createPickupTestConfig({
+      healDropChance: 0,
+      healDropPityBonus: 0,
+    });
+    const world = createWorld(config);
     world.obstacles = [{ id: "large-block", x: 0, y: 0, width: 200, height: 200 }];
     const events = [
       {
@@ -391,7 +640,7 @@ describe("stepWorld", () => {
       },
     ];
 
-    updatePickups(world, GAME_CONFIG, events);
+    updatePickups(world, config, events);
 
     expect(world.pickups).toHaveLength(1);
     expect(
@@ -404,6 +653,80 @@ describe("stepWorld", () => {
         return dx * dx + dy * dy <= pickup.radius * pickup.radius;
       }),
     ).toBe(false);
+  });
+
+  it("keeps XP and heal pickups from the same kill from overlapping", () => {
+    const config = createPickupTestConfig({
+      healDropChance: 1,
+      healDropMaxChance: 1,
+      healDropPityBonus: 0,
+      healEnemyMultipliers: { chaser: 1 },
+    });
+    const world = createWorld(config);
+    const events: GameEvent[] = [createKillEvent("enemy-double-drop")];
+
+    updatePickups(world, config, events);
+
+    const xpPickup = world.pickups.find((pickup) => pickup.kind === "xp");
+    const healPickup = world.pickups.find((pickup) => pickup.kind === "heal");
+    const distance = Math.hypot(
+      xpPickup!.position.x - healPickup!.position.x,
+      xpPickup!.position.y - healPickup!.position.y,
+    );
+
+    expect(world.pickups.map((pickup) => pickup.kind)).toEqual(["xp", "heal"]);
+    expect(distance).toBeGreaterThan(xpPickup!.radius + healPickup!.radius);
+  });
+
+  it("sets heal value at spawn time using current max HP", () => {
+    const config = createPickupTestConfig({
+      healDropChance: 1,
+      healDropMaxChance: 1,
+      healDropPityBonus: 0,
+      healEnemyMultipliers: { chaser: 1 },
+    });
+    const world = createWorld(config);
+    const firstEvents: GameEvent[] = [createKillEvent("enemy-before-vital")];
+
+    updatePickups(world, config, firstEvents);
+    const firstHeal = world.pickups.find((pickup) => pickup.kind === "heal")!;
+
+    world.runtime.maxHpBonus = 20;
+    const secondEvents: GameEvent[] = [createKillEvent("enemy-after-vital", "chaser", { x: 600, y: 270 })];
+    updatePickups(world, config, secondEvents);
+    const healPickups = world.pickups.filter((pickup) => pickup.kind === "heal");
+
+    expect(firstHeal.healValue).toBe(12);
+    expect(healPickups.at(-1)?.healValue).toBe(14);
+    expect(firstHeal.healValue).toBe(12);
+  });
+
+  it("does not collect pickups after fatal same-frame damage", () => {
+    const world = createWorld(GAME_CONFIG);
+    world.state.hp = 1;
+    world.pickups.push(
+      createTestHealPickup({
+        position: { ...world.player.position },
+        healValue: 100,
+      }),
+    );
+    world.enemyProjectiles.push({
+      id: "fatal-projectile",
+      position: { ...world.player.position },
+      radius: GAME_CONFIG.enemies.ranged.ranged!.projectileRadius,
+      velocity: { x: 0, y: 0 },
+      lifetime: GAME_CONFIG.enemies.ranged.ranged!.projectileLifetime,
+      damage: 100,
+    });
+
+    const result = stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+
+    expect(world.state.status).toBe("gameOver");
+    expect(world.state.hp).toBe(0);
+    expect(world.pickups).toHaveLength(1);
+    expect(world.stats.healPickupsCollected).toBe(0);
+    expect(world.stats.hpRecovered).toBe(0);
+    expect(result.events.some((event) => event.type === "pickup.collected")).toBe(false);
   });
 
   it("requires multiple hits to kill a brute enemy and awards brute score", () => {
@@ -552,13 +875,9 @@ describe("stepWorld", () => {
   it("levels up from collected XP and enters upgrade selection", () => {
     const world = createWorld(GAME_CONFIG);
     world.progression.xp = world.progression.xpToNext - 1;
-    world.pickups.push({
-      id: "pickup-test",
-      kind: "xp",
+    world.pickups.push(createTestXpPickup({
       position: { ...world.player.position },
-      radius: GAME_CONFIG.pickup.xpRadius,
-      xpValue: 1,
-    });
+    }));
 
     const result = stepWorld(world, neutralInput, 1 / 60, () => 0, GAME_CONFIG);
 

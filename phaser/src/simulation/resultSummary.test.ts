@@ -42,6 +42,9 @@ describe("createRunResultSummary", () => {
       },
       xpCollected: 0,
       pickupsCollected: 0,
+      hpRecovered: 0,
+      healPickupsCollected: 0,
+      effectiveHealPickupsCollected: 0,
       upgradesChosen: 0,
       weaponMetrics: {
         pulse: { shotsFired: 6, projectilesFired: 6, hits: 4, kills: 2 },

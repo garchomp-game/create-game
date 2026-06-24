@@ -20,7 +20,15 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
       }
     } else if (event.type === "pickup.collected") {
       world.stats.pickupsCollected += 1;
-      world.stats.xpCollected += event.xpValue;
+      if (event.pickupKind === "xp") {
+        world.stats.xpCollected += event.xpValue;
+      } else {
+        world.stats.healPickupsCollected += 1;
+        world.stats.hpRecovered += event.hpRecovered;
+        if (event.hpRecovered > 0) {
+          world.stats.effectiveHealPickupsCollected += 1;
+        }
+      }
     } else if (event.type === "upgrade.selected") {
       world.stats.upgradesChosen += 1;
     }

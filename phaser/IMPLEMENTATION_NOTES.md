@@ -388,6 +388,42 @@ Verification after this pass:
 - `npm run test:e2e -- tests/e2e/arena-visual.spec.ts --update-snapshots=all`: 10 Playwright tests passed
 - `npm run test:e2e`: 17 Playwright tests passed
 
+### 2026-06-24 v0.3 Healing Pickup Foundation
+
+- Added heal pickups alongside existing XP pickups.
+- Extended pickup config with heal radius, drop chance, pity threshold/bonus/cap, max-HP-based heal amount, lifetime, and enemy-type multipliers.
+- Implemented deterministic heal drop rolls from `seed`, `enemyId`, `enemyType`, and `healDropRollIndex`, without consuming the main `RandomSource`.
+- Added runtime `healDropMissCount` and `healDropRollIndex`.
+- Kept drop/spawn/lifetime/collection logic inside `pickupSystem`; combat only emits kill events.
+- Added existing-pickup overlap checks to pickup placement so same-kill XP+heal drops do not stack.
+- Added heal lifetime expiration through `pickup.expired`; XP remains long-lived.
+- Added the fatal-frame guard: if HP is already 0 after combat, pickup collection does not run that frame.
+- Added run stats and result/debug export fields: `hpRecovered`, `healPickupsCollected`, and `effectiveHealPickupsCollected`.
+- Added heal KPIs to `balanceProbe` and updated the v0.3 balance baseline.
+- Drew heal pickups as white medkit-style items with a red cross, distinct from green XP and pink enemy projectiles.
+- Added dev-only `setHealPickupFixture()` for damaged, full-HP, fatal-frame, and visual-regression scenarios.
+- Updated the result screen with recovered HP and heal pickup counts.
+- Updated `appVersion` to `0.3` and `SIMULATION_CONFIG_VERSION` to `phaser-v0.3-healing-pickup-foundation`.
+
+Balance probe after this pass:
+
+- `kiteCollect` survival p50: 110.8s
+- `kiteCollect` kills/min p50: 153.25
+- `kiteCollect` score/min p50: 2082.13
+- `kiteCollect` first damage p50: 79.87s
+- `kiteCollect` hp recovered p50: 60
+- `kiteCollect` heal pickups collected p50: 18
+- `kiteCollect` effective heal pickups collected p50: 5
+- No probe violations.
+
+Verification after this pass:
+
+- `npm run typecheck`: passed
+- `npm test -- --run`: 11 files, 78 tests passed
+- `npm run test:e2e -- tests/e2e/arena-visual.spec.ts --update-snapshots=all`: 11 Playwright tests passed and regenerated intended visual snapshots
+- `npm run test:e2e`: 21 Playwright tests passed
+- `npm run build`: passed, with the existing Phaser bundle size warning
+
 ## 1. phaser
 
 ### Baseline Impression

@@ -63,10 +63,19 @@ export type WeaponSimulationConfig = {
 
 export type PickupSimulationConfig = {
   xpRadius: number;
+  healRadius: number;
   magnetRadius: number;
   magnetSpeed: number;
   placementStep: number;
   placementRings: number;
+  healDropChance: number;
+  healDropPityThreshold: number;
+  healDropPityBonus: number;
+  healDropMaxChance: number;
+  healRatio: number;
+  healMinimum: number;
+  healLifetime: number;
+  healEnemyMultipliers: Record<EnemyTypeId, number>;
 };
 
 export type LevelingSimulationConfig = {
@@ -166,6 +175,9 @@ export type ViewConfig = {
   };
   pickup: {
     xpColor: number;
+    healFill: number;
+    healStroke: number;
+    healCross: number;
   };
   obstacle: {
     fill: number;
@@ -220,8 +232,10 @@ export type EnemyProjectile = CircleBody & {
 
 export type Pickup = CircleBody & {
   id: string;
-  kind: "xp";
+  kind: "xp" | "heal";
   xpValue: number;
+  healValue: number;
+  lifetime: number | null;
 };
 
 export type GameState = {
@@ -251,6 +265,8 @@ export type RuntimeModifiers = {
   maxHpBonus: number;
   projectileCountBonus: number;
   pierceBonus: number;
+  healDropMissCount: number;
+  healDropRollIndex: number;
 };
 
 export type WeaponRunStats = {
@@ -278,6 +294,9 @@ export type RunStats = {
   lastDamageSource: PlayerDamageSource | null;
   xpCollected: number;
   pickupsCollected: number;
+  hpRecovered: number;
+  healPickupsCollected: number;
+  effectiveHealPickupsCollected: number;
   upgradesChosen: number;
   weaponMetrics: Record<WeaponTypeId, WeaponRunStats>;
 };
@@ -352,8 +371,41 @@ export type GameEvent =
       xpAwarded: number;
       position: Vec2;
     }
-  | { type: "pickup.spawned"; pickupId: string; position: Vec2; xpValue: number }
-  | { type: "pickup.collected"; pickupId: string; xpValue: number }
+  | {
+      type: "pickup.spawned";
+      pickupId: string;
+      pickupKind: "xp";
+      position: Vec2;
+      xpValue: number;
+      healValue: 0;
+      lifetime: null;
+    }
+  | {
+      type: "pickup.spawned";
+      pickupId: string;
+      pickupKind: "heal";
+      position: Vec2;
+      xpValue: 0;
+      healValue: number;
+      lifetime: number;
+    }
+  | {
+      type: "pickup.collected";
+      pickupId: string;
+      pickupKind: "xp";
+      xpValue: number;
+      healValue: 0;
+      hpRecovered: 0;
+    }
+  | {
+      type: "pickup.collected";
+      pickupId: string;
+      pickupKind: "heal";
+      xpValue: 0;
+      healValue: number;
+      hpRecovered: number;
+    }
+  | { type: "pickup.expired"; pickupId: string; pickupKind: "heal" }
   | { type: "player.level_up"; level: number; choices: UpgradeId[] }
   | { type: "upgrade.offered"; level: number; choices: UpgradeId[] }
   | { type: "upgrade.selected"; upgradeId: UpgradeId; rank: number; level: number; effect: UpgradeEffect }

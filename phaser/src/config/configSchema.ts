@@ -12,6 +12,7 @@ import type {
 const finiteNumber = z.number().finite();
 const positiveNumber = finiteNumber.positive();
 const nonNegativeNumber = finiteNumber.nonnegative();
+const chanceNumber = nonNegativeNumber.max(1);
 const colorNumber = z.number().int().min(0).max(0xffffff);
 
 const arenaSimulationSchema = z
@@ -53,13 +54,30 @@ const weaponDefinitionsSchema = z
   )
   .strict();
 
+const healEnemyMultiplierSchema = z
+  .object(
+    Object.fromEntries(
+      ENEMY_TYPE_IDS.map((typeId) => [typeId, positiveNumber]),
+    ) as Record<EnemyTypeId, typeof positiveNumber>,
+  )
+  .strict();
+
 const pickupSimulationSchema = z
   .object({
     xpRadius: positiveNumber,
+    healRadius: positiveNumber,
     magnetRadius: positiveNumber,
     magnetSpeed: positiveNumber,
     placementStep: positiveNumber,
     placementRings: z.number().int().nonnegative(),
+    healDropChance: chanceNumber,
+    healDropPityThreshold: z.number().int().nonnegative(),
+    healDropPityBonus: chanceNumber,
+    healDropMaxChance: chanceNumber,
+    healRatio: positiveNumber,
+    healMinimum: nonNegativeNumber,
+    healLifetime: positiveNumber,
+    healEnemyMultipliers: healEnemyMultiplierSchema,
   })
   .strict();
 
@@ -281,6 +299,9 @@ export const viewConfigSchema: z.ZodType<ViewConfig> = z
     pickup: z
       .object({
         xpColor: colorNumber,
+        healFill: colorNumber,
+        healStroke: colorNumber,
+        healCross: colorNumber,
       })
       .strict(),
     obstacle: z

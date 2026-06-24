@@ -49,6 +49,9 @@ export type BalanceProbeRun = {
   damageTaken: number;
   damageTakenBySource: DamageTakenBySource;
   lastDamageSource: PlayerDamageSource | null;
+  hpRecovered: number;
+  healPickupsCollected: number;
+  effectiveHealPickupsCollected: number;
   waveBoundaryDamage: BalanceProbeWaveBoundaryDamage[];
   violations: string[];
 };
@@ -84,6 +87,9 @@ export type BalanceProbeModelSummary = {
   maxEnemies: BalanceProbePercentiles;
   maxBullets: BalanceProbePercentiles;
   waveStartReached: BalanceProbePercentiles;
+  hpRecovered: BalanceProbePercentiles;
+  healPickupsCollected: BalanceProbePercentiles;
+  effectiveHealPickupsCollected: BalanceProbePercentiles;
   firstDamageAt: BalanceProbeNullablePercentiles;
   firstUpgradeAt: BalanceProbeNullablePercentiles;
 };
@@ -197,6 +203,9 @@ function runBalanceProbeOnce(options: BalanceProbeOptions & {
     damageTaken: world.stats.damageTaken,
     damageTakenBySource: { ...world.stats.damageTakenBySource },
     lastDamageSource: world.stats.lastDamageSource ? { ...world.stats.lastDamageSource } : null,
+    hpRecovered: world.stats.hpRecovered,
+    healPickupsCollected: world.stats.healPickupsCollected,
+    effectiveHealPickupsCollected: world.stats.effectiveHealPickupsCollected,
     waveBoundaryDamage: waveBoundaryDamage.map((entry) => ({ ...entry })),
     violations: [...new Set(violations)],
   };
@@ -363,6 +372,11 @@ function summarizeModelRuns(runs: BalanceProbeRun[]): BalanceProbeModelSummary {
     maxEnemies: percentiles(runs.map((run) => run.maxEnemies)),
     maxBullets: percentiles(runs.map((run) => run.maxBullets)),
     waveStartReached: percentiles(runs.map((run) => run.waveStartReached)),
+    hpRecovered: percentiles(runs.map((run) => run.hpRecovered)),
+    healPickupsCollected: percentiles(runs.map((run) => run.healPickupsCollected)),
+    effectiveHealPickupsCollected: percentiles(
+      runs.map((run) => run.effectiveHealPickupsCollected),
+    ),
     firstDamageAt: nullablePercentiles(runs.map((run) => run.firstDamageAt)),
     firstUpgradeAt: nullablePercentiles(runs.map((run) => run.firstUpgradeAt)),
   };

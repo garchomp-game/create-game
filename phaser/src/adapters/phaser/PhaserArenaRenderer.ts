@@ -107,10 +107,14 @@ export class PhaserArenaRenderer {
     }
 
     for (const item of world.pickups) {
-      g.fillStyle(pickup.xpColor, 1);
-      g.fillCircle(item.position.x, item.position.y, item.radius);
-      g.lineStyle(2, 0x14532d, 1);
-      g.strokeCircle(item.position.x, item.position.y, item.radius);
+      if (item.kind === "heal") {
+        this.drawHealPickup(g, item);
+      } else {
+        g.fillStyle(pickup.xpColor, 1);
+        g.fillCircle(item.position.x, item.position.y, item.radius);
+        g.lineStyle(2, 0x14532d, 1);
+        g.strokeCircle(item.position.x, item.position.y, item.radius);
+      }
     }
 
     for (const item of world.bullets) {
@@ -141,14 +145,16 @@ export class PhaserArenaRenderer {
       g.fillStyle(0x020617, 0.9);
       g.fillRect(0, 0, arena.width, arena.height);
       this.statusText
-        .setFontSize(34)
-        .setPosition(arena.width / 2, arena.height / 2 - 72)
+        .setFontSize(30)
+        .setPosition(arena.width / 2, arena.height / 2 - 100)
         .setText(
           `RUN COMPLETE\nScore: ${summary.score}\nTime: ${formatTime(
             summary.elapsed,
           )}\nLevel: ${summary.level}\nKills: ${summary.enemiesKilled}\nShots: ${
             summary.shotsFired
-          }${causeText}`,
+          }\nRecovered: ${summary.hpRecovered}\nHeals: ${
+            summary.effectiveHealPickupsCollected
+          }/${summary.healPickupsCollected}${causeText}`,
         )
         .setVisible(true);
       this.drawMenuButtons(g, world);
@@ -267,6 +273,27 @@ export class PhaserArenaRenderer {
     }
 
     this.drawEnemyMark(g, enemy, view);
+  }
+
+  private drawHealPickup(
+    g: Phaser.GameObjects.Graphics,
+    pickup: WorldState["pickups"][number],
+  ): void {
+    const view = this.viewConfig.pickup;
+    const { x, y } = pickup.position;
+    const size = pickup.radius * 2.25;
+    const left = x - size / 2;
+    const top = y - size / 2;
+    const crossLong = pickup.radius * 1.22;
+    const crossShort = Math.max(3, pickup.radius * 0.38);
+
+    g.fillStyle(view.healFill, 1);
+    g.fillRoundedRect(left, top, size, size, 3);
+    g.lineStyle(2, view.healStroke, 1);
+    g.strokeRoundedRect(left, top, size, size, 3);
+    g.fillStyle(view.healCross, 1);
+    g.fillRect(x - crossShort / 2, y - crossLong / 2, crossShort, crossLong);
+    g.fillRect(x - crossLong / 2, y - crossShort / 2, crossLong, crossShort);
   }
 
   private drawEnemyMark(

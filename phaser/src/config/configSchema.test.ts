@@ -175,6 +175,40 @@ describe("config schemas", () => {
     ).toThrow();
   });
 
+  it("rejects invalid heal pickup tuning values", () => {
+    expect(() =>
+      parseSimulationConfig({
+        ...SIMULATION_CONFIG,
+        pickup: {
+          ...SIMULATION_CONFIG.pickup,
+          healDropChance: 1.1,
+        },
+      }),
+    ).toThrow();
+
+    expect(() =>
+      parseSimulationConfig({
+        ...SIMULATION_CONFIG,
+        pickup: {
+          ...SIMULATION_CONFIG.pickup,
+          healDropPityThreshold: -1,
+        },
+      }),
+    ).toThrow();
+
+    const { ranged: _ranged, ...incompleteMultipliers } =
+      SIMULATION_CONFIG.pickup.healEnemyMultipliers;
+    expect(() =>
+      parseSimulationConfig({
+        ...SIMULATION_CONFIG,
+        pickup: {
+          ...SIMULATION_CONFIG.pickup,
+          healEnemyMultipliers: incompleteMultipliers,
+        },
+      }),
+    ).toThrow();
+  });
+
   it("rejects invalid view colors", () => {
     expect(() =>
       parseViewConfig({

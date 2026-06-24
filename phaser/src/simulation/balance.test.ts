@@ -21,14 +21,17 @@ const balanceProbeSeeds = [20260619, 20260620, 20260621, 20260622, 20260623];
 const balanceBaseline = {
   noInputSurvivalP50: 6.77,
   fixedAimShootSurvivalP50: 6.77,
-  kiteCollectSurvivalP50: 119.4,
-  kiteCollectKillsPerMinuteP50: 161.84,
-  kiteCollectScorePerMinuteP50: 2245.73,
-  kiteCollectFirstDamageP50: 73.53,
+  kiteCollectSurvivalP50: 110.8,
+  kiteCollectKillsPerMinuteP50: 153.25,
+  kiteCollectScorePerMinuteP50: 2082.13,
+  kiteCollectFirstDamageP50: 79.87,
   kiteCollectFirstUpgradeP50: 7.13,
   kiteCollectWaveReachedP50: 90,
-  kiteCollectMaxEnemiesMax: 29,
-  kiteCollectMaxBulletsMax: 34,
+  kiteCollectMaxEnemiesMax: 28,
+  kiteCollectMaxBulletsMax: 37,
+  kiteCollectHpRecoveredP50: 60,
+  kiteCollectHealPickupsCollectedP50: 18,
+  kiteCollectEffectiveHealPickupsCollectedP50: 5,
 };
 
 describe("balance simulation", () => {
@@ -95,7 +98,7 @@ describe("balance simulation", () => {
       true,
     );
 
-    // v0.1/v0.2 Batch A balance baseline. These probes are regression sentries,
+    // v0.3 Healing Pickup Foundation balance baseline. These probes are regression sentries,
     // not a claim that the input models are correct human play.
     expectWithinBaseline(noInput.survivalSeconds.p50, balanceBaseline.noInputSurvivalP50);
     expectWithinBaseline(
@@ -128,6 +131,20 @@ describe("balance simulation", () => {
     );
     expectWithinBaseline(kiteCollect.maxEnemies.max, balanceBaseline.kiteCollectMaxEnemiesMax);
     expectWithinBaseline(kiteCollect.maxBullets.max, balanceBaseline.kiteCollectMaxBulletsMax);
+    expectWithinBaseline(
+      kiteCollect.hpRecovered.p50,
+      balanceBaseline.kiteCollectHpRecoveredP50,
+    );
+    expectWithinBaseline(
+      kiteCollect.healPickupsCollected.p50,
+      balanceBaseline.kiteCollectHealPickupsCollectedP50,
+    );
+    expectWithinBaseline(
+      kiteCollect.effectiveHealPickupsCollected.p50,
+      balanceBaseline.kiteCollectEffectiveHealPickupsCollectedP50,
+    );
+    expect(noInput.healPickupsCollected.max).toBe(0);
+    expect(fixedAimShoot.healPickupsCollected.max).toBe(0);
   });
 });
 

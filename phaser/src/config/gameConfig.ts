@@ -1,7 +1,7 @@
 import type { GameConfig } from "../domain/types";
 import { parseSimulationConfig, parseViewConfig } from "./configSchema";
 
-export const SIMULATION_CONFIG_VERSION = "phaser-v0.2-playtest-foundation";
+export const SIMULATION_CONFIG_VERSION = "phaser-v0.3-healing-pickup-foundation";
 
 const rawSimulationConfig = {
   seed: 20260619,
@@ -152,10 +152,24 @@ const rawSimulationConfig = {
   ],
   pickup: {
     xpRadius: 6,
+    healRadius: 7,
     magnetRadius: 92,
     magnetSpeed: 380,
     placementStep: 24,
     placementRings: 4,
+    healDropChance: 0.08,
+    healDropPityThreshold: 18,
+    healDropPityBonus: 0.025,
+    healDropMaxChance: 0.35,
+    healRatio: 0.12,
+    healMinimum: 8,
+    healLifetime: 18,
+    healEnemyMultipliers: {
+      chaser: 0.75,
+      brute: 1.4,
+      fast: 0.75,
+      ranged: 1.2,
+    },
   },
   leveling: {
     baseXp: 3,
@@ -270,6 +284,9 @@ const rawViewConfig = {
   },
   pickup: {
     xpColor: 0x22c55e,
+    healFill: 0xf8fafc,
+    healStroke: 0x0f172a,
+    healCross: 0xef4444,
   },
   obstacle: {
     fill: 0x475569,

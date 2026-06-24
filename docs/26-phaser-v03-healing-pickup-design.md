@@ -674,3 +674,39 @@ Blocking findings:
 - 実装着手可。
 
 ただし、実装後にbalanceProbe結果を見てdrop chanceとheal量を再調整すること。
+
+## 16. Implementation Result
+
+実装日: 2026-06-24
+
+実装概要:
+
+- `Pickup.kind` を `xp | heal` に拡張した。
+- heal dropは `config.seed`, `enemyId`, `enemyType`, `healDropRollIndex` からhash rollで決定し、既存 `RandomSource` は消費しない。
+- `healDropMissCount` とpity式をruntimeへ追加した。
+- XPとhealが同一killから出る場合はXPを先に置き、heal placementは既存pickupとの重なりを避ける。
+- heal pickupはmagnet対象になり、寿命切れで `pickup.expired` を出す。
+- HP0になった同フレームではpickup collectionをスキップし、healによる蘇生を禁止した。
+- `hpRecovered`, `healPickupsCollected`, `effectiveHealPickupsCollected` をstats/result/debug export/balanceProbeへ追加した。
+- heal pickupは白いmedkit風の描画にし、XP/敵弾/敵と識別しやすくした。
+- dev-only `setHealPickupFixture()` を追加し、damaged/full/fatal/visualのE2E確認に使えるようにした。
+
+バランス実測:
+
+- `kiteCollect` survival p50: 110.8s
+- `kiteCollect` hpRecovered p50: 60
+- `kiteCollect` healPickupsCollected p50: 18
+- `kiteCollect` effectiveHealPickupsCollected p50: 5
+- v0.2 baseline比で20%以内の変動に収まったため、初期値は据え置きとした。
+
+検証:
+
+- `npm run typecheck`: passed
+- `npm test -- --run`: 11 files, 78 tests passed
+- `npm run test:e2e`: 21 Playwright tests passed
+- `npm run build`: passed, existing Phaser bundle size warningのみ
+
+更新したvisual regression:
+
+- `arena-heal-pickup.png` を新規追加。
+- `arena-game-over.png` は回復KPI表示追加に伴い更新。

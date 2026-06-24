@@ -18,6 +18,9 @@ export function createRunResultSummary(world: WorldState): RunResultSummary {
     lastDamageSource: world.stats.lastDamageSource ? { ...world.stats.lastDamageSource } : null,
     xpCollected: world.stats.xpCollected,
     pickupsCollected: world.stats.pickupsCollected,
+    hpRecovered: world.stats.hpRecovered,
+    healPickupsCollected: world.stats.healPickupsCollected,
+    effectiveHealPickupsCollected: world.stats.effectiveHealPickupsCollected,
     upgradesChosen: world.stats.upgradesChosen,
     weaponMetrics: {
       pulse: { ...world.stats.weaponMetrics.pulse },

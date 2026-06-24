@@ -96,6 +96,7 @@ export type ArenaDebugApi = {
   setElapsed(elapsed: number): void;
   setEnemyVisualFixture(band?: "wave2" | "wave3"): void;
   setObstacleFrictionFixture(): void;
+  setHealPickupFixture(mode?: "damaged" | "full" | "fatal" | "visual"): void;
   step(input?: Partial<InputSnapshot>, deltaSeconds?: number): void;
 };
 

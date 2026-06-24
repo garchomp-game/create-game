@@ -1,4 +1,11 @@
-import type { GameEvent, Pickup, SimulationConfig, WorldState } from "../../domain/types";
+import type {
+  EnemyTypeId,
+  GameEvent,
+  Pickup,
+  SimulationConfig,
+  Vec2,
+  WorldState,
+} from "../../domain/types";
 import { circleCircle, circleRect } from "../../math/geometry";
 
 export function updatePickups(
@@ -7,38 +14,163 @@ export function updatePickups(
   events: GameEvent[],
   dt = 0,
 ): void {
-  spawnXpPickups(world, config, events);
+  spawnPickupsFromKills(world, config, events);
+  updatePickupLifetimes(world, events, dt);
   attractPickups(world, config, dt);
-  collectPickups(world, events);
+  collectPickups(world, config, events);
 }
 
-function spawnXpPickups(
+export function calculateHealDropChance(
+  config: SimulationConfig,
+  enemyType: EnemyTypeId,
+  missCount: number,
+): number {
+  const pitySteps = Math.max(0, missCount - config.pickup.healDropPityThreshold + 1);
+  const pityBonus = pitySteps * config.pickup.healDropPityBonus;
+  const enemyMultiplier = config.pickup.healEnemyMultipliers[enemyType];
+  return Math.min(
+    config.pickup.healDropMaxChance,
+    Math.max(0, (config.pickup.healDropChance + pityBonus) * enemyMultiplier),
+  );
+}
+
+export function rollHealDrop(
+  config: SimulationConfig,
+  enemyId: string,
+  enemyType: EnemyTypeId,
+  rollIndex: number,
+  missCount: number,
+): boolean {
+  const chance = calculateHealDropChance(config, enemyType, missCount);
+  if (chance <= 0) return false;
+  if (chance >= 1) return true;
+
+  return hashToUnit(`${config.seed}:${enemyId}:${enemyType}:${rollIndex}`) < chance;
+}
+
+export function getCurrentMaxHp(world: WorldState, config: SimulationConfig): number {
+  return config.player.maxHp + world.runtime.maxHpBonus;
+}
+
+function spawnPickupsFromKills(
   world: WorldState,
   config: SimulationConfig,
   events: GameEvent[],
 ): void {
   const killEvents = events.filter((event) => event.type === "enemy.killed");
   for (const event of killEvents) {
-    if (event.xpAwarded <= 0) continue;
+    if (event.xpAwarded > 0) {
+      const xpPickup = createXpPickup(world, config, event.position, event.xpAwarded);
+      world.pickups.push(xpPickup);
+      events.push({
+        type: "pickup.spawned",
+        pickupId: xpPickup.id,
+        pickupKind: "xp",
+        position: { ...xpPickup.position },
+        xpValue: xpPickup.xpValue,
+        healValue: 0,
+        lifetime: null,
+      });
+    }
 
-    const pickup: Pickup = {
-      id: `pickup-${world.nextPickupId++}`,
-      kind: "xp",
-      position: findPickupPosition(world, config, event.position),
-      radius: config.pickup.xpRadius,
-      xpValue: event.xpAwarded,
-    };
-    world.pickups.push(pickup);
+    const rollIndex = world.runtime.healDropRollIndex;
+    const shouldSpawnHeal = rollHealDrop(
+      config,
+      event.enemyId,
+      event.enemyType,
+      rollIndex,
+      world.runtime.healDropMissCount,
+    );
+    world.runtime.healDropRollIndex += 1;
+
+    if (!shouldSpawnHeal) {
+      world.runtime.healDropMissCount += 1;
+      continue;
+    }
+
+    world.runtime.healDropMissCount = 0;
+    const healPickup = createHealPickup(world, config, event.position);
+    world.pickups.push(healPickup);
     events.push({
       type: "pickup.spawned",
-      pickupId: pickup.id,
-      position: { ...pickup.position },
-      xpValue: pickup.xpValue,
+      pickupId: healPickup.id,
+      pickupKind: "heal",
+      position: { ...healPickup.position },
+      xpValue: 0,
+      healValue: healPickup.healValue,
+      lifetime: config.pickup.healLifetime,
     });
   }
 }
 
-function collectPickups(world: WorldState, events: GameEvent[]): void {
+function createXpPickup(
+  world: WorldState,
+  config: SimulationConfig,
+  origin: Vec2,
+  xpValue: number,
+): Pickup {
+  return {
+    id: `pickup-${world.nextPickupId++}`,
+    kind: "xp",
+    position: findPickupPosition(world, config, origin, config.pickup.xpRadius),
+    radius: config.pickup.xpRadius,
+    xpValue,
+    healValue: 0,
+    lifetime: null,
+  };
+}
+
+function createHealPickup(
+  world: WorldState,
+  config: SimulationConfig,
+  origin: Vec2,
+): Pickup {
+  return {
+    id: `pickup-${world.nextPickupId++}`,
+    kind: "heal",
+    position: findPickupPosition(world, config, origin, config.pickup.healRadius),
+    radius: config.pickup.healRadius,
+    xpValue: 0,
+    healValue: Math.max(
+      config.pickup.healMinimum,
+      Math.floor(getCurrentMaxHp(world, config) * config.pickup.healRatio),
+    ),
+    lifetime: config.pickup.healLifetime,
+  };
+}
+
+function updatePickupLifetimes(world: WorldState, events: GameEvent[], dt: number): void {
+  if (dt <= 0) return;
+
+  const remaining: Pickup[] = [];
+  for (const pickup of world.pickups) {
+    if (pickup.kind !== "heal" || pickup.lifetime === null) {
+      remaining.push(pickup);
+      continue;
+    }
+
+    pickup.lifetime -= dt;
+    if (pickup.lifetime > 0) {
+      remaining.push(pickup);
+      continue;
+    }
+
+    events.push({
+      type: "pickup.expired",
+      pickupId: pickup.id,
+      pickupKind: "heal",
+    });
+  }
+  world.pickups = remaining;
+}
+
+function collectPickups(
+  world: WorldState,
+  config: SimulationConfig,
+  events: GameEvent[],
+): void {
+  if (world.state.hp <= 0) return;
+
   const remaining: Pickup[] = [];
   for (const pickup of world.pickups) {
     if (!circleCircle(world.player, pickup)) {
@@ -46,11 +178,28 @@ function collectPickups(world: WorldState, events: GameEvent[]): void {
       continue;
     }
 
-    world.progression.xp += pickup.xpValue;
+    if (pickup.kind === "xp") {
+      world.progression.xp += pickup.xpValue;
+      events.push({
+        type: "pickup.collected",
+        pickupId: pickup.id,
+        pickupKind: "xp",
+        xpValue: pickup.xpValue,
+        healValue: 0,
+        hpRecovered: 0,
+      });
+      continue;
+    }
+
+    const hpBefore = world.state.hp;
+    world.state.hp = Math.min(getCurrentMaxHp(world, config), hpBefore + pickup.healValue);
     events.push({
       type: "pickup.collected",
       pickupId: pickup.id,
-      xpValue: pickup.xpValue,
+      pickupKind: "heal",
+      xpValue: 0,
+      healValue: pickup.healValue,
+      hpRecovered: world.state.hp - hpBefore,
     });
   }
   world.pickups = remaining;
@@ -80,9 +229,9 @@ function attractPickups(
 function findPickupPosition(
   world: WorldState,
   config: SimulationConfig,
-  origin: { x: number; y: number },
+  origin: Vec2,
+  radius: number,
 ): { x: number; y: number } {
-  const radius = config.pickup.xpRadius;
   const clampedOrigin = {
     x: Math.max(radius, Math.min(config.arena.width - radius, origin.x)),
     y: Math.max(radius, Math.min(config.arena.height - radius, origin.y)),
@@ -130,5 +279,18 @@ function isPickupPositionClear(
   radius: number,
   position: { x: number; y: number },
 ): boolean {
-  return !world.obstacles.some((obstacle) => circleRect({ position, radius }, obstacle));
+  const candidate = { position, radius };
+  return (
+    !world.obstacles.some((obstacle) => circleRect(candidate, obstacle)) &&
+    !world.pickups.some((pickup) => circleCircle(candidate, pickup))
+  );
+}
+
+function hashToUnit(input: string): number {
+  let hash = 2166136261;
+  for (let index = 0; index < input.length; index += 1) {
+    hash ^= input.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0) / 0x100000000;
 }

@@ -32,6 +32,8 @@ export function createWorld(config: SimulationConfig): WorldState {
       maxHpBonus: 0,
       projectileCountBonus: 0,
       pierceBonus: 0,
+      healDropMissCount: 0,
+      healDropRollIndex: 0,
     },
     stats: {
       shotsFired: 0,
@@ -42,6 +44,9 @@ export function createWorld(config: SimulationConfig): WorldState {
       lastDamageSource: null,
       xpCollected: 0,
       pickupsCollected: 0,
+      hpRecovered: 0,
+      healPickupsCollected: 0,
+      effectiveHealPickupsCollected: 0,
       upgradesChosen: 0,
       weaponMetrics: {
         pulse: { shotsFired: 0, projectilesFired: 0, hits: 0, kills: 0 },

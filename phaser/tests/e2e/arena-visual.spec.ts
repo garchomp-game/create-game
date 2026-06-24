@@ -79,6 +79,22 @@ test("matches the fixed wave three HUD frame", async ({ page }) => {
   });
 });
 
+test("matches the fixed heal pickup fixture frame", async ({ page }) => {
+  await page.goto("/");
+  const canvas = page.locator("canvas");
+  await expect(canvas).toHaveCount(1);
+
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.restart();
+    window.__ARENA_DEBUG__?.setHealPickupFixture("visual");
+    window.__ARENA_DEBUG__?.setPaused(true);
+  });
+
+  await expect(canvas).toHaveScreenshot("arena-heal-pickup.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
 test("matches the fixed wave four HUD frame", async ({ page }) => {
   await page.goto("/");
   const canvas = page.locator("canvas");
