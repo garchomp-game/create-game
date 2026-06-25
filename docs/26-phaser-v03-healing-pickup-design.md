@@ -6,7 +6,7 @@ Ticket ID: `PH-V03-001`
 Title: Healing Pickup Foundation  
 Priority: P0  
 Effort: 5 EP  
-Status: Revised Design  
+Status: Done
 Owner type: main/worker  
 Target: Phaser v0.3 candidate  
 Dependencies:

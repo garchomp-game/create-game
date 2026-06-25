@@ -67,6 +67,7 @@
 | `24-phaser-v02-obstacle-friction-audit.md` | Phaser v0.2の障害物摩擦監査、壁沿い移動テスト、debug接触カウント |
 | `25-phaser-v02-stabilization-report.md` | Phaser v0.2 core完了後の検証結果、candidate判定、残リスク |
 | `26-phaser-v03-healing-pickup-design.md` | Phaser v0.3 Healing Pickup Foundationのチケット、設計、受け入れ条件 |
+| `27-phaser-v03-next-actions-backlog.md` | Phaser v0.3以降のネクストアクション、チケット、実行順 |
 
 ## 実装方針
 
