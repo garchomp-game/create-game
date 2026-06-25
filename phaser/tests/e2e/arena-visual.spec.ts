@@ -158,7 +158,8 @@ test("matches the fixed game over frame", async ({ page }) => {
   await page.evaluate(() => {
     window.__ARENA_DEBUG__?.restart();
     window.__ARENA_DEBUG__?.setPaused(true);
-    window.__ARENA_DEBUG__?.forceGameOver();
+    window.__ARENA_DEBUG__?.setHealPickupFixture("fatal");
+    window.__ARENA_DEBUG__?.step({}, 1 / 60);
   });
 
   await expect(canvas).toHaveScreenshot("arena-game-over.png", {

@@ -138,31 +138,25 @@ export class PhaserArenaRenderer {
 
     this.hideButtonTexts();
     if (world.state.status === "gameOver") {
-      const summary = createRunResultSummary(world);
-      const causeText = summary.lastDamageSource
-        ? `\nCause: ${this.formatDamageSource(summary.lastDamageSource)}`
-        : "";
       g.fillStyle(0x020617, 0.9);
       g.fillRect(0, 0, arena.width, arena.height);
       this.statusText
-        .setFontSize(30)
-        .setPosition(arena.width / 2, arena.height / 2 - 100)
-        .setText(
-          `RUN COMPLETE\nScore: ${summary.score}\nTime: ${formatTime(
-            summary.elapsed,
-          )}\nLevel: ${summary.level}\nKills: ${summary.enemiesKilled}\nShots: ${
-            summary.shotsFired
-          }\nRecovered: ${summary.hpRecovered}\nHeals: ${
-            summary.effectiveHealPickupsCollected
-          }/${summary.healPickupsCollected}${causeText}`,
-        )
+        .setOrigin(0.5, 0)
+        .setFontSize(26)
+        .setLineSpacing(6)
+        .setWordWrapWidth(arena.width - 96)
+        .setPosition(arena.width / 2, 46)
+        .setText(this.formatGameOverText(world))
         .setVisible(true);
       this.drawMenuButtons(g, world);
     } else if (world.state.status === "upgradeSelect") {
       g.fillStyle(0x020617, 0.9);
       g.fillRect(0, 0, arena.width, arena.height);
       this.statusText
+        .setOrigin(0.5)
         .setFontSize(24)
+        .setLineSpacing(10)
+        .setWordWrapWidth(null)
         .setPosition(arena.width / 2, arena.height / 2 - 138)
         .setText(`LEVEL ${world.progression.level}\nChoose Upgrade`)
         .setVisible(true);
@@ -171,7 +165,10 @@ export class PhaserArenaRenderer {
       g.fillStyle(0x020617, 0.9);
       g.fillRect(0, 0, arena.width, arena.height);
       this.statusText
+        .setOrigin(0.5)
         .setFontSize(34)
+        .setLineSpacing(10)
+        .setWordWrapWidth(null)
         .setPosition(arena.width / 2, arena.height / 2 - 74)
         .setText("PAUSED")
         .setVisible(true);
@@ -180,7 +177,10 @@ export class PhaserArenaRenderer {
       g.fillStyle(0x05070d, 1);
       g.fillRect(0, 0, arena.width, arena.height);
       this.statusText
+        .setOrigin(0.5)
         .setFontSize(34)
+        .setLineSpacing(10)
+        .setWordWrapWidth(null)
         .setPosition(arena.width / 2, arena.height / 2 - 72)
         .setText("ARENA CORE\nMove  Aim  Shoot\nSurvive the waves")
         .setVisible(true);
@@ -191,6 +191,23 @@ export class PhaserArenaRenderer {
 
     this.hud.render(world);
     this.drawCursor(g, pointerWorld);
+  }
+
+  private formatGameOverText(world: WorldState): string {
+    const summary = createRunResultSummary(world);
+    const lines = [
+      "RUN COMPLETE",
+      `Score: ${summary.score}   Time: ${formatTime(summary.elapsed)}`,
+      `Level: ${summary.level}   Kills: ${summary.enemiesKilled}`,
+      `Shots: ${summary.shotsFired}   Recovered: ${summary.hpRecovered}`,
+      `Heals: ${summary.effectiveHealPickupsCollected}/${summary.healPickupsCollected}`,
+    ];
+
+    if (summary.lastDamageSource) {
+      lines.push(`Cause: ${this.formatDamageSource(summary.lastDamageSource)}`);
+    }
+
+    return lines.join("\n");
   }
 
   private drawAimGuide(
