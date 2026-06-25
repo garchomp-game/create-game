@@ -378,7 +378,6 @@ test("can enter upgrade selection and choose an upgrade", async ({ page }) => {
   await page.goto("/");
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
-  await canvas.click();
 
   await page.evaluate(() => {
     window.__ARENA_DEBUG__?.restart();

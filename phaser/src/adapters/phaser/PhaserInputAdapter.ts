@@ -134,6 +134,10 @@ export class PhaserInputAdapter {
     return { x: pointer.x, y: pointer.y };
   }
 
+  clearTransientInput(): void {
+    this.pointerPressed = false;
+  }
+
   private readMove(): Vec2 {
     let dx = 0;
     let dy = 0;

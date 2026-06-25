@@ -101,6 +101,7 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private resetGame(status: WorldState["state"]["status"] = "playing"): void {
+    this.inputAdapter.clearTransientInput();
     this.random = createRandom(this.simulationConfig.seed);
     this.world = createWorld(this.simulationConfig);
     this.world.state.status = status;
@@ -197,6 +198,7 @@ export class ArenaScene extends Phaser.Scene {
   private forceDamage(amount: number): void {
     if (this.world.state.status !== "playing") return;
 
+    this.inputAdapter.clearTransientInput();
     const requestedDamage = Number.isFinite(amount) ? Math.max(0, amount) : 0;
     if (requestedDamage === 0) return;
 
@@ -229,6 +231,7 @@ export class ArenaScene extends Phaser.Scene {
   private forceGameOver(): void {
     if (this.world.state.status === "gameOver") return;
 
+    this.inputAdapter.clearTransientInput();
     this.world.state.hp = 0;
     this.world.state.status = "gameOver";
     this.recordForcedEvents([
@@ -244,6 +247,7 @@ export class ArenaScene extends Phaser.Scene {
   private grantXp(amount: number): void {
     if (this.world.state.status !== "playing") return;
 
+    this.inputAdapter.clearTransientInput();
     const xpValue = Math.max(0, Math.floor(amount));
     if (xpValue === 0) return;
 
@@ -267,6 +271,7 @@ export class ArenaScene extends Phaser.Scene {
   private forceUpgradeSelect(): void {
     if (this.world.state.status === "gameOver") return;
 
+    this.inputAdapter.clearTransientInput();
     this.world.state.status = "upgradeSelect";
     this.world.progression.pendingUpgradeChoices = selectUpgradeChoices(
       this.simulationConfig,
@@ -299,6 +304,7 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private setEnemyVisualFixture(band: "wave2" | "wave3" = "wave3"): void {
+    this.inputAdapter.clearTransientInput();
     const enemyLayout: Array<{ typeId: EnemyTypeId; x: number; y: number }> =
       band === "wave2"
         ? [
@@ -357,6 +363,7 @@ export class ArenaScene extends Phaser.Scene {
     const obstacle = this.simulationConfig.obstacles[0];
     if (!obstacle) return;
 
+    this.inputAdapter.clearTransientInput();
     this.world.player.position = {
       x: obstacle.x - this.simulationConfig.player.radius,
       y: obstacle.y + obstacle.height / 2,
@@ -370,6 +377,7 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private setHealPickupFixture(mode: "damaged" | "full" | "fatal" | "visual" = "damaged"): void {
+    this.inputAdapter.clearTransientInput();
     const maxHp = this.simulationConfig.player.maxHp + this.world.runtime.maxHpBonus;
     const healValue = this.getDebugHealValue();
 
