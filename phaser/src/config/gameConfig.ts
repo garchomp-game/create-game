@@ -26,7 +26,7 @@ const rawSimulationConfig = {
       interval: 0.16,
       damage: 1,
       projectileCount: 1,
-      spreadAngle: 0,
+      spreadAngle: 0.12,
       pierceCount: 1,
     },
     spread: {

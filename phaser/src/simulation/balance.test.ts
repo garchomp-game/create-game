@@ -21,17 +21,17 @@ const balanceProbeSeeds = [20260619, 20260620, 20260621, 20260622, 20260623];
 const balanceBaseline = {
   noInputSurvivalP50: 6.77,
   fixedAimShootSurvivalP50: 6.77,
-  kiteCollectSurvivalP50: 110.8,
-  kiteCollectKillsPerMinuteP50: 153.25,
-  kiteCollectScorePerMinuteP50: 2082.13,
-  kiteCollectFirstDamageP50: 79.87,
+  kiteCollectSurvivalP50: 119.3,
+  kiteCollectKillsPerMinuteP50: 165.47,
+  kiteCollectScorePerMinuteP50: 2269.74,
+  kiteCollectFirstDamageP50: 84.23,
   kiteCollectFirstUpgradeP50: 7.13,
   kiteCollectWaveReachedP50: 90,
-  kiteCollectMaxEnemiesMax: 28,
-  kiteCollectMaxBulletsMax: 37,
-  kiteCollectHpRecoveredP50: 60,
-  kiteCollectHealPickupsCollectedP50: 18,
-  kiteCollectEffectiveHealPickupsCollectedP50: 5,
+  kiteCollectMaxEnemiesMax: 34,
+  kiteCollectMaxBulletsMax: 32,
+  kiteCollectHpRecoveredP50: 88,
+  kiteCollectHealPickupsCollectedP50: 22,
+  kiteCollectEffectiveHealPickupsCollectedP50: 8,
 };
 
 describe("balance simulation", () => {

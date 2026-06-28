@@ -210,6 +210,27 @@ describe("stepWorld", () => {
     expect(world.stats.weaponMetrics.spread.projectilesFired).toBe(3);
   });
 
+  it("fans out upgraded pulse projectiles instead of stacking them on one line", () => {
+    const world = createWorld(GAME_CONFIG);
+    world.runtime.projectileCountBonus = 1;
+
+    stepWorld(
+      world,
+      { ...neutralInput, aimWorld: null, shootHeld: true },
+      1 / 60,
+      createRandom(GAME_CONFIG.seed),
+      GAME_CONFIG,
+    );
+
+    expect(world.bullets).toHaveLength(2);
+    expect(world.bullets.map((bullet) => bullet.weaponType)).toEqual(["pulse", "pulse"]);
+    expect(world.bullets[0]!.velocity.x).toBeCloseTo(world.bullets[1]!.velocity.x);
+    expect(world.bullets[0]!.velocity.y).toBeLessThan(0);
+    expect(world.bullets[1]!.velocity.y).toBeGreaterThan(0);
+    expect(world.bullets[0]!.position.y).toBeLessThan(world.player.position.y);
+    expect(world.bullets[1]!.position.y).toBeGreaterThan(world.player.position.y);
+  });
+
   it("does not exceed the current wave spawn budget in a single frame catch-up", () => {
     const world = createWorld(GAME_CONFIG);
     world.state.spawnTimer = -3;

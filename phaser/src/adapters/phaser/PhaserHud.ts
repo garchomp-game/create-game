@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import type { SimulationConfig, WorldState } from "../../domain/types";
 import { formatTime } from "../../format/time";
+import { TEXT } from "../../lang";
 import { getWaveBand } from "../../simulation/waveDirector";
 
 export class PhaserHud {
@@ -46,13 +47,26 @@ export class PhaserHud {
     this.drawBar(102, 27, 168, 10, hpRatio, 0xef4444);
     this.drawBar(102, 50, 168, 10, xpRatio, 0x22c55e);
 
-    this.hpText.setText(`HP ${Math.ceil(world.state.hp)}/${maxHp}`);
-    this.xpText.setText(`LV ${world.progression.level}  XP ${world.progression.xp}/${world.progression.xpToNext}`);
+    this.hpText.setText(TEXT.hud.hp(Math.ceil(world.state.hp), maxHp));
+    this.xpText.setText(
+      TEXT.hud.xp(world.progression.level, world.progression.xp, world.progression.xpToNext),
+    );
     this.metaText.setText(
-      `Wave ${waveIndex}  ${formatTime(world.state.elapsed)}  Score ${world.state.score}  Enemies ${world.enemies.length}/${wave.maxEnemies}`,
+      TEXT.hud.meta(
+        waveIndex,
+        formatTime(world.state.elapsed),
+        world.state.score,
+        world.enemies.length,
+        wave.maxEnemies,
+      ),
     );
     this.weaponText.setText(
-      `${world.state.weaponType.toUpperCase()}  ${fireRate.toFixed(1)}/s  x${projectileCount}  pierce ${pierce}`,
+      TEXT.hud.weapon(
+        TEXT.hud.weaponNames[world.state.weaponType],
+        fireRate.toFixed(1),
+        projectileCount,
+        pierce,
+      ),
     );
   }
 

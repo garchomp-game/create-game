@@ -8,6 +8,7 @@ import type {
   WorldState,
 } from "../../domain/types";
 import { formatTime } from "../../format/time";
+import { TEXT } from "../../lang";
 import { createRunResultSummary } from "../../simulation/resultSummary";
 import { createUpgradePreview, formatUpgradePreview } from "../../simulation/upgradePreview";
 import { PhaserHud } from "./PhaserHud";
@@ -29,7 +30,7 @@ export class PhaserArenaRenderer {
     this.hud = new PhaserHud(scene, simulationConfig);
 
     scene.add
-      .text(simulationConfig.arena.width - 18, 16, "Library: Phaser", {
+      .text(simulationConfig.arena.width - 18, 16, TEXT.ui.libraryLabel, {
         fontFamily: "Arial, sans-serif",
         fontSize: "18px",
         color: "#cbd5e1",
@@ -129,6 +130,7 @@ export class PhaserArenaRenderer {
     for (const item of world.enemies) {
       this.drawEnemy(g, item);
     }
+    this.drawOffscreenEnemyIndicators(g, world);
 
     this.drawAimGuide(g, world, pointerWorld);
     g.fillStyle(player.color, 1);
@@ -158,7 +160,7 @@ export class PhaserArenaRenderer {
         .setLineSpacing(10)
         .setWordWrapWidth(null)
         .setPosition(arena.width / 2, arena.height / 2 - 138)
-        .setText(`LEVEL ${world.progression.level}\nChoose Upgrade`)
+        .setText(TEXT.ui.upgradeHeading(world.progression.level))
         .setVisible(true);
       this.drawUpgradeChoiceButtons(g, world);
     } else if (world.state.status === "paused") {
@@ -170,7 +172,7 @@ export class PhaserArenaRenderer {
         .setLineSpacing(10)
         .setWordWrapWidth(null)
         .setPosition(arena.width / 2, arena.height / 2 - 74)
-        .setText("PAUSED")
+        .setText(TEXT.ui.paused)
         .setVisible(true);
       this.drawMenuButtons(g, world);
     } else if (world.state.status === "title") {
@@ -182,7 +184,7 @@ export class PhaserArenaRenderer {
         .setLineSpacing(10)
         .setWordWrapWidth(null)
         .setPosition(arena.width / 2, arena.height / 2 - 72)
-        .setText("ARENA CORE\nMove  Aim  Shoot\nSurvive the waves")
+        .setText(TEXT.ui.titleScreen)
         .setVisible(true);
       this.drawMenuButtons(g, world);
     } else {
@@ -196,15 +198,18 @@ export class PhaserArenaRenderer {
   private formatGameOverText(world: WorldState): string {
     const summary = createRunResultSummary(world);
     const lines = [
-      "RUN COMPLETE",
-      `Score: ${summary.score}   Time: ${formatTime(summary.elapsed)}`,
-      `Level: ${summary.level}   Kills: ${summary.enemiesKilled}`,
-      `Shots: ${summary.shotsFired}   Recovered: ${summary.hpRecovered}`,
-      `Heals: ${summary.effectiveHealPickupsCollected}/${summary.healPickupsCollected}`,
+      TEXT.ui.result.title,
+      TEXT.ui.result.scoreTime(summary.score, formatTime(summary.elapsed)),
+      TEXT.ui.result.levelKills(summary.level, summary.enemiesKilled),
+      TEXT.ui.result.shotsRecovered(summary.shotsFired, summary.hpRecovered),
+      TEXT.ui.result.heals(
+        summary.effectiveHealPickupsCollected,
+        summary.healPickupsCollected,
+      ),
     ];
 
     if (summary.lastDamageSource) {
-      lines.push(`Cause: ${this.formatDamageSource(summary.lastDamageSource)}`);
+      lines.push(TEXT.ui.result.cause(this.formatDamageSource(summary.lastDamageSource)));
     }
 
     return lines.join("\n");
@@ -290,6 +295,109 @@ export class PhaserArenaRenderer {
     }
 
     this.drawEnemyMark(g, enemy, view);
+  }
+
+  private drawOffscreenEnemyIndicators(g: Phaser.GameObjects.Graphics, world: WorldState): void {
+    if (world.state.status !== "playing" && world.state.status !== "paused") return;
+
+    const visibleLimit = 8;
+    const offscreenEnemies = world.enemies
+      .filter((enemy) => this.isOffscreen(enemy))
+      .sort((a, b) => this.distanceToPlayer(world, a) - this.distanceToPlayer(world, b))
+      .slice(0, visibleLimit);
+
+    for (const enemy of offscreenEnemies) {
+      this.drawOffscreenEnemyIndicator(g, world, enemy);
+    }
+  }
+
+  private isOffscreen(enemy: WorldState["enemies"][number]): boolean {
+    const { width, height } = this.simulationConfig.arena;
+    return (
+      enemy.position.x < 0 ||
+      enemy.position.x > width ||
+      enemy.position.y < 0 ||
+      enemy.position.y > height
+    );
+  }
+
+  private distanceToPlayer(world: WorldState, enemy: WorldState["enemies"][number]): number {
+    return Math.hypot(
+      world.player.position.x - enemy.position.x,
+      world.player.position.y - enemy.position.y,
+    );
+  }
+
+  private drawOffscreenEnemyIndicator(
+    g: Phaser.GameObjects.Graphics,
+    world: WorldState,
+    enemy: WorldState["enemies"][number],
+  ): void {
+    const center = this.getOffscreenIndicatorCenter(enemy);
+    const dx = world.player.position.x - enemy.position.x;
+    const dy = world.player.position.y - enemy.position.y;
+    const distance = Math.max(0.001, Math.hypot(dx, dy));
+    const direction = { x: dx / distance, y: dy / distance };
+    const perpendicular = { x: -direction.y, y: direction.x };
+    const size = 11;
+    const spread = 7;
+    const tail = 7;
+    const points = [
+      {
+        x: center.x + direction.x * size,
+        y: center.y + direction.y * size,
+      },
+      {
+        x: center.x - direction.x * tail + perpendicular.x * spread,
+        y: center.y - direction.y * tail + perpendicular.y * spread,
+      },
+      {
+        x: center.x - direction.x * tail - perpendicular.x * spread,
+        y: center.y - direction.y * tail - perpendicular.y * spread,
+      },
+    ];
+    const view = this.viewConfig.enemy[enemy.typeId];
+
+    g.fillStyle(0x020617, 0.72);
+    g.fillCircle(center.x, center.y, 15);
+    this.drawPolygon(g, points, view.color, 0xf8fafc);
+    g.lineStyle(1, view.stroke, 0.95);
+    g.strokeCircle(center.x, center.y, 15);
+  }
+
+  private getOffscreenIndicatorCenter(enemy: WorldState["enemies"][number]): Vec2 {
+    const { width, height } = this.simulationConfig.arena;
+    const padding = 18;
+    const hud = { x: 16, y: 14, width: 348, height: 94 };
+    const margin = 16;
+    const center = {
+      x: Math.max(padding, Math.min(width - padding, enemy.position.x)),
+      y: Math.max(padding, Math.min(height - padding, enemy.position.y)),
+    };
+
+    if (!this.overlapsHud(center, hud, margin)) return center;
+
+    if (enemy.position.y < 0) {
+      return { x: hud.x + hud.width + margin + 15, y: center.y };
+    }
+    if (enemy.position.x < 0) {
+      return { x: center.x, y: hud.y + hud.height + margin + 15 };
+    }
+
+    return center;
+  }
+
+  private overlapsHud(
+    position: Vec2,
+    hud: { x: number; y: number; width: number; height: number },
+    margin: number,
+  ): boolean {
+    return (
+      position.x >= hud.x - margin &&
+      position.x <= hud.x + hud.width + margin &&
+      position.y >= hud.y - margin &&
+      position.y <= hud.y + hud.height + margin
+    );
   }
 
   private drawHealPickup(
@@ -402,14 +510,16 @@ export class PhaserArenaRenderer {
   }
 
   private formatDamageSource(source: PlayerDamageSource): string {
-    if (source.kind === "contact") return `${source.enemyType} contact`;
+    if (source.kind === "contact") {
+      return TEXT.ui.damageSource.enemyContact(TEXT.ui.enemyNames[source.enemyType]);
+    }
 
-    return "enemy projectile";
+    return TEXT.ui.damageSource.enemyProjectile;
   }
 
   private drawMenuButtons(g: Phaser.GameObjects.Graphics, world: WorldState): void {
     const { width, height } = this.simulationConfig.arena;
-    const buttons = getMenuButtons(world.state.status, width, height);
+    const buttons = getMenuButtons(world.state.status, width, height, TEXT.ui.menu);
     buttons.forEach((button, index) => {
       this.drawButton(g, button.x, button.y, button.width, button.height);
       const text = this.menuButtonTexts[index]!;
@@ -430,16 +540,22 @@ export class PhaserArenaRenderer {
     buttons.forEach((button) => {
       const upgradeId = world.progression.pendingUpgradeChoices[button.index]!;
       const upgrade = this.simulationConfig.upgrades[upgradeId];
+      const upgradeDisplay = TEXT.upgrades.definitions[upgradeId];
       const currentRank = world.progression.upgradeRanks[upgradeId];
       const preview = formatUpgradePreview(
         createUpgradePreview(world, this.simulationConfig, upgradeId),
+        TEXT.upgrades.preview.labels,
+        {
+          perSecond: TEXT.upgrades.preview.perSecond,
+          separator: TEXT.upgrades.preview.separator,
+        },
       );
       this.drawButton(g, button.x, button.y, button.width, button.height);
       this.upgradeChoiceTexts[button.index]!
         .setText(
-          `${button.index + 1}. ${upgrade.title}  Rank ${currentRank + 1}/${
+          `${button.index + 1}. ${upgradeDisplay.title}  ${TEXT.ui.rank} ${currentRank + 1}/${
             upgrade.maxRank
-          }\n${upgrade.description}\n${preview}`,
+          }\n${upgradeDisplay.description}\n${preview}`,
         )
         .setPosition(button.x + button.width / 2, button.y + button.height / 2)
         .setVisible(true);

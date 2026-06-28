@@ -9,9 +9,10 @@ describe("createUpgradePreview", () => {
     world.runtime.fireIntervalMultiplier = 0.85;
 
     expect(createUpgradePreview(world, SIMULATION_CONFIG, "rapidFire")).toEqual({
-      label: "Fire rate",
-      before: "7.4/s",
-      after: "8.7/s",
+      stat: "fireRate",
+      before: "7.4",
+      after: "8.7",
+      unit: "perSecond",
     });
   });
 
@@ -19,9 +20,10 @@ describe("createUpgradePreview", () => {
     const world = createWorld(SIMULATION_CONFIG);
 
     expect(createUpgradePreview(world, SIMULATION_CONFIG, "swiftStep")).toEqual({
-      label: "Move speed",
+      stat: "moveSpeed",
       before: "240",
       after: "269",
+      unit: null,
     });
   });
 
@@ -30,9 +32,10 @@ describe("createUpgradePreview", () => {
     world.runtime.maxHpBonus = 20;
 
     expect(createUpgradePreview(world, SIMULATION_CONFIG, "vitalCore")).toEqual({
-      label: "Max HP",
+      stat: "maxHp",
       before: "120",
       after: "140",
+      unit: null,
     });
   });
 
@@ -42,19 +45,22 @@ describe("createUpgradePreview", () => {
     world.runtime.pierceBonus = 1;
 
     expect(createUpgradePreview(world, SIMULATION_CONFIG, "overdriveRounds")).toEqual({
-      label: "Shot speed",
+      stat: "shotSpeed",
       before: "520",
       after: "598",
+      unit: null,
     });
     expect(createUpgradePreview(world, SIMULATION_CONFIG, "splitShot")).toEqual({
-      label: "Projectiles",
+      stat: "projectiles",
       before: "2",
       after: "3",
+      unit: null,
     });
     expect(createUpgradePreview(world, SIMULATION_CONFIG, "piercingRounds")).toEqual({
-      label: "Pierce",
+      stat: "pierce",
       before: "2",
       after: "3",
+      unit: null,
     });
   });
 
@@ -64,5 +70,24 @@ describe("createUpgradePreview", () => {
     expect(formatUpgradePreview(createUpgradePreview(world, SIMULATION_CONFIG, "splitShot"))).toBe(
       "Projectiles: 1 -> 2",
     );
+  });
+
+  it("formats localized preview text", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+
+    expect(
+      formatUpgradePreview(
+        createUpgradePreview(world, SIMULATION_CONFIG, "rapidFire"),
+        {
+          fireRate: "連射",
+          moveSpeed: "移動速度",
+          shotSpeed: "弾速",
+          maxHp: "最大HP",
+          projectiles: "弾数",
+          pierce: "貫通",
+        },
+        { perSecond: "/秒" },
+      ),
+    ).toBe("連射: 6.3/秒 -> 7.4/秒");
   });
 });

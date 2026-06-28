@@ -1,4 +1,5 @@
 import type { GameStatus } from "../../domain/types";
+import type { MenuActionLabel } from "../../lang";
 
 export type MenuAction = "start" | "resume" | "restart" | "title";
 
@@ -19,10 +20,18 @@ export type UpgradeChoiceButton = {
   height: number;
 };
 
+const DEFAULT_MENU_LABELS: Record<MenuActionLabel, string> = {
+  start: "Start",
+  resume: "Resume",
+  restart: "Restart",
+  title: "Title",
+};
+
 export function getMenuButtons(
   status: GameStatus,
   arenaWidth: number,
   arenaHeight: number,
+  labels: Record<MenuActionLabel, string> = DEFAULT_MENU_LABELS,
 ): MenuButton[] {
   const buttonWidth = 220;
   const buttonHeight = 44;
@@ -32,7 +41,7 @@ export function getMenuButtons(
     return [
       {
         action: "start",
-        label: "Start",
+        label: labels.start,
         x,
         y: arenaHeight / 2 + 76,
         width: buttonWidth,
@@ -43,16 +52,16 @@ export function getMenuButtons(
 
   if (status === "paused") {
     return [
-      { action: "resume", label: "Resume", x, y: arenaHeight / 2 + 14, width: buttonWidth, height: buttonHeight },
-      { action: "restart", label: "Restart", x, y: arenaHeight / 2 + 66, width: buttonWidth, height: buttonHeight },
-      { action: "title", label: "Title", x, y: arenaHeight / 2 + 118, width: buttonWidth, height: buttonHeight },
+      { action: "resume", label: labels.resume, x, y: arenaHeight / 2 + 14, width: buttonWidth, height: buttonHeight },
+      { action: "restart", label: labels.restart, x, y: arenaHeight / 2 + 66, width: buttonWidth, height: buttonHeight },
+      { action: "title", label: labels.title, x, y: arenaHeight / 2 + 118, width: buttonWidth, height: buttonHeight },
     ];
   }
 
   if (status === "gameOver") {
     return [
-      { action: "restart", label: "Restart", x, y: arenaHeight / 2 + 114, width: buttonWidth, height: buttonHeight },
-      { action: "title", label: "Title", x, y: arenaHeight / 2 + 166, width: buttonWidth, height: buttonHeight },
+      { action: "restart", label: labels.restart, x, y: arenaHeight / 2 + 114, width: buttonWidth, height: buttonHeight },
+      { action: "title", label: labels.title, x, y: arenaHeight / 2 + 166, width: buttonWidth, height: buttonHeight },
     ];
   }
 

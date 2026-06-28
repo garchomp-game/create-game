@@ -112,6 +112,22 @@ test("matches the fixed wave four HUD frame", async ({ page }) => {
   });
 });
 
+test("matches the fixed offscreen enemy indicator frame", async ({ page }) => {
+  await page.goto("/");
+  const canvas = page.locator("canvas");
+  await expect(canvas).toHaveCount(1);
+
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.restart();
+    window.__ARENA_DEBUG__?.setOffscreenEnemyIndicatorFixture();
+    window.__ARENA_DEBUG__?.setPaused(true);
+  });
+
+  await expect(canvas).toHaveScreenshot("arena-offscreen-enemy-indicators.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
 test("matches the fixed shooting frame", async ({ page }) => {
   await page.goto("/");
   const canvas = page.locator("canvas");
@@ -130,6 +146,37 @@ test("matches the fixed shooting frame", async ({ page }) => {
   });
 
   await expect(canvas).toHaveScreenshot("arena-shooting.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("matches the fixed upgraded pulse split shot frame", async ({ page }) => {
+  await page.goto("/");
+  const canvas = page.locator("canvas");
+  await expect(canvas).toHaveCount(1);
+
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
+    if (!debug) throw new Error("Debug API is not available.");
+
+    debug.restart();
+    debug.forceUpgradeSelect();
+    const splitShotIndex = debug.getSnapshot().pendingUpgradeChoices.indexOf("splitShot");
+    if (splitShotIndex < 0) throw new Error("splitShot upgrade is not available in fixture.");
+
+    debug.step({ upgradeChoicePressed: splitShotIndex }, 1 / 60);
+    debug.setPaused(true);
+    debug.step(
+      {
+        aimWorld: { x: 640, y: 270 },
+        shootHeld: true,
+      },
+      1 / 60,
+    );
+    debug.step({ aimWorld: { x: 640, y: 270 } }, 8 / 60);
+  });
+
+  await expect(canvas).toHaveScreenshot("arena-upgraded-pulse-split-shot.png", {
     maxDiffPixelRatio: 0.01,
   });
 });

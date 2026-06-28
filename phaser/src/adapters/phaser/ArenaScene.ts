@@ -454,6 +454,27 @@ export class ArenaScene extends Phaser.Scene {
     this.renderCurrentWorld();
   }
 
+  private setOffscreenEnemyIndicatorFixture(): void {
+    this.inputAdapter.clearTransientInput();
+    const { width, height } = this.simulationConfig.arena;
+
+    this.world.state.status = "playing";
+    this.world.state.elapsed = 64;
+    this.world.player.position = { x: width / 2, y: height / 2 };
+    this.world.state.lastAim = { x: 1, y: 0 };
+    this.world.enemies = [
+      this.createDebugEnemy("chaser", { x: width * 0.48, y: -34 }, 1, false),
+      this.createDebugEnemy("brute", { x: width + 34, y: height * 0.35 }, 2, false),
+      this.createDebugEnemy("fast", { x: width * 0.7, y: height + 34 }, 3, false),
+      this.createDebugEnemy("ranged", { x: -34, y: height * 0.68 }, 4, false),
+    ];
+    this.world.enemyProjectiles = [];
+    this.world.bullets = [];
+    this.world.pickups = [];
+    this.world.nextEnemyId = this.world.enemies.length + 1;
+    this.renderCurrentWorld();
+  }
+
   private recordForcedEvents(events: GameEvent[]): void {
     updateRunStats(this.world, events);
     this.recordResult({ events, metrics: [] });
@@ -532,6 +553,9 @@ export class ArenaScene extends Phaser.Scene {
       },
       setHealPickupFixture: (mode: "damaged" | "full" | "fatal" | "visual" = "damaged") => {
         this.setHealPickupFixture(mode);
+      },
+      setOffscreenEnemyIndicatorFixture: () => {
+        this.setOffscreenEnemyIndicatorFixture();
       },
       step: (input: Partial<InputSnapshot> = {}, deltaSeconds = 1 / 60) => {
         this.stepDebugWorld(input, deltaSeconds);
@@ -641,7 +665,12 @@ export class ArenaScene extends Phaser.Scene {
     };
   }
 
-  private createDebugEnemy(typeId: EnemyTypeId, position: { x: number; y: number }, index: number): Enemy {
+  private createDebugEnemy(
+    typeId: EnemyTypeId,
+    position: { x: number; y: number },
+    index: number,
+    enteredArena = true,
+  ): Enemy {
     const definition = this.simulationConfig.enemies[typeId];
     return {
       id: `debug-heal-enemy-${index}`,
@@ -655,7 +684,7 @@ export class ArenaScene extends Phaser.Scene {
       xpValue: definition.xpValue,
       behavior: definition.behavior,
       attackTimer: definition.ranged ? definition.ranged.attackInterval : 0,
-      enteredArena: true,
+      enteredArena,
     };
   }
 

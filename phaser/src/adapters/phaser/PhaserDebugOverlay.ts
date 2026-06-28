@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { TEXT } from "../../lang";
 import type { MetricsReader } from "../../ports/MetricsPort";
 
 export class PhaserDebugOverlay {
@@ -29,11 +30,11 @@ export class PhaserDebugOverlay {
     const snapshot = this.metrics.getSnapshot();
     this.text.setText(
       [
-        "Debug",
-        `dt: ${snapshot.dtMs.toFixed(1)} ms`,
-        `p95 dt: ${snapshot.p95DtMs.toFixed(1)} ms`,
-        `enemies: ${snapshot.enemies}`,
-        `bullets: ${snapshot.bullets}`,
+        TEXT.debug.title,
+        TEXT.debug.delta(snapshot.dtMs.toFixed(1)),
+        TEXT.debug.p95Delta(snapshot.p95DtMs.toFixed(1)),
+        TEXT.debug.enemies(snapshot.enemies),
+        TEXT.debug.bullets(snapshot.bullets),
       ].join("\n"),
     );
   }
