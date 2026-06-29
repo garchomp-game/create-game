@@ -43,6 +43,7 @@ const weaponSimulationSchema = z
     projectileCount: z.number().int().positive(),
     spreadAngle: nonNegativeNumber,
     pierceCount: z.number().int().positive(),
+    ricochetCount: z.number().int().nonnegative(),
   })
   .strict();
 

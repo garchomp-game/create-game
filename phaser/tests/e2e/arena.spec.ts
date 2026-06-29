@@ -95,6 +95,41 @@ test("renders canvas and accepts movement and shooting input", async ({ page }) 
   expect(consoleErrors).toEqual([]);
 });
 
+test("auto-fires after mouse aim is established during play", async ({ page }) => {
+  await page.goto("/");
+  const canvas = page.locator("canvas");
+  await expect(canvas).toHaveCount(1);
+
+  await page.evaluate(() => window.__ARENA_DEBUG__?.restart());
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "playing",
+  );
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().bulletCount)).toBe(0);
+
+  const box = await canvas.evaluate((node) => {
+    const canvasElement = node as HTMLCanvasElement;
+    const rect = canvasElement.getBoundingClientRect();
+    return {
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
+      canvasWidth: canvasElement.width,
+      canvasHeight: canvasElement.height,
+    };
+  });
+  await page.mouse.move(
+    box.left + (640 / box.canvasWidth) * box.width,
+    box.top + (270 / box.canvasHeight) * box.height,
+  );
+
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().bulletCount))
+    .toBeGreaterThan(0);
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().stats.shotsFired))
+    .toBeGreaterThan(0);
+});
+
 test("can force game over and restart with R", async ({ page }) => {
   await page.goto("/");
   const canvas = page.locator("canvas");
@@ -261,8 +296,8 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   const runExport = await page.evaluate(() => window.__ARENA_DEBUG__?.getRunExport());
   expect(runExport).toBeTruthy();
   expect(runExport?.game).toBe("arena-core-phaser");
-  expect(runExport?.appVersion).toBe("0.3");
-  expect(runExport?.configVersion).toBe("phaser-v0.3-healing-pickup-foundation");
+  expect(runExport?.appVersion).toBe("0.4");
+  expect(runExport?.configVersion).toBe("phaser-v0.4-obstacle-layout-foundation");
   expect(runExport?.buildCommit).toBe("unknown");
   expect(runExport?.seed).toBe(20260619);
   expect(runExport?.resultSummary.elapsed).toBeCloseTo(61, 1);

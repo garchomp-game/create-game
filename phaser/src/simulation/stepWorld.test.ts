@@ -61,6 +61,7 @@ function createTestBullet(
     lifetime: definition.lifetime,
     damage: definition.damage,
     pierceRemaining: definition.pierceCount,
+    ricochetRemaining: definition.ricochetCount,
     hitEnemyIds: [],
     ...overrides,
   };
@@ -156,6 +157,7 @@ describe("stepWorld", () => {
     expect(world.stats.shotsFired).toBe(1);
     expect(world.stats.weaponMetrics.pulse.shotsFired).toBe(1);
     expect(world.stats.weaponMetrics.pulse.projectilesFired).toBe(1);
+    expect(world.bullets[0]?.ricochetRemaining).toBe(GAME_CONFIG.weapons.pulse.ricochetCount);
     expect(result.events).toContainEqual(
       expect.objectContaining({
         type: "shot.fired",
@@ -347,6 +349,43 @@ describe("stepWorld", () => {
 
     expect(world.player.position.x).toBe(obstacle.x - GAME_CONFIG.player.radius);
     expect(world.player.position.y).toBeGreaterThan(startY);
+  });
+
+  it("ricochets player bullets once when they hit an obstacle", () => {
+    const world = createWorld(GAME_CONFIG);
+    const obstacle = GAME_CONFIG.obstacles[0]!;
+    const radius = GAME_CONFIG.weapons.pulse.radius;
+    world.bullets.push(
+      createTestBullet("pulse", {
+        position: { x: obstacle.x - radius - 1, y: obstacle.y + obstacle.height / 2 },
+        velocity: { x: 120, y: 0 },
+        ricochetRemaining: 1,
+      }),
+    );
+
+    stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+
+    expect(world.bullets).toHaveLength(1);
+    expect(world.bullets[0]?.velocity.x).toBeLessThan(0);
+    expect(world.bullets[0]?.position.x).toBeLessThan(obstacle.x);
+    expect(world.bullets[0]?.ricochetRemaining).toBe(0);
+  });
+
+  it("removes player bullets that hit an obstacle with no ricochets remaining", () => {
+    const world = createWorld(GAME_CONFIG);
+    const obstacle = GAME_CONFIG.obstacles[0]!;
+    const radius = GAME_CONFIG.weapons.pulse.radius;
+    world.bullets.push(
+      createTestBullet("pulse", {
+        position: { x: obstacle.x - radius - 1, y: obstacle.y + obstacle.height / 2 },
+        velocity: { x: 120, y: 0 },
+        ricochetRemaining: 0,
+      }),
+    );
+
+    stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+
+    expect(world.bullets).toHaveLength(0);
   });
 
   it("kills an enemy with a bullet and awards score", () => {

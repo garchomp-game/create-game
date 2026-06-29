@@ -22,8 +22,8 @@ description: 現在のチケット一覧と優先順位。
 
 | Ticket | Title | Purpose |
 | --- | --- | --- |
-| `PH-V04-005` | Obstacle Layout and Projectile Interaction Review | 壁、障害物、弾の扱いを整理する |
-| `PH-V04-001` | Auto-Fire With Mouse Aim Prototype | 射撃操作負荷を下げる案を検証する |
+| `PH-V04-005` | Obstacle Layout and Projectile Interaction Review | In progress: 中央障害物削除、ricochet data model追加 |
+| `PH-V04-001` | Auto-Fire With Mouse Aim Prototype | In progress: adapter-level auto-fire prototype追加 |
 | `PH-V04-002` | Defensive Dash Binding Spike | Space / Shift / Ctrlのdash候補を比較する |
 | `PH-V04-003` | Right-Click Active Skill Input Split | 右クリックskillと入力分離を検証する |
 | `PH-V04-004` | Space Defensive Action Design | Spaceの新しい役割を決める |

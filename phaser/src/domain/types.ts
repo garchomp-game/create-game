@@ -59,6 +59,7 @@ export type WeaponSimulationConfig = {
   projectileCount: number;
   spreadAngle: number;
   pierceCount: number;
+  ricochetCount: number;
 };
 
 export type PickupSimulationConfig = {
@@ -207,6 +208,7 @@ export type Bullet = CircleBody & {
   lifetime: number;
   damage: number;
   pierceRemaining: number;
+  ricochetRemaining: number;
   hitEnemyIds: string[];
 };
 

@@ -21,16 +21,16 @@ const balanceProbeSeeds = [20260619, 20260620, 20260621, 20260622, 20260623];
 const balanceBaseline = {
   noInputSurvivalP50: 6.77,
   fixedAimShootSurvivalP50: 6.77,
-  kiteCollectSurvivalP50: 119.3,
+  kiteCollectSurvivalP50: 161.77,
   kiteCollectKillsPerMinuteP50: 165.47,
   kiteCollectScorePerMinuteP50: 2269.74,
-  kiteCollectFirstDamageP50: 84.23,
+  kiteCollectFirstDamageP50: 101.57,
   kiteCollectFirstUpgradeP50: 7.13,
   kiteCollectWaveReachedP50: 90,
   kiteCollectMaxEnemiesMax: 34,
   kiteCollectMaxBulletsMax: 32,
   kiteCollectHpRecoveredP50: 88,
-  kiteCollectHealPickupsCollectedP50: 22,
+  kiteCollectHealPickupsCollectedP50: 29,
   kiteCollectEffectiveHealPickupsCollectedP50: 8,
 };
 
@@ -98,7 +98,7 @@ describe("balance simulation", () => {
       true,
     );
 
-    // v0.3 Healing Pickup Foundation balance baseline. These probes are regression sentries,
+    // v0.4 Obstacle Layout balance baseline. These probes are regression sentries,
     // not a claim that the input models are correct human play.
     expectWithinBaseline(noInput.survivalSeconds.p50, balanceBaseline.noInputSurvivalP50);
     expectWithinBaseline(

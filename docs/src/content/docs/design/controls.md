@@ -26,6 +26,28 @@ description: 操作性、active skill、dash、auto-fireの検討。
 - `PH-V04-003 Right-Click Active Skill Input Split`
 - `PH-V04-004 Space Defensive Action Design`
 
+## Auto-Fire Prototype
+
+v0.4 first passでは、Phaser入力アダプタ上でauto-fireを有効化します。
+
+現在の仕様:
+
+- playing中にmouse aimが確立されたら、自動で射撃する。
+- title、pause、upgrade select、game over中のmouse movementはauto-fire照準として保持しない。
+- left click / Space shootは従来通り残す。
+- simulationの `InputSnapshot.shootHeld` 境界は維持する。
+
+意図:
+
+- `WASD + mouse aim + hold shoot` の同時操作負荷を下げる。
+- mouseはaim専用に近づける。
+- Spaceを将来のdash / defensive action候補へ空ける。
+
+注意:
+
+- balanceProbeはsimulation入力モデルであり、adapter-level auto-fireの人間操作改善を直接表さない。
+- manual playtestで早死に、射撃過多、upgrade選択中の誤射がないか確認する。
+
 ## 方針
 
 最初から完成形を決めず、prototypeで比較します。

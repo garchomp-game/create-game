@@ -73,7 +73,6 @@ export class PhaserInputAdapter {
       this.hasPointerAim = true;
     });
     scene.input.on(Phaser.Input.Events.POINTER_DOWN, () => {
-      this.hasPointerAim = true;
       this.pointerPressed = true;
     });
   }
@@ -82,6 +81,11 @@ export class PhaserInputAdapter {
     const pointer = this.scene.input.activePointer;
     const pointerPressed = this.pointerPressed;
     this.pointerPressed = false;
+    if (status !== "playing") {
+      this.hasPointerAim = false;
+    }
+    const pointerAimsThisFrame =
+      this.hasPointerAim || (status === "playing" && (pointer.isDown || pointerPressed));
     const menuAction = pointerPressed
       ? findMenuActionAt(
           status,
@@ -108,9 +112,12 @@ export class PhaserInputAdapter {
 
     return {
       move: this.readMove(),
-      aimWorld: this.hasPointerAim ? { x: pointer.x, y: pointer.y } : null,
+      aimWorld: pointerAimsThisFrame ? { x: pointer.x, y: pointer.y } : null,
       startPressed,
-      shootHeld: this.keys.shoot.isDown || pointer.isDown,
+      shootHeld:
+        this.keys.shoot.isDown ||
+        pointer.isDown ||
+        (status === "playing" && this.hasPointerAim),
       restartPressed:
         Phaser.Input.Keyboard.JustDown(this.keys.restart) || menuAction === "restart",
       pausePressed:
@@ -136,6 +143,7 @@ export class PhaserInputAdapter {
 
   clearTransientInput(): void {
     this.pointerPressed = false;
+    this.hasPointerAim = false;
   }
 
   private readMove(): Vec2 {

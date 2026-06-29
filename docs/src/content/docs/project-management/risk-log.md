@@ -12,6 +12,8 @@ description: 現在の主要リスクと扱い。
 対応:
 
 - `PH-V04-005` で単独ticketとして扱う。
+- v0.4 first passでは中央障害物を削除し、ricochet data modelを追加した。
+- 通常武器のricochet常時付与は強すぎる可能性があるため保留。
 
 ### Control Load
 

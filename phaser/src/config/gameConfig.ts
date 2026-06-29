@@ -1,7 +1,7 @@
 import type { GameConfig } from "../domain/types";
 import { parseSimulationConfig, parseViewConfig } from "./configSchema";
 
-export const SIMULATION_CONFIG_VERSION = "phaser-v0.3-healing-pickup-foundation";
+export const SIMULATION_CONFIG_VERSION = "phaser-v0.4-obstacle-layout-foundation";
 
 const rawSimulationConfig = {
   seed: 20260619,
@@ -28,6 +28,7 @@ const rawSimulationConfig = {
       projectileCount: 1,
       spreadAngle: 0.12,
       pierceCount: 1,
+      ricochetCount: 0,
     },
     spread: {
       radius: 4,
@@ -38,6 +39,7 @@ const rawSimulationConfig = {
       projectileCount: 3,
       spreadAngle: 0.52,
       pierceCount: 1,
+      ricochetCount: 0,
     },
     pierce: {
       radius: 4,
@@ -48,6 +50,7 @@ const rawSimulationConfig = {
       projectileCount: 1,
       spreadAngle: 0,
       pierceCount: 3,
+      ricochetCount: 0,
     },
   },
   enemies: {
@@ -231,7 +234,6 @@ const rawSimulationConfig = {
     { id: "block-b", x: 620, y: 150, width: 120, height: 32 },
     { id: "block-c", x: 220, y: 360, width: 120, height: 32 },
     { id: "block-d", x: 620, y: 360, width: 120, height: 32 },
-    { id: "block-e", x: 444, y: 220, width: 72, height: 32 },
   ],
 };
 

@@ -27,6 +27,7 @@ export default defineConfig({
           label: "Design",
           items: [
             { label: "Controls", slug: "design/controls" },
+            { label: "Obstacles and Projectiles", slug: "design/obstacles-and-projectiles" },
             { label: "Healing Pickups", slug: "design/healing-pickups" },
             { label: "Item System", slug: "design/item-system" },
             { label: "Stages and Equipment", slug: "design/stages-and-equipment" }

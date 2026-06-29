@@ -31,6 +31,7 @@ export function updateShooting(
       lifetime: weapon.lifetime,
       damage: weapon.damage,
       pierceRemaining: pierceCount,
+      ricochetRemaining: weapon.ricochetCount,
       hitEnemyIds: [],
     };
     world.bullets.push(bullet);

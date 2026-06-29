@@ -45,6 +45,13 @@ v0.3 candidateに含めないもの:
 
 v0.4では、item追加より先にプレイ体験の土台を整えます。
 
+着手済み:
+
+- 中央障害物を削除し、arena中央の圧迫感を下げた。
+- player bullet ricochetのdata modelとsimulation処理を追加した。
+- 通常武器のricochetは初期値0のままにし、upgrade/modifier候補として残した。
+- playing中のmouse aimでauto-fireするadapter-level prototypeを追加した。
+
 優先順:
 
 1. `PH-V04-005 Obstacle Layout and Projectile Interaction Review`

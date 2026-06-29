@@ -54,6 +54,21 @@ describe("config schemas", () => {
     ).toThrow();
   });
 
+  it("rejects invalid weapon ricochet counts", () => {
+    expect(() =>
+      parseSimulationConfig({
+        ...SIMULATION_CONFIG,
+        weapons: {
+          ...SIMULATION_CONFIG.weapons,
+          pulse: {
+            ...SIMULATION_CONFIG.weapons.pulse,
+            ricochetCount: -1,
+          },
+        },
+      }),
+    ).toThrow();
+  });
+
   it("rejects invalid upgrade rank and weight values", () => {
     expect(() =>
       parseSimulationConfig({

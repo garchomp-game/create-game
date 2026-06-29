@@ -567,7 +567,7 @@ export class ArenaScene extends Phaser.Scene {
     return {
       capturedAt: new Date().toISOString(),
       game: "arena-core-phaser" as const,
-      appVersion: "0.3",
+      appVersion: "0.4",
       configVersion: SIMULATION_CONFIG_VERSION,
       buildCommit: this.getBuildCommit(),
       seed: this.simulationConfig.seed,
