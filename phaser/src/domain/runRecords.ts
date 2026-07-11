@@ -1,13 +1,16 @@
 import { z } from "zod";
 import { UPGRADE_IDS, WEAPON_TYPE_IDS } from "./types";
 import type {
+  CapstoneRunStats,
+  EncounterRunStats,
   PlayerDamageSource,
   RunResultSummary,
   UpgradeId,
+  UpgradeSelectionRunStat,
   WeaponTypeId,
 } from "./types";
 
-export const RUN_RECORD_SCHEMA_VERSION = 1 as const;
+export const RUN_RECORD_SCHEMA_VERSION = 2 as const;
 export const RUN_HISTORY_LIMIT = 50;
 export const RUN_RANKING_LIMIT = 10;
 
@@ -72,6 +75,10 @@ export type RunRecord = RunComparisonKey & {
   hpRecovered: number;
   upgradesChosen: number;
   upgradeRanks: Record<UpgradeId, number>;
+  upgradeSelections: UpgradeSelectionRunStat[];
+  buildCompletedAt: number | null;
+  capstoneMetrics: CapstoneRunStats;
+  encounterMetrics: EncounterRunStats;
 };
 
 export type CreateRunRecordInput = {
@@ -79,6 +86,9 @@ export type CreateRunRecordInput = {
   capturedAt: string;
   summary: RunResultSummary;
   upgradeRanks: Record<UpgradeId, number>;
+  upgradeSelections: UpgradeSelectionRunStat[];
+  buildCompletedAt: number | null;
+  encounterMetrics?: EncounterRunStats;
 };
 
 const damageSourceSchema = z.discriminatedUnion("kind", [
@@ -99,7 +109,64 @@ const upgradeRanksSchema = z.object(
   ) as Record<UpgradeId, z.ZodNumber>,
 );
 
-export const runRecordSchema: z.ZodType<RunRecord> = z.object({
+const legacyUpgradeRanksSchema = z.object({
+  rapidFire: z.number().int().nonnegative(),
+  swiftStep: z.number().int().nonnegative(),
+  vitalCore: z.number().int().nonnegative(),
+  overdriveRounds: z.number().int().nonnegative(),
+  splitShot: z.number().int().nonnegative(),
+  piercingRounds: z.number().int().nonnegative(),
+});
+
+const upgradeSelectionSchema = z.object({
+  elapsed: z.number().nonnegative(),
+  level: z.number().int().positive(),
+  upgradeId: z.enum(UPGRADE_IDS),
+  rank: z.number().int().positive(),
+});
+
+const capstoneMetricsSchema = z.object({
+  upgradeId: z.literal("pulseRicochet"),
+  acquiredAt: z.number().nonnegative().nullable(),
+  activations: z.number().int().nonnegative(),
+  followUpHits: z.number().int().nonnegative(),
+  followUpUniqueEnemiesHit: z.number().int().nonnegative(),
+  maxFollowUpUniqueEnemiesPerVolley: z.number().int().nonnegative(),
+});
+
+const encounterMovementWindowSchema = z.object({
+  distance: z.number().nonnegative(),
+  vector: z.object({ x: z.number().finite(), y: z.number().finite() }),
+});
+
+const enemyTypeCountsSchema = z.object({
+  chaser: z.number().int().nonnegative(),
+  brute: z.number().int().nonnegative(),
+  fast: z.number().int().nonnegative(),
+  ranged: z.number().int().nonnegative(),
+});
+
+const encounterMetricsSchema = z.object({
+  scheduledAt: z.number().nonnegative().nullable(),
+  warningStartedAt: z.number().nonnegative().nullable(),
+  activeStartedAt: z.number().nonnegative().nullable(),
+  recoveryStartedAt: z.number().nonnegative().nullable(),
+  completedAt: z.number().nonnegative().nullable(),
+  rangedEnemiesSpawned: z.number().int().nonnegative(),
+  damageTakenDuringActive: z.number().nonnegative(),
+  killsDuringActiveByEnemyType: enemyTypeCountsSchema,
+  movement: z.object({
+    baseline: encounterMovementWindowSchema,
+    warning: encounterMovementWindowSchema,
+    active: encounterMovementWindowSchema,
+    recovery: encounterMovementWindowSchema,
+  }),
+  contractOfferedAt: z.number().nonnegative().nullable(),
+  contractSelectedAt: z.number().nonnegative().nullable(),
+  contractChoice: z.enum(["standard", "overdrive"]).nullable(),
+});
+
+const runRecordV2Schema = z.object({
   schemaVersion: z.literal(RUN_RECORD_SCHEMA_VERSION),
   id: z.string().min(1),
   profileId: z.string().min(1),
@@ -138,4 +205,67 @@ export const runRecordSchema: z.ZodType<RunRecord> = z.object({
   hpRecovered: z.number().nonnegative(),
   upgradesChosen: z.number().int().nonnegative(),
   upgradeRanks: upgradeRanksSchema,
+  upgradeSelections: z.array(upgradeSelectionSchema),
+  buildCompletedAt: z.number().nonnegative().nullable(),
+  capstoneMetrics: capstoneMetricsSchema,
+  encounterMetrics: encounterMetricsSchema.default(createEmptyEncounterMetrics),
 });
+
+const runRecordV1Schema = runRecordV2Schema
+  .omit({
+    schemaVersion: true,
+    upgradeRanks: true,
+    upgradeSelections: true,
+    buildCompletedAt: true,
+    capstoneMetrics: true,
+  })
+  .extend({
+    schemaVersion: z.literal(1),
+    upgradeRanks: legacyUpgradeRanksSchema,
+  });
+
+export const runRecordSchema: z.ZodType<RunRecord> = z.union([
+  runRecordV2Schema,
+  runRecordV1Schema.transform((record) => ({
+    ...record,
+    schemaVersion: RUN_RECORD_SCHEMA_VERSION,
+    upgradeRanks: { ...record.upgradeRanks, pulseRicochet: 0 },
+    upgradeSelections: [],
+    buildCompletedAt: null,
+    capstoneMetrics: createEmptyCapstoneMetrics(),
+    encounterMetrics: createEmptyEncounterMetrics(),
+  })),
+]);
+
+function createEmptyCapstoneMetrics(): CapstoneRunStats {
+  return {
+    upgradeId: "pulseRicochet",
+    acquiredAt: null,
+    activations: 0,
+    followUpHits: 0,
+    followUpUniqueEnemiesHit: 0,
+    maxFollowUpUniqueEnemiesPerVolley: 0,
+  };
+}
+
+function createEmptyEncounterMetrics(): EncounterRunStats {
+  return {
+    scheduledAt: null,
+    warningStartedAt: null,
+    activeStartedAt: null,
+    recoveryStartedAt: null,
+    completedAt: null,
+    rangedEnemiesSpawned: 0,
+    damageTakenDuringActive: 0,
+    killsDuringActiveByEnemyType: { chaser: 0, brute: 0, fast: 0, ranged: 0 },
+    movement: {
+      baseline: { distance: 0, vector: { x: 0, y: 0 } },
+      warning: { distance: 0, vector: { x: 0, y: 0 } },
+      active: { distance: 0, vector: { x: 0, y: 0 } },
+      recovery: { distance: 0, vector: { x: 0, y: 0 } },
+    },
+    contractOfferedAt: null,
+    contractSelectedAt: null,
+    contractChoice: null,
+  };
+}

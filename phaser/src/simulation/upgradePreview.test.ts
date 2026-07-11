@@ -39,10 +39,10 @@ describe("createUpgradePreview", () => {
     });
   });
 
-  it("previews projectile speed, count, and pierce changes", () => {
+  it("previews projectile speed, count, and hit capacity changes", () => {
     const world = createWorld(SIMULATION_CONFIG);
     world.runtime.projectileCountBonus = 1;
-    world.runtime.pierceBonus = 1;
+    world.runtime.hitCapacityBonus = 1;
 
     expect(createUpgradePreview(world, SIMULATION_CONFIG, "overdriveRounds")).toEqual({
       stat: "shotSpeed",
@@ -57,7 +57,7 @@ describe("createUpgradePreview", () => {
       unit: null,
     });
     expect(createUpgradePreview(world, SIMULATION_CONFIG, "piercingRounds")).toEqual({
-      stat: "pierce",
+      stat: "hitCapacity",
       before: "2",
       after: "3",
       unit: null,
@@ -84,7 +84,8 @@ describe("createUpgradePreview", () => {
           shotSpeed: "弾速",
           maxHp: "最大HP",
           projectiles: "弾数",
-          pierce: "貫通",
+          hitCapacity: "命中可能数",
+          ricochets: "跳弾回数",
         },
         { perSecond: "/秒" },
       ),

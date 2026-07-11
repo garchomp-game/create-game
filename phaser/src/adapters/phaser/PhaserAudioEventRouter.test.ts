@@ -42,6 +42,7 @@ describe("PhaserAudioEventRouter", () => {
     const router = new PhaserAudioEventRouter(scene);
     const shot = {
       type: "shot.fired" as const,
+      volleyId: 1,
       bulletIds: ["bullet-1"],
       weaponType: "pulse" as const,
       position: { x: 0, y: 0 },

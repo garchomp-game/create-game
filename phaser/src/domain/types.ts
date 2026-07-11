@@ -5,7 +5,14 @@ export type Vec2 = {
 
 export type RandomSource = () => number;
 
-export type GameStatus = "title" | "playing" | "paused" | "upgradeSelect" | "gameOver";
+export type GameStatus =
+  | "title"
+  | "weaponSelect"
+  | "playing"
+  | "paused"
+  | "upgradeSelect"
+  | "contractSelect"
+  | "gameOver";
 
 export const ENEMY_TYPE_IDS = ["chaser", "brute", "fast", "ranged"] as const;
 export type EnemyTypeId = (typeof ENEMY_TYPE_IDS)[number];
@@ -21,8 +28,49 @@ export const UPGRADE_IDS = [
   "overdriveRounds",
   "splitShot",
   "piercingRounds",
+  "pulseRicochet",
 ] as const;
 export type UpgradeId = (typeof UPGRADE_IDS)[number];
+
+export const UPGRADE_CATEGORIES = [
+  "weapon",
+  "mobility",
+  "survival",
+  "support",
+  "capstone",
+] as const;
+export type UpgradeCategory = (typeof UPGRADE_CATEGORIES)[number];
+
+export type SimulationFeatures = {
+  pulseRicochet: boolean;
+  rangedSurge: boolean;
+  endlessContract: boolean;
+};
+
+export const CONTRACT_CHOICE_IDS = ["standard", "overdrive"] as const;
+export type ContractChoiceId = (typeof CONTRACT_CHOICE_IDS)[number];
+
+export type RangedSurgeSimulationConfig = {
+  minStart: number;
+  maxStart: number;
+  warningDuration: number;
+  activeDuration: number;
+  recoveryDuration: number;
+  spawnIntervalMultiplier: number;
+  spawnBudget: number;
+  enemyWeights: Partial<Record<EnemyTypeId, number>>;
+};
+
+export type EndlessContractSimulationConfig = {
+  offerAt: number;
+  enemySpeedMultiplier: number;
+  scoreMultiplier: number;
+};
+
+export type EncounterSimulationConfig = {
+  rangedSurge: RangedSurgeSimulationConfig;
+  contract: EndlessContractSimulationConfig;
+};
 
 export type Difficulty = {
   spawnInterval: number;
@@ -58,7 +106,7 @@ export type WeaponSimulationConfig = {
   damage: number;
   projectileCount: number;
   spreadAngle: number;
-  pierceCount: number;
+  hitCapacity: number;
   ricochetCount: number;
 };
 
@@ -82,6 +130,7 @@ export type PickupSimulationConfig = {
 export type LevelingSimulationConfig = {
   baseXp: number;
   growth: number;
+  maxXp: number;
   upgradeChoiceCount: number;
 };
 
@@ -91,15 +140,24 @@ export type UpgradeEffect =
   | { type: "projectileSpeedMultiplier"; multiplier: number }
   | { type: "maxHp"; amount: number }
   | { type: "projectileCount"; amount: number }
-  | { type: "pierce"; amount: number };
+  | { type: "hitCapacity"; amount: number }
+  | { type: "ricochet"; amount: number };
+
+export type UpgradeRequirements = {
+  weaponIds?: WeaponTypeId[];
+  minimumCategoryRanks?: Partial<Record<UpgradeCategory, number>>;
+  featureFlag?: keyof SimulationFeatures;
+};
 
 export type UpgradeDefinition = {
   id: UpgradeId;
   title: string;
   description: string;
+  category: UpgradeCategory;
   maxRank: number;
   weight: number;
   effect: UpgradeEffect;
+  requirements?: UpgradeRequirements;
 };
 
 export type RangedEnemySimulationConfig = {
@@ -133,6 +191,7 @@ export type Obstacle = {
 
 export type SimulationConfig = {
   seed: number;
+  features: SimulationFeatures;
   arena: ArenaSimulationConfig;
   player: PlayerSimulationConfig;
   defaultWeapon: WeaponTypeId;
@@ -142,6 +201,7 @@ export type SimulationConfig = {
   pickup: PickupSimulationConfig;
   leveling: LevelingSimulationConfig;
   upgrades: Record<UpgradeId, UpgradeDefinition>;
+  encounter: EncounterSimulationConfig;
   obstacles: Obstacle[];
 };
 
@@ -203,12 +263,14 @@ export type Player = CircleBody & {
 
 export type Bullet = CircleBody & {
   id: string;
+  volleyId: number;
   weaponType: WeaponTypeId;
   velocity: Vec2;
   lifetime: number;
   damage: number;
-  pierceRemaining: number;
+  hitsRemaining: number;
   ricochetRemaining: number;
+  ricochetsUsed: number;
   hitEnemyIds: string[];
 };
 
@@ -256,8 +318,30 @@ export type ProgressionState = {
   level: number;
   xp: number;
   xpToNext: number;
+  buildCompletedAt: number | null;
   pendingUpgradeChoices: UpgradeId[];
   upgradeRanks: Record<UpgradeId, number>;
+};
+
+export type RangedSurgePhase = "pending" | "warning" | "active" | "recovery" | "completed";
+
+export type EncounterState = {
+  rangedSurge: {
+    phase: RangedSurgePhase;
+    scheduledAt: number | null;
+    warningStartedAt: number | null;
+    activeStartedAt: number | null;
+    recoveryStartedAt: number | null;
+    completedAt: number | null;
+  };
+  contract: {
+    status: "pending" | "offered" | "selected";
+    choice: ContractChoiceId | null;
+    offeredAt: number | null;
+    selectedAt: number | null;
+    enemySpeedMultiplier: number;
+    scoreMultiplier: number;
+  };
 };
 
 export type RuntimeModifiers = {
@@ -266,7 +350,8 @@ export type RuntimeModifiers = {
   projectileSpeedMultiplier: number;
   maxHpBonus: number;
   projectileCountBonus: number;
-  pierceBonus: number;
+  hitCapacityBonus: number;
+  ricochetBonus: number;
   healDropMissCount: number;
   healDropRollIndex: number;
 };
@@ -276,6 +361,74 @@ export type WeaponRunStats = {
   projectilesFired: number;
   hits: number;
   kills: number;
+};
+
+export type WeaponComparisonRunStats = {
+  hitVolleys: number;
+  uniqueEnemiesHit: number;
+  maxUniqueEnemiesHitPerVolley: number;
+  hitsByEnemyType: Record<EnemyTypeId, number>;
+  killsByEnemyType: Record<EnemyTypeId, number>;
+};
+
+export type UpgradeOfferRunStat = {
+  elapsed: number;
+  level: number;
+  choices: UpgradeId[];
+  availableUpgradeIds: UpgradeId[];
+  lockedUpgradeIds: UpgradeId[];
+  maxedUpgradeIds: UpgradeId[];
+};
+
+export type UpgradeSelectionRunStat = {
+  elapsed: number;
+  level: number;
+  upgradeId: UpgradeId;
+  rank: number;
+};
+
+export type ProgressionRunStats = {
+  firstOfferAt: number | null;
+  firstSelectionAt: number | null;
+  lastSelectionAt: number | null;
+  buildCompletedAt: number | null;
+  longestMeaningfulChoiceGap: number;
+  offers: UpgradeOfferRunStat[];
+  selections: UpgradeSelectionRunStat[];
+};
+
+export type CapstoneRunStats = {
+  upgradeId: "pulseRicochet";
+  acquiredAt: number | null;
+  activations: number;
+  followUpHits: number;
+  followUpUniqueEnemiesHit: number;
+  maxFollowUpUniqueEnemiesPerVolley: number;
+};
+
+export type EncounterMovementWindow = {
+  distance: number;
+  vector: Vec2;
+};
+
+export type EncounterRunStats = {
+  scheduledAt: number | null;
+  warningStartedAt: number | null;
+  activeStartedAt: number | null;
+  recoveryStartedAt: number | null;
+  completedAt: number | null;
+  rangedEnemiesSpawned: number;
+  damageTakenDuringActive: number;
+  killsDuringActiveByEnemyType: Record<EnemyTypeId, number>;
+  movement: {
+    baseline: EncounterMovementWindow;
+    warning: EncounterMovementWindow;
+    active: EncounterMovementWindow;
+    recovery: EncounterMovementWindow;
+  };
+  contractOfferedAt: number | null;
+  contractSelectedAt: number | null;
+  contractChoice: ContractChoiceId | null;
 };
 
 export type PlayerDamageSource =
@@ -300,10 +453,33 @@ export type RunStats = {
   healPickupsCollected: number;
   effectiveHealPickupsCollected: number;
   upgradesChosen: number;
+  movementDistance: number;
+  progressionMetrics: ProgressionRunStats;
+  capstoneMetrics: CapstoneRunStats;
+  encounterMetrics: EncounterRunStats;
   weaponMetrics: Record<WeaponTypeId, WeaponRunStats>;
+  weaponComparisonMetrics: Record<WeaponTypeId, WeaponComparisonRunStats>;
 };
 
-export type RunResultSummary = Omit<RunStats, "damageTakenBySource" | "lastDamageSource"> & {
+export type ActiveVolleyAnalytics = {
+  weaponType: WeaponTypeId;
+  enemyIds: string[];
+  postRicochetEnemyIds: string[];
+};
+
+export type RunAnalyticsState = {
+  activeVolleys: Record<string, ActiveVolleyAnalytics>;
+};
+
+export type RunResultSummary = Omit<
+  RunStats,
+  | "damageTakenBySource"
+  | "lastDamageSource"
+  | "movementDistance"
+  | "progressionMetrics"
+  | "encounterMetrics"
+  | "weaponComparisonMetrics"
+> & {
   elapsed: number;
   score: number;
   hp: number;
@@ -318,6 +494,8 @@ export type WorldState = {
   progression: ProgressionState;
   runtime: RuntimeModifiers;
   stats: RunStats;
+  analytics: RunAnalyticsState;
+  encounter: EncounterState;
   player: Player;
   bullets: Bullet[];
   enemies: Enemy[];
@@ -325,6 +503,7 @@ export type WorldState = {
   pickups: Pickup[];
   obstacles: Obstacle[];
   nextBulletId: number;
+  nextVolleyId: number;
   nextEnemyId: number;
   nextEnemyProjectileId: number;
   nextPickupId: number;
@@ -339,6 +518,7 @@ export type InputSnapshot = {
   pausePressed: boolean;
   quitToTitlePressed: boolean;
   upgradeChoicePressed: number | null;
+  contractChoicePressed?: number | null;
 };
 
 export type GameEvent =
@@ -349,6 +529,7 @@ export type GameEvent =
   | { type: "game.resumed"; elapsed: number }
   | {
       type: "shot.fired";
+      volleyId: number;
       bulletIds: string[];
       weaponType: WeaponTypeId;
       position: Vec2;
@@ -357,15 +538,30 @@ export type GameEvent =
     }
   | {
       type: "enemy.hit";
+      bulletId: string;
+      volleyId: number;
       enemyId: string;
       enemyType: EnemyTypeId;
       weaponType: WeaponTypeId;
+      ricochetsUsed: number;
       damage: number;
       hpAfter: number;
+    }
+  | {
+      type: "bullet.ricocheted";
+      bulletId: string;
+      volleyId: number;
+      weaponType: WeaponTypeId;
+      obstacleId: string;
+      position: Vec2;
+      ricochetsUsed: number;
+      ricochetsRemaining: number;
     }
   | { type: "enemy.spawned"; enemyId: string; enemyType: EnemyTypeId; position: Vec2 }
   | {
       type: "enemy.killed";
+      bulletId: string;
+      volleyId: number;
       enemyId: string;
       enemyType: EnemyTypeId;
       weaponType: WeaponTypeId;
@@ -409,8 +605,29 @@ export type GameEvent =
     }
   | { type: "pickup.expired"; pickupId: string; pickupKind: "heal" }
   | { type: "player.level_up"; level: number; choices: UpgradeId[] }
-  | { type: "upgrade.offered"; level: number; choices: UpgradeId[] }
+  | {
+      type: "upgrade.offered";
+      level: number;
+      choices: UpgradeId[];
+      availableUpgradeIds: UpgradeId[];
+      lockedUpgradeIds: UpgradeId[];
+      maxedUpgradeIds: UpgradeId[];
+    }
   | { type: "upgrade.selected"; upgradeId: UpgradeId; rank: number; level: number; effect: UpgradeEffect }
+  | { type: "build.completed"; level: number; elapsed: number }
+  | { type: "encounter.scheduled"; encounterId: "rangedSurge"; scheduledAt: number }
+  | { type: "encounter.warning.started"; encounterId: "rangedSurge"; elapsed: number }
+  | { type: "encounter.started"; encounterId: "rangedSurge"; elapsed: number }
+  | { type: "encounter.recovery.started"; encounterId: "rangedSurge"; elapsed: number }
+  | { type: "encounter.completed"; encounterId: "rangedSurge"; elapsed: number }
+  | { type: "contract.offered"; elapsed: number }
+  | {
+      type: "contract.selected";
+      choice: ContractChoiceId;
+      elapsed: number;
+      enemySpeedMultiplier: number;
+      scoreMultiplier: number;
+    }
   | {
       type: "enemy.projectile.fired";
       projectileId: string;

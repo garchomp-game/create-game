@@ -94,6 +94,22 @@ test("matches the fixed title frame", async ({ page }) => {
   });
 });
 
+test("matches the starting weapon selection frame", async ({ page }) => {
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+
+  await moveMouseToCanvasLogical(page, 480, 307);
+  await page.mouse.down();
+  await page.mouse.up();
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "weaponSelect",
+  );
+
+  await expect(canvas).toHaveScreenshot("arena-weapon-select.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
 test("matches the settings frame", async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem(
@@ -346,6 +362,48 @@ test("matches the fixed upgrade selection frame", async ({ page }) => {
   });
 
   await expect(canvas).toHaveScreenshot("arena-upgrade-select.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("matches the ranged surge warning frame", async ({ page }) => {
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
+    debug?.restart();
+    debug?.step({}, 1 / 60);
+    const scheduledAt = debug?.getSnapshot().encounter.rangedSurge.scheduledAt;
+    if (scheduledAt === null || scheduledAt === undefined) throw new Error("Encounter was not scheduled.");
+    debug?.setElapsed(scheduledAt - 5);
+    debug?.step({}, 1 / 60);
+    debug?.setPaused(true);
+  });
+
+  await expect(canvas).toHaveScreenshot("arena-ranged-surge-warning.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("matches the endless contract selection frame", async ({ page }) => {
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
+    debug?.restart();
+    debug?.step({}, 1 / 60);
+    const scheduledAt = debug?.getSnapshot().encounter.rangedSurge.scheduledAt;
+    if (scheduledAt === null || scheduledAt === undefined) throw new Error("Encounter was not scheduled.");
+    debug?.setElapsed(scheduledAt + 27);
+    debug?.step({}, 1 / 60);
+    debug?.setElapsed(240);
+    debug?.step({}, 1 / 60);
+  });
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "contractSelect",
+  );
+
+  await expect(canvas).toHaveScreenshot("arena-endless-contract.png", {
     maxDiffPixelRatio: 0.01,
   });
 });

@@ -6,7 +6,8 @@ export type UpgradePreviewStat =
   | "shotSpeed"
   | "maxHp"
   | "projectiles"
-  | "pierce";
+  | "hitCapacity"
+  | "ricochets";
 
 export type UpgradePreviewLabels = Record<UpgradePreviewStat, string>;
 
@@ -23,7 +24,8 @@ const DEFAULT_PREVIEW_LABELS: UpgradePreviewLabels = {
   shotSpeed: "Shot speed",
   maxHp: "Max HP",
   projectiles: "Projectiles",
-  pierce: "Pierce",
+  hitCapacity: "Hit capacity",
+  ricochets: "Ricochets",
 };
 
 export function createUpgradePreview(
@@ -34,10 +36,12 @@ export function createUpgradePreview(
   const upgrade = config.upgrades[upgradeId];
   const effect = upgrade.effect;
   const weapon = config.weapons[world.state.weaponType];
-
   if (effect.type === "fireIntervalMultiplier") {
     const before = getFireRate(weapon.interval, world.runtime.fireIntervalMultiplier);
-    const after = getFireRate(weapon.interval, world.runtime.fireIntervalMultiplier * effect.multiplier);
+    const after = getFireRate(
+      weapon.interval,
+      world.runtime.fireIntervalMultiplier * effect.multiplier,
+    );
     return { stat: "fireRate", before: before.toFixed(1), after: after.toFixed(1), unit: "perSecond" };
   }
 
@@ -65,9 +69,15 @@ export function createUpgradePreview(
     return { stat: "projectiles", before: formatWhole(before), after: formatWhole(after), unit: null };
   }
 
-  const before = weapon.pierceCount + world.runtime.pierceBonus;
+  if (effect.type === "hitCapacity") {
+    const before = weapon.hitCapacity + world.runtime.hitCapacityBonus;
+    const after = before + effect.amount;
+    return { stat: "hitCapacity", before: formatWhole(before), after: formatWhole(after), unit: null };
+  }
+
+  const before = weapon.ricochetCount + world.runtime.ricochetBonus;
   const after = before + effect.amount;
-  return { stat: "pierce", before: formatWhole(before), after: formatWhole(after), unit: null };
+  return { stat: "ricochets", before: formatWhole(before), after: formatWhole(after), unit: null };
 }
 
 export function formatUpgradePreview(

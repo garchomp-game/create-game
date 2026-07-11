@@ -28,33 +28,41 @@ export function resolveCombat(
 
       enemy.hp -= bullet.damage;
       bullet.hitEnemyIds.push(enemy.id);
-      bullet.pierceRemaining -= 1;
+      bullet.hitsRemaining -= 1;
       events.push({
         type: "enemy.hit",
+        bulletId: bullet.id,
+        volleyId: bullet.volleyId,
         enemyId: enemy.id,
         enemyType: enemy.typeId,
         weaponType: bullet.weaponType,
+        ricochetsUsed: bullet.ricochetsUsed,
         damage: bullet.damage,
         hpAfter: Math.max(0, enemy.hp),
       });
 
       if (enemy.hp <= 0) {
         deadEnemies.add(enemy);
-        world.state.score += enemy.score;
+        const scoreAwarded = Math.round(
+          enemy.score * world.encounter.contract.scoreMultiplier,
+        );
+        world.state.score += scoreAwarded;
         events.push({
           type: "enemy.killed",
+          bulletId: bullet.id,
+          volleyId: bullet.volleyId,
           enemyId: enemy.id,
           enemyType: enemy.typeId,
           weaponType: bullet.weaponType,
-          scoreAwarded: enemy.score,
+          scoreAwarded,
           xpAwarded: enemy.xpValue,
           position: { ...enemy.position },
         });
       }
 
-      if (bullet.pierceRemaining <= 0) break;
+      if (bullet.hitsRemaining <= 0) break;
     }
-    if (bullet.pierceRemaining > 0) remainingBullets.push(bullet);
+    if (bullet.hitsRemaining > 0) remainingBullets.push(bullet);
   }
 
   world.bullets = remainingBullets;

@@ -59,7 +59,7 @@ function spawnPickupsFromKills(
 ): void {
   const killEvents = events.filter((event) => event.type === "enemy.killed");
   for (const event of killEvents) {
-    if (event.xpAwarded > 0) {
+    if (event.xpAwarded > 0 && world.progression.buildCompletedAt === null) {
       const xpPickup = createXpPickup(world, config, event.position, event.xpAwarded);
       world.pickups.push(xpPickup);
       events.push({
@@ -179,7 +179,9 @@ function collectPickups(
     }
 
     if (pickup.kind === "xp") {
-      world.progression.xp += pickup.xpValue;
+      if (world.progression.buildCompletedAt === null) {
+        world.progression.xp += pickup.xpValue;
+      }
       events.push({
         type: "pickup.collected",
         pickupId: pickup.id,

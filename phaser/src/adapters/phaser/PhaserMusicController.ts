@@ -51,7 +51,12 @@ export class PhaserMusicController {
 
   private applyVolume(status: GameStatus): void {
     if (!this.music) return;
-    const contextVolume = status === "paused" ? 0.32 : status === "title" ? 0.55 : 0.78;
+    const contextVolume =
+      status === "paused" || status === "contractSelect"
+        ? 0.32
+        : status === "title" || status === "weaponSelect"
+          ? 0.55
+          : 0.78;
     this.music.setVolume(this.muted ? 0 : this.volume * contextVolume);
   }
 }

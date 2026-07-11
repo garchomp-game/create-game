@@ -40,6 +40,8 @@ describe("run records", () => {
       capturedAt: "2026-07-10T10:05:00.000Z",
       summary,
       upgradeRanks,
+      upgradeSelections: [],
+      buildCompletedAt: null,
     });
 
     context.modifierIds.push("late-change");
@@ -47,7 +49,7 @@ describe("run records", () => {
     upgradeRanks.rapidFire = 5;
 
     expect(record).toMatchObject({
-      schemaVersion: 1,
+      schemaVersion: 2,
       id: "run-1",
       score: 4200,
       kills: 80,
@@ -97,6 +99,27 @@ describe("run records", () => {
     record.capturedAt = "not-a-timestamp";
     expect(runRecordSchema.safeParse(record).success).toBe(false);
   });
+
+  it("migrates v1 records without discarding existing rank data", () => {
+    const current = makeRecord();
+    const { pulseRicochet: _pulseRicochet, ...legacyRanks } = current.upgradeRanks;
+    const legacy = {
+      ...current,
+      schemaVersion: 1,
+      upgradeRanks: legacyRanks,
+    };
+    delete (legacy as Partial<RunRecord>).upgradeSelections;
+    delete (legacy as Partial<RunRecord>).buildCompletedAt;
+    delete (legacy as Partial<RunRecord>).capstoneMetrics;
+
+    expect(runRecordSchema.parse(legacy)).toMatchObject({
+      schemaVersion: 2,
+      upgradeRanks: { rapidFire: 2, pulseRicochet: 0 },
+      upgradeSelections: [],
+      buildCompletedAt: null,
+      capstoneMetrics: { acquiredAt: null, activations: 0 },
+    });
+  });
 });
 
 function makeContext(): RunContext {
@@ -134,6 +157,14 @@ function makeSummary(overrides: Partial<RunResultSummary> = {}): RunResultSummar
     healPickupsCollected: 2,
     effectiveHealPickupsCollected: 1,
     upgradesChosen: 7,
+    capstoneMetrics: {
+      upgradeId: "pulseRicochet",
+      acquiredAt: null,
+      activations: 0,
+      followUpHits: 0,
+      followUpUniqueEnemiesHit: 0,
+      maxFollowUpUniqueEnemiesPerVolley: 0,
+    },
     weaponMetrics: {
       pulse: { shotsFired: 200, projectilesFired: 200, hits: 90, kills: 80 },
       spread: { shotsFired: 0, projectilesFired: 0, hits: 0, kills: 0 },
@@ -151,6 +182,7 @@ function makeUpgradeRanks() {
     overdriveRounds: 2,
     splitShot: 1,
     piercingRounds: 1,
+    pulseRicochet: 0,
   };
 }
 
@@ -178,5 +210,7 @@ function makeRecord(
       elapsed: overrides.elapsed ?? 120,
     }),
     upgradeRanks: makeUpgradeRanks(),
+    upgradeSelections: [],
+    buildCompletedAt: null,
   });
 }

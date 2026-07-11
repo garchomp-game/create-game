@@ -22,6 +22,7 @@ export function createRunResultSummary(world: WorldState): RunResultSummary {
     healPickupsCollected: world.stats.healPickupsCollected,
     effectiveHealPickupsCollected: world.stats.effectiveHealPickupsCollected,
     upgradesChosen: world.stats.upgradesChosen,
+    capstoneMetrics: { ...world.stats.capstoneMetrics },
     weaponMetrics: {
       pulse: { ...world.stats.weaponMetrics.pulse },
       spread: { ...world.stats.weaponMetrics.spread },

@@ -6,9 +6,10 @@ import type {
   PlayerDamageSource,
   SimulationConfig,
   Vec2,
+  WeaponTypeId,
   WorldState,
 } from "../domain/types";
-import { createRandom } from "../math/random";
+import { createRandomStreams } from "../math/random";
 import { normalize } from "../math/vector";
 import { createWorld } from "./createWorld";
 import { stepWorld } from "./stepWorld";
@@ -28,11 +29,13 @@ export type BalanceProbeOptions = {
   inputModels?: readonly BalanceInputModelId[];
   durationSeconds: number;
   frameRate?: number;
+  weaponType?: WeaponTypeId;
 };
 
 export type BalanceProbeRun = {
   inputModel: BalanceInputModelId;
   seed: number;
+  weaponType: WeaponTypeId;
   survivedSeconds: number;
   endedStatus: WorldState["state"]["status"];
   score: number;
@@ -40,8 +43,29 @@ export type BalanceProbeRun = {
   kills: number;
   scorePerMinute: number;
   killsPerMinute: number;
+  projectilesFired: number;
+  hits: number;
+  projectileHitRate: number;
+  hitVolleyRate: number;
+  uniqueEnemiesPerHitVolley: number;
   firstDamageAt: number | null;
   firstUpgradeAt: number | null;
+  upgradeOffers: number;
+  upgradesChosen: number;
+  longestMeaningfulChoiceGap: number;
+  buildCompletedAt: number | null;
+  movementDistance: number;
+  encounterScheduledAt: number | null;
+  encounterRangedEnemiesSpawned: number;
+  encounterDamageTaken: number;
+  encounterBaselineMovement: number;
+  encounterWarningMovement: number;
+  encounterActiveMovement: number;
+  encounterDirectionChangeDegrees: number | null;
+  capstoneAcquiredAt: number | null;
+  capstoneActivations: number;
+  capstoneFollowUpHits: number;
+  capstoneFollowUpUniqueEnemiesHit: number;
   maxEnemies: number;
   maxBullets: number;
   maxPickups: number;
@@ -92,6 +116,19 @@ export type BalanceProbeModelSummary = {
   effectiveHealPickupsCollected: BalanceProbePercentiles;
   firstDamageAt: BalanceProbeNullablePercentiles;
   firstUpgradeAt: BalanceProbeNullablePercentiles;
+  upgradeOffers: BalanceProbePercentiles;
+  upgradesChosen: BalanceProbePercentiles;
+  longestMeaningfulChoiceGap: BalanceProbePercentiles;
+  buildCompletedAt: BalanceProbeNullablePercentiles;
+  movementDistance: BalanceProbePercentiles;
+  projectileHitRate: BalanceProbePercentiles;
+  hitVolleyRate: BalanceProbePercentiles;
+  uniqueEnemiesPerHitVolley: BalanceProbePercentiles;
+  damageTaken: BalanceProbePercentiles;
+  encounterDamageTaken: BalanceProbePercentiles;
+  encounterActiveMovement: BalanceProbePercentiles;
+  capstoneActivations: BalanceProbePercentiles;
+  capstoneFollowUpHits: BalanceProbePercentiles;
 };
 
 export type BalanceProbeSummary = {
@@ -113,9 +150,11 @@ const BASE_INPUT: InputSnapshot = {
   pausePressed: false,
   quitToTitlePressed: false,
   upgradeChoicePressed: null,
+  contractChoicePressed: null,
 };
 
 const UPGRADE_PRIORITY = [
+  "pulseRicochet",
   "splitShot",
   "rapidFire",
   "piercingRounds",
@@ -140,6 +179,15 @@ export function runBalanceProbe(options: BalanceProbeOptions): BalanceProbeRepor
   };
 }
 
+export function runStartingWeaponComparison(
+  options: Omit<BalanceProbeOptions, "weaponType">,
+): Record<"pulse" | "spread", BalanceProbeReport> {
+  return {
+    pulse: runBalanceProbe({ ...options, weaponType: "pulse" }),
+    spread: runBalanceProbe({ ...options, weaponType: "spread" }),
+  };
+}
+
 function runBalanceProbeOnce(options: BalanceProbeOptions & {
   inputModel: BalanceInputModelId;
   seed: number;
@@ -147,8 +195,9 @@ function runBalanceProbeOnce(options: BalanceProbeOptions & {
   const frameRate = options.frameRate ?? 30;
   const dt = 1 / frameRate;
   const maxFrames = Math.ceil(options.durationSeconds * frameRate);
-  const random = createRandom(options.seed);
+  const random = createRandomStreams(options.seed);
   const world = createWorld(options.config);
+  world.state.weaponType = options.weaponType ?? options.config.defaultWeapon;
   const violations: string[] = [];
   let firstDamageAt: number | null = null;
   let firstUpgradeAt: number | null = null;
@@ -184,9 +233,13 @@ function runBalanceProbeOnce(options: BalanceProbeOptions & {
   }
 
   const minutes = Math.max(world.state.elapsed / 60, 1 / 60);
+  const weaponMetrics = world.stats.weaponMetrics[world.state.weaponType];
+  const comparisonMetrics = world.stats.weaponComparisonMetrics[world.state.weaponType];
+  const encounterMovement = world.stats.encounterMetrics.movement;
   return {
     inputModel: options.inputModel,
     seed: options.seed,
+    weaponType: world.state.weaponType,
     survivedSeconds: roundMetric(world.state.elapsed),
     endedStatus: world.state.status,
     score: world.state.score,
@@ -194,8 +247,44 @@ function runBalanceProbeOnce(options: BalanceProbeOptions & {
     kills: world.stats.enemiesKilled,
     scorePerMinute: roundMetric(world.state.score / minutes),
     killsPerMinute: roundMetric(world.stats.enemiesKilled / minutes),
+    projectilesFired: weaponMetrics.projectilesFired,
+    hits: weaponMetrics.hits,
+    projectileHitRate: roundMetric(
+      weaponMetrics.hits / Math.max(1, weaponMetrics.projectilesFired),
+    ),
+    hitVolleyRate: roundMetric(
+      comparisonMetrics.hitVolleys / Math.max(1, weaponMetrics.shotsFired),
+    ),
+    uniqueEnemiesPerHitVolley: roundMetric(
+      comparisonMetrics.uniqueEnemiesHit / Math.max(1, comparisonMetrics.hitVolleys),
+    ),
     firstDamageAt: firstDamageAt === null ? null : roundMetric(firstDamageAt),
     firstUpgradeAt: firstUpgradeAt === null ? null : roundMetric(firstUpgradeAt),
+    upgradeOffers: world.stats.progressionMetrics.offers.length,
+    upgradesChosen: world.stats.upgradesChosen,
+    longestMeaningfulChoiceGap: roundMetric(
+      world.stats.progressionMetrics.longestMeaningfulChoiceGap,
+    ),
+    buildCompletedAt:
+      world.stats.progressionMetrics.buildCompletedAt === null
+        ? null
+        : roundMetric(world.stats.progressionMetrics.buildCompletedAt),
+    movementDistance: roundMetric(world.stats.movementDistance),
+    encounterScheduledAt: world.stats.encounterMetrics.scheduledAt,
+    encounterRangedEnemiesSpawned: world.stats.encounterMetrics.rangedEnemiesSpawned,
+    encounterDamageTaken: world.stats.encounterMetrics.damageTakenDuringActive,
+    encounterBaselineMovement: roundMetric(encounterMovement.baseline.distance),
+    encounterWarningMovement: roundMetric(encounterMovement.warning.distance),
+    encounterActiveMovement: roundMetric(encounterMovement.active.distance),
+    encounterDirectionChangeDegrees: getDirectionChangeDegrees(
+      encounterMovement.baseline.vector,
+      encounterMovement.active.vector,
+    ),
+    capstoneAcquiredAt: world.stats.capstoneMetrics.acquiredAt,
+    capstoneActivations: world.stats.capstoneMetrics.activations,
+    capstoneFollowUpHits: world.stats.capstoneMetrics.followUpHits,
+    capstoneFollowUpUniqueEnemiesHit:
+      world.stats.capstoneMetrics.followUpUniqueEnemiesHit,
     maxEnemies,
     maxBullets,
     maxPickups,
@@ -216,6 +305,9 @@ function createInputForModel(
   world: WorldState,
   config: SimulationConfig,
 ): InputSnapshot {
+  if (world.state.status === "contractSelect") {
+    return { ...BASE_INPUT, contractChoicePressed: 0 };
+  }
   if (world.state.status === "upgradeSelect") {
     return { ...BASE_INPUT, upgradeChoicePressed: chooseUpgradeIndex(world) };
   }
@@ -379,7 +471,35 @@ function summarizeModelRuns(runs: BalanceProbeRun[]): BalanceProbeModelSummary {
     ),
     firstDamageAt: nullablePercentiles(runs.map((run) => run.firstDamageAt)),
     firstUpgradeAt: nullablePercentiles(runs.map((run) => run.firstUpgradeAt)),
+    upgradeOffers: percentiles(runs.map((run) => run.upgradeOffers)),
+    upgradesChosen: percentiles(runs.map((run) => run.upgradesChosen)),
+    longestMeaningfulChoiceGap: percentiles(
+      runs.map((run) => run.longestMeaningfulChoiceGap),
+    ),
+    buildCompletedAt: nullablePercentiles(runs.map((run) => run.buildCompletedAt)),
+    movementDistance: percentiles(runs.map((run) => run.movementDistance)),
+    projectileHitRate: percentiles(runs.map((run) => run.projectileHitRate)),
+    hitVolleyRate: percentiles(runs.map((run) => run.hitVolleyRate)),
+    uniqueEnemiesPerHitVolley: percentiles(
+      runs.map((run) => run.uniqueEnemiesPerHitVolley),
+    ),
+    damageTaken: percentiles(runs.map((run) => run.damageTaken)),
+    encounterDamageTaken: percentiles(runs.map((run) => run.encounterDamageTaken)),
+    encounterActiveMovement: percentiles(runs.map((run) => run.encounterActiveMovement)),
+    capstoneActivations: percentiles(runs.map((run) => run.capstoneActivations)),
+    capstoneFollowUpHits: percentiles(runs.map((run) => run.capstoneFollowUpHits)),
   };
+}
+
+function getDirectionChangeDegrees(before: Vec2, after: Vec2): number | null {
+  const beforeLength = Math.hypot(before.x, before.y);
+  const afterLength = Math.hypot(after.x, after.y);
+  if (beforeLength < 0.001 || afterLength < 0.001) return null;
+  const cosine = Math.max(
+    -1,
+    Math.min(1, (before.x * after.x + before.y * after.y) / (beforeLength * afterLength)),
+  );
+  return roundMetric((Math.acos(cosine) * 180) / Math.PI);
 }
 
 function percentiles(values: number[]): BalanceProbePercentiles {

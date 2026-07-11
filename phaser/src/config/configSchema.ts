@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { ENEMY_TYPE_IDS, UPGRADE_IDS, WEAPON_TYPE_IDS } from "../domain/types";
+import {
+  ENEMY_TYPE_IDS,
+  UPGRADE_CATEGORIES,
+  UPGRADE_IDS,
+  WEAPON_TYPE_IDS,
+} from "../domain/types";
 import type {
   EnemyViewConfig,
   EnemyTypeId,
@@ -42,7 +47,7 @@ const weaponSimulationSchema = z
     damage: positiveNumber,
     projectileCount: z.number().int().positive(),
     spreadAngle: nonNegativeNumber,
-    pierceCount: z.number().int().positive(),
+    hitCapacity: z.number().int().positive(),
     ricochetCount: z.number().int().nonnegative(),
   })
   .strict();
@@ -86,6 +91,7 @@ const levelingSimulationSchema = z
   .object({
     baseXp: z.number().int().positive(),
     growth: z.number().finite().min(1),
+    maxXp: z.number().int().positive(),
     upgradeChoiceCount: z.number().int().min(1).max(UPGRADE_IDS.length),
   })
   .strict();
@@ -96,17 +102,38 @@ const upgradeEffectSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("projectileSpeedMultiplier"), multiplier: positiveNumber }).strict(),
   z.object({ type: z.literal("maxHp"), amount: positiveNumber }).strict(),
   z.object({ type: z.literal("projectileCount"), amount: z.number().int().positive() }).strict(),
-  z.object({ type: z.literal("pierce"), amount: z.number().int().positive() }).strict(),
+  z.object({ type: z.literal("hitCapacity"), amount: z.number().int().positive() }).strict(),
+  z.object({ type: z.literal("ricochet"), amount: z.number().int().positive() }).strict(),
 ]);
+
+const categoryRankRequirementsSchema = z
+  .object({
+    weapon: z.number().int().nonnegative().optional(),
+    mobility: z.number().int().nonnegative().optional(),
+    survival: z.number().int().nonnegative().optional(),
+    support: z.number().int().nonnegative().optional(),
+    capstone: z.number().int().nonnegative().optional(),
+  })
+  .strict();
+
+const upgradeRequirementsSchema = z
+  .object({
+    weaponIds: z.array(z.enum(WEAPON_TYPE_IDS)).min(1).optional(),
+    minimumCategoryRanks: categoryRankRequirementsSchema.optional(),
+    featureFlag: z.literal("pulseRicochet").optional(),
+  })
+  .strict();
 
 const upgradeDefinitionSchema = z
   .object({
     id: z.enum(UPGRADE_IDS),
     title: z.string().min(1),
     description: z.string().min(1),
+    category: z.enum(UPGRADE_CATEGORIES),
     maxRank: z.number().int().positive(),
     weight: positiveNumber,
     effect: upgradeEffectSchema,
+    requirements: upgradeRequirementsSchema.optional(),
   })
   .strict();
 
@@ -204,6 +231,13 @@ const obstacleSchema = z
 export const simulationConfigSchema: z.ZodType<SimulationConfig> = z
   .object({
     seed: z.number().int(),
+    features: z
+      .object({
+        pulseRicochet: z.boolean(),
+        rangedSurge: z.boolean(),
+        endlessContract: z.boolean(),
+      })
+      .strict(),
     arena: arenaSimulationSchema,
     player: playerSimulationSchema,
     defaultWeapon: z.enum(WEAPON_TYPE_IDS),
@@ -226,6 +260,32 @@ export const simulationConfigSchema: z.ZodType<SimulationConfig> = z
     pickup: pickupSimulationSchema,
     leveling: levelingSimulationSchema,
     upgrades: upgradeDefinitionsSchema,
+    encounter: z
+      .object({
+        rangedSurge: z
+          .object({
+            minStart: nonNegativeNumber,
+            maxStart: positiveNumber,
+            warningDuration: positiveNumber,
+            activeDuration: positiveNumber,
+            recoveryDuration: positiveNumber,
+            spawnIntervalMultiplier: positiveNumber.max(1),
+            spawnBudget: z.number().int().positive(),
+            enemyWeights: z.partialRecord(z.enum(ENEMY_TYPE_IDS), positiveNumber),
+          })
+          .strict()
+          .refine((value) => value.maxStart >= value.minStart, {
+            message: "ranged surge maxStart must be at least minStart",
+          }),
+        contract: z
+          .object({
+            offerAt: positiveNumber,
+            enemySpeedMultiplier: positiveNumber,
+            scoreMultiplier: positiveNumber,
+          })
+          .strict(),
+      })
+      .strict(),
     obstacles: z.array(obstacleSchema).min(1),
   })
   .strict()

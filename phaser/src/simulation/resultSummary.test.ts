@@ -46,6 +46,14 @@ describe("createRunResultSummary", () => {
       healPickupsCollected: 0,
       effectiveHealPickupsCollected: 0,
       upgradesChosen: 0,
+      capstoneMetrics: {
+        upgradeId: "pulseRicochet",
+        acquiredAt: null,
+        activations: 0,
+        followUpHits: 0,
+        followUpUniqueEnemiesHit: 0,
+        maxFollowUpUniqueEnemiesPerVolley: 0,
+      },
       weaponMetrics: {
         pulse: { shotsFired: 6, projectilesFired: 6, hits: 4, kills: 2 },
         spread: { shotsFired: 0, projectilesFired: 0, hits: 0, kills: 0 },

@@ -1,8 +1,17 @@
-import type { EnemyTypeId, UpgradeId, WeaponTypeId } from "../domain/types";
+import type {
+  EnemyTypeId,
+  UpgradeCategory,
+  UpgradeId,
+  WeaponTypeId,
+} from "../domain/types";
 import type { UpgradePreviewStat } from "../simulation/upgradePreview";
 
 export type MenuActionLabel =
   | "start"
+  | "selectPulse"
+  | "selectSpread"
+  | "contractStandard"
+  | "contractOverdrive"
   | "resume"
   | "restart"
   | "title"
@@ -12,6 +21,9 @@ export type MenuActionLabel =
   | "back"
   | "historyPrevious"
   | "historyNext"
+  | "historyFilterAll"
+  | "historyFilterPulse"
+  | "historyFilterSpread"
   | "clearHistory"
   | "clearRankings"
   | "resetSettings"
@@ -26,6 +38,10 @@ export type UiText = {
   libraryLabel: string;
   titleScreen: string;
   endlessMode: string;
+  weaponSelectTitle: string;
+  weaponSelectDescription: string;
+  contractTitle: string;
+  contractDescription: string;
   historyTitle: string;
   rankingTitle: string;
   settingsTitle: string;
@@ -57,6 +73,7 @@ export type UiText = {
 export type HudText = {
   hp: (current: number, max: number) => string;
   xp: (level: number, xp: number, next: number) => string;
+  buildComplete: (level: number) => string;
   meta: (time: string, score: number) => string;
   danger: (
     wave: number,
@@ -64,7 +81,16 @@ export type HudText = {
     maxEnemies: number,
     weaponName: string,
   ) => string;
-  weapon: (weaponName: string, fireRate: string, projectileCount: number, pierce: number) => string;
+  encounterWarning: (seconds: number) => string;
+  encounterActive: (seconds: number) => string;
+  encounterRecovery: (seconds: number) => string;
+  overdriveContract: string;
+  weapon: (
+    weaponName: string,
+    fireRate: string,
+    projectileCount: number,
+    extraPierce: number,
+  ) => string;
   weaponNames: Record<WeaponTypeId, string>;
 };
 
@@ -73,6 +99,9 @@ export type UpgradeText = {
     title: string;
     description: string;
   }>;
+  categoryLabels: Record<UpgradeCategory, string>;
+  capstoneProgress: (current: number, required: number) => string;
+  capstoneAcquired: string;
   preview: {
     labels: Record<UpgradePreviewStat, string>;
     perSecond: string;

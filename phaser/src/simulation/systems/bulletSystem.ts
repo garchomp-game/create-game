@@ -1,10 +1,22 @@
-import type { Bullet, Obstacle, SimulationConfig, Vec2, WorldState } from "../../domain/types";
+import type {
+  Bullet,
+  GameEvent,
+  Obstacle,
+  SimulationConfig,
+  Vec2,
+  WorldState,
+} from "../../domain/types";
 import { circleRect } from "../../math/geometry";
 
 const BOUNCE_EPSILON = 0.000001;
-const RICOCHET_LIFETIME_CAP = 0.12;
+const RICOCHET_LIFETIME_CAP = 0.35;
 
-export function updateBullets(world: WorldState, dt: number, config: SimulationConfig): void {
+export function updateBullets(
+  world: WorldState,
+  dt: number,
+  config: SimulationConfig,
+  events: GameEvent[] = [],
+): void {
   const remainingBullets: Bullet[] = [];
 
   for (const bullet of world.bullets) {
@@ -28,6 +40,17 @@ export function updateBullets(world: WorldState, dt: number, config: SimulationC
       if (bullet.ricochetRemaining <= 0) continue;
       ricochetBullet(bullet, obstacle, previousPosition);
       bullet.ricochetRemaining -= 1;
+      bullet.ricochetsUsed += 1;
+      events.push({
+        type: "bullet.ricocheted",
+        bulletId: bullet.id,
+        volleyId: bullet.volleyId,
+        weaponType: bullet.weaponType,
+        obstacleId: obstacle.id,
+        position: { ...bullet.position },
+        ricochetsUsed: bullet.ricochetsUsed,
+        ricochetsRemaining: bullet.ricochetRemaining,
+      });
       bullet.lifetime = Math.min(bullet.lifetime, RICOCHET_LIFETIME_CAP);
     }
 

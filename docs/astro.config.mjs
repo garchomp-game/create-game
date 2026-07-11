@@ -51,6 +51,7 @@ export default defineConfig({
             { label: "直近フェーズ", slug: "project-management/next-phase-plan" },
             { label: "v0.5作業計画", slug: "project-management/endless-polish-plan" },
             { label: "v0.5チケット詳細", slug: "project-management/v05-tickets" },
+            { label: "v0.6チケット詳細", slug: "project-management/v06-tickets" },
             { label: "中長期作業計画", slug: "project-management/gameplay-expansion-plan" },
             { label: "ロードマップ", slug: "project-management/roadmap" },
             { label: "チケット一覧", slug: "project-management/tickets" },

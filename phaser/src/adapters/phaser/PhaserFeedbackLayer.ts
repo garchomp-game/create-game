@@ -67,6 +67,13 @@ export class PhaserFeedbackLayer {
       } else if (event.type === "player.level_up") {
         this.addImpact(world.player.position, world.player.radius + 12, 0x22d3ee);
         this.addBurst(world.player.position, 0x22d3ee);
+      } else if (event.type === "encounter.warning.started") {
+        this.addImpact(world.player.position, world.player.radius + 18, 0xfacc15);
+      } else if (event.type === "encounter.started") {
+        this.addImpact(world.player.position, world.player.radius + 22, 0xf97316);
+        this.addBurst(world.player.position, 0xf97316);
+      } else if (event.type === "contract.offered") {
+        this.addImpact(world.player.position, world.player.radius + 18, 0x22d3ee);
       } else if (event.type === "game.over") {
         this.screenFlashAlpha = 0;
         this.scene.cameras.main.resetFX();

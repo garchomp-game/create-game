@@ -50,7 +50,9 @@ test("runs the rendered arena for fifteen real-time minutes", async ({ page }, t
     const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
     if (!snapshot) throw new Error("Debug snapshot is not available.");
     if (snapshot.status === "gameOver") throw new Error("Soak run ended unexpectedly.");
-    if (snapshot.status === "upgradeSelect") {
+    if (snapshot.status === "contractSelect") {
+      await page.evaluate(() => window.__ARENA_DEBUG__?.step({ contractChoicePressed: 0 }, 1 / 60));
+    } else if (snapshot.status === "upgradeSelect") {
       await page.evaluate(() => window.__ARENA_DEBUG__?.step({ upgradeChoicePressed: 0 }, 1 / 60));
     } else if (snapshot.hp < 50) {
       await page.evaluate(() => window.__ARENA_DEBUG__?.restoreHealthForSoak());
@@ -70,8 +72,15 @@ test("runs the rendered arena for fifteen real-time minutes", async ({ page }, t
   if (activeDirection) await page.keyboard.up(activeDirection);
   let finalSnapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
   if (!finalSnapshot) throw new Error("Final debug snapshot is not available.");
-  if (finalSnapshot.status === "upgradeSelect") {
-    await page.evaluate(() => window.__ARENA_DEBUG__?.step({ upgradeChoicePressed: 0 }, 1 / 60));
+  if (finalSnapshot.status === "upgradeSelect" || finalSnapshot.status === "contractSelect") {
+    await page.evaluate((status) => {
+      window.__ARENA_DEBUG__?.step(
+        status === "contractSelect"
+          ? { contractChoicePressed: 0 }
+          : { upgradeChoicePressed: 0 },
+        1 / 60,
+      );
+    }, finalSnapshot.status);
     finalSnapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
     if (!finalSnapshot) throw new Error("Final debug snapshot is not available.");
   }

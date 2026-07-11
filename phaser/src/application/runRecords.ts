@@ -9,6 +9,7 @@ import type {
   RunOrigin,
   RunRecord,
 } from "../domain/runRecords";
+import type { EncounterRunStats } from "../domain/types";
 
 export function createRankEligibility(
   runOrigin: RunOrigin,
@@ -59,6 +60,32 @@ export function createRunRecord(input: CreateRunRecordInput): RunRecord {
     hpRecovered: summary.hpRecovered,
     upgradesChosen: summary.upgradesChosen,
     upgradeRanks: { ...input.upgradeRanks },
+    upgradeSelections: input.upgradeSelections.map((selection) => ({ ...selection })),
+    buildCompletedAt: input.buildCompletedAt,
+    capstoneMetrics: { ...summary.capstoneMetrics },
+    encounterMetrics: structuredClone(input.encounterMetrics ?? createEmptyEncounterMetrics()),
+  };
+}
+
+function createEmptyEncounterMetrics(): EncounterRunStats {
+  return {
+    scheduledAt: null,
+    warningStartedAt: null,
+    activeStartedAt: null,
+    recoveryStartedAt: null,
+    completedAt: null,
+    rangedEnemiesSpawned: 0,
+    damageTakenDuringActive: 0,
+    killsDuringActiveByEnemyType: { chaser: 0, brute: 0, fast: 0, ranged: 0 },
+    movement: {
+      baseline: { distance: 0, vector: { x: 0, y: 0 } },
+      warning: { distance: 0, vector: { x: 0, y: 0 } },
+      active: { distance: 0, vector: { x: 0, y: 0 } },
+      recovery: { distance: 0, vector: { x: 0, y: 0 } },
+    },
+    contractOfferedAt: null,
+    contractSelectedAt: null,
+    contractChoice: null,
   };
 }
 

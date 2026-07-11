@@ -43,6 +43,18 @@ describe("RunRecordCoordinator", () => {
     expect(coordinator.getContext()?.runOrigin).toBe("test");
   });
 
+  it("adds contract modifiers and marks overdrive as a non-standard ruleset", () => {
+    const coordinator = new RunRecordCoordinator(new MemoryRunRecordStore());
+    coordinator.reset(makeContext(), true);
+    coordinator.addModifier("contract:overdrive", false);
+    coordinator.addModifier("contract:overdrive", false);
+
+    expect(coordinator.getContext()).toMatchObject({
+      modifierIds: ["contract:overdrive"],
+      rankEligibility: { eligible: false, reasons: ["nonStandardRuleset"] },
+    });
+  });
+
   it("retries a failed storage write with the same run id", () => {
     const store = new MemoryRunRecordStore();
     store.failWrites = true;
@@ -141,6 +153,14 @@ function makeFinalizeInput() {
       healPickupsCollected: 0,
       effectiveHealPickupsCollected: 0,
       upgradesChosen: 1,
+      capstoneMetrics: {
+        upgradeId: "pulseRicochet" as const,
+        acquiredAt: null,
+        activations: 0,
+        followUpHits: 0,
+        followUpUniqueEnemiesHit: 0,
+        maxFollowUpUniqueEnemiesPerVolley: 0,
+      },
       weaponMetrics: {
         pulse: { shotsFired: 10, projectilesFired: 10, hits: 5, kills: 5 },
         spread: { shotsFired: 0, projectilesFired: 0, hits: 0, kills: 0 },
@@ -154,6 +174,9 @@ function makeFinalizeInput() {
       overdriveRounds: 0,
       splitShot: 0,
       piercingRounds: 0,
+      pulseRicochet: 0,
     },
+    upgradeSelections: [],
+    buildCompletedAt: null,
   };
 }

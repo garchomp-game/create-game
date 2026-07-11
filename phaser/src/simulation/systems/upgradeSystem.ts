@@ -1,4 +1,6 @@
-import type { GameEvent, SimulationConfig, UpgradeDefinition, WorldState } from "../../domain/types";
+import type { GameEvent, SimulationConfig, WorldState } from "../../domain/types";
+import { composeBuild } from "../buildComposer";
+import { getAvailableUpgradeIds, getRemainingUpgradeIds } from "./levelSystem";
 
 export function chooseUpgrade(
   world: WorldState,
@@ -10,11 +12,28 @@ export function chooseUpgrade(
   if (!upgradeId) return;
 
   const upgrade = config.upgrades[upgradeId];
+  if (
+    !getAvailableUpgradeIds(
+      config,
+      world.progression.upgradeRanks,
+      world.state.weaponType,
+    ).includes(upgradeId)
+  ) {
+    return;
+  }
   const nextRank = world.progression.upgradeRanks[upgradeId] + 1;
   if (nextRank > upgrade.maxRank) return;
 
   world.progression.upgradeRanks[upgradeId] = nextRank;
-  applyUpgrade(world, upgrade, config);
+  const maxHpBonusBefore = world.runtime.maxHpBonus;
+  const composition = composeBuild(
+    config,
+    world.state.weaponType,
+    world.progression.upgradeRanks,
+  );
+  Object.assign(world.runtime, composition.modifiers);
+  world.state.hp += Math.max(0, world.runtime.maxHpBonus - maxHpBonusBefore);
+  world.state.hp = Math.min(world.state.hp, config.player.maxHp + world.runtime.maxHpBonus);
   world.progression.pendingUpgradeChoices = [];
   world.state.status = "playing";
   events.push({
@@ -24,28 +43,20 @@ export function chooseUpgrade(
     level: world.progression.level,
     effect: upgrade.effect,
   });
-}
-
-function applyUpgrade(
-  world: WorldState,
-  upgrade: UpgradeDefinition,
-  config: SimulationConfig,
-): void {
-  const effect = upgrade.effect;
-  if (effect.type === "fireIntervalMultiplier") {
-    world.runtime.fireIntervalMultiplier *= effect.multiplier;
-  } else if (effect.type === "moveSpeedMultiplier") {
-    world.runtime.playerSpeedMultiplier *= effect.multiplier;
-  } else if (effect.type === "projectileSpeedMultiplier") {
-    world.runtime.projectileSpeedMultiplier *= effect.multiplier;
-  } else if (effect.type === "maxHp") {
-    world.runtime.maxHpBonus += effect.amount;
-    world.state.hp += effect.amount;
-    const maxHp = config.player.maxHp + world.runtime.maxHpBonus;
-    world.state.hp = Math.min(world.state.hp, maxHp);
-  } else if (effect.type === "projectileCount") {
-    world.runtime.projectileCountBonus += effect.amount;
-  } else if (effect.type === "pierce") {
-    world.runtime.pierceBonus += effect.amount;
+  if (
+    getRemainingUpgradeIds(
+      config,
+      world.progression.upgradeRanks,
+      world.state.weaponType,
+    ).length === 0
+  ) {
+    world.progression.buildCompletedAt = world.state.elapsed;
+    world.progression.xp = 0;
+    world.progression.xpToNext = 0;
+    events.push({
+      type: "build.completed",
+      level: world.progression.level,
+      elapsed: world.state.elapsed,
+    });
   }
 }

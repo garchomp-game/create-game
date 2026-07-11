@@ -8,6 +8,9 @@ description: バージョン別のチケット番号、表示名、状態。
 - v0.5の計画: [v0.5作業計画](../endless-polish-plan/)
 - v0.5の詳細: [v0.5チケット詳細](../v05-tickets/)
 - v0.5の進捗: [GitHubマイルストーン](https://github.com/garchomp-game/create-game/milestone/1)
+- v0.6の計画: [直近フェーズ](../next-phase-plan/)
+- v0.6の詳細: [v0.6チケット詳細](../v06-tickets/)
+- v0.6の進捗: [GitHubマイルストーン](https://github.com/garchomp-game/create-game/milestone/2)
 
 ## v0.3
 
@@ -57,17 +60,21 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 
 ## v0.6 ビルドの個性とエンドレス後半
 
-| ID | チケット |
-| --- | --- |
-| `PH-V06-001` | XP曲線と強化選択間隔の再設計 |
-| `PH-V06-002` | 開始武器選択の基盤 |
-| `PH-V06-003` | 強化分類と効果合成 |
-| `PH-V06-004` | 最初の武器最終強化試作 |
-| `PH-V06-005` | 強化選択UIとビルド要約 |
-| `PH-V06-006` | エンドレス危険度と契約試作 |
-| `PH-V06-007` | 用途別乱数列の分離 |
-| `PH-V06-008` | ビルド多様性の計測と比較 |
-| [`PH-V06-009` #12](https://github.com/garchomp-game/create-game/issues/12) | Phaser画面とデバッグ責務の分割 |
+詳細な依存、対象外、受け入れ条件は[v0.6チケット詳細](../v06-tickets/)を参照してください。
+
+| ID | GitHub | チケット | 優先度 | 状態 |
+| --- | --- | --- | --- | --- |
+| `PH-V06-001` | [#13](https://github.com/garchomp-game/create-game/issues/13) | XP曲線と強化選択間隔の再設計 | P0 | 実装・自動検証済み |
+| `PH-V06-002` | [#14](https://github.com/garchomp-game/create-game/issues/14) | 開始武器選択の縦切り基盤 | P0 | 実装・自動検証済み |
+| `PH-V06-003` | [#15](https://github.com/garchomp-game/create-game/issues/15) | 強化分類と効果合成 | P0 | 実装・自動検証済み |
+| `PH-V06-004` | [#16](https://github.com/garchomp-game/create-game/issues/16) | 最初の武器最終強化試作 | P0 | 実装済み・手動評価待ち |
+| `PH-V06-005` | [#17](https://github.com/garchomp-game/create-game/issues/17) | 強化選択UIとビルド要約 | P1 | 実装・画面確認済み |
+| `PH-V06-006` | [#18](https://github.com/garchomp-game/create-game/issues/18) | 予兆付き危険イベントと契約試作 | P1 | 実装済み・手動評価待ち |
+| `PH-V06-007` | [#19](https://github.com/garchomp-game/create-game/issues/19) | 用途別乱数列の分離 | P0 | 実装・自動検証済み |
+| `PH-V06-008` | [#20](https://github.com/garchomp-game/create-game/issues/20) | ビルド多様性の計測と比較 | P0 | 10シード比較済み・手動待ち |
+| `PH-V06-009` | [#12](https://github.com/garchomp-game/create-game/issues/12) | Phaser画面とデバッグ責務の分割 | P0 | 実装・回帰確認済み |
+| `PH-V06-010` | [#21](https://github.com/garchomp-game/create-game/issues/21) | 弾・貫通・無敵時間ルールの監査 | P0 | 監査・固定配置試験済み |
+| `PH-V06-011` | [#22](https://github.com/garchomp-game/create-game/issues/22) | v0.6統合プレイテストと採否判定 | P0 | 自動QA済み・手動判定待ち |
 
 ## v0.7 戦闘展開とステージ試作
 
@@ -106,4 +113,4 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-V09-007` | 性能、バンドル、長時間動作確認 |
 | `PH-V09-008` | 複数セッションのプレイテストとバランス確認 |
 
-v0.5の全体計画は [v0.5作業計画](../endless-polish-plan/)、個別要件は [v0.5チケット詳細](../v05-tickets/)、v0.6以降は [中長期作業計画](../gameplay-expansion-plan/) を参照してください。
+v0.5の全体計画は [v0.5作業計画](../endless-polish-plan/)、v0.6の個別要件は[v0.6チケット詳細](../v06-tickets/)、v0.6以降のつながりは [中長期作業計画](../gameplay-expansion-plan/) を参照してください。

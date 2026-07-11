@@ -236,7 +236,12 @@ function parseRecords(candidates: unknown[]): { records: RunRecord[]; recovered:
   let recovered = false;
   for (const candidate of candidates) {
     const result = runRecordSchema.safeParse(candidate);
-    if (result.success) records.push(result.data);
+    if (result.success) {
+      records.push(result.data);
+      if (!isObject(candidate) || candidate.schemaVersion !== result.data.schemaVersion) {
+        recovered = true;
+      }
+    }
     else recovered = true;
   }
   return { records, recovered };

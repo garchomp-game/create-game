@@ -1,4 +1,9 @@
-import type { RunResultSummary, UpgradeId } from "../domain/types";
+import type {
+  RunResultSummary,
+  UpgradeId,
+  UpgradeSelectionRunStat,
+  EncounterRunStats,
+} from "../domain/types";
 import type { RunContext, RunOrigin, RunRecord } from "../domain/runRecords";
 import type { RunRecordStorePort, RunRecordWriteResult } from "../ports/RunRecordStorePort";
 import { createRankEligibility, createRunRecord } from "./runRecords";
@@ -7,6 +12,9 @@ export type FinalizeRunInput = {
   capturedAt: string;
   summary: RunResultSummary;
   upgradeRanks: Record<UpgradeId, number>;
+  upgradeSelections: UpgradeSelectionRunStat[];
+  buildCompletedAt: number | null;
+  encounterMetrics?: EncounterRunStats;
 };
 
 export type FinalizeRunResult =
@@ -38,6 +46,16 @@ export class RunRecordCoordinator {
     this.setOrigin("debug");
   }
 
+  addModifier(modifierId: string, standardRuleset = true): void {
+    if (!this.context) return;
+    if (!this.context.modifierIds.includes(modifierId)) this.context.modifierIds.push(modifierId);
+    const wasStandard = !this.context.rankEligibility.reasons.includes("nonStandardRuleset");
+    this.context.rankEligibility = createRankEligibility(
+      this.context.runOrigin,
+      wasStandard && standardRuleset,
+    );
+  }
+
   setOrigin(origin: RunOrigin): void {
     if (!this.context) return;
     const standardRuleset = !this.context.rankEligibility.reasons.includes("nonStandardRuleset");
@@ -64,6 +82,9 @@ export class RunRecordCoordinator {
       capturedAt: input.capturedAt,
       summary: input.summary,
       upgradeRanks: input.upgradeRanks,
+      upgradeSelections: input.upgradeSelections,
+      buildCompletedAt: input.buildCompletedAt,
+      encounterMetrics: input.encounterMetrics,
     });
     this.finalizedRecord ??= cloneRecord(record);
     const write = this.store.save(record);
@@ -98,5 +119,8 @@ function cloneRecord(record: RunRecord): RunRecord {
     },
     lastDamageSource: record.lastDamageSource ? { ...record.lastDamageSource } : null,
     upgradeRanks: { ...record.upgradeRanks },
+    upgradeSelections: record.upgradeSelections.map((selection) => ({ ...selection })),
+    capstoneMetrics: { ...record.capstoneMetrics },
+    encounterMetrics: structuredClone(record.encounterMetrics),
   };
 }

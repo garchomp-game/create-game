@@ -1,11 +1,11 @@
 import type {
   GameEvent,
   InputSnapshot,
-  RandomSource,
   SimulationConfig,
   StepWorldResult,
   WorldState,
 } from "../domain/types";
+import type { RandomStreams } from "../math/random";
 import { updateAim } from "./systems/aimingSystem";
 import { updateBullets } from "./systems/bulletSystem";
 import { resolveCombat } from "./systems/combatSystem";
@@ -19,13 +19,18 @@ import { updateShooting } from "./systems/shootingSystem";
 import { updateSpawner } from "./systems/spawnSystem";
 import { updateRunStats } from "./systems/statsSystem";
 import { chooseUpgrade } from "./systems/upgradeSystem";
+import {
+  chooseEndlessContract,
+  recordEncounterMovement,
+  updateEncounter,
+} from "./systems/encounterSystem";
 import { getWaveBand } from "./waveDirector";
 
 export function stepWorld(
   world: WorldState,
   input: InputSnapshot,
   deltaSeconds: number,
-  random: RandomSource,
+  random: RandomStreams,
   config: SimulationConfig,
 ): StepWorldResult {
   const events: GameEvent[] = [];
@@ -36,6 +41,18 @@ export function stepWorld(
     if (input.startPressed) {
       world.state.status = "playing";
       events.push({ type: "game.started" });
+    }
+    return collectResult(world, 0, rawDt, config, events);
+  }
+
+  if (world.state.status === "weaponSelect") {
+    return collectResult(world, 0, rawDt, config, events);
+  }
+
+  if (world.state.status === "contractSelect") {
+    if (input.contractChoicePressed !== null && input.contractChoicePressed !== undefined) {
+      chooseEndlessContract(world, input.contractChoicePressed, config, events);
+      updateRunStats(world, events);
     }
     return collectResult(world, 0, rawDt, config, events);
   }
@@ -80,17 +97,35 @@ export function stepWorld(
   world.state.elapsed += dt;
   world.state.shotTimer -= dt;
   world.state.damageCooldown = Math.max(0, world.state.damageCooldown - dt);
+  updateEncounter(world, random.encounter, config, events);
+  if (world.encounter.contract.status === "offered") {
+    updateRunStats(world, events);
+    return collectResult(world, dt, rawDt, config, events);
+  }
 
   updateAim(world, input);
+  const playerPositionBeforeMove = { ...world.player.position };
   updatePlayer(world, input.move, dt, config);
+  world.stats.movementDistance += Math.hypot(
+    world.player.position.x - playerPositionBeforeMove.x,
+    world.player.position.y - playerPositionBeforeMove.y,
+  );
+  recordEncounterMovement(
+    world,
+    {
+      x: world.player.position.x - playerPositionBeforeMove.x,
+      y: world.player.position.y - playerPositionBeforeMove.y,
+    },
+    config,
+  );
   updateShooting(world, input.shootHeld, config, events);
-  updateBullets(world, dt, config);
-  updateSpawner(world, dt, random, config, events);
+  updateBullets(world, dt, config, events);
+  updateSpawner(world, dt, random.spawn, config, events);
   updateEnemies(world, dt, config, events);
   updateEnemyProjectiles(world, dt, config);
   resolveCombat(world, config, events);
   updatePickups(world, config, events, dt);
-  updateLevelProgression(world, random, config, events);
+  updateLevelProgression(world, random.upgrade, config, events);
   updateGameOver(world, events);
   updateRunStats(world, events);
 

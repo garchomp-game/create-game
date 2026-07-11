@@ -10,6 +10,7 @@ export class PhaserHud {
   private readonly xpText: Phaser.GameObjects.Text;
   private readonly metaText: Phaser.GameObjects.Text;
   private readonly weaponText: Phaser.GameObjects.Text;
+  private readonly encounterText: Phaser.GameObjects.Text;
 
   constructor(scene: Phaser.Scene, private readonly simulationConfig: SimulationConfig) {
     this.graphics = scene.add.graphics().setDepth(10);
@@ -17,6 +18,9 @@ export class PhaserHud {
     this.xpText = this.createText(scene, 28, 52);
     this.metaText = this.createText(scene, simulationConfig.arena.width - 28, 24).setOrigin(1, 0);
     this.weaponText = this.createText(scene, simulationConfig.arena.width - 28, 52).setOrigin(1, 0);
+    this.encounterText = this.createText(scene, simulationConfig.arena.width / 2, 102)
+      .setOrigin(0.5, 0)
+      .setFontSize(15);
   }
 
   render(world: WorldState, enabled = true): void {
@@ -35,8 +39,10 @@ export class PhaserHud {
     };
     const maxHp = this.simulationConfig.player.maxHp + world.runtime.maxHpBonus;
     const hpRatio = maxHp > 0 ? world.state.hp / maxHp : 0;
-    const xpRatio =
-      world.progression.xpToNext > 0
+    const buildComplete = world.progression.buildCompletedAt !== null;
+    const xpRatio = buildComplete
+      ? 1
+      : world.progression.xpToNext > 0
         ? world.progression.xp / world.progression.xpToNext
         : 0;
     const wave = getWaveBand(this.simulationConfig, world.state.elapsed);
@@ -65,7 +71,9 @@ export class PhaserHud {
 
     this.hpText.setText(TEXT.hud.hp(Math.ceil(world.state.hp), maxHp));
     this.xpText.setText(
-      TEXT.hud.xp(world.progression.level, world.progression.xp, world.progression.xpToNext),
+      buildComplete
+        ? TEXT.hud.buildComplete(world.progression.level)
+        : TEXT.hud.xp(world.progression.level, world.progression.xp, world.progression.xpToNext),
     );
     this.metaText.setText(
       TEXT.hud.meta(formatTime(world.state.elapsed), world.state.score),
@@ -78,6 +86,15 @@ export class PhaserHud {
         TEXT.hud.weaponNames[world.state.weaponType],
       ),
     );
+    const encounterLabel = this.getEncounterLabel(world);
+    this.encounterText.setText(encounterLabel).setVisible(Boolean(encounterLabel));
+    if (encounterLabel) {
+      const banner = { x: this.simulationConfig.arena.width / 2 - 205, y: 94, width: 410, height: 34 };
+      this.graphics.fillStyle(0x020617, 0.88);
+      this.graphics.fillRoundedRect(banner.x, banner.y, banner.width, banner.height, 6);
+      this.graphics.lineStyle(2, world.encounter.rangedSurge.phase === "active" ? 0xf97316 : 0xfacc15, 0.95);
+      this.graphics.strokeRoundedRect(banner.x, banner.y, banner.width, banner.height, 6);
+    }
   }
 
   private createText(scene: Phaser.Scene, x: number, y: number): Phaser.GameObjects.Text {
@@ -114,5 +131,27 @@ export class PhaserHud {
     this.xpText.setVisible(visible);
     this.metaText.setVisible(visible);
     this.weaponText.setVisible(visible);
+    this.encounterText.setVisible(visible && Boolean(this.encounterText.text));
+  }
+
+  private getEncounterLabel(world: WorldState): string {
+    const surge = world.encounter.rangedSurge;
+    const scheduledAt = surge.scheduledAt;
+    if (scheduledAt !== null && surge.phase === "warning") {
+      return TEXT.hud.encounterWarning(Math.max(0, Math.ceil(scheduledAt - world.state.elapsed)));
+    }
+    if (scheduledAt !== null && surge.phase === "active") {
+      const end = scheduledAt + this.simulationConfig.encounter.rangedSurge.activeDuration;
+      return TEXT.hud.encounterActive(Math.max(0, Math.ceil(end - world.state.elapsed)));
+    }
+    if (scheduledAt !== null && surge.phase === "recovery") {
+      const end =
+        scheduledAt +
+        this.simulationConfig.encounter.rangedSurge.activeDuration +
+        this.simulationConfig.encounter.rangedSurge.recoveryDuration;
+      return TEXT.hud.encounterRecovery(Math.max(0, Math.ceil(end - world.state.elapsed)));
+    }
+    if (world.encounter.contract.choice === "overdrive") return TEXT.hud.overdriveContract;
+    return "";
   }
 }

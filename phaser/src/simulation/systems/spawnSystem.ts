@@ -15,7 +15,7 @@ export function updateSpawner(
   config: SimulationConfig,
   events: GameEvent[],
 ): void {
-  const wave = getWaveBand(config, world.state.elapsed);
+  const wave = getSpawnWave(world, config);
   if (world.enemies.length >= wave.maxEnemies) return;
 
   world.state.spawnTimer -= dt;
@@ -78,7 +78,10 @@ function spawnEnemy(
     radius: definition.radius,
     hp: definition.hp,
     damage: definition.damage,
-    speed: definition.speed * difficulty.speedMultiplier,
+    speed:
+      definition.speed *
+      difficulty.speedMultiplier *
+      world.encounter.contract.enemySpeedMultiplier,
     score: definition.score,
     xpValue: definition.xpValue,
     behavior: definition.behavior,
@@ -87,4 +90,16 @@ function spawnEnemy(
   };
   world.enemies.push(enemy);
   return enemy;
+}
+
+export function getSpawnWave(world: WorldState, config: SimulationConfig) {
+  const wave = getWaveBand(config, world.state.elapsed);
+  if (world.encounter.rangedSurge.phase !== "active") return wave;
+  const surge = config.encounter.rangedSurge;
+  return {
+    ...wave,
+    spawnInterval: Math.max(0.3, wave.spawnInterval * surge.spawnIntervalMultiplier),
+    spawnBudget: Math.max(wave.spawnBudget, surge.spawnBudget),
+    enemyWeights: { ...surge.enemyWeights },
+  };
 }

@@ -144,7 +144,8 @@ export class PhaserInputAdapter {
           secondaryMenu === null &&
           Phaser.Input.Keyboard.JustDown(this.keys.shoot)));
     const backActivated =
-      secondaryMenu !== null && Phaser.Input.Keyboard.JustDown(this.keys.escape);
+      (secondaryMenu !== null || status === "weaponSelect") &&
+      Phaser.Input.Keyboard.JustDown(this.keys.escape);
     const menuAction = backActivated
       ? "back"
       : pointerPressed
@@ -164,6 +165,12 @@ export class PhaserInputAdapter {
           )
         : null;
     const startPressed = menuAction === "start";
+    const contractChoicePressed =
+      menuAction === "contractStandard"
+        ? 0
+        : menuAction === "contractOverdrive"
+          ? 1
+          : null;
 
     return {
       move: this.readMove(),
@@ -183,6 +190,7 @@ export class PhaserInputAdapter {
       quitToTitlePressed:
         Phaser.Input.Keyboard.JustDown(this.keys.quitToTitle) || menuAction === "title",
       upgradeChoicePressed: clickedUpgradeChoice ?? this.readUpgradeChoice(),
+      contractChoicePressed,
     };
   }
 

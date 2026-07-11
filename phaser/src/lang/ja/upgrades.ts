@@ -24,9 +24,22 @@ export const upgradeText: UpgradeText = {
     },
     piercingRounds: {
       title: "貫通弾",
-      description: "貫通数を1追加",
+      description: "1発あたりの命中可能数を1増加",
+    },
+    pulseRicochet: {
+      title: "反響回路",
+      description: "パルス弾が障害物で1回跳弾する",
     },
   },
+  categoryLabels: {
+    weapon: "武器",
+    mobility: "機動",
+    survival: "生存",
+    support: "補助",
+    capstone: "最終強化",
+  },
+  capstoneProgress: (current, required) => `最終強化の解放: 武器強化 ${current}/${required}`,
+  capstoneAcquired: "最終強化: 反響回路 取得済み",
   preview: {
     labels: {
       fireRate: "連射",
@@ -34,7 +47,8 @@ export const upgradeText: UpgradeText = {
       shotSpeed: "弾速",
       maxHp: "最大HP",
       projectiles: "弾数",
-      pierce: "貫通",
+      hitCapacity: "命中可能数",
+      ricochets: "跳弾回数",
     },
     perSecond: "/秒",
     separator: " -> ",

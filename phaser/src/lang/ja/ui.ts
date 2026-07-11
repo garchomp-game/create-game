@@ -4,6 +4,12 @@ export const uiText: UiText = {
   libraryLabel: "ライブラリ: Phaser",
   titleScreen: "ARENA CORE",
   endlessMode: "ENDLESS\n照準と位置取りで、押し寄せる敵を生き延びろ",
+  weaponSelectTitle: "開始武器を選択",
+  weaponSelectDescription:
+    "パルス: 連射と継続照準に優れた標準型\n拡散: 近距離で複数の敵を捉える広角型",
+  contractTitle: "後半契約",
+  contractDescription:
+    "標準維持: 現在の難易度と倍率を維持\n過負荷: 敵速度 +12% / スコア x1.3 / ランキング対象外",
   historyTitle: "ラン履歴",
   rankingTitle: "ローカルランキング",
   settingsTitle: "設定",
@@ -26,6 +32,10 @@ export const uiText: UiText = {
   },
   menu: {
     start: "エンドレス開始",
+    selectPulse: "パルスを選ぶ",
+    selectSpread: "拡散を選ぶ",
+    contractStandard: "標準を維持",
+    contractOverdrive: "過負荷を受け入れる",
     resume: "再開",
     restart: "リスタート",
     title: "タイトルへ",
@@ -35,6 +45,9 @@ export const uiText: UiText = {
     back: "戻る",
     historyPrevious: "前のページ",
     historyNext: "次のページ",
+    historyFilterAll: "すべて",
+    historyFilterPulse: "パルス",
+    historyFilterSpread: "拡散",
     clearHistory: "履歴を消去",
     clearRankings: "ランキングを消去",
     resetSettings: "設定を初期化",

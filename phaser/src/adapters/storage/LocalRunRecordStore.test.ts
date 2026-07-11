@@ -215,6 +215,14 @@ function makeRecord(id: string, score: number, capturedAt = "2026-07-10T10:00:00
       healPickupsCollected: 0,
       effectiveHealPickupsCollected: 0,
       upgradesChosen: 2,
+      capstoneMetrics: {
+        upgradeId: "pulseRicochet",
+        acquiredAt: null,
+        activations: 0,
+        followUpHits: 0,
+        followUpUniqueEnemiesHit: 0,
+        maxFollowUpUniqueEnemiesPerVolley: 0,
+      },
       weaponMetrics: {
         pulse: { shotsFired: 20, projectilesFired: 20, hits: 10, kills: 10 },
         spread: { shotsFired: 0, projectilesFired: 0, hits: 0, kills: 0 },
@@ -228,6 +236,9 @@ function makeRecord(id: string, score: number, capturedAt = "2026-07-10T10:00:00
       overdriveRounds: 0,
       splitShot: 0,
       piercingRounds: 0,
+      pulseRicochet: 0,
     },
+    upgradeSelections: [],
+    buildCompletedAt: null,
   });
 }

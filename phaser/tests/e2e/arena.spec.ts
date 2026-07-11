@@ -88,6 +88,10 @@ test("renders canvas and accepts movement and shooting input", async ({ page }) 
 
   await clickCanvasAt(page, 480, 307);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "weaponSelect",
+  );
+  await clickCanvasAt(page, 480, 325);
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "playing",
   );
 
@@ -136,6 +140,13 @@ test("uses native cursor affordances outside active play", async ({ page }) => {
   await expect.poll(() => getCanvasCursor(page)).toBe("pointer");
 
   await clickCanvasAt(page, 480, 307);
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "weaponSelect",
+  );
+  await expect.poll(() => getCanvasCursor(page)).toBe("pointer");
+  await moveMouseToCanvasAt(page, 480, 325);
+  await expect.poll(() => getCanvasCursor(page)).toBe("pointer");
+  await clickCanvasAt(page, 480, 325);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "playing",
   );
@@ -387,9 +398,9 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   const runExport = await page.evaluate(() => window.__ARENA_DEBUG__?.getRunExport());
   expect(runExport).toBeTruthy();
   expect(runExport?.game).toBe("arena-core-phaser");
-  expect(runExport?.appVersion).toBe("0.5");
-  expect(runExport?.rulesetVersion).toBe("phaser-v0.4-endless-pressure");
-  expect(runExport?.configVersion).toBe("phaser-v0.4-endless-pressure");
+  expect(runExport?.appVersion).toBe("0.6");
+  expect(runExport?.rulesetVersion).toBe("phaser-v0.6-build-identity-foundation");
+  expect(runExport?.configVersion).toBe("phaser-v0.6-build-identity-foundation");
   expect(runExport?.buildCommit).toMatch(/^[0-9a-f]{12}$/);
   expect(runExport?.runOrigin).toBe("test");
   expect(runExport?.rankEligibility).toEqual({
@@ -401,6 +412,8 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   expect(runExport?.resultSummary.damageTaken).toBe(12);
   expect(runExport?.resultSummary.hpRecovered).toBe(0);
   expect(runExport?.stats.healPickupsCollected).toBe(0);
+  expect(runExport?.stats.progressionMetrics.offers).toHaveLength(1);
+  expect(runExport?.stats.progressionMetrics.selections).toHaveLength(1);
   expect(runExport?.resultSummary.level).toBeGreaterThanOrEqual(2);
   expect(runExport?.wave.start).toBe(60);
   expect(runExport?.counts.enemyTypes).toEqual({ chaser: 0, brute: 0, fast: 0, ranged: 0 });
@@ -863,6 +876,7 @@ test("loads local audio assets without page errors", async ({ page }) => {
   });
 
   await clickCanvasAt(page, 480, 307);
+  await clickCanvasAt(page, 480, 325);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().music.playing)).toBe(
     true,
   );
@@ -899,6 +913,85 @@ test("loads local audio assets without page errors", async ({ page }) => {
       "upgrade.ogg",
     ].map((name) => `/audio/${name}`),
   );
+});
+
+test("selects spread as the run weapon and preserves it on restart", async ({ page }) => {
+  await gotoArena(page, "/?seed=20260619");
+
+  await clickCanvasAt(page, 480, 307);
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "weaponSelect",
+  );
+  await clickCanvasAt(page, 480, 377);
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "playing",
+  );
+
+  const selected = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+  expect(selected?.status).toBe("playing");
+  expect(selected?.weaponType).toBe("spread");
+  expect(selected?.runContext?.weaponId).toBe("spread");
+  expect(selected?.seed).toBe(20260619);
+
+  await page.evaluate(() => window.__ARENA_DEBUG__?.restart());
+  const restarted = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+  expect(restarted?.weaponType).toBe("spread");
+  expect(restarted?.runContext?.weaponId).toBe("spread");
+  expect(restarted?.seed).toBe(20260619);
+});
+
+test("replays the ranged surge timeline and excludes overdrive contracts from ranking", async ({ page }) => {
+  await gotoArena(page, "/?seed=20260619");
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
+    debug?.restart();
+    debug?.step({}, 1 / 60);
+  });
+  const scheduledAt = await page.evaluate(
+    () => window.__ARENA_DEBUG__?.getSnapshot().encounter.rangedSurge.scheduledAt,
+  );
+  expect(scheduledAt).toBeGreaterThanOrEqual(135);
+  expect(scheduledAt).toBeLessThanOrEqual(165);
+
+  await page.evaluate((scheduled) => {
+    const debug = window.__ARENA_DEBUG__;
+    if (scheduled === null) throw new Error("Encounter was not scheduled.");
+    debug?.setElapsed(scheduled - 5);
+    debug?.step({}, 1 / 60);
+  }, scheduledAt!);
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().encounter.rangedSurge.phase))
+    .toBe("warning");
+
+  await page.evaluate((scheduled) => {
+    const debug = window.__ARENA_DEBUG__;
+    if (scheduled === null) throw new Error("Encounter was not scheduled.");
+    debug?.setElapsed(scheduled + 27);
+    debug?.step({}, 1 / 60);
+    debug?.setElapsed(240);
+    debug?.step({}, 1 / 60);
+  }, scheduledAt!);
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "contractSelect",
+  );
+
+  await clickCanvasAt(page, 480, 395);
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "playing",
+  );
+  const selected = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+  expect(selected?.encounter.contract).toMatchObject({
+    choice: "overdrive",
+    enemySpeedMultiplier: 1.12,
+    scoreMultiplier: 1.3,
+  });
+  expect(selected?.runContext?.modifierIds).toContain("contract:overdrive");
+  expect(selected?.runContext?.rankEligibility.reasons).toContain("nonStandardRuleset");
+
+  await page.evaluate(() => window.__ARENA_DEBUG__?.forceGameOver());
+  const record = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().latestRunRecord);
+  expect(record?.encounterMetrics.contractChoice).toBe("overdrive");
+  expect(record?.rankEligibility.eligible).toBe(false);
 });
 
 test("fits the canvas inside portrait and landscape mobile viewports", async ({ page }) => {

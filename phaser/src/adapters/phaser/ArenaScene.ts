@@ -17,7 +17,6 @@ import {
   compareRunRecords,
   createRankEligibility,
   selectPersonalBest,
-  selectRanking,
 } from "../../application/runRecords";
 import type { RunOrigin, RunRecord } from "../../domain/runRecords";
 import type {
@@ -26,41 +25,65 @@ import type {
   ProfileSettingsUpdate,
 } from "../../domain/profile";
 import type {
-  CircleBody,
-  Enemy,
-  EnemyProjectile,
-  EnemyTypeId,
   GameEvent,
-  Pickup,
-  RandomSource,
   SimulationConfig,
   StepWorldResult,
   ViewConfig,
+  WeaponTypeId,
   WorldState,
   InputSnapshot,
 } from "../../domain/types";
 import { ConsoleLogger } from "../telemetry/ConsoleLogger";
 import { FrameSpikeReporter } from "../telemetry/FrameSpikeReporter";
 import { InMemoryMetrics } from "../telemetry/InMemoryMetrics";
-import { circleRect } from "../../math/geometry";
-import { createRandom } from "../../math/random";
+import { createRandomStreams, type RandomStreams } from "../../math/random";
 import { createWorld } from "../../simulation/createWorld";
+import { composeBuild } from "../../simulation/buildComposer";
 import { createRunResultSummary } from "../../simulation/resultSummary";
 import { stepWorld } from "../../simulation/stepWorld";
-import { selectUpgradeChoices, updateLevelProgression } from "../../simulation/systems/levelSystem";
+import {
+  getAvailableUpgradeIds,
+  getLockedUpgradeIds,
+  getMaxedUpgradeIds,
+  selectUpgradeChoices,
+  updateLevelProgression,
+} from "../../simulation/systems/levelSystem";
 import { updateRunStats } from "../../simulation/systems/statsSystem";
 import { getWaveBand } from "../../simulation/waveDirector";
 import { PhaserAudioEventRouter } from "./PhaserAudioEventRouter";
+import {
+  ArenaDebugBridge,
+  type ArenaDebugApi,
+  type ArenaRunExport,
+} from "./ArenaDebugBridge";
+import {
+  applyEnemyVisualFixture,
+  applyHealPickupFixture,
+  applyObstacleFrictionFixture,
+  applyOffscreenEnemyIndicatorFixture,
+  createDebugInput,
+} from "./ArenaDebugFixtures";
 import { PhaserArenaRenderer } from "./PhaserArenaRenderer";
 import { PhaserDebugOverlay } from "./PhaserDebugOverlay";
 import { PhaserFeedbackLayer } from "./PhaserFeedbackLayer";
 import { PhaserInputAdapter } from "./PhaserInputAdapter";
 import { PhaserMusicController } from "./PhaserMusicController";
 import type { MenuAction, SecondaryMenu } from "./PhaserMenuLayout";
-import type { PhaserUiState } from "./PhaserUiState";
+import {
+  createPhaserUiState,
+  type HistoryWeaponFilter,
+  type PhaserUiState,
+} from "./PhaserUiState";
 import { createBrowserStorage, createVolatileStorage } from "../storage/BrowserStorage";
 import { LocalProfileStore } from "../storage/LocalProfileStore";
 import { LocalRunRecordStore } from "../storage/LocalRunRecordStore";
+import {
+  copyRunStats,
+  createArenaRunExport,
+  getArenaEnemyTypeCounts,
+  getArenaObstacleContactCounts,
+} from "../telemetry/ArenaRunExport";
+import { DevRunExportClient } from "../telemetry/DevRunExportClient";
 
 export class ArenaScene extends Phaser.Scene {
   private inputAdapter!: PhaserInputAdapter;
@@ -76,6 +99,7 @@ export class ArenaScene extends Phaser.Scene {
   private runConfig: SimulationConfig = SIMULATION_CONFIG;
   private viewConfig: ViewConfig = VIEW_CONFIG;
   private runSeed = SIMULATION_CONFIG.seed;
+  private selectedWeapon: WeaponTypeId = SIMULATION_CONFIG.defaultWeapon;
   private runRecordStore!: LocalRunRecordStore;
   private runRecordCoordinator!: RunRecordCoordinator;
   private runHistory: RunRecord[] = [];
@@ -85,7 +109,7 @@ export class ArenaScene extends Phaser.Scene {
   private profileStore!: LocalProfileStore;
   private profile!: LocalProfile;
   private settings!: ProfileSettings;
-  private random!: RandomSource;
+  private randomStreams!: RandomStreams;
   private world!: WorldState;
   private lastEvents: GameEvent[] = [];
   private debugPaused = false;
@@ -93,7 +117,10 @@ export class ArenaScene extends Phaser.Scene {
   private historyClearPending = false;
   private rankingClearPending = false;
   private historyPage = 0;
+  private historyWeaponFilter: HistoryWeaponFilter = "all";
   private uiNotice: string | null = null;
+  private debugBridge: ArenaDebugBridge | null = null;
+  private readonly devRunExportClient = new DevRunExportClient();
 
   constructor() {
     super("arena");
@@ -139,7 +166,11 @@ export class ArenaScene extends Phaser.Scene {
     this.musicController.configure(this.settings);
     this.debugOverlay = new PhaserDebugOverlay(this, this.metrics);
     this.resetGame("title");
-    this.installDebugHook();
+    if (import.meta.env.DEV) {
+      this.debugBridge = new ArenaDebugBridge(window);
+      this.installDebugHook();
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.debugBridge?.uninstall());
+    }
   }
 
   update(_time: number, deltaMs: number): void {
@@ -169,7 +200,7 @@ export class ArenaScene extends Phaser.Scene {
     }
 
     this.feedbackLayer.update(deltaMs / 1000);
-    const result = stepWorld(this.world, input, deltaMs / 1000, this.random, this.runConfig);
+    const result = stepWorld(this.world, input, deltaMs / 1000, this.randomStreams, this.runConfig);
     this.recordResult(result);
     if (result.events.some((event) => event.type === "game.restart.requested")) {
       this.resetGame("playing");
@@ -193,8 +224,9 @@ export class ArenaScene extends Phaser.Scene {
     const fixedSeed = this.getFixedRunSeed();
     this.runSeed = this.createRunSeed(fixedSeed);
     this.runConfig = { ...this.simulationConfig, seed: this.runSeed };
-    this.random = createRandom(this.runSeed);
+    this.randomStreams = createRandomStreams(this.runSeed);
     this.world = createWorld(this.runConfig);
+    this.world.state.weaponType = this.selectedWeapon;
     this.world.state.status = status;
     const runOrigin = runOriginOverride ?? this.getBaseRunOrigin();
     this.runRecordCoordinator.reset(
@@ -223,6 +255,7 @@ export class ArenaScene extends Phaser.Scene {
     this.historyClearPending = false;
     this.rankingClearPending = false;
     this.historyPage = 0;
+    this.historyWeaponFilter = "all";
     this.uiNotice = null;
     this.lastEvents = [];
     this.feedbackLayer.reset();
@@ -239,6 +272,12 @@ export class ArenaScene extends Phaser.Scene {
       this.lastEvents.push(event);
       this.logEvent(event);
       if (event.type === "game.started") this.runRecordCoordinator.markStarted();
+      if (event.type === "contract.selected") {
+        this.runRecordCoordinator.addModifier(
+          `contract:${event.choice}`,
+          event.choice === "standard",
+        );
+      }
     }
     this.lastEvents = this.lastEvents.slice(-20);
     this.feedbackLayer.handleEvents(result.events, this.world);
@@ -260,6 +299,9 @@ export class ArenaScene extends Phaser.Scene {
       capturedAt: new Date().toISOString(),
       summary: createRunResultSummary(this.world),
       upgradeRanks: this.world.progression.upgradeRanks,
+      upgradeSelections: this.world.stats.progressionMetrics.selections,
+      buildCompletedAt: this.world.progression.buildCompletedAt,
+      encounterMetrics: this.world.stats.encounterMetrics,
     });
 
     if (result.status === "notStarted" || result.status === "alreadyFinalized") return;
@@ -303,21 +345,12 @@ export class ArenaScene extends Phaser.Scene {
 
   private stepDebugWorld(input: Partial<InputSnapshot>, deltaSeconds: number): void {
     this.runRecordCoordinator.markDebugMutation();
-    const debugInput: InputSnapshot = {
-      move: input.move ?? { x: 0, y: 0 },
-      aimWorld: input.aimWorld ?? null,
-      startPressed: input.startPressed ?? false,
-      shootHeld: input.shootHeld ?? false,
-      restartPressed: input.restartPressed ?? false,
-      pausePressed: input.pausePressed ?? false,
-      quitToTitlePressed: input.quitToTitlePressed ?? false,
-      upgradeChoicePressed: input.upgradeChoicePressed ?? null,
-    };
+    const debugInput = createDebugInput(input);
     const result = stepWorld(
       this.world,
       debugInput,
       deltaSeconds,
-      this.random,
+      this.randomStreams,
       this.runConfig,
     );
     this.recordResult(result);
@@ -351,7 +384,7 @@ export class ArenaScene extends Phaser.Scene {
         upgradeChoicePressed: null,
       },
       0,
-      this.random,
+      this.randomStreams,
       this.runConfig,
     );
     this.recordResult(result);
@@ -433,7 +466,7 @@ export class ArenaScene extends Phaser.Scene {
       },
     ];
     this.world.progression.xp += xpValue;
-    updateLevelProgression(this.world, this.random, this.runConfig, events);
+    updateLevelProgression(this.world, this.randomStreams.upgrade, this.runConfig, events);
     updateRunStats(this.world, events);
     this.recordResult({ events, metrics: [] });
     this.renderCurrentWorld();
@@ -444,11 +477,19 @@ export class ArenaScene extends Phaser.Scene {
 
     this.runRecordCoordinator.markDebugMutation();
     this.inputAdapter.clearTransientInput();
-    this.world.state.status = "upgradeSelect";
-    this.world.progression.pendingUpgradeChoices = selectUpgradeChoices(
+    const choices = selectUpgradeChoices(
       this.runConfig,
-      this.random,
+      this.randomStreams.upgrade,
       this.world.progression.upgradeRanks,
+      this.world.state.weaponType,
+    );
+    if (choices.length === 0) return;
+    this.world.state.status = "upgradeSelect";
+    this.world.progression.pendingUpgradeChoices = choices;
+    const availableUpgradeIds = getAvailableUpgradeIds(
+      this.runConfig,
+      this.world.progression.upgradeRanks,
+      this.world.state.weaponType,
     );
     this.recordResult({
       events: [
@@ -461,6 +502,17 @@ export class ArenaScene extends Phaser.Scene {
           type: "upgrade.offered",
           level: this.world.progression.level,
           choices: [...this.world.progression.pendingUpgradeChoices],
+          availableUpgradeIds,
+          lockedUpgradeIds: getLockedUpgradeIds(
+            this.runConfig,
+            this.world.progression.upgradeRanks,
+            this.world.state.weaponType,
+          ),
+          maxedUpgradeIds: getMaxedUpgradeIds(
+            this.runConfig,
+            this.world.progression.upgradeRanks,
+            this.world.state.weaponType,
+          ),
         },
       ],
       metrics: [],
@@ -479,176 +531,27 @@ export class ArenaScene extends Phaser.Scene {
   private setEnemyVisualFixture(band: "wave2" | "wave3" = "wave3"): void {
     this.runRecordCoordinator.markDebugMutation();
     this.inputAdapter.clearTransientInput();
-    const enemyLayout: Array<{ typeId: EnemyTypeId; x: number; y: number }> =
-      band === "wave2"
-        ? [
-            { typeId: "chaser", x: 660, y: 205 },
-            { typeId: "brute", x: 745, y: 205 },
-            { typeId: "fast", x: 830, y: 205 },
-          ]
-        : [
-            { typeId: "chaser", x: 620, y: 205 },
-            { typeId: "brute", x: 705, y: 205 },
-            { typeId: "fast", x: 790, y: 205 },
-            { typeId: "ranged", x: 875, y: 205 },
-          ];
-
-    this.world.player.position = { x: 280, y: 390 };
-    this.world.state.lastAim = { x: 0.98, y: -0.2 };
-    this.world.enemies = enemyLayout.map((item, index): Enemy => {
-      const definition = this.runConfig.enemies[item.typeId];
-      return {
-        id: `debug-enemy-${index + 1}`,
-        typeId: item.typeId,
-        position: { x: item.x, y: item.y },
-        radius: definition.radius,
-        hp: definition.hp,
-        damage: definition.damage,
-        speed: definition.speed,
-        score: definition.score,
-        xpValue: definition.xpValue,
-        behavior: definition.behavior,
-        attackTimer: definition.ranged ? definition.ranged.attackInterval : 0,
-        enteredArena: true,
-      };
-    });
-
-    const ranged = this.runConfig.enemies.ranged.ranged;
-    this.world.enemyProjectiles = band === "wave3" && ranged
-      ? [
-          {
-            id: "debug-enemy-projectile-1",
-            position: { x: 760, y: 295 },
-            velocity: { x: -ranged.projectileSpeed, y: 0 },
-            radius: ranged.projectileRadius,
-            lifetime: ranged.projectileLifetime,
-            damage: ranged.projectileDamage,
-          } satisfies EnemyProjectile,
-        ]
-      : [];
-    this.world.bullets = [];
-    this.world.pickups = [];
-    this.world.nextEnemyId = this.world.enemies.length + 1;
-    this.world.nextEnemyProjectileId = this.world.enemyProjectiles.length + 1;
+    applyEnemyVisualFixture(this.world, this.runConfig, band);
     this.renderCurrentWorld();
   }
 
   private setObstacleFrictionFixture(): void {
-    const obstacle = this.runConfig.obstacles[0];
-    if (!obstacle) return;
-
     this.runRecordCoordinator.markDebugMutation();
     this.inputAdapter.clearTransientInput();
-    this.world.player.position = {
-      x: obstacle.x - this.runConfig.player.radius,
-      y: obstacle.y + obstacle.height / 2,
-    };
-    this.world.state.lastAim = { x: 1, y: 0 };
-    this.world.enemies = [];
-    this.world.bullets = [];
-    this.world.enemyProjectiles = [];
-    this.world.pickups = [];
-    this.renderCurrentWorld();
+    if (applyObstacleFrictionFixture(this.world, this.runConfig)) this.renderCurrentWorld();
   }
 
   private setHealPickupFixture(mode: "damaged" | "full" | "fatal" | "visual" = "damaged"): void {
     this.runRecordCoordinator.markDebugMutation();
     this.inputAdapter.clearTransientInput();
-    const maxHp = this.runConfig.player.maxHp + this.world.runtime.maxHpBonus;
-    const healValue = this.getDebugHealValue();
-
-    this.world.state.status = "playing";
-    this.world.state.damageCooldown = 0;
-    this.world.player.position =
-      mode === "visual" ? { x: 280, y: 390 } : { ...this.world.player.position };
-    this.world.state.lastAim = { x: 1, y: 0 };
-    this.world.enemies = [];
-    this.world.bullets = [];
-    this.world.enemyProjectiles = [];
-    this.world.pickups = [];
-
-    if (mode === "full") {
-      this.world.state.hp = maxHp;
-    } else if (mode === "fatal") {
-      this.world.state.hp = 1;
-    } else {
-      this.world.state.hp = Math.max(1, maxHp - 40);
-    }
-
-    if (mode === "visual") {
-      this.world.state.hp = Math.max(1, maxHp - 32);
-      this.world.pickups = [
-        {
-          id: "debug-xp-pickup",
-          kind: "xp",
-          position: { x: 620, y: 300 },
-          radius: this.runConfig.pickup.xpRadius,
-          xpValue: 1,
-          healValue: 0,
-          lifetime: null,
-        },
-        this.createDebugHealPickup("debug-heal-pickup", { x: 665, y: 300 }, healValue),
-      ];
-      this.world.enemies = [this.createDebugEnemy("chaser", { x: 740, y: 300 }, 1)];
-      const ranged = this.runConfig.enemies.ranged.ranged;
-      if (ranged) {
-        this.world.enemyProjectiles = [
-          {
-            id: "debug-heal-projectile",
-            position: { x: 705, y: 300 },
-            velocity: { x: 0, y: 0 },
-            radius: ranged.projectileRadius,
-            lifetime: ranged.projectileLifetime,
-            damage: ranged.projectileDamage,
-          },
-        ];
-      }
-    } else {
-      this.world.pickups = [
-        this.createDebugHealPickup(
-          "debug-heal-pickup",
-          { ...this.world.player.position },
-          healValue,
-        ),
-      ];
-    }
-
-    if (mode === "fatal") {
-      const ranged = this.runConfig.enemies.ranged.ranged;
-      this.world.enemyProjectiles = [
-        {
-          id: "debug-fatal-projectile",
-          position: { ...this.world.player.position },
-          velocity: { x: 0, y: 0 },
-          radius: ranged?.projectileRadius ?? 6,
-          lifetime: ranged?.projectileLifetime ?? 1,
-          damage: maxHp,
-        },
-      ];
-    }
-
+    applyHealPickupFixture(this.world, this.runConfig, mode);
     this.renderCurrentWorld();
   }
 
   private setOffscreenEnemyIndicatorFixture(): void {
     this.runRecordCoordinator.markDebugMutation();
     this.inputAdapter.clearTransientInput();
-    const { width, height } = this.runConfig.arena;
-
-    this.world.state.status = "playing";
-    this.world.state.elapsed = 64;
-    this.world.player.position = { x: width / 2, y: height / 2 };
-    this.world.state.lastAim = { x: 1, y: 0 };
-    this.world.enemies = [
-      this.createDebugEnemy("chaser", { x: width * 0.48, y: -34 }, 1, false),
-      this.createDebugEnemy("brute", { x: width + 34, y: height * 0.35 }, 2, false),
-      this.createDebugEnemy("fast", { x: width * 0.7, y: height + 34 }, 3, false),
-      this.createDebugEnemy("ranged", { x: -34, y: height * 0.68 }, 4, false),
-    ];
-    this.world.enemyProjectiles = [];
-    this.world.bullets = [];
-    this.world.pickups = [];
-    this.world.nextEnemyId = this.world.enemies.length + 1;
+    applyOffscreenEnemyIndicatorFixture(this.world, this.runConfig);
     this.renderCurrentWorld();
   }
 
@@ -674,9 +577,9 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private installDebugHook(): void {
-    if (!import.meta.env.DEV) return;
+    if (!this.debugBridge) return;
 
-    window.__ARENA_DEBUG__ = {
+    const api: ArenaDebugApi = {
       getSnapshot: () => ({
         configVersion: SIMULATION_CONFIG_VERSION,
         buildCommit: this.getBuildCommit(),
@@ -684,6 +587,11 @@ export class ArenaScene extends Phaser.Scene {
         latestRunRecord: this.latestRunRecord ? { ...this.latestRunRecord } : null,
         secondaryMenu: this.secondaryMenu,
         seed: this.runSeed,
+        randomStreams: {
+          version: this.randomStreams.version,
+          rootSeed: this.randomStreams.rootSeed,
+          seeds: { ...this.randomStreams.seeds },
+        },
         status: this.world.state.status,
         elapsed: this.world.state.elapsed,
         hp: this.world.state.hp,
@@ -692,20 +600,27 @@ export class ArenaScene extends Phaser.Scene {
         level: this.world.progression.level,
         xp: this.world.progression.xp,
         xpToNext: this.world.progression.xpToNext,
+        buildCompletedAt: this.world.progression.buildCompletedAt,
         pendingUpgradeChoices: [...this.world.progression.pendingUpgradeChoices],
         upgradeRanks: { ...this.world.progression.upgradeRanks },
         runtime: { ...this.world.runtime },
+        buildComposition: composeBuild(
+          this.runConfig,
+          this.world.state.weaponType,
+          this.world.progression.upgradeRanks,
+        ),
+        encounter: structuredClone(this.world.encounter),
         wave: { ...getWaveBand(this.runConfig, this.world.state.elapsed) },
-        stats: this.getStatsSnapshot(),
+        stats: copyRunStats(this.world),
         resultSummary: createRunResultSummary(this.world),
         player: { ...this.world.player.position },
         lastAim: { ...this.world.state.lastAim },
         bulletCount: this.world.bullets.length,
         enemyCount: this.world.enemies.length,
-        enemyTypeCounts: this.getEnemyTypeCounts(),
+        enemyTypeCounts: getArenaEnemyTypeCounts(this.world),
         enemyProjectileCount: this.world.enemyProjectiles.length,
         pickupCount: this.world.pickups.length,
-        obstacleContacts: this.getObstacleContactCounts(),
+        obstacleContacts: getArenaObstacleContactCounts(this.world),
         feedback: this.feedbackLayer.getSnapshot(),
         audioCues: this.audioRouter.getLastCues(),
         music: this.musicController.getSnapshot(),
@@ -729,6 +644,7 @@ export class ArenaScene extends Phaser.Scene {
         this.historyClearPending = false;
         this.rankingClearPending = false;
         this.historyPage = 0;
+        this.historyWeaponFilter = "all";
         this.renderCurrentWorld();
       },
       saveRunExport: () => this.submitDevRunExport(),
@@ -778,46 +694,23 @@ export class ArenaScene extends Phaser.Scene {
         this.stepDebugWorld(input, deltaSeconds);
       },
     };
+    this.debugBridge.install(api);
   }
 
-  private getRunExport() {
-    const context = this.runRecordCoordinator.getContext();
-    return {
+  private getRunExport(): ArenaRunExport {
+    return createArenaRunExport({
       capturedAt: new Date().toISOString(),
-      game: "arena-core-phaser" as const,
-      appVersion: APP_VERSION,
-      rulesetVersion: RULESET_VERSION,
-      configVersion: SIMULATION_CONFIG_VERSION,
       buildCommit: this.getBuildCommit(),
-      runId: context?.id ?? "unknown",
-      profileId: context?.profileId ?? this.profile.id,
-      modeId: context?.modeId ?? DEFAULT_MODE_ID,
-      stageId: context?.stageId ?? DEFAULT_STAGE_ID,
-      difficultyId: context?.difficultyId ?? DEFAULT_DIFFICULTY_ID,
-      runOrigin: context?.runOrigin ?? this.getBaseRunOrigin(),
-      rankEligibility: context?.rankEligibility ?? createRankEligibility(this.getBaseRunOrigin()),
-      seed: this.runSeed,
-      seedCategory: context?.seedCategory ?? resolveSeedCategory(this.getFixedRunSeed()),
-      status: this.world.state.status,
-      elapsed: this.world.state.elapsed,
-      wave: { ...getWaveBand(this.runConfig, this.world.state.elapsed) },
-      resultSummary: createRunResultSummary(this.world),
-      stats: this.getStatsSnapshot(),
-      counts: {
-        bullets: this.world.bullets.length,
-        enemies: this.world.enemies.length,
-        enemyTypes: this.getEnemyTypeCounts(),
-        enemyProjectiles: this.world.enemyProjectiles.length,
-        pickups: this.world.pickups.length,
-        obstacleContacts: this.getObstacleContactCounts(),
-      },
-      player: { ...this.world.player.position },
-      lastAim: { ...this.world.state.lastAim },
-      pendingUpgradeChoices: [...this.world.progression.pendingUpgradeChoices],
-      upgradeRanks: { ...this.world.progression.upgradeRanks },
-      runtime: { ...this.world.runtime },
-      lastEvents: [...this.lastEvents],
-    };
+      context: this.runRecordCoordinator.getContext(),
+      profileId: this.profile.id,
+      baseRunOrigin: this.getBaseRunOrigin(),
+      fixedSeed: this.getFixedRunSeed(),
+      runSeed: this.runSeed,
+      randomStreams: this.randomStreams,
+      runConfig: this.runConfig,
+      world: this.world,
+      lastEvents: this.lastEvents,
+    });
   }
 
   private submitDevRunExport(): Promise<{ ok: boolean; path?: string; error?: string }> {
@@ -826,30 +719,21 @@ export class ArenaScene extends Phaser.Scene {
     }
 
     const runExport = this.getRunExport();
-    return fetch("/__arena/run-export", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(runExport),
-    })
-      .then(async (response) => {
-        const payload = (await response.json()) as { ok: boolean; path?: string; error?: string };
-        if (!response.ok || !payload.ok) {
-          throw new Error(payload.error ?? "Run export logging failed.");
+    return this.devRunExportClient
+      .submit(runExport)
+      .then((payload) => {
+        if (payload.ok) {
+          this.logger.info("run.export.saved", {
+            path: payload.path,
+            score: runExport.resultSummary.score,
+            elapsed: Number(runExport.resultSummary.elapsed.toFixed(2)),
+          });
+        } else {
+          this.logger.warn("run.export.save_failed", {
+            message: payload.error ?? "Run export logging failed.",
+          });
         }
         return payload;
-      })
-      .then((payload) => {
-        this.logger.info("run.export.saved", {
-          path: payload.path,
-          score: runExport.resultSummary.score,
-          elapsed: Number(runExport.resultSummary.elapsed.toFixed(2)),
-        });
-        return payload;
-      })
-      .catch((error) => {
-        const message = error instanceof Error ? error.message : String(error);
-        this.logger.warn("run.export.save_failed", { message });
-        return { ok: false, error: message };
       });
   }
 
@@ -857,111 +741,30 @@ export class ArenaScene extends Phaser.Scene {
     return import.meta.env.VITE_GIT_COMMIT || "unknown";
   }
 
-  private getEnemyTypeCounts(): Record<EnemyTypeId, number> {
-    return this.world.enemies.reduce(
-      (counts, enemy) => {
-        counts[enemy.typeId] += 1;
-        return counts;
-      },
-      { chaser: 0, brute: 0, fast: 0, ranged: 0 },
-    );
-  }
-
-  private getObstacleContactCounts(): {
-    player: number;
-    enemies: number;
-    bullets: number;
-    enemyProjectiles: number;
-    pickups: number;
-  } {
-    return {
-      player: this.countObstacleContacts([this.world.player]),
-      enemies: this.countObstacleContacts(this.world.enemies),
-      bullets: this.countObstacleContacts(this.world.bullets),
-      enemyProjectiles: this.countObstacleContacts(this.world.enemyProjectiles),
-      pickups: this.countObstacleContacts(this.world.pickups),
-    };
-  }
-
-  private countObstacleContacts(bodies: CircleBody[]): number {
-    return bodies.filter((body) =>
-      this.world.obstacles.some((obstacle) => circleRect(body, obstacle)),
-    ).length;
-  }
-
-  private getStatsSnapshot(): WorldState["stats"] {
-    return {
-      shotsFired: this.world.stats.shotsFired,
-      enemiesKilled: this.world.stats.enemiesKilled,
-      hitsTaken: this.world.stats.hitsTaken,
-      damageTaken: this.world.stats.damageTaken,
-      damageTakenBySource: { ...this.world.stats.damageTakenBySource },
-      lastDamageSource: this.world.stats.lastDamageSource
-        ? { ...this.world.stats.lastDamageSource }
-        : null,
-      xpCollected: this.world.stats.xpCollected,
-      pickupsCollected: this.world.stats.pickupsCollected,
-      hpRecovered: this.world.stats.hpRecovered,
-      healPickupsCollected: this.world.stats.healPickupsCollected,
-      effectiveHealPickupsCollected: this.world.stats.effectiveHealPickupsCollected,
-      upgradesChosen: this.world.stats.upgradesChosen,
-      weaponMetrics: {
-        pulse: { ...this.world.stats.weaponMetrics.pulse },
-        spread: { ...this.world.stats.weaponMetrics.spread },
-        pierce: { ...this.world.stats.weaponMetrics.pierce },
-      },
-    };
-  }
-
-  private createDebugHealPickup(id: string, position: { x: number; y: number }, healValue: number): Pickup {
-    return {
-      id,
-      kind: "heal",
-      position,
-      radius: this.runConfig.pickup.healRadius,
-      xpValue: 0,
-      healValue,
-      lifetime: this.runConfig.pickup.healLifetime,
-    };
-  }
-
-  private createDebugEnemy(
-    typeId: EnemyTypeId,
-    position: { x: number; y: number },
-    index: number,
-    enteredArena = true,
-  ): Enemy {
-    const definition = this.runConfig.enemies[typeId];
-    return {
-      id: `debug-heal-enemy-${index}`,
-      typeId,
-      position,
-      radius: definition.radius,
-      hp: definition.hp,
-      damage: definition.damage,
-      speed: definition.speed,
-      score: definition.score,
-      xpValue: definition.xpValue,
-      behavior: definition.behavior,
-      attackTimer: definition.ranged ? definition.ranged.attackInterval : 0,
-      enteredArena,
-    };
-  }
-
-  private getDebugHealValue(): number {
-    const maxHp = this.runConfig.player.maxHp + this.world.runtime.maxHpBonus;
-    return Math.max(
-      this.runConfig.pickup.healMinimum,
-      Math.floor(maxHp * this.runConfig.pickup.healRatio),
-    );
-  }
-
   private handleMenuAction(action: MenuAction): boolean {
+    if (action === "start" && this.world.state.status === "title") {
+      this.world.state.status = "weaponSelect";
+      this.uiNotice = null;
+      return true;
+    }
+
+    if (action === "selectPulse" || action === "selectSpread") {
+      this.selectedWeapon = action === "selectPulse" ? "pulse" : "spread";
+      this.resetGame("playing");
+      return true;
+    }
+
+    if (action === "back" && this.world.state.status === "weaponSelect") {
+      this.resetGame("title");
+      return true;
+    }
+
     if (action === "history" || action === "ranking" || action === "settings") {
       this.secondaryMenu = action;
       this.historyClearPending = false;
       this.rankingClearPending = false;
       this.historyPage = 0;
+      this.historyWeaponFilter = "all";
       this.uiNotice = null;
       return true;
     }
@@ -971,6 +774,7 @@ export class ArenaScene extends Phaser.Scene {
       this.historyClearPending = false;
       this.rankingClearPending = false;
       this.historyPage = 0;
+      this.historyWeaponFilter = "all";
       this.uiNotice = null;
       return true;
     }
@@ -994,9 +798,30 @@ export class ArenaScene extends Phaser.Scene {
       return true;
     }
 
+    if (
+      action === "historyFilterAll" ||
+      action === "historyFilterPulse" ||
+      action === "historyFilterSpread"
+    ) {
+      this.historyWeaponFilter =
+        action === "historyFilterPulse"
+          ? "pulse"
+          : action === "historyFilterSpread"
+            ? "spread"
+            : "all";
+      this.historyPage = 0;
+      this.historyClearPending = false;
+      this.uiNotice = null;
+      return true;
+    }
+
     if (action === "historyPrevious" || action === "historyNext") {
-      const count = this.runHistory.filter((record) => record.profileId === this.profile.id).length;
-      const maxPage = Math.max(0, Math.ceil(count / 8) - 1);
+      const count = this.runHistory.filter(
+        (record) =>
+          record.profileId === this.profile.id &&
+          (this.historyWeaponFilter === "all" || record.weaponId === this.historyWeaponFilter),
+      ).length;
+      const maxPage = Math.max(0, Math.ceil(count / 7) - 1);
       this.historyPage = Math.max(
         0,
         Math.min(maxPage, this.historyPage + (action === "historyNext" ? 1 : -1)),
@@ -1095,30 +920,25 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private createUiState(): PhaserUiState {
-    const context = this.runRecordCoordinator.getContext();
-    const ranking = context
-      ? selectRanking(
-          this.runRankings.filter((record) => record.profileId === this.profile.id),
-          context,
-        )
-      : [];
-    return {
+    return createPhaserUiState({
       secondaryMenu: this.secondaryMenu,
-      records: this.runHistory.filter((record) => record.profileId === this.profile.id),
-      ranking,
-      profile: { ...this.profile },
-      settings: { ...this.settings },
-      latestRunRecord: this.latestRunRecord ? { ...this.latestRunRecord } : null,
-      previousBest: this.previousBest ? { ...this.previousBest } : null,
+      runHistory: this.runHistory,
+      runRankings: this.runRankings,
+      runContext: this.runRecordCoordinator.getContext(),
+      profile: this.profile,
+      settings: this.settings,
+      latestRunRecord: this.latestRunRecord,
+      previousBest: this.previousBest,
       historyClearPending: this.historyClearPending,
       rankingClearPending: this.rankingClearPending,
       historyPage: this.historyPage,
+      historyWeaponFilter: this.historyWeaponFilter,
       focusedMenuAction: this.inputAdapter.getFocusedMenuAction(
         this.world.state.status,
         this.secondaryMenu,
       ),
       notice: this.uiNotice,
-    };
+    });
   }
 
   private createRunSeed(fixedSeed: number | null): number {

@@ -4,6 +4,10 @@ export type SecondaryMenu = "history" | "ranking" | "settings";
 
 export type MenuAction =
   | "start"
+  | "selectPulse"
+  | "selectSpread"
+  | "contractStandard"
+  | "contractOverdrive"
   | "resume"
   | "restart"
   | "title"
@@ -13,6 +17,9 @@ export type MenuAction =
   | "back"
   | "historyPrevious"
   | "historyNext"
+  | "historyFilterAll"
+  | "historyFilterPulse"
+  | "historyFilterSpread"
   | "clearHistory"
   | "clearRankings"
   | "resetSettings"
@@ -42,6 +49,10 @@ export type UpgradeChoiceButton = {
 
 const DEFAULT_MENU_LABELS: Record<MenuAction, string> = {
   start: "エンドレス開始",
+  selectPulse: "パルスを選ぶ",
+  selectSpread: "拡散を選ぶ",
+  contractStandard: "標準を維持",
+  contractOverdrive: "過負荷を受け入れる",
   resume: "再開",
   restart: "リスタート",
   title: "タイトルへ",
@@ -51,6 +62,9 @@ const DEFAULT_MENU_LABELS: Record<MenuAction, string> = {
   back: "戻る",
   historyPrevious: "前のページ",
   historyNext: "次のページ",
+  historyFilterAll: "すべて",
+  historyFilterPulse: "パルス",
+  historyFilterSpread: "拡散",
   clearHistory: "履歴を消去",
   clearRankings: "ランキングを消去",
   resetSettings: "設定を初期化",
@@ -73,6 +87,56 @@ export function getMenuButtons(
   const buttonWidth = 260;
   const buttonHeight = 42;
   const x = arenaWidth / 2 - buttonWidth / 2;
+
+  if (status === "weaponSelect") {
+    return [
+      {
+        action: "selectPulse",
+        label: label("selectPulse"),
+        x,
+        y: 304,
+        width: buttonWidth,
+        height: buttonHeight,
+      },
+      {
+        action: "selectSpread",
+        label: label("selectSpread"),
+        x,
+        y: 356,
+        width: buttonWidth,
+        height: buttonHeight,
+      },
+      {
+        action: "back",
+        label: label("back"),
+        x,
+        y: 434,
+        width: buttonWidth,
+        height: buttonHeight,
+      },
+    ];
+  }
+
+  if (status === "contractSelect") {
+    return [
+      {
+        action: "contractStandard",
+        label: label("contractStandard"),
+        x,
+        y: 322,
+        width: buttonWidth,
+        height: buttonHeight,
+      },
+      {
+        action: "contractOverdrive",
+        label: label("contractOverdrive"),
+        x,
+        y: 374,
+        width: buttonWidth,
+        height: buttonHeight,
+      },
+    ];
+  }
 
   if (secondaryMenu === "settings") {
     const actions: MenuAction[] = [
@@ -98,10 +162,34 @@ export function getMenuButtons(
   if (secondaryMenu === "history") {
     return [
       {
+        action: "historyFilterAll",
+        label: label("historyFilterAll"),
+        x: arenaWidth / 2 - 245,
+        y: arenaHeight - 198,
+        width: 150,
+        height: buttonHeight,
+      },
+      {
+        action: "historyFilterPulse",
+        label: label("historyFilterPulse"),
+        x: arenaWidth / 2 - 75,
+        y: arenaHeight - 198,
+        width: 150,
+        height: buttonHeight,
+      },
+      {
+        action: "historyFilterSpread",
+        label: label("historyFilterSpread"),
+        x: arenaWidth / 2 + 95,
+        y: arenaHeight - 198,
+        width: 150,
+        height: buttonHeight,
+      },
+      {
         action: "historyPrevious",
         label: label("historyPrevious"),
         x: arenaWidth / 2 - 270,
-        y: arenaHeight - 150,
+        y: arenaHeight - 146,
         width: 250,
         height: buttonHeight,
       },
@@ -109,7 +197,7 @@ export function getMenuButtons(
         action: "historyNext",
         label: label("historyNext"),
         x: arenaWidth / 2 + 20,
-        y: arenaHeight - 150,
+        y: arenaHeight - 146,
         width: 250,
         height: buttonHeight,
       },

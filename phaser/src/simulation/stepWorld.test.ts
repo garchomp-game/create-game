@@ -10,9 +10,10 @@ import type {
   Vec2,
   WeaponTypeId,
 } from "../domain/types";
-import { createRandom } from "../math/random";
+import { createRandomStreams } from "../math/random";
+import type { RandomStreams } from "../math/random";
 import { createWorld } from "./createWorld";
-import { selectUpgradeChoices } from "./systems/levelSystem";
+import { getXpToNextLevel, selectUpgradeChoices } from "./systems/levelSystem";
 import { calculateHealDropChance, updatePickups } from "./systems/pickupSystem";
 import { stepWorld } from "./stepWorld";
 import { getWaveBand, selectEnemyTypeForWave } from "./waveDirector";
@@ -54,14 +55,16 @@ function createTestBullet(
   const definition = GAME_CONFIG.weapons[weaponType];
   return {
     id: "bullet-test",
+    volleyId: 1,
     weaponType,
     position: { x: 540, y: 270 },
     radius: definition.radius,
     velocity: { x: 0, y: 0 },
     lifetime: definition.lifetime,
     damage: definition.damage,
-    pierceRemaining: definition.pierceCount,
+    hitsRemaining: definition.hitCapacity,
     ricochetRemaining: definition.ricochetCount,
+    ricochetsUsed: 0,
     hitEnemyIds: [],
     ...overrides,
   };
@@ -119,12 +122,27 @@ function createKillEvent(
 ): Extract<GameEvent, { type: "enemy.killed" }> {
   return {
     type: "enemy.killed",
+    bulletId: "bullet-test",
+    volleyId: 1,
     enemyId,
     enemyType,
     weaponType: "pulse",
     scoreAwarded: GAME_CONFIG.enemies[enemyType].score,
     xpAwarded: GAME_CONFIG.enemies[enemyType].xpValue,
     position,
+  };
+}
+
+function createFixedRandomStreams(value: number): RandomStreams {
+  const streams = createRandomStreams(GAME_CONFIG.seed);
+  const fixed = () => value;
+  return {
+    ...streams,
+    spawn: fixed,
+    upgrade: fixed,
+    drop: fixed,
+    encounter: fixed,
+    stageVariant: fixed,
   };
 }
 
@@ -135,7 +153,7 @@ describe("stepWorld", () => {
       world,
       { ...neutralInput, aimWorld: null },
       1 / 60,
-      createRandom(GAME_CONFIG.seed),
+      createRandomStreams(GAME_CONFIG.seed),
       GAME_CONFIG,
     );
 
@@ -148,7 +166,7 @@ describe("stepWorld", () => {
       world,
       { ...neutralInput, shootHeld: true },
       1 / 60,
-      createRandom(GAME_CONFIG.seed),
+      createRandomStreams(GAME_CONFIG.seed),
       GAME_CONFIG,
     );
 
@@ -174,7 +192,7 @@ describe("stepWorld", () => {
       world,
       { ...neutralInput, aimWorld: null, shootHeld: true },
       1 / 60,
-      createRandom(GAME_CONFIG.seed),
+      createRandomStreams(GAME_CONFIG.seed),
       GAME_CONFIG,
     );
 
@@ -190,7 +208,7 @@ describe("stepWorld", () => {
       world,
       { ...neutralInput, aimWorld: null, shootHeld: true },
       1 / 60,
-      createRandom(GAME_CONFIG.seed),
+      createRandomStreams(GAME_CONFIG.seed),
       GAME_CONFIG,
     );
 
@@ -220,7 +238,7 @@ describe("stepWorld", () => {
       world,
       { ...neutralInput, aimWorld: null, shootHeld: true },
       1 / 60,
-      createRandom(GAME_CONFIG.seed),
+      createRandomStreams(GAME_CONFIG.seed),
       GAME_CONFIG,
     );
 
@@ -240,7 +258,7 @@ describe("stepWorld", () => {
       world,
       neutralInput,
       1 / 60,
-      createRandom(GAME_CONFIG.seed),
+      createRandomStreams(GAME_CONFIG.seed),
       GAME_CONFIG,
     );
 
@@ -267,7 +285,13 @@ describe("stepWorld", () => {
     const world = createWorld(GAME_CONFIG);
     world.state.spawnTimer = 0;
 
-    const result = stepWorld(world, neutralInput, 1 / 60, () => 0.99, GAME_CONFIG);
+    const result = stepWorld(
+      world,
+      neutralInput,
+      1 / 60,
+      createFixedRandomStreams(0.99),
+      GAME_CONFIG,
+    );
 
     expect(world.enemies[0]?.typeId).toBe("chaser");
     expect(result.events).toContainEqual(
@@ -283,11 +307,12 @@ describe("stepWorld", () => {
       world,
       { ...neutralInput, move: { x: 1, y: 0 } },
       1,
-      createRandom(GAME_CONFIG.seed),
+      createRandomStreams(GAME_CONFIG.seed),
       GAME_CONFIG,
     );
 
     expect(world.player.position.x).toBe(GAME_CONFIG.arena.width - GAME_CONFIG.player.radius);
+    expect(world.stats.movementDistance).toBe(1);
   });
 
   it("blocks player movement through obstacles", () => {
@@ -301,13 +326,14 @@ describe("stepWorld", () => {
       world,
       { ...neutralInput, move: { x: 1, y: 0 } },
       1 / 60,
-      createRandom(GAME_CONFIG.seed),
+      createRandomStreams(GAME_CONFIG.seed),
       GAME_CONFIG,
     );
 
     expect(world.player.position.x).toBe(
       GAME_CONFIG.obstacles[0]!.x - GAME_CONFIG.player.radius - 1,
     );
+    expect(world.stats.movementDistance).toBe(0);
   });
 
   it("lets the player slide along an obstacle while touching its side", () => {
@@ -322,7 +348,7 @@ describe("stepWorld", () => {
       world,
       { ...neutralInput, move: { x: 0, y: 1 } },
       1 / 60,
-      createRandom(GAME_CONFIG.seed),
+      createRandomStreams(GAME_CONFIG.seed),
       GAME_CONFIG,
     );
 
@@ -343,7 +369,7 @@ describe("stepWorld", () => {
       world,
       { ...neutralInput, move: { x: 1, y: 1 } },
       1 / 60,
-      createRandom(GAME_CONFIG.seed),
+      createRandomStreams(GAME_CONFIG.seed),
       GAME_CONFIG,
     );
 
@@ -363,12 +389,27 @@ describe("stepWorld", () => {
       }),
     );
 
-    stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+    const result = stepWorld(
+      world,
+      neutralInput,
+      1 / 60,
+      createRandomStreams(GAME_CONFIG.seed),
+      GAME_CONFIG,
+    );
 
     expect(world.bullets).toHaveLength(1);
     expect(world.bullets[0]?.velocity.x).toBeLessThan(0);
     expect(world.bullets[0]?.position.x).toBeLessThan(obstacle.x);
     expect(world.bullets[0]?.ricochetRemaining).toBe(0);
+    expect(world.bullets[0]?.ricochetsUsed).toBe(1);
+    expect(result.events).toContainEqual(
+      expect.objectContaining({
+        type: "bullet.ricocheted",
+        bulletId: "bullet-test",
+        obstacleId: obstacle.id,
+        ricochetsUsed: 1,
+      }),
+    );
   });
 
   it("removes player bullets that hit an obstacle with no ricochets remaining", () => {
@@ -383,7 +424,7 @@ describe("stepWorld", () => {
       }),
     );
 
-    stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+    stepWorld(world, neutralInput, 1 / 60, createRandomStreams(GAME_CONFIG.seed), GAME_CONFIG);
 
     expect(world.bullets).toHaveLength(0);
   });
@@ -393,7 +434,7 @@ describe("stepWorld", () => {
     world.enemies.push(createTestEnemy());
     world.bullets.push(createTestBullet());
 
-    const result = stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+    const result = stepWorld(world, neutralInput, 1 / 60, createRandomStreams(GAME_CONFIG.seed), GAME_CONFIG);
 
     expect(world.enemies).toHaveLength(0);
     expect(world.bullets).toHaveLength(0);
@@ -425,7 +466,7 @@ describe("stepWorld", () => {
       world,
       neutralInput,
       1 / 60,
-      createRandom(config.seed),
+      createRandomStreams(config.seed),
       config,
     );
 
@@ -440,7 +481,7 @@ describe("stepWorld", () => {
       world,
       neutralInput,
       1 / 60,
-      createRandom(config.seed),
+      createRandomStreams(config.seed),
       config,
     );
 
@@ -463,7 +504,7 @@ describe("stepWorld", () => {
     world.enemies.push(createTestEnemy("chaser"));
     world.bullets.push(createTestBullet());
 
-    const killResult = stepWorld(world, neutralInput, 1 / 60, createRandom(config.seed), config);
+    const killResult = stepWorld(world, neutralInput, 1 / 60, createRandomStreams(config.seed), config);
     const healPickup = world.pickups.find((pickup) => pickup.kind === "heal");
 
     expect(healPickup).toBeTruthy();
@@ -477,7 +518,7 @@ describe("stepWorld", () => {
     );
 
     world.player.position = { ...healPickup!.position };
-    const collectResult = stepWorld(world, neutralInput, 1 / 60, createRandom(config.seed), config);
+    const collectResult = stepWorld(world, neutralInput, 1 / 60, createRandomStreams(config.seed), config);
 
     expect(world.state.hp).toBe(82);
     expect(world.stats.hpRecovered).toBe(12);
@@ -496,7 +537,7 @@ describe("stepWorld", () => {
     const world = createWorld(GAME_CONFIG);
     world.pickups.push(createTestHealPickup({ position: { ...world.player.position }, healValue: 20 }));
 
-    const result = stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+    const result = stepWorld(world, neutralInput, 1 / 60, createRandomStreams(GAME_CONFIG.seed), GAME_CONFIG);
 
     expect(world.state.hp).toBe(GAME_CONFIG.player.maxHp);
     expect(world.pickups).toHaveLength(0);
@@ -526,7 +567,7 @@ describe("stepWorld", () => {
       }),
     );
 
-    stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+    stepWorld(world, neutralInput, 1 / 60, createRandomStreams(GAME_CONFIG.seed), GAME_CONFIG);
 
     expect(world.pickups.find((pickup) => pickup.id === "near-pickup")?.position.x).toBeLessThan(
       world.player.position.x + 80,
@@ -545,7 +586,7 @@ describe("stepWorld", () => {
       }),
     );
 
-    stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+    stepWorld(world, neutralInput, 1 / 60, createRandomStreams(GAME_CONFIG.seed), GAME_CONFIG);
 
     expect(world.pickups.find((pickup) => pickup.id === "near-heal")?.position.x).toBeLessThan(
       world.player.position.x + 80,
@@ -566,7 +607,7 @@ describe("stepWorld", () => {
       }),
     );
 
-    const result = stepWorld(world, neutralInput, 0.02, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+    const result = stepWorld(world, neutralInput, 0.02, createRandomStreams(GAME_CONFIG.seed), GAME_CONFIG);
 
     expect(world.pickups.map((pickup) => pickup.id)).toEqual(["long-lived-xp"]);
     expect(result.events).toContainEqual(
@@ -585,6 +626,7 @@ describe("stepWorld", () => {
       healEnemyMultipliers: { chaser: 1 },
     });
     const world = createWorld(config);
+    world.encounter.rangedSurge.scheduledAt = 150;
     let randomCalls = 0;
     const random = () => {
       randomCalls += 1;
@@ -593,7 +635,14 @@ describe("stepWorld", () => {
     world.enemies.push(createTestEnemy("chaser"));
     world.bullets.push(createTestBullet());
 
-    stepWorld(world, neutralInput, 1 / 60, random, config);
+    const randomStreams = createFixedRandomStreams(0.5);
+    randomStreams.spawn = random;
+    randomStreams.upgrade = random;
+    randomStreams.drop = random;
+    randomStreams.encounter = random;
+    randomStreams.stageVariant = random;
+
+    stepWorld(world, neutralInput, 1 / 60, randomStreams, config);
 
     expect(randomCalls).toBe(0);
     expect(world.pickups.some((pickup) => pickup.kind === "heal")).toBe(true);
@@ -656,6 +705,8 @@ describe("stepWorld", () => {
     const events = [
       {
         type: "enemy.killed" as const,
+        bulletId: "bullet-test",
+        volleyId: 1,
         enemyId: "enemy-in-obstacle",
         enemyType: "chaser" as const,
         weaponType: "pulse" as const,
@@ -691,6 +742,8 @@ describe("stepWorld", () => {
     const events = [
       {
         type: "enemy.killed" as const,
+        bulletId: "bullet-test",
+        volleyId: 1,
         enemyId: "enemy-in-large-obstacle",
         enemyType: "chaser" as const,
         weaponType: "pulse" as const,
@@ -779,7 +832,7 @@ describe("stepWorld", () => {
       damage: 100,
     });
 
-    const result = stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+    const result = stepWorld(world, neutralInput, 1 / 60, createRandomStreams(GAME_CONFIG.seed), GAME_CONFIG);
 
     expect(world.state.status).toBe("gameOver");
     expect(world.state.hp).toBe(0);
@@ -795,7 +848,7 @@ describe("stepWorld", () => {
 
     for (let hit = 0; hit < GAME_CONFIG.enemies.brute.hp - 1; hit += 1) {
       world.bullets.push(createTestBullet("pulse", { id: `bullet-test-${hit}` }));
-      stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+      stepWorld(world, neutralInput, 1 / 60, createRandomStreams(GAME_CONFIG.seed), GAME_CONFIG);
     }
 
     expect(world.enemies).toHaveLength(1);
@@ -806,7 +859,7 @@ describe("stepWorld", () => {
       world,
       neutralInput,
       1 / 60,
-      createRandom(GAME_CONFIG.seed),
+      createRandomStreams(GAME_CONFIG.seed),
       GAME_CONFIG,
     );
 
@@ -829,11 +882,11 @@ describe("stepWorld", () => {
     );
     world.bullets.push(createTestBullet("pierce"));
 
-    const result = stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+    const result = stepWorld(world, neutralInput, 1 / 60, createRandomStreams(GAME_CONFIG.seed), GAME_CONFIG);
 
     expect(world.enemies).toHaveLength(0);
     expect(world.bullets).toHaveLength(1);
-    expect(world.bullets[0]?.pierceRemaining).toBe(1);
+    expect(world.bullets[0]?.hitsRemaining).toBe(1);
     expect(world.bullets[0]?.hitEnemyIds).toEqual(["enemy-a", "enemy-b"]);
     expect(result.events.filter((event) => event.type === "enemy.hit")).toHaveLength(2);
     expect(result.events.filter((event) => event.type === "enemy.killed")).toHaveLength(2);
@@ -841,7 +894,7 @@ describe("stepWorld", () => {
     expect(world.stats.weaponMetrics.pierce.kills).toBe(2);
 
     world.enemies.push(createTestEnemy("chaser", { id: "enemy-a", position: { x: 540, y: 270 } }));
-    stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+    stepWorld(world, neutralInput, 1 / 60, createRandomStreams(GAME_CONFIG.seed), GAME_CONFIG);
     expect(world.enemies).toHaveLength(1);
   });
 
@@ -849,7 +902,7 @@ describe("stepWorld", () => {
     const world = createWorld(GAME_CONFIG);
     world.enemies.push(createTestEnemy("fast", { position: { x: 360, y: 270 } }));
 
-    stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+    stepWorld(world, neutralInput, 1 / 60, createRandomStreams(GAME_CONFIG.seed), GAME_CONFIG);
 
     expect(world.enemies[0]?.position.x).toBeGreaterThan(360);
     expect(world.enemies[0]?.speed).toBe(GAME_CONFIG.enemies.fast.speed);
@@ -864,7 +917,7 @@ describe("stepWorld", () => {
       }),
     );
 
-    const result = stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+    const result = stepWorld(world, neutralInput, 1 / 60, createRandomStreams(GAME_CONFIG.seed), GAME_CONFIG);
 
     expect(world.enemyProjectiles).toHaveLength(1);
     expect(world.enemyProjectiles[0]?.velocity.x).toBeLessThan(0);
@@ -883,7 +936,7 @@ describe("stepWorld", () => {
       }),
     );
 
-    const result = stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+    const result = stepWorld(world, neutralInput, 1 / 60, createRandomStreams(GAME_CONFIG.seed), GAME_CONFIG);
 
     expect(world.enemyProjectiles).toHaveLength(1);
     expect(world.enemyProjectiles[0]?.velocity.x).toBeGreaterThan(0);
@@ -907,7 +960,7 @@ describe("stepWorld", () => {
       damage: GAME_CONFIG.enemies.ranged.ranged!.projectileDamage,
     });
 
-    const result = stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+    const result = stepWorld(world, neutralInput, 1 / 60, createRandomStreams(GAME_CONFIG.seed), GAME_CONFIG);
 
     expect(world.enemyProjectiles).toHaveLength(0);
     expect(world.state.hp).toBe(
@@ -932,6 +985,25 @@ describe("stepWorld", () => {
     });
   });
 
+  it("consumes enemy projectiles that overlap the player during damage cooldown", () => {
+    const world = createWorld(GAME_CONFIG);
+    world.state.damageCooldown = GAME_CONFIG.player.damageCooldown;
+    world.enemyProjectiles.push({
+      id: "enemy-projectile-cooldown",
+      position: { ...world.player.position },
+      radius: GAME_CONFIG.enemies.ranged.ranged!.projectileRadius,
+      velocity: { x: 0, y: 0 },
+      lifetime: GAME_CONFIG.enemies.ranged.ranged!.projectileLifetime,
+      damage: GAME_CONFIG.enemies.ranged.ranged!.projectileDamage,
+    });
+
+    const result = stepWorld(world, neutralInput, 1 / 60, createRandomStreams(GAME_CONFIG.seed), GAME_CONFIG);
+
+    expect(world.enemyProjectiles).toEqual([]);
+    expect(world.state.hp).toBe(GAME_CONFIG.player.maxHp);
+    expect(result.events).not.toContainEqual(expect.objectContaining({ type: "player.damaged" }));
+  });
+
   it("levels up from collected XP and enters upgrade selection", () => {
     const world = createWorld(GAME_CONFIG);
     world.progression.xp = world.progression.xpToNext - 1;
@@ -939,7 +1011,13 @@ describe("stepWorld", () => {
       position: { ...world.player.position },
     }));
 
-    const result = stepWorld(world, neutralInput, 1 / 60, () => 0, GAME_CONFIG);
+    const result = stepWorld(
+      world,
+      neutralInput,
+      1 / 60,
+      createFixedRandomStreams(0),
+      GAME_CONFIG,
+    );
 
     expect(world.state.status).toBe("upgradeSelect");
     expect(world.progression.level).toBe(2);
@@ -963,7 +1041,7 @@ describe("stepWorld", () => {
       world,
       { ...neutralInput, move: { x: 1, y: 0 }, shootHeld: true },
       1,
-      createRandom(GAME_CONFIG.seed),
+      createRandomStreams(GAME_CONFIG.seed),
       GAME_CONFIG,
     );
 
@@ -976,7 +1054,7 @@ describe("stepWorld", () => {
       world,
       { ...neutralInput, upgradeChoicePressed: 0 },
       1,
-      createRandom(GAME_CONFIG.seed),
+      createRandomStreams(GAME_CONFIG.seed),
       GAME_CONFIG,
     );
 
@@ -1001,6 +1079,77 @@ describe("stepWorld", () => {
       maxedRanks[upgradeId] = GAME_CONFIG.upgrades[upgradeId].maxRank;
     }
     expect(selectUpgradeChoices(GAME_CONFIG, () => 0, maxedRanks)).toEqual([]);
+  });
+
+  it("caps the XP curve and marks the build complete after the final upgrade", () => {
+    const thresholds = Array.from({ length: 40 }, (_, index) =>
+      getXpToNextLevel(index + 1, GAME_CONFIG),
+    );
+    expect(thresholds.every((value, index) => index === 0 || value >= thresholds[index - 1]!)).toBe(
+      true,
+    );
+    expect(thresholds.at(-1)).toBe(GAME_CONFIG.leveling.maxXp);
+
+    const world = createWorld(GAME_CONFIG);
+    for (const upgradeId of Object.keys(world.progression.upgradeRanks) as Array<
+      keyof typeof world.progression.upgradeRanks
+    >) {
+      world.progression.upgradeRanks[upgradeId] = GAME_CONFIG.upgrades[upgradeId].maxRank;
+    }
+    world.progression.upgradeRanks.rapidFire -= 1;
+    world.progression.pendingUpgradeChoices = ["rapidFire"];
+    world.state.status = "upgradeSelect";
+    world.state.elapsed = 240;
+
+    const selected = stepWorld(
+      world,
+      { ...neutralInput, upgradeChoicePressed: 0 },
+      1 / 60,
+      createRandomStreams(GAME_CONFIG.seed),
+      GAME_CONFIG,
+    );
+
+    expect(world.state.status).toBe("playing");
+    expect(world.progression.buildCompletedAt).toBe(240);
+    expect(world.progression.xp).toBe(0);
+    expect(world.progression.xpToNext).toBe(0);
+    expect(selected.events).toContainEqual({ type: "build.completed", level: 1, elapsed: 240 });
+    expect(world.stats.progressionMetrics.buildCompletedAt).toBe(240);
+
+    world.encounter.contract.status = "selected";
+    world.encounter.contract.choice = "standard";
+    world.pickups.push(createTestXpPickup({ position: { ...world.player.position }, xpValue: 3 }));
+    stepWorld(
+      world,
+      neutralInput,
+      1 / 60,
+      createRandomStreams(GAME_CONFIG.seed),
+      GAME_CONFIG,
+    );
+    expect(world.progression.xp).toBe(0);
+    expect(world.stats.xpCollected).toBe(3);
+  });
+
+  it("does not create rewardless XP pickups after the build is complete", () => {
+    const world = createWorld(GAME_CONFIG);
+    world.progression.buildCompletedAt = 300;
+    world.enemies.push(createTestEnemy("chaser"));
+    world.bullets.push(createTestBullet());
+
+    const result = stepWorld(
+      world,
+      neutralInput,
+      1 / 60,
+      createRandomStreams(GAME_CONFIG.seed),
+      GAME_CONFIG,
+    );
+
+    expect(world.pickups.some((pickup) => pickup.kind === "xp")).toBe(false);
+    expect(
+      result.events.some(
+        (event) => event.type === "pickup.spawned" && event.pickupKind === "xp",
+      ),
+    ).toBe(false);
   });
 
   it("applies each upgrade effect through selected upgrades", () => {
@@ -1029,7 +1178,8 @@ describe("stepWorld", () => {
       },
       {
         upgradeId: "piercingRounds" as const,
-        assert: (world: ReturnType<typeof createWorld>) => expect(world.runtime.pierceBonus).toBe(1),
+        assert: (world: ReturnType<typeof createWorld>) =>
+          expect(world.runtime.hitCapacityBonus).toBe(1),
       },
     ];
 
@@ -1042,7 +1192,7 @@ describe("stepWorld", () => {
         world,
         { ...neutralInput, upgradeChoicePressed: 0 },
         1 / 60,
-        createRandom(GAME_CONFIG.seed),
+        createRandomStreams(GAME_CONFIG.seed),
         GAME_CONFIG,
       );
 
@@ -1079,7 +1229,7 @@ describe("stepWorld", () => {
       },
     );
 
-    stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+    stepWorld(world, neutralInput, 1 / 60, createRandomStreams(GAME_CONFIG.seed), GAME_CONFIG);
 
     expect(world.enemyProjectiles).toHaveLength(0);
   });
@@ -1088,9 +1238,9 @@ describe("stepWorld", () => {
     const world = createWorld(GAME_CONFIG);
     world.enemies.push(createTestEnemy("chaser", { position: { ...world.player.position } }));
 
-    const result = stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+    const result = stepWorld(world, neutralInput, 1 / 60, createRandomStreams(GAME_CONFIG.seed), GAME_CONFIG);
     const hpAfterFirstHit = world.state.hp;
-    stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+    stepWorld(world, neutralInput, 1 / 60, createRandomStreams(GAME_CONFIG.seed), GAME_CONFIG);
 
     expect(hpAfterFirstHit).toBe(GAME_CONFIG.player.maxHp - GAME_CONFIG.enemies.chaser.damage);
     expect(world.state.hp).toBe(hpAfterFirstHit);
@@ -1120,7 +1270,7 @@ describe("stepWorld", () => {
     world.state.hp = 1;
     world.enemies.push(createTestEnemy("chaser", { position: { ...world.player.position } }));
 
-    const result = stepWorld(world, neutralInput, 1 / 60, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+    const result = stepWorld(world, neutralInput, 1 / 60, createRandomStreams(GAME_CONFIG.seed), GAME_CONFIG);
 
     expect(world.state.status).toBe("gameOver");
     expect(world.state.hp).toBe(0);
@@ -1135,7 +1285,7 @@ describe("stepWorld", () => {
       world,
       { ...neutralInput, restartPressed: true },
       1 / 60,
-      createRandom(GAME_CONFIG.seed),
+      createRandomStreams(GAME_CONFIG.seed),
       GAME_CONFIG,
     );
 
@@ -1150,7 +1300,7 @@ describe("stepWorld", () => {
       world,
       neutralInput,
       1,
-      createRandom(GAME_CONFIG.seed),
+      createRandomStreams(GAME_CONFIG.seed),
       GAME_CONFIG,
     );
     expect(world.state.status).toBe("title");
@@ -1165,7 +1315,7 @@ describe("stepWorld", () => {
       world,
       { ...neutralInput, startPressed: true, shootHeld: true },
       1,
-      createRandom(GAME_CONFIG.seed),
+      createRandomStreams(GAME_CONFIG.seed),
       GAME_CONFIG,
     );
     expect(world.state.status).toBe("playing");
@@ -1176,7 +1326,7 @@ describe("stepWorld", () => {
 
   it("toggles pause and keeps simulation state frozen while paused", () => {
     const world = createWorld(GAME_CONFIG);
-    const random = createRandom(GAME_CONFIG.seed);
+    const random = createRandomStreams(GAME_CONFIG.seed);
 
     const pauseResult = stepWorld(
       world,
@@ -1238,7 +1388,7 @@ describe("stepWorld", () => {
       world,
       { ...neutralInput, restartPressed: true },
       1 / 60,
-      createRandom(GAME_CONFIG.seed),
+      createRandomStreams(GAME_CONFIG.seed),
       GAME_CONFIG,
     );
     expect(restartResult.events).toContainEqual({ type: "game.restart.requested" });
@@ -1247,7 +1397,7 @@ describe("stepWorld", () => {
       world,
       { ...neutralInput, quitToTitlePressed: true },
       1 / 60,
-      createRandom(GAME_CONFIG.seed),
+      createRandomStreams(GAME_CONFIG.seed),
       GAME_CONFIG,
     );
     expect(titleResult.events).toContainEqual({ type: "game.title.requested" });
@@ -1256,12 +1406,32 @@ describe("stepWorld", () => {
   it("clamps large dt samples to 50ms", () => {
     const world = createWorld(GAME_CONFIG);
 
-    const result = stepWorld(world, neutralInput, 10, createRandom(GAME_CONFIG.seed), GAME_CONFIG);
+    const result = stepWorld(world, neutralInput, 10, createRandomStreams(GAME_CONFIG.seed), GAME_CONFIG);
 
     expect(result.metrics).toContainEqual({
       type: "timing",
       name: "frame.dt_ms",
       valueMs: 50,
+    });
+  });
+
+  it("reports the simulated dt when an endless contract is offered", () => {
+    const world = createWorld(GAME_CONFIG);
+    world.state.elapsed = GAME_CONFIG.encounter.contract.offerAt;
+
+    const result = stepWorld(
+      world,
+      neutralInput,
+      1 / 60,
+      createRandomStreams(GAME_CONFIG.seed),
+      GAME_CONFIG,
+    );
+
+    expect(world.state.status).toBe("contractSelect");
+    expect(result.metrics).toContainEqual({
+      type: "timing",
+      name: "frame.dt_ms",
+      valueMs: 1000 / 60,
     });
   });
 });

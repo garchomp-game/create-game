@@ -1,11 +1,17 @@
 import type { GameConfig } from "../domain/types";
 import { parseSimulationConfig, parseViewConfig } from "./configSchema";
+import { UPGRADE_DEFINITIONS } from "../content/upgradeCatalog";
 import { RULESET_VERSION } from "./version";
 
 export const SIMULATION_CONFIG_VERSION = RULESET_VERSION;
 
 const rawSimulationConfig = {
   seed: 20260619,
+  features: {
+    pulseRicochet: true,
+    rangedSurge: true,
+    endlessContract: true,
+  },
   arena: {
     width: 960,
     height: 540,
@@ -28,7 +34,7 @@ const rawSimulationConfig = {
       damage: 1,
       projectileCount: 1,
       spreadAngle: 0.12,
-      pierceCount: 1,
+      hitCapacity: 1,
       ricochetCount: 0,
     },
     spread: {
@@ -39,7 +45,7 @@ const rawSimulationConfig = {
       damage: 1,
       projectileCount: 3,
       spreadAngle: 0.52,
-      pierceCount: 1,
+      hitCapacity: 1,
       ricochetCount: 0,
     },
     pierce: {
@@ -50,7 +56,7 @@ const rawSimulationConfig = {
       damage: 1,
       projectileCount: 1,
       spreadAngle: 0,
-      pierceCount: 3,
+      hitCapacity: 3,
       ricochetCount: 0,
     },
   },
@@ -177,57 +183,31 @@ const rawSimulationConfig = {
   },
   leveling: {
     baseXp: 3,
-    growth: 1.4,
+    growth: 1.25,
+    maxXp: 140,
     upgradeChoiceCount: 3,
   },
-  upgrades: {
-    rapidFire: {
-      id: "rapidFire",
-      title: "Rapid Fire",
-      description: "Shoot 15% faster",
-      maxRank: 5,
-      weight: 1,
-      effect: { type: "fireIntervalMultiplier", multiplier: 0.85 },
+  upgrades: UPGRADE_DEFINITIONS,
+  encounter: {
+    rangedSurge: {
+      minStart: 135,
+      maxStart: 165,
+      warningDuration: 6,
+      activeDuration: 18,
+      recoveryDuration: 8,
+      spawnIntervalMultiplier: 0.72,
+      spawnBudget: 4,
+      enemyWeights: {
+        chaser: 0.35,
+        brute: 0.2,
+        fast: 0.3,
+        ranged: 3,
+      },
     },
-    swiftStep: {
-      id: "swiftStep",
-      title: "Swift Step",
-      description: "Move 12% faster",
-      maxRank: 5,
-      weight: 1,
-      effect: { type: "moveSpeedMultiplier", multiplier: 1.12 },
-    },
-    vitalCore: {
-      id: "vitalCore",
-      title: "Vital Core",
-      description: "Gain 20 max HP",
-      maxRank: 4,
-      weight: 0.8,
-      effect: { type: "maxHp", amount: 20 },
-    },
-    overdriveRounds: {
-      id: "overdriveRounds",
-      title: "Overdrive Rounds",
-      description: "Projectiles fly 15% faster",
-      maxRank: 5,
-      weight: 0.9,
-      effect: { type: "projectileSpeedMultiplier", multiplier: 1.15 },
-    },
-    splitShot: {
-      id: "splitShot",
-      title: "Split Shot",
-      description: "Add one projectile",
-      maxRank: 2,
-      weight: 0.7,
-      effect: { type: "projectileCount", amount: 1 },
-    },
-    piercingRounds: {
-      id: "piercingRounds",
-      title: "Piercing Rounds",
-      description: "Add one pierce",
-      maxRank: 3,
-      weight: 0.8,
-      effect: { type: "pierce", amount: 1 },
+    contract: {
+      offerAt: 240,
+      enemySpeedMultiplier: 1.12,
+      scoreMultiplier: 1.3,
     },
   },
   obstacles: [
