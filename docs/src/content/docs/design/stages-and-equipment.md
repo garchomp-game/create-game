@@ -1,49 +1,67 @@
 ---
-title: Stages and Equipment
-description: v0.5以降のstage、equipment、meta progressionの整理。
+title: ステージと装備
+description: ステージ、開始武器、装備、ラン外進行のデータ設計。
 ---
 
-## Stage
+## ステージ定義
 
-stageは `StageDefinition` としてdata化します。
+ステージは `StageDefinition` としてデータ化します。
 
-想定field:
+想定する項目:
 
 - `id`
 - `title`
 - `arena`
 - `obstacles`
-- `waves`
+- `encounterDeck`
 - `enemyPool`
+- `clearCondition`
+- `bossId`
 - `unlock`
 
-最初の目標は、既存arenaを `default` stageとして表現することです。
+最初は既存アリーナを `stageId: default` として表現し、モードは別の `modeId: endless` で持ちます。
 
-## Equipment
+要件:
 
-run開始前に選ぶ要素です。
+- ステージ追加のたびに `ArenaScene` へ条件分岐を増やさない。
+- 地形、敵構成、戦闘展開、クリア条件を1つの定義から組み立てる。
+- ルールセットとラン記録へステージIDを残す。
+- 自動生成より検証済み配置を先に使う。
 
-最初は1 slotだけで始めます。
+戦闘上の要件は [モードと戦闘展開](../encounters-and-modes/) を参照してください。
+
+## 開始武器
+
+独立した装備システムを作る前に、既存の `pulse`、`spread`、`pierce` を開始武器として選べるようにします。
+
+最初の目的は能力値の上位互換を作ることではなく、ラン開始時から照準距離と位置取りを変えることです。
+
+詳細は [ビルドと成長](../build-and-progression/) を参照してください。
+
+## 装備
+
+開始武器の検証後、必要であれば1枠から導入します。
 
 候補:
 
-- 初期武器
-- core module
-- movement module
-- pickup module
+- コア: HP、移動、防御行動の方向性。
+- 補助モジュール: 回収範囲やスキル再使用時間。
+- 特殊モジュール: 小さなルール変更。
 
-装備は単純な上位互換ではなく、強みと弱みを持たせます。
+装備は単純な上位互換にせず、強みと弱みを持たせます。装備効果、ラン中強化、一時アイテムの合成順をテスト可能にします。
 
-## Meta Progression
+## ラン外進行
 
-最初はlocalStorage保存でよいです。
+最初は `localStorage` へ保存します。
 
-保存対象候補:
+保存候補:
 
-- unlock state
-- profile stats
-- settings
-- selected stage
-- selected equipment
+- 解放状態。
+- プロフィール統計。
+- 設定。
+- 最後に選んだステージ。
+- 最後に選んだ武器と装備。
 
-save schemaにはversionとreset導線を持たせます。
+保存形式にはバージョン、移行方針、破損時の復旧、明示的な初期化を持たせます。
+
+v0.5ではゲストプロフィール、ラン履歴、ローカルランキングの境界だけを作ります。解放、チャレンジ、武器熟練度はv0.8で扱い、恒久ステータス上昇は当面入れません。

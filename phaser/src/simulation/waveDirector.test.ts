@@ -24,6 +24,16 @@ describe("waveDirector", () => {
       speedMultiplier: 1.35,
       maxEnemies: 60,
     });
+    expect(getWaveDifficulty(SIMULATION_CONFIG, 150)).toEqual({
+      spawnInterval: 0.535,
+      speedMultiplier: 1.39,
+      maxEnemies: 62,
+    });
+    expect(getWaveDifficulty(SIMULATION_CONFIG, 570)).toEqual({
+      spawnInterval: 0.43,
+      speedMultiplier: 1.67,
+      maxEnemies: 76,
+    });
   });
 
   it("uses wave weights and spawn budget when choosing enemy types", () => {

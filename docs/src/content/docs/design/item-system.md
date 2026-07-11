@@ -1,40 +1,57 @@
 ---
-title: Item System
-description: Item systemの最小data modelと初回item方針。
+title: アイテム
+description: 一時効果アイテムのデータ境界と最初の検証候補。
 ---
 
 ## 目的
 
-今後のitem追加を、pickup処理の場当たり拡張にしないため、item定義と効果適用の境界を先に決めます。
+アイテム追加のたびにピックアップ処理へ条件分岐を増やさないよう、定義、所持状態、効果適用を分けます。
 
-## 初回Item
+アイテムはコンテンツ量を増やすことより、取得後の短い時間にプレイ判断を変えることを目的とします。
 
-初回itemは `haste` を候補にします。
+## 最初の候補
 
-理由:
+最初の試作候補は `haste` です。
 
-- 開始、継続、終了が明確。
-- statsとdebug exportで観測しやすい。
+採用理由:
+
+- 開始、継続、終了が明確である。
+- 統計とラン出力で効果時間を確認しやすい。
 - 回復、被弾、死亡判定へ直接干渉しない。
-- 攻撃力を直接上げない。
-- 既存upgradeの `swiftStep` と比較しやすい。
+- 既存強化 `swiftStep` と比較しやすい。
 
-## Data Model方針
+ただし、移動速度が急に変わると操作感を崩す可能性があります。技術的な効果時間の試作として扱い、面白さの主軸には置きません。
 
-- `Pickup.kind` は `"xp" | "heal" | "item"` にする。
-- item種類は `itemId` で表す。
-- item効果は `ItemDefinition` と `activeTemporaryEffects` に分離する。
-- `runtime.playerSpeedMultiplier` を直接書き換えず、effective valueをhelperで合成する。
+比較候補:
 
-## 最小Stats
+- アリーナ全体のXPを引き寄せる回収イベント。
+- 1回だけダメージを防ぐシールド。
+
+## データ方針
+
+- `Pickup.kind` を `"xp" | "heal" | "item"` に拡張する。
+- アイテム種類は `itemId` で表す。
+- 定義は `ItemDefinition`、実行中の効果は `activeTemporaryEffects` へ分ける。
+- `runtime.playerSpeedMultiplier` を直接上書きせず、有効値を合成する関数を使う。
+
+## 最小計測項目
 
 - `itemsCollected`
 - `itemCollectionsById`
 - `firstItemCollectedAt`
 - `itemEffectUptimeById`
 
+## 採用条件
+
+- 取得するために危険を取る価値がある。
+- 発動中に位置取り、攻撃、回収の判断が変わる。
+- 開始と終了を画面、音、HUDで識別できる。
+- 強化や装備との効果合成を説明できる。
+
+アイテム候補の大量追加は、開始武器、強化、戦闘展開が成立した後に行います。
+
 ## 関連チケット
 
-- `PH-V03-004 Item System Requirements and Data Model`
-- `PH-V03-005 Temporary Buff Item Prototype`
-- `PH-V03-007 BalanceProbe Item KPI Extension`
+- `PH-V03-004` アイテム要件とデータモデル。
+- `PH-V03-005` 一時強化アイテム試作。
+- `PH-V03-007` バランス回帰テストへのアイテム指標追加。

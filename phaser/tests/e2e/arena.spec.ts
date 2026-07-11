@@ -1,4 +1,10 @@
 import { expect, type Page, test } from "@playwright/test";
+import type { RunRecord } from "../../src/domain/runRecords";
+
+async function gotoArena(page: Page, path = "/"): Promise<void> {
+  await page.goto(path);
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+}
 
 async function clickCanvasAt(page: Page, x: number, y: number): Promise<void> {
   const box = await page.locator("canvas").evaluate((node) => {
@@ -19,6 +25,29 @@ async function clickCanvasAt(page: Page, x: number, y: number): Promise<void> {
   );
 }
 
+async function moveMouseToCanvasAt(page: Page, x: number, y: number): Promise<void> {
+  const box = await page.locator("canvas").evaluate((node) => {
+    const canvas = node as HTMLCanvasElement;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
+      canvasWidth: canvas.width,
+      canvasHeight: canvas.height,
+    };
+  });
+  await page.mouse.move(
+    box.left + (x / box.canvasWidth) * box.width,
+    box.top + (y / box.canvasHeight) * box.height,
+  );
+}
+
+async function getCanvasCursor(page: Page): Promise<string> {
+  return page.locator("canvas").evaluate((node) => getComputedStyle(node).cursor);
+}
+
 test("renders canvas and accepts movement and shooting input", async ({ page }) => {
   const consoleErrors: string[] = [];
   page.on("console", (message) => {
@@ -27,7 +56,7 @@ test("renders canvas and accepts movement and shooting input", async ({ page }) 
     }
   });
 
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
@@ -57,7 +86,7 @@ test("renders canvas and accepts movement and shooting input", async ({ page }) 
     "title",
   );
 
-  await clickCanvasAt(page, 480, 368);
+  await clickCanvasAt(page, 480, 307);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "playing",
   );
@@ -95,8 +124,62 @@ test("renders canvas and accepts movement and shooting input", async ({ page }) 
   expect(consoleErrors).toEqual([]);
 });
 
+test("uses native cursor affordances outside active play", async ({ page }) => {
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+  await expect(canvas).toHaveCount(1);
+
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "title",
+  );
+  await moveMouseToCanvasAt(page, 480, 307);
+  await expect.poll(() => getCanvasCursor(page)).toBe("pointer");
+
+  await clickCanvasAt(page, 480, 307);
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "playing",
+  );
+  await expect.poll(() => getCanvasCursor(page)).toBe("none");
+
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.step({ pausePressed: true }, 1 / 60);
+  });
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "paused",
+  );
+  await moveMouseToCanvasAt(page, 480, 316);
+  await expect.poll(() => getCanvasCursor(page)).toBe("pointer");
+
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.forceGameOver();
+  });
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "gameOver",
+  );
+  await moveMouseToCanvasAt(page, 480, 387);
+  await expect.poll(() => getCanvasCursor(page)).toBe("pointer");
+
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.restart();
+  });
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "playing",
+  );
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.forceUpgradeSelect();
+  });
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "upgradeSelect",
+  );
+  await moveMouseToCanvasAt(page, 480, 234);
+  await expect.poll(() => getCanvasCursor(page)).toBe("pointer");
+
+  await moveMouseToCanvasAt(page, 24, 24);
+  await expect.poll(() => getCanvasCursor(page)).toBe("default");
+});
+
 test("auto-fires after mouse aim is established during play", async ({ page }) => {
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
@@ -131,12 +214,20 @@ test("auto-fires after mouse aim is established during play", async ({ page }) =
 });
 
 test("can force game over and restart with R", async ({ page }) => {
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
   await page.evaluate(() => window.__ARENA_DEBUG__?.restart());
 
+  let automaticRunExports = 0;
+  page.on("request", (request) => {
+    if (request.url().endsWith("/__arena/run-export") && request.method() === "POST") {
+      automaticRunExports += 1;
+    }
+  });
   await page.evaluate(() => window.__ARENA_DEBUG__?.forceGameOver());
+  await page.waitForTimeout(150);
+  expect(automaticRunExports).toBe(0);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "gameOver",
   );
@@ -151,7 +242,7 @@ test("can force game over and restart with R", async ({ page }) => {
     )
     .toBe(true);
 
-  await clickCanvasAt(page, 480, 406);
+  await clickCanvasAt(page, 480, 387);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "playing",
   );
@@ -164,14 +255,14 @@ test("can force game over and restart with R", async ({ page }) => {
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "gameOver",
   );
-  await clickCanvasAt(page, 480, 458);
+  await clickCanvasAt(page, 480, 491);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "title",
   );
 });
 
 test("can pause and resume with P without advancing simulation", async ({ page }) => {
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
   await canvas.click();
@@ -226,7 +317,7 @@ test("can pause and resume with P without advancing simulation", async ({ page }
 });
 
 test("debug freeze still accepts restart and records forced damage events", async ({ page }) => {
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
@@ -247,7 +338,7 @@ test("debug freeze still accepts restart and records forced damage events", asyn
     .toBe(100);
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().feedback.screenFlashAlpha))
-    .toBeGreaterThan(0);
+    .toBe(0);
   await expect
     .poll(() =>
       page.evaluate(() => {
@@ -281,7 +372,7 @@ test("debug freeze still accepts restart and records forced damage events", asyn
 });
 
 test("debug run export includes playtest report metadata and KPI data", async ({ page }) => {
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
@@ -296,9 +387,15 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   const runExport = await page.evaluate(() => window.__ARENA_DEBUG__?.getRunExport());
   expect(runExport).toBeTruthy();
   expect(runExport?.game).toBe("arena-core-phaser");
-  expect(runExport?.appVersion).toBe("0.4");
-  expect(runExport?.configVersion).toBe("phaser-v0.4-obstacle-layout-foundation");
-  expect(runExport?.buildCommit).toBe("unknown");
+  expect(runExport?.appVersion).toBe("0.5");
+  expect(runExport?.rulesetVersion).toBe("phaser-v0.4-endless-pressure");
+  expect(runExport?.configVersion).toBe("phaser-v0.4-endless-pressure");
+  expect(runExport?.buildCommit).toMatch(/^[0-9a-f]{12}$/);
+  expect(runExport?.runOrigin).toBe("test");
+  expect(runExport?.rankEligibility).toEqual({
+    eligible: false,
+    reasons: ["automatedTest"],
+  });
   expect(runExport?.seed).toBe(20260619);
   expect(runExport?.resultSummary.elapsed).toBeCloseTo(61, 1);
   expect(runExport?.resultSummary.damageTaken).toBe(12);
@@ -317,8 +414,53 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   expect(parsedRunExport.resultSummary.damageTaken).toBe(runExport?.resultSummary.damageTaken);
 });
 
+test("validates and separates explicit development run exports", async ({ page }) => {
+  await gotoArena(page);
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+
+  const invalidStatus = await page.evaluate(async () => {
+    const response = await fetch("/__arena/run-export", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    return response.status;
+  });
+  expect(invalidStatus).toBe(400);
+
+  const oversizedStatus = await page.evaluate(async () => {
+    const response = await fetch("/__arena/run-export", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "x".repeat(2 * 1024 * 1024 + 1),
+    });
+    return response.status;
+  });
+  expect(oversizedStatus).toBe(413);
+
+  const saved = await page.evaluate(() => window.__ARENA_DEBUG__?.saveRunExport());
+  expect(saved).toMatchObject({
+    ok: true,
+    path: expect.stringMatching(/^logs\/tests\/.+_test_score-0_elapsed-0s\.json$/),
+  });
+});
+
+test("URL seed overrides the automated fixed seed for reproducible runs", async ({ page }) => {
+  await gotoArena(page, "/?seed=123456");
+  const canvas = page.locator("canvas");
+  await expect(canvas).toHaveCount(1);
+
+  await page.evaluate(() => window.__ARENA_DEBUG__?.restart());
+
+  const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+  expect(snapshot?.seed).toBe(123456);
+
+  const runExport = await page.evaluate(() => window.__ARENA_DEBUG__?.getRunExport());
+  expect(runExport?.seed).toBe(123456);
+});
+
 test("debug heal fixture recovers HP through pickup collection", async ({ page }) => {
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
@@ -345,7 +487,7 @@ test("debug heal fixture recovers HP through pickup collection", async ({ page }
 });
 
 test("debug heal fixture separates full-HP collection from effective recovery", async ({ page }) => {
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
@@ -365,7 +507,7 @@ test("debug heal fixture separates full-HP collection from effective recovery", 
 });
 
 test("debug fatal heal fixture cannot revive on the damage frame", async ({ page }) => {
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
@@ -386,7 +528,7 @@ test("debug fatal heal fixture cannot revive on the damage frame", async ({ page
 });
 
 test("debug obstacle fixture slides along obstacle edges", async ({ page }) => {
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
@@ -410,7 +552,7 @@ test("debug obstacle fixture slides along obstacle edges", async ({ page }) => {
 });
 
 test("can enter upgrade selection and choose an upgrade", async ({ page }) => {
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
@@ -435,4 +577,346 @@ test("can enter upgrade selection and choose an upgrade", async ({ page }) => {
   expect(after?.stats.upgradesChosen).toBe(1);
   expect(after?.lastEvents.some((event) => event.type === "upgrade.selected")).toBe(true);
   expect(after?.audioCues).toContain("upgrade");
+});
+
+test("persists a run exactly once and restores it after reload", async ({ page }) => {
+  await gotoArena(page);
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.restart();
+    window.__ARENA_DEBUG__?.setElapsed(61);
+    window.__ARENA_DEBUG__?.forceGameOver();
+    window.__ARENA_DEBUG__?.forceGameOver();
+  });
+
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getRunHistory().length))
+    .toBe(1);
+  const beforeReload = await page.evaluate(() => window.__ARENA_DEBUG__?.getRunHistory()[0]);
+  expect(beforeReload?.runOrigin).toBe("test");
+  expect(beforeReload?.rankEligibility.eligible).toBe(false);
+  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getRunRankingRecords().length)).toBe(0);
+
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  const afterReload = await page.evaluate(() => window.__ARENA_DEBUG__?.getRunHistory());
+  expect(afterReload).toHaveLength(1);
+  expect(afterReload?.[0]?.id).toBe(beforeReload?.id);
+});
+
+test("recovers from corrupted run storage without blocking game boot", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("arena-core.run-records.v2", "{broken");
+  });
+  await gotoArena(page);
+
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "title",
+  );
+  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getRunRecords())).toEqual([]);
+  expect(
+    await page.evaluate(() =>
+      Object.keys(localStorage).some((key) => key.startsWith("arena-core.run-records.v2.corrupt.")),
+    ),
+  ).toBe(true);
+});
+
+test("keeps the result usable when run storage exceeds quota", async ({ page }) => {
+  await page.addInitScript(() => {
+    const originalSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function setItem(key: string, value: string): void {
+      if (key === "arena-core.run-records.v2") {
+        throw new DOMException("quota exceeded", "QuotaExceededError");
+      }
+      originalSetItem.call(this, key, value);
+    };
+  });
+  await gotoArena(page);
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.restart();
+    window.__ARENA_DEBUG__?.setElapsed(30);
+    window.__ARENA_DEBUG__?.forceGameOver();
+  });
+
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "gameOver",
+  );
+  const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+  expect(snapshot?.latestRunRecord?.elapsed).toBe(30);
+  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getRunHistory())).toEqual([]);
+});
+
+test("persists accessibility settings and disables automatic fire", async ({ page }) => {
+  await gotoArena(page);
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.updateSettings({
+      bgmVolume: 0,
+      sfxVolume: 0,
+      bgmMuted: true,
+      sfxMuted: true,
+      shakeIntensity: 0,
+      flashIntensity: 0,
+      autoFireEnabled: false,
+    });
+    window.__ARENA_DEBUG__?.restart();
+  });
+
+  const canvas = page.locator("canvas");
+  await moveMouseToCanvasAt(page, 640, 270);
+  await page.waitForTimeout(260);
+  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().stats.shotsFired)).toBe(0);
+
+  await canvas.click({ button: "right" });
+  await page.waitForTimeout(120);
+  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().stats.shotsFired)).toBe(0);
+
+  await canvas.click();
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().stats.shotsFired))
+    .toBeGreaterThan(0);
+  await page.evaluate(() => window.__ARENA_DEBUG__?.forceDamage(12));
+  expect(
+    await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().feedback.screenFlashAlpha),
+  ).toBe(0);
+
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getSettings())).toMatchObject({
+    bgmMuted: true,
+    sfxMuted: true,
+    shakeIntensity: 0,
+    flashIntensity: 0,
+    autoFireEnabled: false,
+  });
+});
+
+test("supports keyboard navigation and Escape on secondary menus", async ({ page }) => {
+  await gotoArena(page);
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  for (const key of ["ArrowDown", "ArrowDown", "Enter"]) {
+    await page.keyboard.down(key);
+    await page.waitForTimeout(80);
+    await page.keyboard.up(key);
+    await page.waitForTimeout(40);
+  }
+
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
+    .toBe("history");
+  await page.keyboard.down("Escape");
+  await page.waitForTimeout(80);
+  await page.keyboard.up("Escape");
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
+    .toBeNull();
+});
+
+test("changes and resets settings through the pointer UI", async ({ page }) => {
+  await gotoArena(page);
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  await page.evaluate(() => window.__ARENA_DEBUG__?.openMenu("settings"));
+
+  await clickCanvasAt(page, 480, 159);
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSettings().bgmVolume)).toBe(
+    0.5,
+  );
+
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getSettings().bgmVolume)).toBe(0.5);
+
+  await page.evaluate(() => window.__ARENA_DEBUG__?.openMenu("settings"));
+  await clickCanvasAt(page, 480, 395);
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSettings())).toMatchObject({
+    bgmVolume: 1,
+    sfxVolume: 1,
+    shakeIntensity: 1,
+    flashIntensity: 1,
+    autoFireEnabled: true,
+  });
+});
+
+test("resets the guest profile without clearing settings or run records", async ({ page }) => {
+  await gotoArena(page);
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.restart();
+    window.__ARENA_DEBUG__?.setElapsed(61);
+    window.__ARENA_DEBUG__?.forceGameOver();
+    window.__ARENA_DEBUG__?.updateSettings({ bgmVolume: 0.5 });
+    window.__ARENA_DEBUG__?.openMenu("settings");
+  });
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getRunHistory().length)).toBe(
+    1,
+  );
+  const previousProfileId = await page.evaluate(() => window.__ARENA_DEBUG__?.getProfile().id);
+
+  await clickCanvasAt(page, 480, 443);
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getProfile().id))
+    .not.toBe(previousProfileId);
+  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getSettings().bgmVolume)).toBe(0.5);
+  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getRunHistory().length)).toBe(1);
+
+  const newProfileId = await page.evaluate(() => window.__ARENA_DEBUG__?.getProfile().id);
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getProfile().id)).toBe(newProfileId);
+  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getSettings().bgmVolume)).toBe(0.5);
+  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getRunHistory().length)).toBe(1);
+});
+
+test("clears rankings and history independently after confirmation", async ({ page }) => {
+  await gotoArena(page);
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.restart();
+    window.__ARENA_DEBUG__?.setElapsed(61);
+    window.__ARENA_DEBUG__?.forceGameOver();
+  });
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getRunHistory().length)).toBe(
+    1,
+  );
+
+  await page.evaluate(() => {
+    const key = "arena-core.run-records.v2";
+    const raw = localStorage.getItem(key);
+    if (!raw) throw new Error("Run record storage is missing.");
+    const envelope = JSON.parse(raw) as {
+      schemaVersion: 2;
+      history: RunRecord[];
+      rankings: RunRecord[];
+    };
+    const record = envelope.history[0];
+    if (!record) throw new Error("Run history fixture is missing.");
+    const eligibleRecord: RunRecord = {
+      ...record,
+      runOrigin: "manual",
+      rankEligibility: { eligible: true, reasons: [] },
+    };
+    localStorage.setItem(key, JSON.stringify({ ...envelope, rankings: [eligibleRecord] }));
+  });
+  await page.reload();
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getRunRankingRecords().length))
+    .toBe(1);
+
+  await page.evaluate(() => window.__ARENA_DEBUG__?.openMenu("ranking"));
+  await clickCanvasAt(page, 480, 463);
+  await page.waitForTimeout(80);
+  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getRunRankingRecords().length)).toBe(1);
+  await clickCanvasAt(page, 480, 463);
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getRunRankingRecords().length))
+    .toBe(0);
+  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getRunHistory().length)).toBe(1);
+
+  await page.evaluate(() => window.__ARENA_DEBUG__?.openMenu("history"));
+  await clickCanvasAt(page, 480, 463);
+  await page.waitForTimeout(80);
+  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getRunHistory().length)).toBe(1);
+  await clickCanvasAt(page, 480, 463);
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getRunHistory().length)).toBe(
+    0,
+  );
+});
+
+test("navigates from results to history and back to title", async ({ page }) => {
+  await gotoArena(page);
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.restart();
+    window.__ARENA_DEBUG__?.forceGameOver();
+  });
+
+  await clickCanvasAt(page, 480, 439);
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
+    .toBe("history");
+  await page.keyboard.down("Escape");
+  await page.waitForTimeout(80);
+  await page.keyboard.up("Escape");
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
+    .toBeNull();
+
+  await clickCanvasAt(page, 480, 491);
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "title",
+  );
+});
+
+test("loads local audio assets without page errors", async ({ page }) => {
+  const failedAudio: string[] = [];
+  const loadedAudio = new Set<string>();
+  page.on("response", (response) => {
+    if (!response.url().includes("/audio/")) return;
+    if (response.status() >= 400) failedAudio.push(`${response.status()} ${response.url()}`);
+    else loadedAudio.add(new URL(response.url()).pathname);
+  });
+  await gotoArena(page);
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().music)).toMatchObject({
+    loaded: true,
+    playing: false,
+  });
+
+  await clickCanvasAt(page, 480, 307);
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().music.playing)).toBe(
+    true,
+  );
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().music.volume))
+    .toBeCloseTo(0.78);
+
+  await page.evaluate(() => window.__ARENA_DEBUG__?.step({ pausePressed: true }, 1 / 60));
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().music.volume)).toBeCloseTo(
+    0.32,
+  );
+  await page.evaluate(() => window.__ARENA_DEBUG__?.forceGameOver());
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().music.playing)).toBe(
+    false,
+  );
+  expect(failedAudio).toEqual([]);
+  expect([...loadedAudio].sort()).toEqual(
+    [
+      "arena-loop.ogg",
+      "damage-alt-1.ogg",
+      "damage.ogg",
+      "game-over.ogg",
+      "hit-alt-1.ogg",
+      "hit-alt-2.ogg",
+      "hit.ogg",
+      "kill-alt-1.ogg",
+      "kill.ogg",
+      "level-up.ogg",
+      "pickup-alt-1.ogg",
+      "pickup.ogg",
+      "shot-alt-1.ogg",
+      "shot-alt-2.ogg",
+      "shot.ogg",
+      "upgrade.ogg",
+    ].map((name) => `/audio/${name}`),
+  );
+});
+
+test("fits the canvas inside portrait and landscape mobile viewports", async ({ page }) => {
+  for (const viewport of [
+    { width: 390, height: 844 },
+    { width: 844, height: 390 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await gotoArena(page);
+    const box = await page.locator("canvas").boundingBox();
+    expect(box).toBeTruthy();
+    expect(box!.width).toBeLessThanOrEqual(viewport.width);
+    expect(box!.height).toBeLessThanOrEqual(viewport.height);
+    expect(
+      await page.evaluate(() => ({
+        width: document.documentElement.scrollWidth,
+        height: document.documentElement.scrollHeight,
+      })),
+    ).toEqual({ width: viewport.width, height: viewport.height });
+  }
 });

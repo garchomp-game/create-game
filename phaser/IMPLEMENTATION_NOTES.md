@@ -21,14 +21,14 @@
 
 - Player movement: implemented with Phaser keyboard state
 - Aiming: implemented with Phaser pointer position, custom cursor, and an aim guide line
-- Shooting: left click and `Space`, with shared cooldown
+- Shooting: automatic fire by default, plus left click and `Space`, with shared cooldown
 - Enemy spawning: deterministic seeded spawns from arena edges
 - Enemy chasing: direct normalized movement toward player
 - Bullet/enemy collision: manual circle/circle
 - Enemy/player damage: manual circle/circle with shared damage cooldown
 - Obstacles: manual circle/AABB blocking
-- HUD: Phaser `Text`
-- Game over/restart: `GAME OVER` overlay and `R` reset
+- HUD: fixed HP/XP and score/time/danger panels using Phaser `Text`
+- Game over/restart: two-column result, history, restart, and title flow
 - Pause/resume: `P` or `Esc` freezes simulation time and shows a pause overlay
 - Run stats: shots fired, enemies killed, hits taken, damage taken, pickups collected, upgrades chosen
 - Result summary: Game Over overlay and debug snapshot derive from `WorldState`
@@ -41,11 +41,13 @@
 - Upgrades: weighted, ranked upgrades modify runtime combat/player values
 - Wave director: time-based enemy mix, spawn budget, speed, and max population bands
 - Presentation feedback: hit rings, kill bursts, damage flash, and camera shake
-- Audio hooks: adapter-side cue routing with no-op behavior when assets are absent
-- Refined HUD: HP/LV/XP, score/time/wave, weapon/enemy count
-- Title screen: app startup begins at title and starts with one action
+- Audio: separate BGM controller and SFX router with local generated assets
+- Refined HUD: HP/LV/XP on the left, score/time/danger/enemy/weapon on the right
+- Title screen: endless start, local ranking, run history, and settings
 - Pause menu: resume, restart, and title return
-- Result screen: score, time, level, kills, shots, restart/title flow
+- Result screen: score, time, level, kills, cause, build, seed, eligibility, best difference
+- Run records: versioned local history, rankings, eligibility, and exactly-once finalization
+- Profile/settings: persistent guest profile, audio, flash, shake, and auto-fire settings
 
 ## Deviations From Shared Spec
 
@@ -80,13 +82,15 @@ The Graphics API was enough to produce a complete prototype without creating tex
 - API friction: low for Scene/Input/Graphics/Text
 - Collision/physics friction: avoided by using manual collision
 - Debugging friction: low; most state is plain JavaScript objects
-- Code organization: one Scene file is readable at this scope
+- Code organization: simulation, run records, storage, profile, and audio boundaries are separated; screen/debug extraction remains a follow-up
 - Risk of outdated knowledge: moderate around optional Phaser physics APIs, low for core Scene usage
 
 ## Known Issues
 
 - Enemy obstacle avoidance is intentionally simple and may cause brief clustering near obstacles.
 - Pointer aiming follows Phaser's scaled pointer coordinate behavior; verified at the fixed logical canvas size.
+- The production bundle is about 1.37 MB and still triggers Vite's 500 KB warning.
+- `ArenaScene` and `PhaserArenaRenderer` remain large; split screen components and the debug bridge before adding several new screens.
 
 ## Verification
 
@@ -423,6 +427,36 @@ Verification after this pass:
 - `npm run test:e2e -- tests/e2e/arena-visual.spec.ts --update-snapshots=all`: 11 Playwright tests passed and regenerated intended visual snapshots
 - `npm run test:e2e`: 21 Playwright tests passed
 - `npm run build`: passed, with the existing Phaser bundle size warning
+
+### 2026-07-10 v0.5 Endless Polish and Run Records
+
+- Added versioned `RunRecord`, `RunContext`, comparison keys, rank eligibility, and Zod validation.
+- Added Phaser-independent record generation, ranking, personal-best selection, and exact-once finalization.
+- Added separate local history and ranking retention so an old best survives after leaving the newest 50 runs.
+- Added guest profile and settings stores under separate versioned browser keys.
+- Added result, history, local ranking, settings, and revised title screens.
+- Added keyboard focus, Escape navigation, pointer cursor affordances, and left-button-only menu/shoot actions.
+- Split the HUD into fixed left and right panels and removed low-priority projectile details from constant display.
+- Added configurable feedback limits, recovery/level effects, fatal-flash cleanup, and personal-best celebration.
+- Added one generated 32-second, four-section loop BGM and 15 generated SFX files across eight cue types, with deterministic regeneration and a repository asset ledger.
+- Added round-robin sound variants and small detune changes for frequent shot, hit, kill, pickup, and damage cues after manual feedback found the first pass too repetitive.
+- Added a dedicated music controller with title/play/pause/game-over transitions and browser audio-lock handling.
+- Split dev exports into `logs/runs`, `logs/debug`, and `logs/tests`, with validation, a 2 MiB limit, and per-origin retention.
+- Added automated storage corruption/quota checks, individual clears, mobile fit checks, and 18 visual regression states.
+- Added a 900-second accelerated soak covering 27,000 simulation frames and bounded entity counts.
+- Updated package version to `0.5.0`; gameplay ruleset remains `phaser-v0.4-endless-pressure`.
+
+Verification:
+
+- Unit tests: 18 files and 121 tests passed.
+- Typecheck and production build passed, with the known bundle-size warning.
+- Playwright: 25 functional tests and 18 visual tests passed (43 regular tests); the optional 15.1-minute browser soak also passed.
+- Starlight: 70 pages built successfully.
+- Legacy v0.4 manual logs cover 63s, 132s, 146s, 377s, and 882s runs, but do not contain the v0.5 ruleset key and are not migrated into the new ranking history.
+- Three v0.5 manual runs cover 98s / 3211 points, 178s / 8196 points, and 272s / 14172 points. Browser history, rankings, and dev logs contain the same three eligible records.
+- Five legacy sub-second logs were moved from `logs/runs` to `logs/debug`.
+- The known Phaser bundle-size warning remains.
+- PH-V05-011 is complete after the manual runs, UI/control review, audio revision, and final regression pass.
 
 ## 1. phaser
 

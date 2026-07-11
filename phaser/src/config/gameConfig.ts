@@ -1,7 +1,8 @@
 import type { GameConfig } from "../domain/types";
 import { parseSimulationConfig, parseViewConfig } from "./configSchema";
+import { RULESET_VERSION } from "./version";
 
-export const SIMULATION_CONFIG_VERSION = "phaser-v0.4-obstacle-layout-foundation";
+export const SIMULATION_CONFIG_VERSION = RULESET_VERSION;
 
 const rawSimulationConfig = {
   seed: 20260619,

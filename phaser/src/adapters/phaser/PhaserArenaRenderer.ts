@@ -7,17 +7,21 @@ import type {
   ViewConfig,
   WorldState,
 } from "../../domain/types";
+import type { RankIneligibilityReason, RunRecord } from "../../domain/runRecords";
 import { formatTime } from "../../format/time";
 import { TEXT } from "../../lang";
 import { createRunResultSummary } from "../../simulation/resultSummary";
 import { createUpgradePreview, formatUpgradePreview } from "../../simulation/upgradePreview";
 import { PhaserHud } from "./PhaserHud";
 import { getMenuButtons, getUpgradeChoiceButtons } from "./PhaserMenuLayout";
+import type { MenuAction } from "./PhaserMenuLayout";
+import type { PhaserUiState } from "./PhaserUiState";
 
 export class PhaserArenaRenderer {
   private readonly graphics: Phaser.GameObjects.Graphics;
   private readonly hud: PhaserHud;
   private readonly statusText: Phaser.GameObjects.Text;
+  private readonly detailText: Phaser.GameObjects.Text;
   private readonly menuButtonTexts: Phaser.GameObjects.Text[];
   private readonly upgradeChoiceTexts: Phaser.GameObjects.Text[];
 
@@ -28,15 +32,6 @@ export class PhaserArenaRenderer {
   ) {
     this.graphics = scene.add.graphics();
     this.hud = new PhaserHud(scene, simulationConfig);
-
-    scene.add
-      .text(simulationConfig.arena.width - 18, 16, TEXT.ui.libraryLabel, {
-        fontFamily: "Arial, sans-serif",
-        fontSize: "18px",
-        color: "#cbd5e1",
-      })
-      .setOrigin(1, 0)
-      .setDepth(10);
 
     this.statusText = scene.add
       .text(simulationConfig.arena.width / 2, simulationConfig.arena.height / 2, "", {
@@ -50,7 +45,19 @@ export class PhaserArenaRenderer {
       .setDepth(20)
       .setVisible(false);
 
-    this.menuButtonTexts = Array.from({ length: 3 }, () =>
+    this.detailText = scene.add
+      .text(0, 0, "", {
+        fontFamily: "Arial, sans-serif",
+        fontSize: "17px",
+        color: "#cbd5e1",
+        align: "left",
+        lineSpacing: 6,
+      })
+      .setOrigin(0, 0)
+      .setDepth(20)
+      .setVisible(false);
+
+    this.menuButtonTexts = Array.from({ length: 8 }, () =>
       scene.add
         .text(0, 0, "", {
           fontFamily: "Arial, sans-serif",
@@ -77,7 +84,11 @@ export class PhaserArenaRenderer {
     );
   }
 
-  render(world: WorldState, pointerWorld: Vec2 | null = null): void {
+  render(
+    world: WorldState,
+    pointerWorld: Vec2 | null = null,
+    uiState?: PhaserUiState,
+  ): void {
     const g = this.graphics;
     const { arena } = this.simulationConfig;
     const { bullet, pickup, player } = this.viewConfig;
@@ -139,18 +150,27 @@ export class PhaserArenaRenderer {
     g.strokeCircle(world.player.position.x, world.player.position.y, world.player.radius);
 
     this.hideButtonTexts();
-    if (world.state.status === "gameOver") {
+    this.detailText.setVisible(false);
+    if (uiState?.secondaryMenu) {
+      this.drawSecondaryMenu(g, world, uiState);
+    } else if (world.state.status === "gameOver") {
       g.fillStyle(0x020617, 0.9);
       g.fillRect(0, 0, arena.width, arena.height);
       this.statusText
-        .setOrigin(0.5, 0)
-        .setFontSize(26)
-        .setLineSpacing(6)
-        .setWordWrapWidth(arena.width - 96)
-        .setPosition(arena.width / 2, 46)
-        .setText(this.formatGameOverText(world))
+        .setOrigin(0, 0)
+        .setAlign("left")
+        .setFontSize(20)
+        .setLineSpacing(7)
+        .setWordWrapWidth(400)
+        .setPosition(72, 34)
+        .setText(this.formatGameOverText(world, uiState))
         .setVisible(true);
-      this.drawMenuButtons(g, world);
+      this.detailText
+        .setPosition(520, 42)
+        .setWordWrapWidth(366)
+        .setText(this.formatGameOverDetails(uiState))
+        .setVisible(true);
+      this.drawMenuButtons(g, world, uiState);
     } else if (world.state.status === "upgradeSelect") {
       g.fillStyle(0x020617, 0.9);
       g.fillRect(0, 0, arena.width, arena.height);
@@ -174,44 +194,171 @@ export class PhaserArenaRenderer {
         .setPosition(arena.width / 2, arena.height / 2 - 74)
         .setText(TEXT.ui.paused)
         .setVisible(true);
-      this.drawMenuButtons(g, world);
+      this.drawMenuButtons(g, world, uiState);
     } else if (world.state.status === "title") {
-      g.fillStyle(0x05070d, 1);
+      g.fillStyle(0x05070d, 0.86);
       g.fillRect(0, 0, arena.width, arena.height);
       this.statusText
         .setOrigin(0.5)
-        .setFontSize(34)
-        .setLineSpacing(10)
-        .setWordWrapWidth(null)
-        .setPosition(arena.width / 2, arena.height / 2 - 72)
-        .setText(TEXT.ui.titleScreen)
+        .setAlign("center")
+        .setFontSize(36)
+        .setLineSpacing(8)
+        .setWordWrapWidth(arena.width - 160)
+        .setPosition(arena.width / 2, 164)
+        .setText(`${TEXT.ui.titleScreen}\n${TEXT.ui.endlessMode}`)
         .setVisible(true);
-      this.drawMenuButtons(g, world);
+      this.drawMenuButtons(g, world, uiState);
     } else {
       this.statusText.setVisible(false);
     }
 
-    this.hud.render(world);
+    this.hud.render(world, uiState?.secondaryMenu === null || uiState?.secondaryMenu === undefined);
     this.drawCursor(g, pointerWorld);
   }
 
-  private formatGameOverText(world: WorldState): string {
+  private formatGameOverText(world: WorldState, uiState?: PhaserUiState): string {
     const summary = createRunResultSummary(world);
+    const record = uiState?.latestRunRecord;
+    const bestLine = this.formatBestLine(record, uiState?.previousBest ?? null);
     const lines = [
       TEXT.ui.result.title,
       TEXT.ui.result.scoreTime(summary.score, formatTime(summary.elapsed)),
+      bestLine,
       TEXT.ui.result.levelKills(summary.level, summary.enemiesKilled),
       TEXT.ui.result.shotsRecovered(summary.shotsFired, summary.hpRecovered),
-      TEXT.ui.result.heals(
-        summary.effectiveHealPickupsCollected,
-        summary.healPickupsCollected,
-      ),
     ];
 
     if (summary.lastDamageSource) {
       lines.push(TEXT.ui.result.cause(this.formatDamageSource(summary.lastDamageSource)));
     }
 
+    return lines.filter(Boolean).join("\n");
+  }
+
+  private formatGameOverDetails(uiState?: PhaserUiState): string {
+    const record = uiState?.latestRunRecord;
+    if (!record) return "記録を保存できませんでした";
+    const eligibility = record.rankEligibility.eligible
+      ? TEXT.ui.rankingEligible
+      : TEXT.ui.rankingIneligible(
+          record.rankEligibility.reasons.map(formatRankReason).join(" / "),
+        );
+    return [
+      `開始武器: ${TEXT.hud.weaponNames[record.weaponId]}`,
+      this.formatBuildLine(record),
+      `シード: ${record.seed}`,
+      `区分: ${record.seedCategory === "fixed" ? "固定シード" : "ランダム"}`,
+      eligibility,
+      `ルール: ${record.rulesetVersion}`,
+      uiState.notice ?? "",
+    ].filter(Boolean).join("\n");
+  }
+
+  private formatBestLine(record: RunRecord | null | undefined, previousBest: RunRecord | null): string {
+    if (!record || !record.rankEligibility.eligible) return "";
+    if (previousBest === null) return TEXT.ui.firstRecord;
+    const difference = record.score - previousBest.score;
+    if (difference > 0) return TEXT.ui.newBest(difference);
+    if (difference === 0 && record.elapsed > previousBest.elapsed) {
+      return `自己ベスト更新  生存 +${formatTime(record.elapsed - previousBest.elapsed)}`;
+    }
+    if (difference === 0) return "自己ベストと同点";
+    return TEXT.ui.bestDifference(Math.abs(difference));
+  }
+
+  private formatBuildLine(record: RunRecord | null | undefined): string {
+    if (!record) return "";
+    const upgrades = Object.entries(record.upgradeRanks)
+      .filter(([, rank]) => rank > 0)
+      .sort(([, left], [, right]) => right - left)
+      .slice(0, 3)
+      .map(([id, rank]) => `${TEXT.upgrades.definitions[id as keyof typeof TEXT.upgrades.definitions].title} ${rank}`);
+    return upgrades.length > 0 ? `ビルド: ${upgrades.join(" / ")}` : "ビルド: 強化なし";
+  }
+
+  private drawSecondaryMenu(
+    g: Phaser.GameObjects.Graphics,
+    world: WorldState,
+    uiState: PhaserUiState,
+  ): void {
+    const { width, height } = this.simulationConfig.arena;
+    g.fillStyle(0x05070d, 0.96);
+    g.fillRect(0, 0, width, height);
+
+    if (uiState.secondaryMenu === "history") {
+      this.statusText
+        .setOrigin(0, 0)
+        .setAlign("left")
+        .setFontSize(17)
+        .setLineSpacing(6)
+        .setWordWrapWidth(width - 128)
+        .setPosition(64, 32)
+        .setText(this.formatHistory(uiState))
+        .setVisible(true);
+    } else if (uiState.secondaryMenu === "ranking") {
+      this.statusText
+        .setOrigin(0, 0)
+        .setAlign("left")
+        .setFontSize(17)
+        .setLineSpacing(6)
+        .setWordWrapWidth(width - 128)
+        .setPosition(64, 32)
+        .setText(this.formatRanking(uiState))
+        .setVisible(true);
+    } else {
+      this.statusText
+        .setOrigin(0.5, 0)
+        .setAlign("center")
+        .setFontSize(28)
+        .setLineSpacing(5)
+        .setWordWrapWidth(width - 120)
+        .setPosition(width / 2, 34)
+        .setText(
+          `${TEXT.ui.settingsTitle}\n${uiState.profile.displayName ?? "ゲスト"}  ${uiState.profile.id.slice(0, 8)}\n${uiState.notice ?? "選択すると値が切り替わります"}`,
+        )
+        .setVisible(true);
+    }
+
+    this.drawMenuButtons(g, world, uiState);
+  }
+
+  private formatHistory(uiState: PhaserUiState): string {
+    const lines = [TEXT.ui.historyTitle, ""];
+    if (uiState.records.length === 0) {
+      lines.push(TEXT.ui.noRecords);
+    } else {
+      const pageSize = 8;
+      const pageCount = Math.max(1, Math.ceil(uiState.records.length / pageSize));
+      const start = uiState.historyPage * pageSize;
+      lines[0] = `${TEXT.ui.historyTitle}  ${uiState.historyPage + 1}/${pageCount}`;
+      uiState.records.slice(start, start + pageSize).forEach((record, index) => {
+        const eligibility = record.rankEligibility.eligible ? "対象" : "対象外";
+        lines.push(
+          `${start + index + 1}. ${formatRecordDate(record.capturedAt)}  ${record.score.toString().padStart(6)}点  ${formatTime(record.elapsed)}  Lv${record.level}  ${eligibility}`,
+        );
+      });
+      const latest = uiState.records[0]!;
+      lines.push(
+        "",
+        `最新: ${latest.kills}撃破 / 被ダメージ${latest.damageTaken} / シード${latest.seed}`,
+      );
+    }
+    if (uiState.notice) lines.push("", uiState.notice);
+    return lines.join("\n");
+  }
+
+  private formatRanking(uiState: PhaserUiState): string {
+    const lines = [TEXT.ui.rankingTitle, "エンドレス / 標準 / 現在のルールセット", ""];
+    if (uiState.ranking.length === 0) {
+      lines.push(TEXT.ui.noRecords);
+    } else {
+      uiState.ranking.slice(0, 10).forEach((record, index) => {
+        lines.push(
+          `${String(index + 1).padStart(2)}. ${record.score.toString().padStart(6)}点  ${formatTime(record.elapsed)}  Lv${record.level}  ${formatRecordDate(record.capturedAt)}`,
+        );
+      });
+    }
+    if (uiState.notice) lines.push("", uiState.notice);
     return lines.join("\n");
   }
 
@@ -517,17 +664,55 @@ export class PhaserArenaRenderer {
     return TEXT.ui.damageSource.enemyProjectile;
   }
 
-  private drawMenuButtons(g: Phaser.GameObjects.Graphics, world: WorldState): void {
+  private drawMenuButtons(
+    g: Phaser.GameObjects.Graphics,
+    world: WorldState,
+    uiState?: PhaserUiState,
+  ): void {
     const { width, height } = this.simulationConfig.arena;
-    const buttons = getMenuButtons(world.state.status, width, height, TEXT.ui.menu);
+    const labels = this.createMenuLabels(uiState);
+    const buttons = getMenuButtons(
+      world.state.status,
+      width,
+      height,
+      labels,
+      uiState?.secondaryMenu ?? null,
+    );
     buttons.forEach((button, index) => {
-      this.drawButton(g, button.x, button.y, button.width, button.height);
+      this.drawButton(
+        g,
+        button.x,
+        button.y,
+        button.width,
+        button.height,
+        button.action === uiState?.focusedMenuAction,
+      );
       const text = this.menuButtonTexts[index]!;
       text
         .setText(button.label)
         .setPosition(button.x + button.width / 2, button.y + button.height / 2)
         .setVisible(true);
     });
+  }
+
+  private createMenuLabels(uiState?: PhaserUiState): Partial<Record<MenuAction, string>> {
+    if (!uiState) return TEXT.ui.menu;
+    const percent = (value: number, muted = false) =>
+      muted ? "オフ" : `${Math.round(value * 100)}%`;
+    const enabled = (value: boolean) => (value ? "オン" : "オフ");
+
+    return {
+      ...TEXT.ui.menu,
+      clearHistory: uiState.historyClearPending ? "もう一度押して消去" : TEXT.ui.menu.clearHistory,
+      clearRankings: uiState.rankingClearPending
+        ? "もう一度押して消去"
+        : TEXT.ui.menu.clearRankings,
+      settingsBgm: `${TEXT.ui.menu.settingsBgm}  ${percent(uiState.settings.bgmVolume, uiState.settings.bgmMuted)}`,
+      settingsSfx: `${TEXT.ui.menu.settingsSfx}  ${percent(uiState.settings.sfxVolume, uiState.settings.sfxMuted)}`,
+      settingsShake: `${TEXT.ui.menu.settingsShake}  ${percent(uiState.settings.shakeIntensity)}`,
+      settingsFlash: `${TEXT.ui.menu.settingsFlash}  ${percent(uiState.settings.flashIntensity)}`,
+      settingsAutoFire: `${TEXT.ui.menu.settingsAutoFire}  ${enabled(uiState.settings.autoFireEnabled)}`,
+    };
   }
 
   private drawUpgradeChoiceButtons(g: Phaser.GameObjects.Graphics, world: WorldState): void {
@@ -568,10 +753,11 @@ export class PhaserArenaRenderer {
     y: number,
     width: number,
     height: number,
+    focused = false,
   ): void {
-    g.fillStyle(0x1f2937, 0.94);
+    g.fillStyle(focused ? 0x164e63 : 0x1f2937, 0.96);
     g.fillRoundedRect(x, y, width, height, 6);
-    g.lineStyle(2, 0x38bdf8, 0.9);
+    g.lineStyle(focused ? 3 : 2, focused ? 0xfacc15 : 0x38bdf8, 0.95);
     g.strokeRoundedRect(x, y, width, height, 6);
   }
 
@@ -583,4 +769,21 @@ export class PhaserArenaRenderer {
       text.setVisible(false);
     }
   }
+}
+
+function formatRankReason(reason: RankIneligibilityReason): string {
+  switch (reason) {
+    case "debugRun":
+      return "デバッグ操作";
+    case "automatedTest":
+      return "自動テスト";
+    case "nonStandardRuleset":
+      return "標準外ルール";
+  }
+}
+
+function formatRecordDate(capturedAt: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(capturedAt);
+  if (!match) return capturedAt.slice(0, 16);
+  return `${match[2]}/${match[3]} ${match[4]}:${match[5]}`;
 }

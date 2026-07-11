@@ -1,5 +1,10 @@
 import { expect, type Page, test } from "@playwright/test";
 
+async function gotoArena(page: Page): Promise<void> {
+  await page.goto(`/`);
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+}
+
 async function moveMouseToCanvasLogical(page: Page, logicalX: number, logicalY: number): Promise<void> {
   const canvas = page.locator("canvas");
   const box = await canvas.boundingBox();
@@ -16,8 +21,67 @@ async function moveMouseToCanvasLogical(page: Page, logicalX: number, logicalY: 
   );
 }
 
+async function seedVisualRunRecords(page: Page): Promise<void> {
+  await gotoArena(page);
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
+    const context = debug?.getSnapshot().runContext;
+    const profile = debug?.getProfile();
+    if (!context || !profile) throw new Error("Run context is not available.");
+
+    const scores = [16_248, 8_204, 3_560];
+    const records = scores.map((score, index) => ({
+      schemaVersion: 1,
+      id: `visual-run-${index + 1}`,
+      profileId: profile.id,
+      capturedAt: `2026-07-${String(10 - index).padStart(2, "0")}T10:00:00.000Z`,
+      modeId: context.modeId,
+      stageId: context.stageId,
+      difficultyId: context.difficultyId,
+      weaponId: "pulse" as const,
+      modifierIds: ["auto-fire:on"],
+      appVersion: context.appVersion,
+      rulesetVersion: context.rulesetVersion,
+      buildCommit: context.buildCommit,
+      seed: 20260619 + index,
+      seedCategory: context.seedCategory,
+      runOrigin: "manual" as const,
+      rankEligibility: { eligible: true, reasons: [] },
+      elapsed: [310, 184, 72][index]!,
+      score,
+      level: [16, 10, 6][index]!,
+      kills: [1114, 502, 188][index]!,
+      damageTaken: [864, 420, 160][index]!,
+      lastDamageSource: {
+        kind: "contact" as const,
+        enemyId: `enemy-${index + 1}`,
+        enemyType: "chaser" as const,
+      },
+      shotsFired: [3612, 1900, 720][index]!,
+      hpRecovered: [764, 312, 84][index]!,
+      upgradesChosen: [15, 9, 5][index]!,
+      upgradeRanks: {
+        rapidFire: 5,
+        swiftStep: Math.max(1, 3 - index),
+        vitalCore: 0,
+        overdriveRounds: Math.max(1, 4 - index),
+        splitShot: Math.max(0, 2 - index),
+        piercingRounds: 1,
+      },
+    }));
+
+    localStorage.setItem(
+      "arena-core.run-records.v2",
+      JSON.stringify({ schemaVersion: 2, history: records, rankings: records }),
+    );
+  });
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+}
+
 test("matches the fixed title frame", async ({ page }) => {
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
@@ -30,8 +94,50 @@ test("matches the fixed title frame", async ({ page }) => {
   });
 });
 
+test("matches the settings frame", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "arena-core.profile.v1",
+      JSON.stringify({
+        schemaVersion: 1,
+        id: "00000000-0000-4000-8000-000000000005",
+        createdAt: "2026-07-10T10:00:00.000Z",
+        updatedAt: "2026-07-10T10:00:00.000Z",
+      }),
+    );
+  });
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+  await expect(canvas).toHaveCount(1);
+  await page.evaluate(() => window.__ARENA_DEBUG__?.openMenu("settings"));
+
+  await expect(canvas).toHaveScreenshot("arena-settings.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("matches the run history frame", async ({ page }) => {
+  await seedVisualRunRecords(page);
+  const canvas = page.locator("canvas");
+  await page.evaluate(() => window.__ARENA_DEBUG__?.openMenu("history"));
+
+  await expect(canvas).toHaveScreenshot("arena-run-history.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("matches the local ranking frame", async ({ page }) => {
+  await seedVisualRunRecords(page);
+  const canvas = page.locator("canvas");
+  await page.evaluate(() => window.__ARENA_DEBUG__?.openMenu("ranking"));
+
+  await expect(canvas).toHaveScreenshot("arena-local-ranking.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
 test("matches the fixed initial arena frame", async ({ page }) => {
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
@@ -46,7 +152,7 @@ test("matches the fixed initial arena frame", async ({ page }) => {
 });
 
 test("matches the fixed wave two HUD frame", async ({ page }) => {
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
@@ -63,7 +169,7 @@ test("matches the fixed wave two HUD frame", async ({ page }) => {
 });
 
 test("matches the fixed wave three HUD frame", async ({ page }) => {
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
@@ -80,7 +186,7 @@ test("matches the fixed wave three HUD frame", async ({ page }) => {
 });
 
 test("matches the fixed heal pickup fixture frame", async ({ page }) => {
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
@@ -96,7 +202,7 @@ test("matches the fixed heal pickup fixture frame", async ({ page }) => {
 });
 
 test("matches the fixed wave four HUD frame", async ({ page }) => {
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
@@ -113,7 +219,7 @@ test("matches the fixed wave four HUD frame", async ({ page }) => {
 });
 
 test("matches the fixed offscreen enemy indicator frame", async ({ page }) => {
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
@@ -129,7 +235,7 @@ test("matches the fixed offscreen enemy indicator frame", async ({ page }) => {
 });
 
 test("matches the fixed shooting frame", async ({ page }) => {
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
@@ -151,7 +257,7 @@ test("matches the fixed shooting frame", async ({ page }) => {
 });
 
 test("matches the fixed upgraded pulse split shot frame", async ({ page }) => {
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
@@ -182,7 +288,7 @@ test("matches the fixed upgraded pulse split shot frame", async ({ page }) => {
 });
 
 test("matches the fixed mouse aiming cursor frame", async ({ page }) => {
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
@@ -198,7 +304,7 @@ test("matches the fixed mouse aiming cursor frame", async ({ page }) => {
 });
 
 test("matches the fixed game over frame", async ({ page }) => {
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
@@ -215,7 +321,7 @@ test("matches the fixed game over frame", async ({ page }) => {
 });
 
 test("matches the fixed paused frame", async ({ page }) => {
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
@@ -230,7 +336,7 @@ test("matches the fixed paused frame", async ({ page }) => {
 });
 
 test("matches the fixed upgrade selection frame", async ({ page }) => {
-  await page.goto("/");
+  await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
@@ -240,6 +346,33 @@ test("matches the fixed upgrade selection frame", async ({ page }) => {
   });
 
   await expect(canvas).toHaveScreenshot("arena-upgrade-select.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("matches the portrait title frame without overflow", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+
+  await expect(canvas).toHaveScreenshot("arena-title-portrait.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("matches the landscape fifteen minute HUD frame", async ({ page }) => {
+  await page.setViewportSize({ width: 844, height: 390 });
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.restart();
+    window.__ARENA_DEBUG__?.setElapsed(900);
+    window.__ARENA_DEBUG__?.setEnemyVisualFixture("wave3");
+    window.__ARENA_DEBUG__?.setPaused(true);
+  });
+
+  await expect(canvas).toHaveScreenshot("arena-fifteen-minute-hud-landscape.png", {
     maxDiffPixelRatio: 0.01,
   });
 });

@@ -1,77 +1,63 @@
 ---
-title: Obstacles and Projectiles
-description: PH-V04-005の障害物配置と弾の壁interaction方針。
+title: 障害物と弾
+description: 障害物配置、弾の消滅と跳弾、今後の地形利用方針。
 ---
 
-## Ticket
+## 対象チケット
 
-`PH-V04-005 Obstacle Layout and Projectile Interaction Review`
+`PH-V04-005` 障害物配置と弾の壁接触見直し。
 
 ## 目的
 
-障害物が「判断を増やす地形」ではなく「操作ミスと射線切れを増やす摩擦」になっている箇所を減らします。
+障害物が単なる操作ミスや射線切れの原因ではなく、移動、誘導、射撃の判断を増やす地形として機能する状態を目指します。
 
-v0.4では、itemやactive skillを足す前にarenaの基本体験を整えます。
+## v0.4で実施したこと
 
-## 今回の判断
+- 中央の小ブロック `block-e` を削除した。
+- プレイヤー弾へ `ricochetCount` を追加した。
+- 跳弾処理をシミュレーションへ実装した。
+- 通常武器の初期 `ricochetCount` は0のままにした。
+- 敵弾は引き続き障害物へ当たると消える。
 
-実装したもの:
+中央ブロックは開始位置付近の移動と射線を塞ぎやすく、攻撃にも防御にも使いにくい状態でした。
 
-- 中央の小ブロック `block-e` を削除。
-- player bulletに `ricochetCount` のdata modelを追加。
-- ricochet処理をsimulationに実装。
-- 通常武器の初期 `ricochetCount` は `0` に据え置き。
-- enemy projectileは引き続き障害物で消える。
+一方、通常武器へ跳弾を常時付与すると、バランス回帰テスト上の生存時間が大きく伸びました。そのため、跳弾の仕組みだけを残し、通常性能としての採用は保留しています。
 
-## 理由
+## 現在の弾ルール
 
-中央ブロックは初期位置付近の移動と射線を塞ぎやすく、現状では攻撃にも防御にも使いにくい状態でした。
-
-一方で、通常武器へricochetを即時付与すると、balanceProbe上の `kiteCollect` survival p50が大きく伸びました。ricochetは有望ですが、基礎武器の常時性能として入れるには強すぎる可能性があります。
-
-そのため、v0.4の初手では以下に分けます。
-
-- 即時採用: arena中央の圧迫感を下げる。
-- 土台のみ採用: ricochetをconfigとsimulationで扱えるようにする。
-- 後続候補: ricochet upgrade、stage modifier、challenge stageで使う。
-
-## Current Rule
-
-player bullet:
+プレイヤー弾:
 
 - `ricochetRemaining > 0` の場合、障害物で反射する。
 - 反射時に `ricochetRemaining` を1減らす。
-- 反射後の残り寿命は短く制限する。
+- 反射後の残り寿命を短く制限する。
 - `ricochetRemaining === 0` で障害物へ当たると消える。
 
-enemy projectile:
+敵弾:
 
 - 障害物へ当たると消える。
 
-## Balance Baseline
+## 現在の基準値
 
-v0.4の障害物配置変更後、`kiteCollect` の主なbaselineは次の通りです。
+最新値は [バランス回帰テスト](../../playtest/balance-probe/) を正本とします。
 
-| Metric | v0.4 |
+主要値:
+
+| 指標 | v0.4 |
 | --- | ---: |
-| Survival p50 | 161.77 |
-| First Damage p50 | 101.57 |
-| First Upgrade p50 | 7.13 |
-| Wave Reached p50 | 90 |
-| HP Recovered p50 | 74 |
-| Heal Pickups p50 | 29 |
-| Effective Heal Pickups p50 | 8 |
+| 生存時間中央値 | 179.57秒 |
+| 初被弾時刻中央値 | 101.57秒 |
+| 初強化時刻中央値 | 7.13秒 |
+| 毎分撃破数中央値 | 187.12 |
+| 毎分スコア中央値 | 2746.61 |
 
-解釈:
+この数値はAI入力モデルによる回帰検知であり、人間にとっての操作感を直接表すものではありません。
 
-- 中央障害物削除により、生存時間と初被弾時刻が伸びた。
-- kills / score / max bulletsは既存許容内。
-- heal pickup取得数は生存時間の伸びに伴って増えた。
+## 今後の候補
 
-## Follow-Up
+- `pulse` の武器最終強化として跳弾を試す。
+- ステージ固有ルールまたはチャレンジとして跳弾を使う。
+- 障害物を中央ではなく外周寄りへ配置する。
+- 完全自動生成ではなく、検証済み配置を複数用意する。
+- 手動プレイで、死因が地形詰まりから敵圧や判断ミスへ移ったか確認する。
 
-次に扱う候補:
-
-- ricochetをupgradeとして入れるか、stage modifierとして入れるかを決める。
-- 障害物が少なすぎる場合は、中央ではなく外周寄りに小さい地形を再配置する。
-- manual playtestで、死因が地形詰まりから敵圧・判断ミスへ移っているか確認する。
+跳弾をどこへ置くかは [ビルドと成長](../build-and-progression/) と [モードと戦闘展開](../encounters-and-modes/) の試作結果で決めます。

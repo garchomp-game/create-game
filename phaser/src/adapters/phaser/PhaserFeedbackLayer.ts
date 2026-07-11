@@ -1,5 +1,9 @@
 import Phaser from "phaser";
+import type { ProfileSettings } from "../../domain/profile";
 import type { GameEvent, Vec2, WorldState } from "../../domain/types";
+
+const MAX_IMPACTS = 64;
+const MAX_PARTICLES = 256;
 
 type ImpactRing = {
   position: Vec2;
@@ -29,9 +33,18 @@ export class PhaserFeedbackLayer {
   private readonly impacts: ImpactRing[] = [];
   private readonly particles: BurstParticle[] = [];
   private screenFlashAlpha = 0;
+  private flashIntensity = 1;
+  private shakeIntensity = 1;
 
   constructor(private readonly scene: Phaser.Scene) {
     this.graphics = scene.add.graphics().setDepth(14);
+  }
+
+  configure(settings: Pick<ProfileSettings, "flashIntensity" | "shakeIntensity">): void {
+    this.flashIntensity = settings.flashIntensity;
+    this.shakeIntensity = settings.shakeIntensity;
+    if (this.flashIntensity === 0) this.screenFlashAlpha = 0;
+    if (this.shakeIntensity === 0) this.scene.cameras.main.resetFX();
   }
 
   handleEvents(events: GameEvent[], world: WorldState): void {
@@ -45,8 +58,18 @@ export class PhaserFeedbackLayer {
         this.addImpact(event.position, 18, 0xfacc15);
         this.addBurst(event.position, 0xfacc15);
       } else if (event.type === "player.damaged") {
-        this.screenFlashAlpha = Math.max(this.screenFlashAlpha, 0.3);
-        this.scene.cameras.main.shake(120, 0.003);
+        this.screenFlashAlpha = Math.max(this.screenFlashAlpha, 0.3 * this.flashIntensity);
+        if (this.shakeIntensity > 0) {
+          this.scene.cameras.main.shake(120, 0.003 * this.shakeIntensity);
+        }
+      } else if (event.type === "pickup.collected" && event.pickupKind === "heal") {
+        this.addImpact(world.player.position, world.player.radius + 8, 0x4ade80);
+      } else if (event.type === "player.level_up") {
+        this.addImpact(world.player.position, world.player.radius + 12, 0x22d3ee);
+        this.addBurst(world.player.position, 0x22d3ee);
+      } else if (event.type === "game.over") {
+        this.screenFlashAlpha = 0;
+        this.scene.cameras.main.resetFX();
       }
     }
   }
@@ -108,7 +131,13 @@ export class PhaserFeedbackLayer {
     };
   }
 
+  celebrateRecord(position: Vec2): void {
+    this.addImpact(position, 34, 0xfacc15);
+    this.addBurst(position, 0xfacc15);
+  }
+
   private addImpact(position: Vec2, radius: number, color: number): void {
+    if (this.impacts.length >= MAX_IMPACTS) this.impacts.shift();
     this.impacts.push({
       position: { ...position },
       age: 0,
@@ -123,6 +152,7 @@ export class PhaserFeedbackLayer {
     for (let index = 0; index < count; index += 1) {
       const angle = (Math.PI * 2 * index) / count;
       const speed = 95 + (index % 3) * 18;
+      if (this.particles.length >= MAX_PARTICLES) this.particles.shift();
       this.particles.push({
         position: { ...position },
         velocity: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed },

@@ -1,7 +1,12 @@
 import Phaser from "phaser";
 import type { GameStatus, InputSnapshot, Vec2 } from "../../domain/types";
 import { normalize } from "../../math/vector";
-import { findMenuActionAt, findUpgradeChoiceAt } from "./PhaserMenuLayout";
+import {
+  findMenuActionAt,
+  findUpgradeChoiceAt,
+  getMenuButtons,
+} from "./PhaserMenuLayout";
+import type { MenuAction, SecondaryMenu } from "./PhaserMenuLayout";
 
 type ArenaKeys = {
   up: Phaser.Input.Keyboard.Key;
@@ -29,6 +34,10 @@ export class PhaserInputAdapter {
   private readonly keys: ArenaKeys;
   private hasPointerAim = false;
   private pointerPressed = false;
+  private currentCursor = "";
+  private pendingMenuAction: MenuAction | null = null;
+  private focusedMenuIndex = 0;
+  private menuContextKey = "";
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -36,7 +45,7 @@ export class PhaserInputAdapter {
     if (!keyboard) {
       throw new Error("Phaser keyboard input is not available.");
     }
-    scene.input.setDefaultCursor("none");
+    this.setCursor("default");
 
     this.keys = keyboard.addKeys({
       up: "W",
@@ -72,29 +81,78 @@ export class PhaserInputAdapter {
     scene.input.on(Phaser.Input.Events.POINTER_MOVE, () => {
       this.hasPointerAim = true;
     });
-    scene.input.on(Phaser.Input.Events.POINTER_DOWN, () => {
-      this.pointerPressed = true;
+    scene.input.on(Phaser.Input.Events.POINTER_DOWN, (pointer: Phaser.Input.Pointer) => {
+      if (pointer.leftButtonDown() || pointer.button === 0) this.pointerPressed = true;
     });
   }
 
-  read(status: GameStatus, upgradeChoiceCount: number): InputSnapshot {
+  read(
+    status: GameStatus,
+    upgradeChoiceCount: number,
+    autoFireEnabled = true,
+    secondaryMenu: SecondaryMenu | null = null,
+  ): InputSnapshot {
     const pointer = this.scene.input.activePointer;
     const pointerPressed = this.pointerPressed;
     this.pointerPressed = false;
+    this.syncCursor(status, upgradeChoiceCount, secondaryMenu);
     if (status !== "playing") {
       this.hasPointerAim = false;
     }
     const pointerAimsThisFrame =
-      this.hasPointerAim || (status === "playing" && (pointer.isDown || pointerPressed));
-    const menuAction = pointerPressed
-      ? findMenuActionAt(
-          status,
-          this.scene.scale.gameSize.width,
-          this.scene.scale.gameSize.height,
-          pointer.x,
-          pointer.y,
-        )
-      : null;
+      this.hasPointerAim ||
+      (status === "playing" && (pointer.leftButtonDown() || pointerPressed));
+    const menuButtons = getMenuButtons(
+      status,
+      this.scene.scale.gameSize.width,
+      this.scene.scale.gameSize.height,
+      undefined,
+      secondaryMenu,
+    );
+    this.syncMenuFocus(status, secondaryMenu, menuButtons.length);
+    const hoveredAction = findMenuActionAt(
+      status,
+      this.scene.scale.gameSize.width,
+      this.scene.scale.gameSize.height,
+      pointer.x,
+      pointer.y,
+      secondaryMenu,
+    );
+    if (hoveredAction) {
+      const hoveredIndex = menuButtons.findIndex((button) => button.action === hoveredAction);
+      if (hoveredIndex >= 0) this.focusedMenuIndex = hoveredIndex;
+    }
+    if (menuButtons.length > 0) {
+      if (
+        Phaser.Input.Keyboard.JustDown(this.keys.up) ||
+        Phaser.Input.Keyboard.JustDown(this.keys.arrowUp)
+      ) {
+        this.focusedMenuIndex =
+          (this.focusedMenuIndex - 1 + menuButtons.length) % menuButtons.length;
+      }
+      if (
+        Phaser.Input.Keyboard.JustDown(this.keys.down) ||
+        Phaser.Input.Keyboard.JustDown(this.keys.arrowDown)
+      ) {
+        this.focusedMenuIndex = (this.focusedMenuIndex + 1) % menuButtons.length;
+      }
+    }
+    const keyboardActivated =
+      menuButtons.length > 0 &&
+      (Phaser.Input.Keyboard.JustDown(this.keys.start) ||
+        (status === "title" &&
+          secondaryMenu === null &&
+          Phaser.Input.Keyboard.JustDown(this.keys.shoot)));
+    const backActivated =
+      secondaryMenu !== null && Phaser.Input.Keyboard.JustDown(this.keys.escape);
+    const menuAction = backActivated
+      ? "back"
+      : pointerPressed
+        ? hoveredAction
+        : keyboardActivated
+          ? menuButtons[this.focusedMenuIndex]?.action ?? null
+          : null;
+    this.pendingMenuAction = menuAction;
     const clickedUpgradeChoice =
       pointerPressed && status === "upgradeSelect"
         ? findUpgradeChoiceAt(
@@ -105,10 +163,7 @@ export class PhaserInputAdapter {
             pointer.y,
           )
         : null;
-    const startPressed =
-      Phaser.Input.Keyboard.JustDown(this.keys.start) ||
-      Phaser.Input.Keyboard.JustDown(this.keys.shoot) ||
-      menuAction === "start";
+    const startPressed = menuAction === "start";
 
     return {
       move: this.readMove(),
@@ -116,8 +171,9 @@ export class PhaserInputAdapter {
       startPressed,
       shootHeld:
         this.keys.shoot.isDown ||
-        pointer.isDown ||
-        (status === "playing" && this.hasPointerAim),
+        pointer.leftButtonDown() ||
+        (status === "playing" && pointerPressed) ||
+        (autoFireEnabled && status === "playing" && this.hasPointerAim),
       restartPressed:
         Phaser.Input.Keyboard.JustDown(this.keys.restart) || menuAction === "restart",
       pausePressed:
@@ -134,6 +190,26 @@ export class PhaserInputAdapter {
     return Phaser.Input.Keyboard.JustDown(this.keys.debug);
   }
 
+  consumeMenuAction(): MenuAction | null {
+    const action = this.pendingMenuAction;
+    this.pendingMenuAction = null;
+    return action;
+  }
+
+  getFocusedMenuAction(
+    status: GameStatus,
+    secondaryMenu: SecondaryMenu | null = null,
+  ): MenuAction | null {
+    const buttons = getMenuButtons(
+      status,
+      this.scene.scale.gameSize.width,
+      this.scene.scale.gameSize.height,
+      undefined,
+      secondaryMenu,
+    );
+    return buttons[this.focusedMenuIndex]?.action ?? null;
+  }
+
   getPointerWorld(): Vec2 | null {
     if (!this.hasPointerAim) return null;
 
@@ -144,6 +220,67 @@ export class PhaserInputAdapter {
   clearTransientInput(): void {
     this.pointerPressed = false;
     this.hasPointerAim = false;
+    this.pendingMenuAction = null;
+  }
+
+  syncCursor(
+    status: GameStatus,
+    upgradeChoiceCount: number,
+    secondaryMenu: SecondaryMenu | null = null,
+  ): void {
+    const pointer = this.scene.input.activePointer;
+    this.updateCursor(status, upgradeChoiceCount, pointer.x, pointer.y, secondaryMenu);
+  }
+
+  private updateCursor(
+    status: GameStatus,
+    upgradeChoiceCount: number,
+    pointerX: number,
+    pointerY: number,
+    secondaryMenu: SecondaryMenu | null,
+  ): void {
+    if (status === "playing" && secondaryMenu === null) {
+      this.setCursor("none");
+      return;
+    }
+
+    const arenaWidth = this.scene.scale.gameSize.width;
+    const arenaHeight = this.scene.scale.gameSize.height;
+    const overMenuButton =
+      findMenuActionAt(
+        status,
+        arenaWidth,
+        arenaHeight,
+        pointerX,
+        pointerY,
+        secondaryMenu,
+      ) !== null;
+    const overUpgradeChoice =
+      status === "upgradeSelect" &&
+      findUpgradeChoiceAt(upgradeChoiceCount, arenaWidth, arenaHeight, pointerX, pointerY) !== null;
+
+    this.setCursor(overMenuButton || overUpgradeChoice ? "pointer" : "default");
+  }
+
+  private syncMenuFocus(
+    status: GameStatus,
+    secondaryMenu: SecondaryMenu | null,
+    buttonCount: number,
+  ): void {
+    const key = `${status}:${secondaryMenu ?? "primary"}`;
+    if (key !== this.menuContextKey) {
+      this.menuContextKey = key;
+      this.focusedMenuIndex = 0;
+    }
+    if (buttonCount === 0) this.focusedMenuIndex = 0;
+    else this.focusedMenuIndex = Math.min(this.focusedMenuIndex, buttonCount - 1);
+  }
+
+  private setCursor(cursor: string): void {
+    if (this.currentCursor === cursor) return;
+
+    this.scene.input.setDefaultCursor(cursor);
+    this.currentCursor = cursor;
   }
 
   private readMove(): Vec2 {

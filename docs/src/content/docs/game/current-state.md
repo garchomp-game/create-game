@@ -1,61 +1,92 @@
 ---
-title: Current State
-description: Arena Core Phaser版の現在地。
+title: 現在地
+description: Arena Core Phaser版の実装状況、確認済み課題、次の作業。
 ---
 
-## 現在のゲーム状態
+最終整理日: 2026-07-11
 
-Phaser版は、ゲームとして成立している状態です。
+## 現在の状態
 
-実装済みの主な体験:
+Phaser版v0.5「エンドレスの磨き込みとラン記録」は完了しました。`PH-V05-001`〜`011`の実装、自動検証、15分耐久、通常UIからの手動3ランと所感反映を終えています。
 
-- WASD / arrow移動
-- mouse aim
-- left click / Space shooting
-- XP pickupとmagnet
-- upgrade selection
-- waves
-- enemies / projectiles / obstacles
-- result screen
-- debug overlay / debug export
-- healing pickup foundation
-- offscreen enemy direction indicator
+| 領域 | 実装状況 |
+| --- | --- |
+| 操作 | WASD / 矢印キー移動、マウス照準、自動射撃、左クリック / Space手動射撃 |
+| 戦闘 | プレイヤー弾、敵接触、敵弾、障害物との衝突 |
+| 敵 | 追跡、重量、高速、遠距離の4種類 |
+| 成長 | XP回収、レベル上昇、最大ランクを除外する3択強化 |
+| 進行 | 時間帯別ウェーブ、90秒以降60秒ごとの持久圧力 |
+| 記録 | 版付き`RunRecord`、直近50件、比較キー別上位10件、対象外理由 |
+| 画面 | タイトル、一時停止、強化、2列リザルト、履歴、ランキング、設定、HUD |
+| 設定 | BGM、効果音、揺れ、点滅、自動射撃の保存と初期化 |
+| 音響 | 32秒ループBGM1曲、主要効果音8種・15ファイル、SEバリエーション、画面状態別BGM制御 |
+| 計測 | デバッグ表示、開発ラン出力、ログ3分類、バランス回帰、900秒耐久試験、画面比較18件 |
 
-## v0.3 Candidate
+## v0.5で実装した境界
 
-v0.3 candidateに含めるもの:
+- プレイヤー向け`RunRecord`と開発診断用ランJSONを別の型、別の保存先へ分けた。
+- `appVersion`、`rulesetVersion`、`buildCommit`の取得元を集約した。
+- 手動、デバッグ、自動テストと、ランダム / 固定シードを区分した。
+- デバッグと自動テストは履歴へ残せるが、通常ランキングから除外する。
+- ゲームオーバー1回につき1件だけ保存し、破損や容量超過でもリザルトを表示する。
+- ゲストプロフィール、設定、ラン記録を別キーにし、履歴とランキングはラン記録内で個別に初期化する。
+- タイトルから開始、ランキング、履歴、設定へキーボードとポインターで移動できる。
+- メニューでは通常カーソル、プレイ中は照準カーソルを使う。
+- BGMと効果音を分離し、ユーザー操作前の音声ロックを待って再生する。
 
-- `PH-V03-001 Healing Pickup Foundation`
-- `PH-V03-004 Item System Requirements and Data Model`
-- `PH-V03-011 Offscreen Enemy Direction Indicator`
-- UI textのlang分割と日本語化
-- `splitShot` 後の `pulse` projectile small spread
-- v0.3 PM docs / playtest template / handoff docs
+## 保存先
 
-v0.3 candidateに含めないもの:
+ブラウザ保存:
 
-- `PH-V03-005 Temporary Buff Item Prototype`
-- `PH-V03-006 Pickup Presentation and Feedback Pass`
-- `PH-V03-007 BalanceProbe Item KPI Extension`
-- `PH-V03-009 Bundle Size / Build Warning Triage`
-- dash / right-click skill / auto-fire / number key skill
-- obstacle layout / projectile bounce / wall interaction redesign
+| キー | 内容 |
+| --- | --- |
+| `arena-core.run-records.v2` | 直近履歴と比較キー別ランキング |
+| `arena-core.profile.v1` | ゲストプロフィール |
+| `arena-core.settings.v1` | 音、演出、自動射撃の設定 |
 
-## 次の焦点
+ローカル開発ログ:
 
-v0.4では、item追加より先にプレイ体験の土台を整えます。
+| パス | 内容 | 保持上限 |
+| --- | --- | ---: |
+| `phaser/logs/runs` | 通常の手動ラン | 200 |
+| `phaser/logs/debug` | デバッグランと退避した旧0秒ログ | 100 |
+| `phaser/logs/tests` | 明示的に送信した自動テスト | 20 |
 
-着手済み:
+通常のPlaywright実行と1秒未満のランは、自動で手動ログへ書き込みません。
 
-- 中央障害物を削除し、arena中央の圧迫感を下げた。
-- player bullet ricochetのdata modelとsimulation処理を追加した。
-- 通常武器のricochetは初期値0のままにし、upgrade/modifier候補として残した。
-- playing中のmouse aimでauto-fireするadapter-level prototypeを追加した。
+## プレイと耐久確認
 
-優先順:
+v0.5の通常UIから、同じビルド`34206f74bd8a`で次の3ランを記録しました。ブラウザ履歴、ランキング、開発ログの内容が一致し、すべて通常ランキング対象です。
 
-1. `PH-V04-005 Obstacle Layout and Projectile Interaction Review`
-2. `PH-V04-001 Auto-Fire With Mouse Aim Prototype`
-3. `PH-V04-002 Defensive Dash Binding Spike`
-4. `PH-V04-003 Right-Click Active Skill Input Split`
-5. `PH-V03-005 Temporary Buff Item Prototype`
+- 短時間: 3211点 / 約98秒 / レベル11。
+- 通常: 8196点 / 約178秒 / レベル14。
+- 長め: 14172点 / 約272秒 / レベル16。
+- 操作とUIは良好と評価された。初版音響は単調という所感を受け、SEへ2〜3バリエーション、BGMへ32秒・4区間の展開を追加した。
+- 自動耐久: 900秒、30fps相当の27,000ステップを完走。敵、弾、ピックアップ、座標は設定した上限内だった。実時間ブラウザ確認の代替ではない。
+- 実時間ブラウザ耐久: 15.1分を完走。終盤FPS、JSヒープ、個体数、Canvas画素、コンソールエラーの判定を通過した。
+
+旧v0.4ログ5件は長時間傾向の参考として残しますが、`rulesetVersion`を持たないためv0.5の履歴やランキングへ移行しません。詳細は[手動プレイ記録](../../playtest/playtest-notes/)を参照してください。
+
+## 残る課題
+
+既知課題:
+
+- `ArenaScene`と`PhaserArenaRenderer`は大きい。ルール、順位、保存、音響は分離済みだが、画面コンポーネントとデバッグブリッジの追加分割余地がある。
+- Phaserを含む本番バンドルは約1.37MBで、Viteの500KB警告が残る。
+- 外部無料BGMの採用は必須ではない。追加選曲する場合は、現在の生成音源と比較し、再配布、加工、クレジット条件を資産台帳へ記録する。
+- 外部ログイン、オンラインランキング、クラウド同期は意図的に対象外である。
+
+実装上の未解決P0はありません。`PH-V05-011`は完了し、Scene分割とバンドル警告はv0.6以降の技術負債として扱います。
+
+## 次の優先順
+
+次はv0.6「ビルドの個性とエンドレス後半」へ進みます。
+
+1. XP曲線と強化選択間隔を再設計する。
+2. `pulse`、`spread`、`pierce`の開始武器選択を作る。
+3. 強化分類と効果合成の境界を作る。
+4. 最初の武器最終強化を試作する。
+5. エンドレス後半へ危険度と報酬の選択を追加する。
+6. 用途別乱数列へ分離する。
+
+中長期の詳細は[拡張設計の全体像](../../design/gameplay-expansion-blueprint/)と[中長期作業計画](../../project-management/gameplay-expansion-plan/)を参照してください。

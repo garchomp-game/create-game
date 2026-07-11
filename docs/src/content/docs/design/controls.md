@@ -1,61 +1,79 @@
 ---
-title: Controls
-description: 操作性、active skill、dash、auto-fireの検討。
+title: 操作設計
+description: 移動、照準、自動射撃、防御行動、固有スキルの役割。
 ---
 
-## 現状
+## 現在の操作
 
-現在の操作:
+| 操作 | 入力 |
+| --- | --- |
+| 移動 | `WASD` または矢印キー |
+| 照準 | マウス |
+| 射撃 | 自動射撃、左クリック、`Space` |
+| リスタート | `R` |
+| 一時停止 | `Escape` |
+| デバッグ表示 | `F3` |
 
-- Move: `WASD` or arrow keys
-- Aim: mouse
-- Shoot: left click or `Space`
-- Restart: `R`
-- Debug overlay: `F3`
+マウス照準が有効な間、Phaser入力アダプターで自動射撃する試作を導入済みです。
 
-## 課題
+## 現在の課題
 
-`WASD + mouse aim + shoot` はかなり難しく、実力差が出ます。
+`WASD + マウス照準 + 射撃維持` は操作負荷が高く、慣れる前の早期死亡を増やします。
 
-特に、Spaceとmouse shootの役割が重複しているため、Spaceを別の役割へ移す余地があります。
+一方、照準と位置取りを自分で行うことは本作の上達要素です。自動射撃で不要な押し続け操作を減らしつつ、敵の優先順位と狙う方向は残します。
 
-## v0.4候補
+また、左クリックとSpaceキーの射撃機能は重複しています。ただしv0.5では記録、画面、設定を優先し、防御行動の追加はv0.6以降へ延期します。
 
-- `PH-V04-001 Auto-Fire With Mouse Aim Prototype`
-- `PH-V04-002 Defensive Dash Binding Spike`
-- `PH-V04-003 Right-Click Active Skill Input Split`
-- `PH-V04-004 Space Defensive Action Design`
+## 自動射撃の現在仕様
 
-## Auto-Fire Prototype
+- プレイ中にマウス照準が確立されたら自動で射撃する。
+- タイトル、一時停止、強化選択、ゲームオーバー中のマウス移動は照準として保持しない。
+- 左クリックとSpaceキーの射撃は互換用として残す。
+- シミュレーション側の `InputSnapshot.shootHeld` は変更しない。
+- メニューでは通常カーソル、ボタン上ではポインター、プレイ中だけ照準カーソルを使う。
 
-v0.4 first passでは、Phaser入力アダプタ上でauto-fireを有効化します。
+## v0.5で採用する役割
 
-現在の仕様:
+| 入力 | 役割 | 状態 |
+| --- | --- | --- |
+| マウス | 照準 | 維持 |
+| 自動射撃 | 通常攻撃 | 既定で有効。v0.5で設定化 |
+| 左クリック | 手動射撃、互換操作 | 維持 |
+| Space | 手動射撃、キーボード互換 | v0.5では維持 |
+| 右クリック | 割り当てなし | アクティブスキル設計まで延期 |
+| Escape | 一時停止、戻る | 維持 |
 
-- playing中にmouse aimが確立されたら、自動で射撃する。
-- title、pause、upgrade select、game over中のmouse movementはauto-fire照準として保持しない。
-- left click / Space shootは従来通り残す。
-- simulationの `InputSnapshot.shootHeld` 境界は維持する。
+自動射撃を無効にした場合も、左クリックまたはSpaceで射撃できます。設定要件は `PH-V05-010` で扱います。
 
-意図:
+## 後続で検証する防御ダッシュ
 
-- `WASD + mouse aim + hold shoot` の同時操作負荷を下げる。
-- mouseはaim専用に近づける。
-- Spaceを将来のdash / defensive action候補へ空ける。
+- 移動入力方向へ短距離移動する。
+- 移動入力がない場合は照準方向を使う。
+- 1回から2回の使用回数と明確な再使用表示を持つ。
+- ごく短い無敵、接触ダメージだけ無効、無敵なしを比較する。
+- 連打によって通常移動、障害物、敵接触の判断を無効化しない。
 
-注意:
+採用条件:
 
-- balanceProbeはsimulation入力モデルであり、adapter-level auto-fireの人間操作改善を直接表さない。
-- manual playtestで早死に、射撃過多、upgrade選択中の誤射がないか確認する。
+- 理不尽に感じる操作ミスを減らす。
+- 常に通常移動より有利な移動手段にならない。
+- プレイヤーが「使うべき瞬間」を説明できる。
+- 使用回数、再使用可能時間、使用直後の被弾を記録できる。
 
-## 方針
+## 検証方法
 
-最初から完成形を決めず、prototypeで比較します。
+- 短時間、通常、高スコアの手動ランを比較する。
+- 早期死亡が減るか確認する。
+- 照準と位置取りによる上達余地が残るか確認する。
+- 強化選択中やメニュー操作中に誤射しないか確認する。
+- 操作方式をラン記録へ残せるようにする。
 
-見る観点:
+`balanceProbe` はシミュレーション入力の回帰検知であり、入力アダプター上の自動射撃が人間にとって快適かどうかは判定できません。最終判断には手動プレイを使います。
 
-- 早死にが減るか。
-- skill ceilingが残るか。
-- 右クリック、Space、Shift、Ctrlの役割が自然か。
-- upgradeやitemと競合しないか。
-- result/debug exportで操作モデルを追跡できるか。
+関連チケット:
+
+- `PH-V04-001` マウス照準時の自動射撃試作。完了。
+- `PH-V04-002` 防御ダッシュのキー配置試作。v0.6以降へ延期。
+- `PH-V04-003` 右クリック固有スキルの入力分離。後続へ延期。
+- `PH-V04-004` Spaceキーの防御行動設計。後続へ延期。
+- [`PH-V05-010`](https://github.com/garchomp-game/create-game/issues/10) 設定とアクセシビリティ境界。

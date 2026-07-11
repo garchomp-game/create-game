@@ -21,9 +21,9 @@ const balanceProbeSeeds = [20260619, 20260620, 20260621, 20260622, 20260623];
 const balanceBaseline = {
   noInputSurvivalP50: 6.77,
   fixedAimShootSurvivalP50: 6.77,
-  kiteCollectSurvivalP50: 161.77,
-  kiteCollectKillsPerMinuteP50: 165.47,
-  kiteCollectScorePerMinuteP50: 2269.74,
+  kiteCollectSurvivalP50: 179.57,
+  kiteCollectKillsPerMinuteP50: 187.12,
+  kiteCollectScorePerMinuteP50: 2746.61,
   kiteCollectFirstDamageP50: 101.57,
   kiteCollectFirstUpgradeP50: 7.13,
   kiteCollectWaveReachedP50: 90,
@@ -98,7 +98,7 @@ describe("balance simulation", () => {
       true,
     );
 
-    // v0.4 Obstacle Layout balance baseline. These probes are regression sentries,
+    // v0.4 Endless Pressure balance baseline. These probes are regression sentries,
     // not a claim that the input models are correct human play.
     expectWithinBaseline(noInput.survivalSeconds.p50, balanceBaseline.noInputSurvivalP50);
     expectWithinBaseline(
@@ -145,6 +145,74 @@ describe("balance simulation", () => {
     );
     expect(noInput.healPickupsCollected.max).toBe(0);
     expect(fixedAimShoot.healPickupsCollected.max).toBe(0);
+  });
+
+  it("keeps a 15 minute accelerated endless run finite and bounded", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.runtime.maxHpBonus = 1_000_000_000;
+    world.state.hp = SIMULATION_CONFIG.player.maxHp + world.runtime.maxHpBonus;
+    const random = createRandom(20260710);
+    const frameRate = 30;
+    const frames = 15 * 60 * frameRate;
+    let maxEnemies = 0;
+    let maxProjectiles = 0;
+    let maxPickups = 0;
+    const startedAt = performance.now();
+
+    for (let frame = 0; frame < frames; frame += 1) {
+      const angle = frame / 180;
+      const target = {
+        x: SIMULATION_CONFIG.arena.width / 2 + Math.cos(angle) * 170,
+        y: SIMULATION_CONFIG.arena.height / 2 + Math.sin(angle) * 105,
+      };
+      const dx = target.x - world.player.position.x;
+      const dy = target.y - world.player.position.y;
+      const length = Math.hypot(dx, dy) || 1;
+      const nearestEnemy = world.enemies.reduce<(typeof world.enemies)[number] | null>(
+        (nearest, enemy) => {
+          if (!nearest) return enemy;
+          const nearestDistance = Math.hypot(
+            nearest.position.x - world.player.position.x,
+            nearest.position.y - world.player.position.y,
+          );
+          const enemyDistance = Math.hypot(
+            enemy.position.x - world.player.position.x,
+            enemy.position.y - world.player.position.y,
+          );
+          return enemyDistance < nearestDistance ? enemy : nearest;
+        },
+        null,
+      );
+      const input =
+        world.state.status === "upgradeSelect"
+          ? { ...neutralInput, upgradeChoicePressed: 0 }
+          : {
+              ...neutralInput,
+              move: { x: dx / length, y: dy / length },
+              aimWorld: nearestEnemy?.position ?? {
+                x: world.player.position.x + 100,
+                y: world.player.position.y,
+              },
+              shootHeld: true,
+            };
+
+      stepWorld(world, input, 1 / frameRate, random, SIMULATION_CONFIG);
+      maxEnemies = Math.max(maxEnemies, world.enemies.length);
+      maxProjectiles = Math.max(
+        maxProjectiles,
+        world.bullets.length + world.enemyProjectiles.length,
+      );
+      maxPickups = Math.max(maxPickups, world.pickups.length);
+    }
+
+    expect(world.state.elapsed).toBeGreaterThanOrEqual(899);
+    expect(world.state.status).not.toBe("gameOver");
+    expect(maxEnemies).toBeLessThanOrEqual(76);
+    expect(maxProjectiles).toBeLessThanOrEqual(220);
+    expect(maxPickups).toBeLessThanOrEqual(2_000);
+    expect(Number.isFinite(world.player.position.x)).toBe(true);
+    expect(Number.isFinite(world.player.position.y)).toBe(true);
+    expect(performance.now() - startedAt).toBeLessThan(5_000);
   });
 });
 

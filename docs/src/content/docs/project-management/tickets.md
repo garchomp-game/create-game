@@ -1,46 +1,109 @@
 ---
-title: Tickets
-description: 現在のチケット一覧と優先順位。
+title: チケット一覧
+description: バージョン別のチケット番号、表示名、状態。
 ---
+
+詳細な目的と完了条件は各バージョンの作業計画、担当と進捗はGitHub Issueを正本とします。
+
+- v0.5の計画: [v0.5作業計画](../endless-polish-plan/)
+- v0.5の詳細: [v0.5チケット詳細](../v05-tickets/)
+- v0.5の進捗: [GitHubマイルストーン](https://github.com/garchomp-game/create-game/milestone/1)
 
 ## v0.3
 
-| Ticket | Title | Status |
+| ID | チケット | 状態 |
 | --- | --- | --- |
-| `PH-V03-001` | Healing Pickup Foundation | Done |
-| `PH-V03-002` | v0.3 Playtest and Balance Review | Session note recorded |
-| `PH-V03-003` | Heal Pickup Tuning Pass | No tuning |
-| `PH-V03-004` | Item System Requirements and Data Model | Design ready |
-| `PH-V03-005` | Temporary Buff Item Prototype | Later |
-| `PH-V03-006` | Pickup Presentation and Feedback Pass | Later |
-| `PH-V03-007` | BalanceProbe Item KPI Extension | Later |
-| `PH-V03-009` | Bundle Size / Build Warning Triage | Later |
-| `PH-V03-010` | v0.3 Stabilization Candidate | Candidate ready |
-| `PH-V03-011` | Offscreen Enemy Direction Indicator | Done |
+| `PH-V03-001` | 回復ピックアップ基盤 | 完了 |
+| `PH-V03-002` | v0.3プレイテストとバランス確認 | 記録済み |
+| `PH-V03-003` | 回復ピックアップ調整 | 追加調整なし |
+| `PH-V03-004` | アイテム要件とデータモデル | 設計済み |
+| `PH-V03-005` | 一時強化アイテム試作 | 後回し |
+| `PH-V03-006` | ピックアップ演出とフィードバック | 後回し |
+| `PH-V03-007` | バランス回帰テストへのアイテム指標追加 | 後回し |
+| `PH-V03-009` | バンドルサイズ警告調査 | 後回し |
+| `PH-V03-010` | v0.3安定版候補 | 候補準備済み |
+| `PH-V03-011` | 画面外敵方向表示 | 完了 |
 
 ## v0.4
 
-| Ticket | Title | Purpose |
+v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.5の未完了作業として数えません。
+
+| ID | チケット | 状態 |
 | --- | --- | --- |
-| `PH-V04-005` | Obstacle Layout and Projectile Interaction Review | In progress: 中央障害物削除、ricochet data model追加 |
-| `PH-V04-001` | Auto-Fire With Mouse Aim Prototype | In progress: adapter-level auto-fire prototype追加 |
-| `PH-V04-002` | Defensive Dash Binding Spike | Space / Shift / Ctrlのdash候補を比較する |
-| `PH-V04-003` | Right-Click Active Skill Input Split | 右クリックskillと入力分離を検証する |
-| `PH-V04-004` | Space Defensive Action Design | Spaceの新しい役割を決める |
+| `PH-V04-001` | マウス照準時の自動射撃試作 | 完了。v0.5の既定操作として暫定採用 |
+| `PH-V04-002` | 防御ダッシュのキー配置試作 | v0.6以降へ延期 |
+| `PH-V04-003` | 右クリック固有スキルの入力分離 | アクティブスキル設計まで延期 |
+| `PH-V04-004` | Spaceキーの防御行動設計 | v0.6以降へ延期。v0.5では手動射撃を維持 |
+| `PH-V04-005` | 障害物配置と弾の壁接触見直し | 完了。中央障害物削除と跳弾基盤を追加 |
+| `PH-V04-006` | リザルトとラン振り返り | 基礎完了。製品向け画面は`PH-V05-002`へ継続 |
+| `PH-V04-007` | v0.4手動プレイ記録 | 完了。短時間、通常、長時間ランを記録 |
+| `PH-V04-008` | ランシードのランダム化と持久圧力 | 完了 |
 
-## v0.5以降
+## v0.5
 
-| Ticket | Title |
+| ID | GitHub | チケット | 優先度 | 状態 |
+| --- | --- | --- | --- | --- |
+| `PH-V05-001` | [#1](https://github.com/garchomp-game/create-game/issues/1) | ラン記録スキーマと保存ポート | P0 | 完了 |
+| `PH-V05-002` | [#2](https://github.com/garchomp-game/create-game/issues/2) | リザルト振り返りUI | P0 | 完了 |
+| `PH-V05-003` | [#3](https://github.com/garchomp-game/create-game/issues/3) | ローカルランキングとラン履歴 | P0 | 完了 |
+| `PH-V05-004` | [#4](https://github.com/garchomp-game/create-game/issues/4) | タイトルとモード選択の更新 | P1 | 完了 |
+| `PH-V05-005` | [#5](https://github.com/garchomp-game/create-game/issues/5) | プレイ中HUDの視認性改善 | P1 | 完了 |
+| `PH-V05-006` | [#6](https://github.com/garchomp-game/create-game/issues/6) | 演出フィードバック改善 | P1 | 完了 |
+| `PH-V05-007` | [#7](https://github.com/garchomp-game/create-game/issues/7) | 音響素材の導入基盤 | P1 | 完了 |
+| `PH-V05-008` | [#8](https://github.com/garchomp-game/create-game/issues/8) | 計測とログの整理 | P0 | 完了 |
+| `PH-V05-009` | [#9](https://github.com/garchomp-game/create-game/issues/9) | ローカルプロフィール境界 | P0 | 完了 |
+| `PH-V05-010` | [#10](https://github.com/garchomp-game/create-game/issues/10) | 設定とアクセシビリティ境界 | P0 | 完了 |
+| `PH-V05-011` | [#11](https://github.com/garchomp-game/create-game/issues/11) | v0.5安定化と手動プレイ判定 | P0 | 完了 |
+
+## v0.6 ビルドの個性とエンドレス後半
+
+| ID | チケット |
 | --- | --- |
-| `PH-V05-001` | Stage Definition Requirements |
-| `PH-V05-002` | Minimal Stage Select |
-| `PH-V05-003` | Stage-Specific Wave and Obstacle Config |
-| `PH-V05-004` | Run Seed and Modifier Export |
-| `PH-V06-001` | Equipment Slot Requirements |
-| `PH-V06-002` | First Equipment Prototype |
-| `PH-V06-003` | Equipment Stats and Debug Export |
-| `PH-V06-004` | Equipment and Upgrade Interaction Review |
-| `PH-V07-001` | Local Save Schema Requirements |
-| `PH-V07-002` | Unlock Condition Requirements |
-| `PH-V07-003` | Achievement and Challenge Requirements |
-| `PH-V07-004` | Profile Stats Screen |
+| `PH-V06-001` | XP曲線と強化選択間隔の再設計 |
+| `PH-V06-002` | 開始武器選択の基盤 |
+| `PH-V06-003` | 強化分類と効果合成 |
+| `PH-V06-004` | 最初の武器最終強化試作 |
+| `PH-V06-005` | 強化選択UIとビルド要約 |
+| `PH-V06-006` | エンドレス危険度と契約試作 |
+| `PH-V06-007` | 用途別乱数列の分離 |
+| `PH-V06-008` | ビルド多様性の計測と比較 |
+| [`PH-V06-009` #12](https://github.com/garchomp-game/create-game/issues/12) | Phaser画面とデバッグ責務の分割 |
+
+## v0.7 戦闘展開とステージ試作
+
+| ID | チケット |
+| --- | --- |
+| `PH-V07-001` | ステージ定義とコンテンツ登録 |
+| `PH-V07-002` | 戦闘展開カードと制御基盤 |
+| `PH-V07-003` | 構造化出現と安全規則 |
+| `PH-V07-004` | エリート特性試作 |
+| `PH-V07-005` | 予兆付き突進敵試作 |
+| `PH-V07-006` | 最初のエクスペディション |
+| `PH-V07-007` | 最初のボス戦試作 |
+| `PH-V07-008` | 戦闘展開とステージの品質確認 |
+
+## v0.8 チャレンジと熟練度
+
+| ID | チケット |
+| --- | --- |
+| `PH-V08-001` | バージョン付きローカル保存と移行 |
+| `PH-V08-002` | 解放条件の評価基盤 |
+| `PH-V08-003` | チャレンジ定義と固定ルールセット |
+| `PH-V08-004` | 武器熟練度と評価 |
+| `PH-V08-005` | プロフィール統計と収集画面 |
+| `PH-V08-006` | アカウント同期の要件判断 |
+
+## v0.9 コンテンツ完成とリリース準備
+
+| ID | チケット |
+| --- | --- |
+| `PH-V09-001` | 最小コンテンツ構成の完成 |
+| `PH-V09-002` | 武器最終強化と強化候補の完成 |
+| `PH-V09-003` | 第2ステージと戦闘展開デッキ |
+| `PH-V09-004` | 危険度契約とチャレンジ一式 |
+| `PH-V09-005` | 音響、演出、フィードバックの最終調整 |
+| `PH-V09-006` | アクセシビリティと設定の最終調整 |
+| `PH-V09-007` | 性能、バンドル、長時間動作確認 |
+| `PH-V09-008` | 複数セッションのプレイテストとバランス確認 |
+
+v0.5の全体計画は [v0.5作業計画](../endless-polish-plan/)、個別要件は [v0.5チケット詳細](../v05-tickets/)、v0.6以降は [中長期作業計画](../gameplay-expansion-plan/) を参照してください。

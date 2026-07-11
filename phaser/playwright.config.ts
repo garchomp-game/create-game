@@ -9,9 +9,9 @@ export default defineConfig({
     timeout: 5_000,
   },
   webServer: {
-    command: `npm run dev -- --port ${port}`,
+    command: `VITE_ARENA_FIXED_SEED=1 VITE_ARENA_RUN_ORIGIN=test npm run dev -- --port ${port}`,
     url: `http://127.0.0.1:${port}/`,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 120_000,
   },
   use: {
@@ -26,7 +26,11 @@ export default defineConfig({
   projects: [
     {
       name: "chrome",
-      use: { ...devices["Desktop Chrome"], browserName: "chromium" },
+      use: {
+        ...devices["Desktop Chrome"],
+        browserName: "chromium",
+        viewport: { width: 960, height: 540 },
+      },
     },
   ],
 });

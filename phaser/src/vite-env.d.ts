@@ -1,7 +1,34 @@
 /// <reference types="vite/client" />
 
+interface ImportMetaEnv {
+  readonly VITE_APP_VERSION: string;
+  readonly VITE_RULESET_VERSION: string;
+  readonly VITE_GIT_COMMIT: string;
+  readonly VITE_ARENA_FIXED_SEED?: string;
+  readonly VITE_ARENA_RUN_ORIGIN?: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+
 import type { AudioCueId } from "./adapters/phaser/PhaserAudioEventRouter";
 import type { FeedbackSnapshot } from "./adapters/phaser/PhaserFeedbackLayer";
+import type { MusicSnapshot } from "./adapters/phaser/PhaserMusicController";
+import type { SecondaryMenu } from "./adapters/phaser/PhaserMenuLayout";
+import type {
+  LocalProfile,
+  ProfileSettings,
+  ProfileSettingsUpdate,
+} from "./domain/profile";
+import type {
+  RankEligibility,
+  RunContext,
+  RunOrigin,
+  RunRecord,
+  SeedCategory,
+} from "./domain/runRecords";
+import type { RunRecordWriteResult } from "./ports/RunRecordStorePort";
 import type {
   EnemyTypeId,
   GameEvent,
@@ -19,6 +46,9 @@ import type {
 export type ArenaDebugSnapshot = {
   configVersion: string;
   buildCommit: string;
+  runContext: RunContext | null;
+  latestRunRecord: RunRecord | null;
+  secondaryMenu: SecondaryMenu | null;
   seed: number;
   status: GameStatus;
   elapsed: number;
@@ -44,6 +74,7 @@ export type ArenaDebugSnapshot = {
   obstacleContacts: ArenaObstacleContactCounts;
   feedback: FeedbackSnapshot;
   audioCues: AudioCueId[];
+  music: MusicSnapshot;
   lastEvents: GameEvent[];
 };
 
@@ -59,9 +90,18 @@ export type ArenaRunExport = {
   capturedAt: string;
   game: "arena-core-phaser";
   appVersion: string;
+  rulesetVersion: string;
   configVersion: string;
   buildCommit: string;
+  runId: string;
+  profileId: string;
+  modeId: string;
+  stageId: string;
+  difficultyId: string;
+  runOrigin: RunOrigin;
+  rankEligibility: RankEligibility;
   seed: number;
+  seedCategory: SeedCategory;
   status: GameStatus;
   elapsed: number;
   wave: WaveBand;
@@ -87,7 +127,17 @@ export type ArenaDebugApi = {
   getSnapshot(): ArenaDebugSnapshot;
   getRunExport(): ArenaRunExport;
   getRunExportJson(): string;
+  getRunRecords(): RunRecord[];
+  getRunHistory(): RunRecord[];
+  getRunRankingRecords(): RunRecord[];
+  clearRunRecords(): RunRecordWriteResult;
+  getProfile(): LocalProfile;
+  getSettings(): ProfileSettings;
+  updateSettings(update: ProfileSettingsUpdate): ProfileSettings;
+  openMenu(menu: SecondaryMenu | null): void;
+  saveRunExport(): Promise<{ ok: boolean; path?: string; error?: string }>;
   forceDamage(amount: number): void;
+  restoreHealthForSoak(): void;
   forceGameOver(): void;
   grantXp(amount: number): void;
   forceUpgradeSelect(): void;

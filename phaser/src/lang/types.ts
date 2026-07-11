@@ -1,11 +1,40 @@
 import type { EnemyTypeId, UpgradeId, WeaponTypeId } from "../domain/types";
 import type { UpgradePreviewStat } from "../simulation/upgradePreview";
 
-export type MenuActionLabel = "start" | "resume" | "restart" | "title";
+export type MenuActionLabel =
+  | "start"
+  | "resume"
+  | "restart"
+  | "title"
+  | "history"
+  | "ranking"
+  | "settings"
+  | "back"
+  | "historyPrevious"
+  | "historyNext"
+  | "clearHistory"
+  | "clearRankings"
+  | "resetSettings"
+  | "resetProfile"
+  | "settingsBgm"
+  | "settingsSfx"
+  | "settingsShake"
+  | "settingsFlash"
+  | "settingsAutoFire";
 
 export type UiText = {
   libraryLabel: string;
   titleScreen: string;
+  endlessMode: string;
+  historyTitle: string;
+  rankingTitle: string;
+  settingsTitle: string;
+  noRecords: string;
+  firstRecord: string;
+  newBest: (delta: number) => string;
+  bestDifference: (delta: number) => string;
+  rankingEligible: string;
+  rankingIneligible: (reasons: string) => string;
   paused: string;
   upgradeHeading: (level: number) => string;
   rank: string;
@@ -28,7 +57,13 @@ export type UiText = {
 export type HudText = {
   hp: (current: number, max: number) => string;
   xp: (level: number, xp: number, next: number) => string;
-  meta: (wave: number, time: string, score: number, enemies: number, maxEnemies: number) => string;
+  meta: (time: string, score: number) => string;
+  danger: (
+    wave: number,
+    enemies: number,
+    maxEnemies: number,
+    weaponName: string,
+  ) => string;
   weapon: (weaponName: string, fireRate: string, projectileCount: number, pierce: number) => string;
   weaponNames: Record<WeaponTypeId, string>;
 };

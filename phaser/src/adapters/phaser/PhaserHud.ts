@@ -13,19 +13,26 @@ export class PhaserHud {
 
   constructor(scene: Phaser.Scene, private readonly simulationConfig: SimulationConfig) {
     this.graphics = scene.add.graphics().setDepth(10);
-    this.hpText = this.createText(scene, 28, 25);
-    this.xpText = this.createText(scene, 28, 48);
-    this.metaText = this.createText(scene, 28, 70);
-    this.weaponText = this.createText(scene, 28, 91);
+    this.hpText = this.createText(scene, 28, 24);
+    this.xpText = this.createText(scene, 28, 52);
+    this.metaText = this.createText(scene, simulationConfig.arena.width - 28, 24).setOrigin(1, 0);
+    this.weaponText = this.createText(scene, simulationConfig.arena.width - 28, 52).setOrigin(1, 0);
   }
 
-  render(world: WorldState): void {
-    const visible = world.state.status === "playing" || world.state.status === "paused";
+  render(world: WorldState, enabled = true): void {
+    const visible =
+      enabled && (world.state.status === "playing" || world.state.status === "paused");
     this.setVisible(visible);
     this.graphics.clear();
     if (!visible) return;
 
-    const panel = { x: 16, y: 14, width: 348, height: 94 };
+    const leftPanel = { x: 16, y: 14, width: 326, height: 72 };
+    const rightPanel = {
+      x: this.simulationConfig.arena.width - 286,
+      y: 14,
+      width: 270,
+      height: 72,
+    };
     const maxHp = this.simulationConfig.player.maxHp + world.runtime.maxHpBonus;
     const hpRatio = maxHp > 0 ? world.state.hp / maxHp : 0;
     const xpRatio =
@@ -34,38 +41,41 @@ export class PhaserHud {
         : 0;
     const wave = getWaveBand(this.simulationConfig, world.state.elapsed);
     const waveIndex = this.simulationConfig.waves.findIndex((item) => item.start === wave.start) + 1;
-    const weapon = this.simulationConfig.weapons[world.state.weaponType];
-    const fireRate = 1 / Math.max(0.001, weapon.interval * world.runtime.fireIntervalMultiplier);
-    const projectileCount = weapon.projectileCount + world.runtime.projectileCountBonus;
-    const pierce = weapon.pierceCount + world.runtime.pierceBonus;
-
     this.graphics.fillStyle(0x020617, 0.76);
-    this.graphics.fillRoundedRect(panel.x, panel.y, panel.width, panel.height, 6);
+    this.graphics.fillRoundedRect(leftPanel.x, leftPanel.y, leftPanel.width, leftPanel.height, 6);
+    this.graphics.fillRoundedRect(rightPanel.x, rightPanel.y, rightPanel.width, rightPanel.height, 6);
     this.graphics.lineStyle(1, 0x334155, 0.95);
-    this.graphics.strokeRoundedRect(panel.x + 0.5, panel.y + 0.5, panel.width - 1, panel.height - 1, 6);
+    this.graphics.strokeRoundedRect(
+      leftPanel.x + 0.5,
+      leftPanel.y + 0.5,
+      leftPanel.width - 1,
+      leftPanel.height - 1,
+      6,
+    );
+    this.graphics.strokeRoundedRect(
+      rightPanel.x + 0.5,
+      rightPanel.y + 0.5,
+      rightPanel.width - 1,
+      rightPanel.height - 1,
+      6,
+    );
 
-    this.drawBar(102, 27, 168, 10, hpRatio, 0xef4444);
-    this.drawBar(102, 50, 168, 10, xpRatio, 0x22c55e);
+    this.drawBar(128, 27, 188, 10, hpRatio, 0xef4444);
+    this.drawBar(128, 55, 188, 10, xpRatio, 0x22c55e);
 
     this.hpText.setText(TEXT.hud.hp(Math.ceil(world.state.hp), maxHp));
     this.xpText.setText(
       TEXT.hud.xp(world.progression.level, world.progression.xp, world.progression.xpToNext),
     );
     this.metaText.setText(
-      TEXT.hud.meta(
-        waveIndex,
-        formatTime(world.state.elapsed),
-        world.state.score,
-        world.enemies.length,
-        wave.maxEnemies,
-      ),
+      TEXT.hud.meta(formatTime(world.state.elapsed), world.state.score),
     );
     this.weaponText.setText(
-      TEXT.hud.weapon(
+      TEXT.hud.danger(
+        waveIndex,
+        world.enemies.length,
+        wave.maxEnemies,
         TEXT.hud.weaponNames[world.state.weaponType],
-        fireRate.toFixed(1),
-        projectileCount,
-        pierce,
       ),
     );
   }

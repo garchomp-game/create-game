@@ -1,0 +1,176 @@
+import { execFileSync } from "node:child_process";
+import { mkdir, readdir, unlink, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { defineConfig, type Plugin } from "vite";
+import { APP_VERSION, RULESET_VERSION } from "./src/config/version";
+
+const RUN_EXPORT_ENDPOINT = "/__arena/run-export";
+const MAX_RUN_EXPORT_BYTES = 2 * 1024 * 1024;
+const MAX_RUN_EXPORT_FILES = { manual: 200, debug: 100, test: 20 } as const;
+const BUILD_COMMIT = readBuildCommit();
+
+function arenaRunExportLogPlugin(): Plugin {
+  return {
+    name: "arena-run-export-log",
+    configureServer(server) {
+      server.middlewares.use(RUN_EXPORT_ENDPOINT, async (request, response) => {
+        if (request.method !== "POST") {
+          response.statusCode = 405;
+          response.setHeader("Allow", "POST");
+          response.end("Method Not Allowed");
+          return;
+        }
+
+        try {
+          const rawBody = await readRequestBody(request);
+          const runExport = validateRunExport(JSON.parse(rawBody) as unknown);
+          const filename = createRunExportFilename(runExport);
+          const directory =
+            runExport.runOrigin === "manual"
+              ? "runs"
+              : runExport.runOrigin === "debug"
+                ? "debug"
+                : "tests";
+          const relativePath = path.join("logs", directory, filename);
+          const outputPath = path.join(server.config.root, relativePath);
+
+          await mkdir(path.dirname(outputPath), { recursive: true });
+          await writeFile(outputPath, `${JSON.stringify(runExport, null, 2)}\n`, "utf8");
+          try {
+            await pruneRunExportLogs(
+              path.dirname(outputPath),
+              MAX_RUN_EXPORT_FILES[runExport.runOrigin],
+            );
+          } catch (error) {
+            server.config.logger.warn(
+              `Run export saved, but retention cleanup failed: ${getErrorMessage(error)}`,
+            );
+          }
+
+          response.statusCode = 200;
+          response.setHeader("Content-Type", "application/json");
+          response.end(JSON.stringify({ ok: true, path: relativePath }));
+        } catch (error) {
+          response.statusCode = error instanceof PayloadTooLargeError ? 413 : 400;
+          response.setHeader("Content-Type", "application/json");
+          response.end(
+            JSON.stringify({
+              ok: false,
+              error: getErrorMessage(error),
+            }),
+          );
+        }
+      });
+    },
+  };
+}
+
+function readRequestBody(request: NodeJS.ReadableStream): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let size = 0;
+    let rejected = false;
+
+    request.on("data", (chunk: Buffer) => {
+      if (rejected) return;
+      size += chunk.byteLength;
+      if (size > MAX_RUN_EXPORT_BYTES) {
+        rejected = true;
+        reject(new PayloadTooLargeError("Run export payload is too large."));
+        return;
+      }
+
+      chunks.push(chunk);
+    });
+    request.on("end", () => {
+      if (!rejected) resolve(Buffer.concat(chunks).toString("utf8"));
+    });
+    request.on("error", reject);
+  });
+}
+
+function createRunExportFilename(runExport: unknown): string {
+  const item = isRecord(runExport) ? runExport : {};
+  const resultSummary = isRecord(item.resultSummary) ? item.resultSummary : {};
+  const capturedAt =
+    typeof item.capturedAt === "string" ? item.capturedAt : new Date().toISOString();
+  const score = typeof resultSummary.score === "number" ? resultSummary.score : "unknown";
+  const elapsed =
+    typeof resultSummary.elapsed === "number"
+      ? `${Math.round(resultSummary.elapsed)}s`
+      : "unknown-elapsed";
+  const runOrigin =
+    item.runOrigin === "manual" || item.runOrigin === "debug" || item.runOrigin === "test"
+      ? item.runOrigin
+      : "unknown-origin";
+  const safeTimestamp = capturedAt.replace(/[^\dA-Za-z-]/g, "-");
+
+  return `${safeTimestamp}_${runOrigin}_score-${score}_elapsed-${elapsed}.json`;
+}
+
+async function pruneRunExportLogs(directory: string, limit: number): Promise<void> {
+  const files = (await readdir(directory))
+    .filter((file) => file.endsWith(".json"))
+    .sort();
+  const expired = files.slice(0, Math.max(0, files.length - limit));
+  await Promise.all(expired.map((file) => unlink(path.join(directory, file))));
+}
+
+function readBuildCommit(): string {
+  if (process.env.VITE_GIT_COMMIT) return process.env.VITE_GIT_COMMIT;
+
+  try {
+    return execFileSync("git", ["rev-parse", "--short=12", "HEAD"], {
+      encoding: "utf8",
+    }).trim();
+  } catch {
+    return "unknown";
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+type ValidRunExport = Record<string, unknown> & {
+  runOrigin: "manual" | "debug" | "test";
+};
+
+function validateRunExport(value: unknown): ValidRunExport {
+  if (!isRecord(value)) throw new Error("Run export must be an object.");
+  if (value.game !== "arena-core-phaser") throw new Error("Unknown game identifier.");
+  if (typeof value.appVersion !== "string" || value.appVersion.length === 0) {
+    throw new Error("Run export appVersion is required.");
+  }
+  if (typeof value.rulesetVersion !== "string" || value.rulesetVersion.length === 0) {
+    throw new Error("Run export rulesetVersion is required.");
+  }
+  if (value.runOrigin !== "manual" && value.runOrigin !== "debug" && value.runOrigin !== "test") {
+    throw new Error("Run export runOrigin is invalid.");
+  }
+  if (!isRecord(value.resultSummary)) throw new Error("Run export resultSummary is required.");
+  if (
+    typeof value.resultSummary.score !== "number" ||
+    !Number.isFinite(value.resultSummary.score) ||
+    typeof value.resultSummary.elapsed !== "number" ||
+    !Number.isFinite(value.resultSummary.elapsed)
+  ) {
+    throw new Error("Run export score and elapsed must be finite numbers.");
+  }
+  return value as ValidRunExport;
+}
+
+class PayloadTooLargeError extends Error {}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Failed to save run export.";
+}
+
+export default defineConfig({
+  plugins: [arenaRunExportLogPlugin()],
+  define: {
+    "import.meta.env.VITE_APP_VERSION": JSON.stringify(APP_VERSION),
+    "import.meta.env.VITE_RULESET_VERSION": JSON.stringify(RULESET_VERSION),
+    "import.meta.env.VITE_GIT_COMMIT": JSON.stringify(BUILD_COMMIT),
+  },
+});

@@ -1,11 +1,12 @@
 {
   "name": "arena-core-phaser",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.5.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build",
+    "audio:generate": "node scripts/generate-audio.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run src",
     "test:watch": "vitest src",
