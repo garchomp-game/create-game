@@ -48,11 +48,11 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
       const weaponStats = world.stats.weaponMetrics[event.weaponType];
       weaponStats.kills += 1;
       world.stats.weaponComparisonMetrics[event.weaponType].killsByEnemyType[event.enemyType] += 1;
-      if (world.encounter.rangedSurge.phase === "active") {
+      if (world.encounter.director.phase === "active") {
         world.stats.encounterMetrics.killsDuringActiveByEnemyType[event.enemyType] += 1;
       }
     } else if (event.type === "enemy.spawned") {
-      if (world.encounter.rangedSurge.phase === "active" && event.enemyType === "ranged") {
+      if (world.encounter.director.phase === "active" && event.enemyType === "ranged") {
         world.stats.encounterMetrics.rangedEnemiesSpawned += 1;
       }
     } else if (event.type === "player.damaged") {
@@ -62,8 +62,11 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
         world.stats.damageTakenBySource[event.source.kind] += event.damage;
         world.stats.lastDamageSource = { ...event.source };
       }
-      if (world.encounter.rangedSurge.phase === "active") {
+      if (world.encounter.director.phase === "active") {
         world.stats.encounterMetrics.damageTakenDuringActive += event.damage;
+      }
+      if (event.source?.kind === "collapse") {
+        world.stats.encounterMetrics.collapseDamageTaken += event.damage;
       }
     } else if (event.type === "pickup.collected") {
       world.stats.pickupsCollected += 1;
@@ -105,18 +108,39 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
       if (event.upgradeId === "pulseRicochet") {
         world.stats.capstoneMetrics.acquiredAt = world.state.elapsed;
       }
+    } else if (event.type === "extra.upgrade.offered") {
+      world.stats.progressionMetrics.extraOffers += 1;
+    } else if (event.type === "extra.upgrade.selected") {
+      world.stats.upgradesChosen += 1;
+      world.stats.extraUpgradesChosen += 1;
+      world.stats.progressionMetrics.extraSelections.push({
+        elapsed: world.state.elapsed,
+        level: event.level,
+        extraLevel: event.extraLevel,
+        extraUpgradeId: event.extraUpgradeId,
+        rank: event.rank,
+      });
     } else if (event.type === "build.completed") {
       world.stats.progressionMetrics.buildCompletedAt = event.elapsed;
+      world.stats.progressionMetrics.extraStartedAt = event.elapsed;
     } else if (event.type === "encounter.scheduled") {
-      world.stats.encounterMetrics.scheduledAt = event.scheduledAt;
+      world.stats.encounterMetrics.scheduledAt ??= event.scheduledAt;
     } else if (event.type === "encounter.warning.started") {
-      world.stats.encounterMetrics.warningStartedAt = event.elapsed;
+      world.stats.encounterMetrics.warningStartedAt ??= event.elapsed;
     } else if (event.type === "encounter.started") {
-      world.stats.encounterMetrics.activeStartedAt = event.elapsed;
+      world.stats.encounterMetrics.activeStartedAt ??= event.elapsed;
+      world.stats.encounterMetrics.eventCounts[event.encounterId] += 1;
     } else if (event.type === "encounter.recovery.started") {
-      world.stats.encounterMetrics.recoveryStartedAt = event.elapsed;
+      world.stats.encounterMetrics.recoveryStartedAt ??= event.elapsed;
     } else if (event.type === "encounter.completed") {
       world.stats.encounterMetrics.completedAt = event.elapsed;
+      world.stats.encounterMetrics.eventsCompleted += 1;
+    } else if (event.type === "collapse.advanced") {
+      world.stats.encounterMetrics.collapseStartedAt ??= event.elapsed;
+      world.stats.encounterMetrics.peakCollapseStage = Math.max(
+        world.stats.encounterMetrics.peakCollapseStage,
+        event.stage,
+      );
     } else if (event.type === "contract.offered") {
       world.stats.encounterMetrics.contractOfferedAt = event.elapsed;
     } else if (event.type === "contract.selected") {

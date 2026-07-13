@@ -1,5 +1,7 @@
 import type {
   RunResultSummary,
+  ExtraUpgradeId,
+  ExtraUpgradeSelectionRunStat,
   UpgradeId,
   UpgradeSelectionRunStat,
   EncounterRunStats,
@@ -13,6 +15,8 @@ export type FinalizeRunInput = {
   summary: RunResultSummary;
   upgradeRanks: Record<UpgradeId, number>;
   upgradeSelections: UpgradeSelectionRunStat[];
+  extraUpgradeRanks?: Record<ExtraUpgradeId, number>;
+  extraUpgradeSelections?: ExtraUpgradeSelectionRunStat[];
   buildCompletedAt: number | null;
   encounterMetrics?: EncounterRunStats;
 };
@@ -83,6 +87,8 @@ export class RunRecordCoordinator {
       summary: input.summary,
       upgradeRanks: input.upgradeRanks,
       upgradeSelections: input.upgradeSelections,
+      extraUpgradeRanks: input.extraUpgradeRanks,
+      extraUpgradeSelections: input.extraUpgradeSelections,
       buildCompletedAt: input.buildCompletedAt,
       encounterMetrics: input.encounterMetrics,
     });
@@ -120,6 +126,8 @@ function cloneRecord(record: RunRecord): RunRecord {
     lastDamageSource: record.lastDamageSource ? { ...record.lastDamageSource } : null,
     upgradeRanks: { ...record.upgradeRanks },
     upgradeSelections: record.upgradeSelections.map((selection) => ({ ...selection })),
+    extraUpgradeRanks: { ...record.extraUpgradeRanks },
+    extraUpgradeSelections: record.extraUpgradeSelections.map((selection) => ({ ...selection })),
     capstoneMetrics: { ...record.capstoneMetrics },
     encounterMetrics: structuredClone(record.encounterMetrics),
   };

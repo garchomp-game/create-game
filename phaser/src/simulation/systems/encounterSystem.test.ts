@@ -10,7 +10,7 @@ import {
   updateEncounter,
 } from "./encounterSystem";
 
-describe("ranged surge encounter", () => {
+describe("encounter deck", () => {
   it("reproduces a warning, active, recovery, and contract timeline from the encounter stream", () => {
     const first = createWorld(SIMULATION_CONFIG);
     const second = createWorld(SIMULATION_CONFIG);
@@ -20,43 +20,79 @@ describe("ranged surge encounter", () => {
 
     updateEncounter(first, firstRandom.encounter, SIMULATION_CONFIG, events);
     updateEncounter(second, secondRandom.encounter, SIMULATION_CONFIG, []);
-    const scheduledAt = first.encounter.rangedSurge.scheduledAt!;
-    expect(scheduledAt).toBe(second.encounter.rangedSurge.scheduledAt);
+    const encounterId = first.encounter.director.currentId!;
+    const definition = SIMULATION_CONFIG.encounter.director.definitions[encounterId];
+    const scheduledAt = first.encounter.director.scheduledAt!;
+    expect(encounterId).toBe(second.encounter.director.currentId);
+    expect(scheduledAt).toBe(second.encounter.director.scheduledAt);
     expect(scheduledAt).toBeGreaterThanOrEqual(135);
     expect(scheduledAt).toBeLessThanOrEqual(165);
     expect(events).toContainEqual({
       type: "encounter.scheduled",
-      encounterId: "rangedSurge",
+      encounterId,
       scheduledAt,
     });
 
-    first.state.elapsed = scheduledAt - SIMULATION_CONFIG.encounter.rangedSurge.warningDuration;
+    first.state.elapsed = scheduledAt - definition.warningDuration;
     updateEncounter(first, firstRandom.encounter, SIMULATION_CONFIG, events);
-    expect(first.encounter.rangedSurge.phase).toBe("warning");
+    expect(first.encounter.director.phase).toBe("warning");
 
     first.state.elapsed = scheduledAt;
     updateEncounter(first, firstRandom.encounter, SIMULATION_CONFIG, events);
-    expect(first.encounter.rangedSurge.phase).toBe("active");
+    expect(first.encounter.director.phase).toBe("active");
     expect(getSpawnWave(first, SIMULATION_CONFIG)).toMatchObject({
-      spawnBudget: 4,
-      enemyWeights: { ranged: 3 },
+      spawnBudget: definition.spawnBudget,
+      enemyWeights: definition.enemyWeights,
     });
 
-    first.state.elapsed = scheduledAt + SIMULATION_CONFIG.encounter.rangedSurge.activeDuration;
+    first.state.elapsed = scheduledAt + definition.activeDuration;
     updateEncounter(first, firstRandom.encounter, SIMULATION_CONFIG, events);
-    expect(first.encounter.rangedSurge.phase).toBe("recovery");
+    expect(first.encounter.director.phase).toBe("recovery");
 
     first.state.elapsed =
-      scheduledAt +
-      SIMULATION_CONFIG.encounter.rangedSurge.activeDuration +
-      SIMULATION_CONFIG.encounter.rangedSurge.recoveryDuration;
+      scheduledAt + definition.activeDuration + definition.recoveryDuration;
     updateEncounter(first, firstRandom.encounter, SIMULATION_CONFIG, events);
-    expect(first.encounter.rangedSurge.phase).toBe("completed");
+    expect(first.encounter.director.phase).toBe("pending");
+    expect(first.encounter.director.completedCount).toBe(1);
+    expect(first.encounter.director.history[0]).toMatchObject({ encounterId, scheduledAt });
+    const nextId = first.encounter.director.currentId!;
+    const nextWarningAt =
+      first.encounter.director.scheduledAt! -
+      SIMULATION_CONFIG.encounter.director.definitions[nextId].warningDuration;
+    expect(nextWarningAt).toBeGreaterThanOrEqual(
+      SIMULATION_CONFIG.encounter.contract.offerAt + 8,
+    );
 
     first.state.elapsed = SIMULATION_CONFIG.encounter.contract.offerAt;
     updateEncounter(first, firstRandom.encounter, SIMULATION_CONFIG, events);
     expect(first.state.status).toBe("contractSelect");
     expect(first.encounter.contract.status).toBe("offered");
+  });
+
+  it("draws every encounter once before refilling its deterministic shuffle bag", () => {
+    const playDeck = () => {
+      const world = createWorld(SIMULATION_CONFIG);
+      const random = createRandomStreams(20260619).encounter;
+      const sequence = [];
+
+      for (let index = 0; index < 3; index += 1) {
+        updateEncounter(world, random, SIMULATION_CONFIG, []);
+        const encounterId = world.encounter.director.currentId!;
+        sequence.push(encounterId);
+        const definition = SIMULATION_CONFIG.encounter.director.definitions[encounterId];
+        world.state.elapsed =
+          world.encounter.director.scheduledAt! +
+          definition.activeDuration +
+          definition.recoveryDuration;
+        updateEncounter(world, random, SIMULATION_CONFIG, []);
+      }
+
+      return sequence;
+    };
+
+    const sequence = playDeck();
+    expect(new Set(sequence).size).toBe(3);
+    expect(playDeck()).toEqual(sequence);
   });
 
   it("applies overdrive once and leaves the standard choice unchanged", () => {
@@ -106,10 +142,11 @@ describe("ranged surge encounter", () => {
 
   it("records movement windows and supports a fully disabled standard state", () => {
     const world = createWorld(SIMULATION_CONFIG);
-    world.encounter.rangedSurge.scheduledAt = 150;
+    world.encounter.director.currentId = "rangedSurge";
+    world.encounter.director.scheduledAt = 150;
     world.state.elapsed = 139;
     recordEncounterMovement(world, { x: 3, y: 4 }, SIMULATION_CONFIG);
-    world.encounter.rangedSurge.phase = "warning";
+    world.encounter.director.phase = "warning";
     world.state.elapsed = 146;
     recordEncounterMovement(world, { x: -2, y: 0 }, SIMULATION_CONFIG);
     expect(world.stats.encounterMetrics.movement).toMatchObject({
@@ -119,7 +156,7 @@ describe("ranged surge encounter", () => {
 
     const disabledConfig = {
       ...SIMULATION_CONFIG,
-      features: { ...SIMULATION_CONFIG.features, rangedSurge: false, endlessContract: false },
+      features: { ...SIMULATION_CONFIG.features, encounterDeck: false, endlessContract: false },
     };
     const disabled = createWorld(disabledConfig);
     updateEncounter(
@@ -128,7 +165,7 @@ describe("ranged surge encounter", () => {
       disabledConfig,
       [],
     );
-    expect(disabled.encounter.rangedSurge.scheduledAt).toBeNull();
+    expect(disabled.encounter.director.scheduledAt).toBeNull();
     expect(disabled.encounter.contract.status).toBe("pending");
   });
 });

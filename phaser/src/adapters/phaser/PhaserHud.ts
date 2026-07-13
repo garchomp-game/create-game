@@ -3,6 +3,8 @@ import type { SimulationConfig, WorldState } from "../../domain/types";
 import { formatTime } from "../../format/time";
 import { TEXT } from "../../lang";
 import { getWaveBand } from "../../simulation/waveDirector";
+import { getThreatTier } from "../../simulation/threatDirector";
+import { getNextCollapseAt } from "../../simulation/systems/collapseSystem";
 
 export class PhaserHud {
   private readonly graphics: Phaser.GameObjects.Graphics;
@@ -40,13 +42,12 @@ export class PhaserHud {
     const maxHp = this.simulationConfig.player.maxHp + world.runtime.maxHpBonus;
     const hpRatio = maxHp > 0 ? world.state.hp / maxHp : 0;
     const buildComplete = world.progression.buildCompletedAt !== null;
-    const xpRatio = buildComplete
-      ? 1
-      : world.progression.xpToNext > 0
+    const xpRatio =
+      world.progression.xpToNext > 0
         ? world.progression.xp / world.progression.xpToNext
         : 0;
     const wave = getWaveBand(this.simulationConfig, world.state.elapsed);
-    const waveIndex = this.simulationConfig.waves.findIndex((item) => item.start === wave.start) + 1;
+    const threatTier = getThreatTier(this.simulationConfig, world.state.elapsed);
     this.graphics.fillStyle(0x020617, 0.76);
     this.graphics.fillRoundedRect(leftPanel.x, leftPanel.y, leftPanel.width, leftPanel.height, 6);
     this.graphics.fillRoundedRect(rightPanel.x, rightPanel.y, rightPanel.width, rightPanel.height, 6);
@@ -72,7 +73,11 @@ export class PhaserHud {
     this.hpText.setText(TEXT.hud.hp(Math.ceil(world.state.hp), maxHp));
     this.xpText.setText(
       buildComplete
-        ? TEXT.hud.buildComplete(world.progression.level)
+        ? TEXT.hud.extraXp(
+            world.progression.extraLevel,
+            world.progression.xp,
+            world.progression.xpToNext,
+          )
         : TEXT.hud.xp(world.progression.level, world.progression.xp, world.progression.xpToNext),
     );
     this.metaText.setText(
@@ -80,7 +85,7 @@ export class PhaserHud {
     );
     this.weaponText.setText(
       TEXT.hud.danger(
-        waveIndex,
+        threatTier,
         world.enemies.length,
         wave.maxEnemies,
         TEXT.hud.weaponNames[world.state.weaponType],
@@ -89,10 +94,16 @@ export class PhaserHud {
     const encounterLabel = this.getEncounterLabel(world);
     this.encounterText.setText(encounterLabel).setVisible(Boolean(encounterLabel));
     if (encounterLabel) {
-      const banner = { x: this.simulationConfig.arena.width / 2 - 205, y: 94, width: 410, height: 34 };
+      const banner = { x: this.simulationConfig.arena.width / 2 - 350, y: 94, width: 700, height: 34 };
       this.graphics.fillStyle(0x020617, 0.88);
       this.graphics.fillRoundedRect(banner.x, banner.y, banner.width, banner.height, 6);
-      this.graphics.lineStyle(2, world.encounter.rangedSurge.phase === "active" ? 0xf97316 : 0xfacc15, 0.95);
+      this.graphics.lineStyle(
+        2,
+        world.encounter.director.phase === "active" || world.encounter.collapse.stage > 0
+          ? 0xf97316
+          : 0xfacc15,
+        0.95,
+      );
       this.graphics.strokeRoundedRect(banner.x, banner.y, banner.width, banner.height, 6);
     }
   }
@@ -135,23 +146,58 @@ export class PhaserHud {
   }
 
   private getEncounterLabel(world: WorldState): string {
-    const surge = world.encounter.rangedSurge;
-    const scheduledAt = surge.scheduledAt;
-    if (scheduledAt !== null && surge.phase === "warning") {
-      return TEXT.hud.encounterWarning(Math.max(0, Math.ceil(scheduledAt - world.state.elapsed)));
+    const labels: string[] = [];
+    const director = world.encounter.director;
+    const scheduledAt = director.scheduledAt;
+    const encounterId = director.currentId;
+    if (scheduledAt !== null && encounterId !== null && director.phase === "warning") {
+      labels.push(
+        TEXT.hud.encounterWarning(
+          TEXT.hud.encounterNames[encounterId],
+          Math.max(0, Math.ceil(scheduledAt - world.state.elapsed)),
+        ),
+      );
     }
-    if (scheduledAt !== null && surge.phase === "active") {
-      const end = scheduledAt + this.simulationConfig.encounter.rangedSurge.activeDuration;
-      return TEXT.hud.encounterActive(Math.max(0, Math.ceil(end - world.state.elapsed)));
-    }
-    if (scheduledAt !== null && surge.phase === "recovery") {
+    if (scheduledAt !== null && encounterId !== null && director.phase === "active") {
       const end =
         scheduledAt +
-        this.simulationConfig.encounter.rangedSurge.activeDuration +
-        this.simulationConfig.encounter.rangedSurge.recoveryDuration;
-      return TEXT.hud.encounterRecovery(Math.max(0, Math.ceil(end - world.state.elapsed)));
+        this.simulationConfig.encounter.director.definitions[encounterId].activeDuration;
+      labels.push(
+        TEXT.hud.encounterActive(
+          TEXT.hud.encounterNames[encounterId],
+          Math.max(0, Math.ceil(end - world.state.elapsed)),
+        ),
+      );
     }
-    if (world.encounter.contract.choice === "overdrive") return TEXT.hud.overdriveContract;
-    return "";
+    if (scheduledAt !== null && encounterId !== null && director.phase === "recovery") {
+      const definition = this.simulationConfig.encounter.director.definitions[encounterId];
+      const end =
+        scheduledAt +
+        definition.activeDuration +
+        definition.recoveryDuration;
+      labels.push(
+        TEXT.hud.encounterRecovery(
+          TEXT.hud.encounterNames[encounterId],
+          Math.max(0, Math.ceil(end - world.state.elapsed)),
+        ),
+      );
+    }
+    if (this.simulationConfig.features.arenaCollapse) {
+      const nextAt = getNextCollapseAt(
+        this.simulationConfig,
+        world.encounter.collapse.stage,
+      );
+      const untilNext = nextAt - world.state.elapsed;
+      if (
+        untilNext >= 0 &&
+        untilNext <= this.simulationConfig.encounter.collapse.warningDuration
+      ) {
+        labels.push(TEXT.hud.collapseWarning(Math.ceil(untilNext)));
+      } else if (world.encounter.collapse.stage > 0) {
+        labels.push(TEXT.hud.collapseActive(world.encounter.collapse.stage));
+      }
+    }
+    if (world.encounter.contract.choice === "overdrive") labels.push(TEXT.hud.overdriveContract);
+    return labels.join(" / ");
   }
 }

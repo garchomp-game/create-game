@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 const SOAK_DURATION_MS = 15 * 60 * 1000;
 const SAMPLE_INTERVAL_MS = 500;
 
-test("runs the rendered arena for fifteen real-time minutes", async ({ page }, testInfo) => {
+test("runs the rendered arena for fifteen real-time minutes with debug sustain", async ({ page }, testInfo) => {
   test.skip(process.env.ARENA_LONG_SOAK !== "1", "Set ARENA_LONG_SOAK=1 to run the long soak.");
   test.setTimeout(SOAK_DURATION_MS + 60_000);
 
@@ -16,6 +16,7 @@ test("runs the rendered arena for fifteen real-time minutes", async ({ page }, t
   await page.goto("/");
   await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
   await page.evaluate(() => window.__ARENA_DEBUG__?.restart());
+  await page.evaluate(() => window.__ARENA_DEBUG__?.restoreHealthForSoak());
   const canvas = page.locator("canvas");
   const box = await canvas.boundingBox();
   if (!box) throw new Error("Canvas is not visible.");
@@ -51,10 +52,16 @@ test("runs the rendered arena for fifteen real-time minutes", async ({ page }, t
     if (!snapshot) throw new Error("Debug snapshot is not available.");
     if (snapshot.status === "gameOver") throw new Error("Soak run ended unexpectedly.");
     if (snapshot.status === "contractSelect") {
-      await page.evaluate(() => window.__ARENA_DEBUG__?.step({ contractChoicePressed: 0 }, 1 / 60));
+      await page.evaluate(() => {
+        window.__ARENA_DEBUG__?.step({ contractChoicePressed: 0 }, 1 / 60);
+        window.__ARENA_DEBUG__?.restoreHealthForSoak();
+      });
     } else if (snapshot.status === "upgradeSelect") {
-      await page.evaluate(() => window.__ARENA_DEBUG__?.step({ upgradeChoicePressed: 0 }, 1 / 60));
-    } else if (snapshot.hp < 50) {
+      await page.evaluate(() => {
+        window.__ARENA_DEBUG__?.step({ upgradeChoicePressed: 0 }, 1 / 60);
+        window.__ARENA_DEBUG__?.restoreHealthForSoak();
+      });
+    } else {
       await page.evaluate(() => window.__ARENA_DEBUG__?.restoreHealthForSoak());
     }
 
@@ -125,8 +132,10 @@ test("runs the rendered arena for fifteen real-time minutes", async ({ page }, t
 
   expect(finalSnapshot.elapsed).toBeGreaterThanOrEqual(890);
   expect(finalSnapshot.status).toBe("playing");
-  expect(maxEnemies).toBeLessThanOrEqual(76);
-  expect(maxProjectiles).toBeLessThanOrEqual(220);
+  expect(finalSnapshot.resultSummary.threatTier).toBeGreaterThanOrEqual(15);
+  expect(finalSnapshot.encounter.collapse.stage).toBeGreaterThanOrEqual(7);
+  expect(maxEnemies).toBeLessThanOrEqual(96);
+  expect(maxProjectiles).toBeLessThanOrEqual(300);
   expect(maxPickups).toBeLessThanOrEqual(2_000);
   expect(maxHeap).toBeLessThan(512 * 1024 * 1024);
   expect(fpsAtEnd).toBeGreaterThan(15);

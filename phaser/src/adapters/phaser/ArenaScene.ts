@@ -33,6 +33,7 @@ import type {
   WorldState,
   InputSnapshot,
 } from "../../domain/types";
+import { UPGRADE_IDS } from "../../domain/types";
 import { ConsoleLogger } from "../telemetry/ConsoleLogger";
 import { FrameSpikeReporter } from "../telemetry/FrameSpikeReporter";
 import { InMemoryMetrics } from "../telemetry/InMemoryMetrics";
@@ -43,6 +44,7 @@ import { createRunResultSummary } from "../../simulation/resultSummary";
 import { stepWorld } from "../../simulation/stepWorld";
 import {
   getAvailableUpgradeIds,
+  completeBuild,
   getLockedUpgradeIds,
   getMaxedUpgradeIds,
   selectUpgradeChoices,
@@ -113,6 +115,7 @@ export class ArenaScene extends Phaser.Scene {
   private world!: WorldState;
   private lastEvents: GameEvent[] = [];
   private debugPaused = false;
+  private soakProtectionEnabled = false;
   private secondaryMenu: SecondaryMenu | null = null;
   private historyClearPending = false;
   private rankingClearPending = false;
@@ -200,7 +203,9 @@ export class ArenaScene extends Phaser.Scene {
     }
 
     this.feedbackLayer.update(deltaMs / 1000);
+    this.prepareSoakProtection();
     const result = stepWorld(this.world, input, deltaMs / 1000, this.randomStreams, this.runConfig);
+    this.normalizeSoakHealth();
     this.recordResult(result);
     if (result.events.some((event) => event.type === "game.restart.requested")) {
       this.resetGame("playing");
@@ -226,6 +231,7 @@ export class ArenaScene extends Phaser.Scene {
     this.runConfig = { ...this.simulationConfig, seed: this.runSeed };
     this.randomStreams = createRandomStreams(this.runSeed);
     this.world = createWorld(this.runConfig);
+    this.soakProtectionEnabled = false;
     this.world.state.weaponType = this.selectedWeapon;
     this.world.state.status = status;
     const runOrigin = runOriginOverride ?? this.getBaseRunOrigin();
@@ -297,9 +303,11 @@ export class ArenaScene extends Phaser.Scene {
       : null;
     const result = this.runRecordCoordinator.finalize({
       capturedAt: new Date().toISOString(),
-      summary: createRunResultSummary(this.world),
+      summary: createRunResultSummary(this.world, this.runConfig),
       upgradeRanks: this.world.progression.upgradeRanks,
       upgradeSelections: this.world.stats.progressionMetrics.selections,
+      extraUpgradeRanks: this.world.progression.extraUpgradeRanks,
+      extraUpgradeSelections: this.world.stats.progressionMetrics.extraSelections,
       buildCompletedAt: this.world.progression.buildCompletedAt,
       encounterMetrics: this.world.stats.encounterMetrics,
     });
@@ -346,6 +354,7 @@ export class ArenaScene extends Phaser.Scene {
   private stepDebugWorld(input: Partial<InputSnapshot>, deltaSeconds: number): void {
     this.runRecordCoordinator.markDebugMutation();
     const debugInput = createDebugInput(input);
+    this.prepareSoakProtection();
     const result = stepWorld(
       this.world,
       debugInput,
@@ -353,6 +362,7 @@ export class ArenaScene extends Phaser.Scene {
       this.randomStreams,
       this.runConfig,
     );
+    this.normalizeSoakHealth();
     this.recordResult(result);
     if (result.events.some((event) => event.type === "game.restart.requested")) {
       this.resetGame("playing");
@@ -496,12 +506,12 @@ export class ArenaScene extends Phaser.Scene {
         {
           type: "player.level_up",
           level: this.world.progression.level,
-          choices: [...this.world.progression.pendingUpgradeChoices],
+          choices: [...choices],
         },
         {
           type: "upgrade.offered",
           level: this.world.progression.level,
-          choices: [...this.world.progression.pendingUpgradeChoices],
+          choices: [...choices],
           availableUpgradeIds,
           lockedUpgradeIds: getLockedUpgradeIds(
             this.runConfig,
@@ -517,6 +527,34 @@ export class ArenaScene extends Phaser.Scene {
       ],
       metrics: [],
     });
+    this.renderCurrentWorld();
+  }
+
+  private forceExtraUpgradeSelect(): void {
+    if (this.world.state.status === "gameOver") return;
+
+    this.runRecordCoordinator.markDebugMutation();
+    this.inputAdapter.clearTransientInput();
+    for (const upgradeId of UPGRADE_IDS) {
+      this.world.progression.upgradeRanks[upgradeId] = this.runConfig.upgrades[upgradeId].maxRank;
+    }
+    const composition = composeBuild(
+      this.runConfig,
+      this.world.state.weaponType,
+      this.world.progression.upgradeRanks,
+      [],
+      this.world.progression.extraUpgradeRanks,
+    );
+    Object.assign(this.world.runtime, composition.modifiers);
+    this.world.state.hp = this.runConfig.player.maxHp + this.world.runtime.maxHpBonus;
+
+    const events: GameEvent[] = [];
+    completeBuild(this.world, this.runConfig, events);
+    this.world.progression.xp = this.world.progression.xpToNext;
+    this.world.state.status = "playing";
+    updateLevelProgression(this.world, this.randomStreams.upgrade, this.runConfig, events);
+    updateRunStats(this.world, events);
+    this.recordResult({ events, metrics: [] });
     this.renderCurrentWorld();
   }
 
@@ -598,21 +636,25 @@ export class ArenaScene extends Phaser.Scene {
         score: this.world.state.score,
         weaponType: this.world.state.weaponType,
         level: this.world.progression.level,
+        extraLevel: this.world.progression.extraLevel,
         xp: this.world.progression.xp,
         xpToNext: this.world.progression.xpToNext,
         buildCompletedAt: this.world.progression.buildCompletedAt,
         pendingUpgradeChoices: [...this.world.progression.pendingUpgradeChoices],
         upgradeRanks: { ...this.world.progression.upgradeRanks },
+        extraUpgradeRanks: { ...this.world.progression.extraUpgradeRanks },
         runtime: { ...this.world.runtime },
         buildComposition: composeBuild(
           this.runConfig,
           this.world.state.weaponType,
           this.world.progression.upgradeRanks,
+          [],
+          this.world.progression.extraUpgradeRanks,
         ),
         encounter: structuredClone(this.world.encounter),
         wave: { ...getWaveBand(this.runConfig, this.world.state.elapsed) },
         stats: copyRunStats(this.world),
-        resultSummary: createRunResultSummary(this.world),
+        resultSummary: createRunResultSummary(this.world, this.runConfig),
         player: { ...this.world.player.position },
         lastAim: { ...this.world.state.lastAim },
         bulletCount: this.world.bullets.length,
@@ -654,7 +696,8 @@ export class ArenaScene extends Phaser.Scene {
       restoreHealthForSoak: () => {
         if (this.world.state.status === "gameOver") return;
         this.runRecordCoordinator.markDebugMutation();
-        this.world.state.hp = this.runConfig.player.maxHp + this.world.runtime.maxHpBonus;
+        this.soakProtectionEnabled = true;
+        this.normalizeSoakHealth();
         this.renderCurrentWorld();
       },
       forceGameOver: () => {
@@ -665,6 +708,9 @@ export class ArenaScene extends Phaser.Scene {
       },
       forceUpgradeSelect: () => {
         this.forceUpgradeSelect();
+      },
+      forceExtraUpgradeSelect: () => {
+        this.forceExtraUpgradeSelect();
       },
       restart: () => {
         this.resetGame("playing", this.getDebugRunOrigin());
@@ -711,6 +757,19 @@ export class ArenaScene extends Phaser.Scene {
       world: this.world,
       lastEvents: this.lastEvents,
     });
+  }
+
+  private prepareSoakProtection(): void {
+    if (!this.soakProtectionEnabled || this.world.state.status !== "playing") return;
+
+    // Keep renderer soak tests independent from late-game lethality without exposing debug HP.
+    this.world.state.hp = 1_000_000_000;
+  }
+
+  private normalizeSoakHealth(): void {
+    if (!this.soakProtectionEnabled || this.world.state.status === "gameOver") return;
+
+    this.world.state.hp = this.runConfig.player.maxHp + this.world.runtime.maxHpBonus;
   }
 
   private submitDevRunExport(): Promise<{ ok: boolean; path?: string; error?: string }> {

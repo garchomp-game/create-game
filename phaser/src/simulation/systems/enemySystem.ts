@@ -9,6 +9,7 @@ import type {
 import { clamp } from "../../math/geometry";
 import { normalize } from "../../math/vector";
 import { moveCircleWithObstacles } from "./movement";
+import { getThreatMultipliers } from "../threatDirector";
 
 export function updateEnemies(
   world: WorldState,
@@ -80,6 +81,7 @@ function updateRangedAttack(
 
   const ranged = config.enemies[enemy.typeId].ranged;
   if (!ranged) return;
+  const threat = getThreatMultipliers(config, world.state.elapsed);
 
   const distanceToPlayer = Math.hypot(
     world.player.position.x - enemy.position.x,
@@ -88,7 +90,7 @@ function updateRangedAttack(
   enemy.attackTimer -= dt;
   if (enemy.attackTimer > 0 || distanceToPlayer > ranged.preferredRange * 1.2) return;
 
-  enemy.attackTimer += ranged.attackInterval;
+  enemy.attackTimer += ranged.attackInterval / threat.attackSpeed;
   const offset = enemy.radius + ranged.projectileRadius + 2;
   const projectile: EnemyProjectile = {
     id: `enemy-projectile-${world.nextEnemyProjectileId++}`,
@@ -97,12 +99,12 @@ function updateRangedAttack(
       y: enemy.position.y + directionToPlayer.y * offset,
     },
     velocity: {
-      x: directionToPlayer.x * ranged.projectileSpeed,
-      y: directionToPlayer.y * ranged.projectileSpeed,
+      x: directionToPlayer.x * ranged.projectileSpeed * threat.projectileSpeed,
+      y: directionToPlayer.y * ranged.projectileSpeed * threat.projectileSpeed,
     },
     radius: ranged.projectileRadius,
     lifetime: ranged.projectileLifetime,
-    damage: ranged.projectileDamage,
+    damage: Math.ceil(ranged.projectileDamage * threat.damage),
   };
   world.enemyProjectiles.push(projectile);
   events.push({

@@ -18,6 +18,7 @@ import { updatePlayer } from "./systems/playerSystem";
 import { updateShooting } from "./systems/shootingSystem";
 import { updateSpawner } from "./systems/spawnSystem";
 import { updateRunStats } from "./systems/statsSystem";
+import { updateArenaCollapse } from "./systems/collapseSystem";
 import { chooseUpgrade } from "./systems/upgradeSystem";
 import {
   chooseEndlessContract,
@@ -25,6 +26,7 @@ import {
   updateEncounter,
 } from "./systems/encounterSystem";
 import { getWaveBand } from "./waveDirector";
+import { getThreatTier } from "./threatDirector";
 
 export function stepWorld(
   world: WorldState,
@@ -118,6 +120,7 @@ export function stepWorld(
     },
     config,
   );
+  updateArenaCollapse(world, dt, config, events);
   updateShooting(world, input.shootHeld, config, events);
   updateBullets(world, dt, config, events);
   updateSpawner(world, dt, random.spawn, config, events);
@@ -156,6 +159,16 @@ function collectResult(
       { type: "gauge", name: "wave.start", value: wave.start },
       { type: "gauge", name: "wave.spawn_budget", value: wave.spawnBudget },
       { type: "gauge", name: "wave.max_enemies", value: wave.maxEnemies },
+      {
+        type: "gauge",
+        name: "endless.threat_tier",
+        value: getThreatTier(config, world.state.elapsed),
+      },
+      {
+        type: "gauge",
+        name: "endless.collapse_stage",
+        value: world.encounter.collapse.stage,
+      },
     ],
   };
 }

@@ -10,6 +10,7 @@ import {
   isUpgradeRelevant,
   meetsUpgradeRequirements,
 } from "../buildComposer";
+import { getExtraXpToNextLevel, selectExtraUpgradeChoices } from "../extraProgression";
 
 export function updateLevelProgression(
   world: WorldState,
@@ -18,7 +19,10 @@ export function updateLevelProgression(
   events: GameEvent[],
 ): void {
   if (world.state.status !== "playing") return;
-  if (world.progression.buildCompletedAt !== null) return;
+  if (world.progression.buildCompletedAt !== null) {
+    updateExtraLevelProgression(world, random, config, events);
+    return;
+  }
   if (
     getRemainingUpgradeIds(
       config,
@@ -26,14 +30,7 @@ export function updateLevelProgression(
       world.state.weaponType,
     ).length === 0
   ) {
-    world.progression.buildCompletedAt = world.state.elapsed;
-    world.progression.xp = 0;
-    world.progression.xpToNext = 0;
-    events.push({
-      type: "build.completed",
-      level: world.progression.level,
-      elapsed: world.state.elapsed,
-    });
+    completeBuild(world, config, events);
     return;
   }
   if (world.progression.xp < world.progression.xpToNext) return;
@@ -55,10 +52,10 @@ export function updateLevelProgression(
   events.push({
     type: "player.level_up",
     level: world.progression.level,
-    choices: [...world.progression.pendingUpgradeChoices],
+    choices: [...world.progression.pendingUpgradeChoices] as UpgradeId[],
   });
   if (world.progression.pendingUpgradeChoices.length === 0) {
-    completeBuild(world, events);
+    completeBuild(world, config, events);
     return;
   }
 
@@ -66,7 +63,7 @@ export function updateLevelProgression(
   events.push({
     type: "upgrade.offered",
     level: world.progression.level,
-    choices: [...world.progression.pendingUpgradeChoices],
+    choices: [...world.progression.pendingUpgradeChoices] as UpgradeId[],
     availableUpgradeIds,
     lockedUpgradeIds: getLockedUpgradeIds(
       config,
@@ -173,13 +170,50 @@ export function getMaxedUpgradeIds(
   );
 }
 
-function completeBuild(world: WorldState, events: GameEvent[]): void {
+export function completeBuild(
+  world: WorldState,
+  config: SimulationConfig,
+  events: GameEvent[],
+): void {
+  if (world.progression.buildCompletedAt !== null) return;
   world.progression.buildCompletedAt = world.state.elapsed;
-  world.progression.xp = 0;
-  world.progression.xpToNext = 0;
+  world.progression.xpToNext = getExtraXpToNextLevel(world.progression.extraLevel, config);
   events.push({
     type: "build.completed",
     level: world.progression.level,
     elapsed: world.state.elapsed,
+  });
+}
+
+function updateExtraLevelProgression(
+  world: WorldState,
+  random: RandomSource,
+  config: SimulationConfig,
+  events: GameEvent[],
+): void {
+  if (world.progression.xp < world.progression.xpToNext) return;
+
+  world.progression.xp -= world.progression.xpToNext;
+  world.progression.level += 1;
+  world.progression.extraLevel += 1;
+  world.progression.xpToNext = getExtraXpToNextLevel(world.progression.extraLevel, config);
+  const choices = selectExtraUpgradeChoices(
+    config,
+    random,
+    world.progression.extraUpgradeRanks,
+  );
+  world.progression.pendingUpgradeChoices = choices;
+  world.state.status = "upgradeSelect";
+  events.push({
+    type: "extra.level_up",
+    level: world.progression.level,
+    extraLevel: world.progression.extraLevel,
+    choices: [...choices],
+  });
+  events.push({
+    type: "extra.upgrade.offered",
+    level: world.progression.level,
+    extraLevel: world.progression.extraLevel,
+    choices: [...choices],
   });
 }

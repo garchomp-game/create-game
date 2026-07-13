@@ -31,7 +31,7 @@ export function updateShooting(
       },
       radius: weapon.radius,
       lifetime: weapon.lifetime,
-      damage: weapon.damage,
+      damage: weapon.damage * world.runtime.projectileDamageMultiplier,
       hitsRemaining: hitCapacity,
       ricochetRemaining: weapon.ricochetCount + world.runtime.ricochetBonus,
       ricochetsUsed: 0,

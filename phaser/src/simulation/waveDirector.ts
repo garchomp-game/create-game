@@ -5,11 +5,7 @@ import type {
   SimulationConfig,
   WaveBand,
 } from "../domain/types";
-
-const ENDLESS_STEP_SECONDS = 60;
-const ENDLESS_MAX_STEPS = 8;
-const ENDLESS_MIN_SPAWN_INTERVAL = 0.43;
-const ENDLESS_MAX_SPAWN_BUDGET = 5;
+import { getPressureStep } from "./threatDirector";
 
 export function getWaveBand(config: SimulationConfig, elapsed: number): WaveBand {
   let current = config.waves[0]!;
@@ -19,7 +15,7 @@ export function getWaveBand(config: SimulationConfig, elapsed: number): WaveBand
   const finalWave = config.waves[config.waves.length - 1]!;
   if (current !== finalWave) return current;
 
-  return applyEndlessPressure(finalWave, elapsed);
+  return applyEndlessPressure(config, finalWave, elapsed);
 }
 
 export function getWaveDifficulty(config: SimulationConfig, elapsed: number): Difficulty {
@@ -53,21 +49,36 @@ export function selectEnemyTypeForWave(
   return available[available.length - 1]![0];
 }
 
-function applyEndlessPressure(finalWave: WaveBand, elapsed: number): WaveBand {
-  const steps = Math.min(
-    ENDLESS_MAX_STEPS,
-    Math.floor((elapsed - finalWave.start) / ENDLESS_STEP_SECONDS),
-  );
+function applyEndlessPressure(
+  config: SimulationConfig,
+  finalWave: WaveBand,
+  elapsed: number,
+): WaveBand {
+  const steps = getPressureStep(config, elapsed);
   if (steps <= 0) return finalWave;
 
   return {
     ...finalWave,
     spawnInterval: roundToThreeDecimals(
-      Math.max(ENDLESS_MIN_SPAWN_INTERVAL, finalWave.spawnInterval - steps * 0.015),
+      Math.max(
+        config.threat.minimumSpawnInterval,
+        finalWave.spawnInterval - steps * config.threat.spawnIntervalStep,
+      ),
     ),
-    speedMultiplier: roundToThreeDecimals(finalWave.speedMultiplier + steps * 0.04),
-    maxEnemies: finalWave.maxEnemies + steps * 2,
-    spawnBudget: Math.min(ENDLESS_MAX_SPAWN_BUDGET, finalWave.spawnBudget + Math.floor(steps / 3)),
+    speedMultiplier: roundToThreeDecimals(
+      Math.min(
+        config.threat.maximumSpeedMultiplier,
+        finalWave.speedMultiplier + steps * config.threat.speedMultiplierStep,
+      ),
+    ),
+    maxEnemies: Math.min(
+      config.threat.maximumEnemies,
+      finalWave.maxEnemies + steps * config.threat.maxEnemiesStep,
+    ),
+    spawnBudget: Math.min(
+      config.threat.maximumSpawnBudget,
+      finalWave.spawnBudget + Math.floor(steps / config.threat.spawnBudgetStepInterval),
+    ),
   };
 }
 

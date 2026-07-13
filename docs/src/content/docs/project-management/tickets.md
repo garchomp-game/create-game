@@ -75,6 +75,8 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-V06-009` | [#12](https://github.com/garchomp-game/create-game/issues/12) | Phaser画面とデバッグ責務の分割 | P0 | 実装・回帰確認済み |
 | `PH-V06-010` | [#21](https://github.com/garchomp-game/create-game/issues/21) | 弾・貫通・無敵時間ルールの監査 | P0 | 監査・固定配置試験済み |
 | `PH-V06-011` | [#22](https://github.com/garchomp-game/create-game/issues/22) | v0.6統合プレイテストと採否判定 | P0 | 自動QA済み・手動判定待ち |
+| `PH-V06-012` | [#23](https://github.com/garchomp-game/create-game/issues/23) | EX進行と無制限脅威の実装 | P0 | 実装・自動検証済み |
+| `PH-V06-013` | [#24](https://github.com/garchomp-game/create-game/issues/24) | v0.6.1長時間プレイ判定 | P0 | 手動評価待ち |
 
 ## v0.7 戦闘展開とステージ試作
 

@@ -22,12 +22,14 @@ import type {
 import type {
   EnemyTypeId,
   EncounterState,
+  ExtraUpgradeId,
   GameEvent,
   GameStatus,
   InputSnapshot,
   RunResultSummary,
   RunStats,
   RuntimeModifiers,
+  ProgressionChoiceId,
   UpgradeId,
   Vec2,
   WaveBand,
@@ -61,11 +63,13 @@ export type ArenaDebugSnapshot = {
   score: number;
   weaponType: WeaponTypeId;
   level: number;
+  extraLevel: number;
   xp: number;
   xpToNext: number;
   buildCompletedAt: number | null;
-  pendingUpgradeChoices: UpgradeId[];
+  pendingUpgradeChoices: ProgressionChoiceId[];
   upgradeRanks: Record<UpgradeId, number>;
+  extraUpgradeRanks: Record<ExtraUpgradeId, number>;
   runtime: RuntimeModifiers;
   buildComposition: BuildComposition;
   encounter: EncounterState;
@@ -119,8 +123,10 @@ export type ArenaRunExport = {
   player: Vec2;
   lastAim: Vec2;
   buildCompletedAt: number | null;
-  pendingUpgradeChoices: UpgradeId[];
+  extraLevel: number;
+  pendingUpgradeChoices: ProgressionChoiceId[];
   upgradeRanks: Record<UpgradeId, number>;
+  extraUpgradeRanks: Record<ExtraUpgradeId, number>;
   runtime: RuntimeModifiers;
   buildComposition: BuildComposition;
   encounter: EncounterState;
@@ -145,6 +151,7 @@ export type ArenaDebugApi = {
   forceGameOver(): void;
   grantXp(amount: number): void;
   forceUpgradeSelect(): void;
+  forceExtraUpgradeSelect(): void;
   restart(): void;
   setPaused(paused: boolean): void;
   setElapsed(elapsed: number): void;

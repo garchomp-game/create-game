@@ -10,6 +10,7 @@ import type {
   RunRecord,
 } from "../domain/runRecords";
 import type { EncounterRunStats } from "../domain/types";
+import { createEmptyExtraUpgradeRanks } from "../simulation/extraProgression";
 
 export function createRankEligibility(
   runOrigin: RunOrigin,
@@ -53,14 +54,24 @@ export function createRunRecord(input: CreateRunRecordInput): RunRecord {
     elapsed: summary.elapsed,
     score: summary.score,
     level: summary.level,
+    extraLevel: summary.extraLevel,
+    threatTier: summary.threatTier,
+    collapseStage: summary.collapseStage,
     kills: summary.enemiesKilled,
     damageTaken: summary.damageTaken,
     lastDamageSource: summary.lastDamageSource ? { ...summary.lastDamageSource } : null,
     shotsFired: summary.shotsFired,
     hpRecovered: summary.hpRecovered,
     upgradesChosen: summary.upgradesChosen,
+    extraUpgradesChosen: summary.extraUpgradesChosen,
     upgradeRanks: { ...input.upgradeRanks },
     upgradeSelections: input.upgradeSelections.map((selection) => ({ ...selection })),
+    extraUpgradeRanks: {
+      ...(input.extraUpgradeRanks ?? createEmptyExtraUpgradeRanks()),
+    },
+    extraUpgradeSelections: (input.extraUpgradeSelections ?? []).map((selection) => ({
+      ...selection,
+    })),
     buildCompletedAt: input.buildCompletedAt,
     capstoneMetrics: { ...summary.capstoneMetrics },
     encounterMetrics: structuredClone(input.encounterMetrics ?? createEmptyEncounterMetrics()),
@@ -86,6 +97,11 @@ function createEmptyEncounterMetrics(): EncounterRunStats {
     contractOfferedAt: null,
     contractSelectedAt: null,
     contractChoice: null,
+    eventCounts: { rangedSurge: 0, swarmRush: 0, bruteSiege: 0 },
+    eventsCompleted: 0,
+    collapseStartedAt: null,
+    peakCollapseStage: 0,
+    collapseDamageTaken: 0,
   };
 }
 

@@ -29,6 +29,7 @@ export default defineConfig({
             { label: "拡張設計の全体像", slug: "design/gameplay-expansion-blueprint" },
             { label: "操作設計", slug: "design/controls" },
             { label: "ビルドと成長", slug: "design/build-and-progression" },
+            { label: "エンドレス後半", slug: "design/endless-escalation" },
             { label: "モードと戦闘展開", slug: "design/encounters-and-modes" },
             { label: "UI/UXとフィードバック", slug: "design/ui-ux" },
             { label: "障害物と弾", slug: "design/obstacles-and-projectiles" },

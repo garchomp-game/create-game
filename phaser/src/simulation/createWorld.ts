@@ -5,6 +5,7 @@ import type {
   WeaponRunStats,
   WorldState,
 } from "../domain/types";
+import { createEmptyExtraUpgradeRanks } from "./extraProgression";
 
 export function createWorld(config: SimulationConfig): WorldState {
   const upgradeRanks = Object.fromEntries(
@@ -25,16 +26,19 @@ export function createWorld(config: SimulationConfig): WorldState {
     },
     progression: {
       level: 1,
+      extraLevel: 0,
       xp: 0,
       xpToNext: config.leveling.baseXp,
       buildCompletedAt: null,
       pendingUpgradeChoices: [],
       upgradeRanks,
+      extraUpgradeRanks: createEmptyExtraUpgradeRanks(),
     },
     runtime: {
       playerSpeedMultiplier: 1,
       fireIntervalMultiplier: 1,
       projectileSpeedMultiplier: 1,
+      projectileDamageMultiplier: 1,
       maxHpBonus: 0,
       projectileCountBonus: 0,
       hitCapacityBonus: 0,
@@ -47,7 +51,7 @@ export function createWorld(config: SimulationConfig): WorldState {
       enemiesKilled: 0,
       hitsTaken: 0,
       damageTaken: 0,
-      damageTakenBySource: { contact: 0, projectile: 0 },
+      damageTakenBySource: { contact: 0, projectile: 0, collapse: 0 },
       lastDamageSource: null,
       xpCollected: 0,
       pickupsCollected: 0,
@@ -55,6 +59,7 @@ export function createWorld(config: SimulationConfig): WorldState {
       healPickupsCollected: 0,
       effectiveHealPickupsCollected: 0,
       upgradesChosen: 0,
+      extraUpgradesChosen: 0,
       movementDistance: 0,
       progressionMetrics: {
         firstOfferAt: null,
@@ -64,6 +69,9 @@ export function createWorld(config: SimulationConfig): WorldState {
         longestMeaningfulChoiceGap: 0,
         offers: [],
         selections: [],
+        extraStartedAt: null,
+        extraOffers: 0,
+        extraSelections: [],
       },
       capstoneMetrics: {
         upgradeId: "pulseRicochet",
@@ -91,6 +99,11 @@ export function createWorld(config: SimulationConfig): WorldState {
         contractOfferedAt: null,
         contractSelectedAt: null,
         contractChoice: null,
+        eventCounts: { rangedSurge: 0, swarmRush: 0, bruteSiege: 0 },
+        eventsCompleted: 0,
+        collapseStartedAt: null,
+        peakCollapseStage: 0,
+        collapseDamageTaken: 0,
       },
       weaponMetrics: {
         pulse: createWeaponRunStats(),
@@ -107,13 +120,16 @@ export function createWorld(config: SimulationConfig): WorldState {
       activeVolleys: {},
     },
     encounter: {
-      rangedSurge: {
+      director: {
         phase: "pending",
+        currentId: null,
         scheduledAt: null,
         warningStartedAt: null,
         activeStartedAt: null,
         recoveryStartedAt: null,
-        completedAt: null,
+        completedCount: 0,
+        bag: [],
+        history: [],
       },
       contract: {
         status: "pending",
@@ -122,6 +138,11 @@ export function createWorld(config: SimulationConfig): WorldState {
         selectedAt: null,
         enemySpeedMultiplier: 1,
         scoreMultiplier: 1,
+      },
+      collapse: {
+        stage: 0,
+        inset: 0,
+        damageTimer: 0,
       },
     },
     player: {

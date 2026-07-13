@@ -34,6 +34,18 @@ describe("waveDirector", () => {
       speedMultiplier: 1.67,
       maxEnemies: 76,
     });
+    expect(getWaveBand(SIMULATION_CONFIG, 900)).toMatchObject({
+      spawnInterval: 0.355,
+      speedMultiplier: 1.87,
+      maxEnemies: 86,
+      spawnBudget: 7,
+    });
+    expect(getWaveBand(SIMULATION_CONFIG, 3_600)).toMatchObject({
+      spawnInterval: SIMULATION_CONFIG.threat.minimumSpawnInterval,
+      speedMultiplier: SIMULATION_CONFIG.threat.maximumSpeedMultiplier,
+      maxEnemies: SIMULATION_CONFIG.threat.maximumEnemies,
+      spawnBudget: SIMULATION_CONFIG.threat.maximumSpawnBudget,
+    });
   });
 
   it("uses wave weights and spawn budget when choosing enemy types", () => {

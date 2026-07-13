@@ -21,6 +21,7 @@ export const uiText: UiText = {
   rankingIneligible: (reasons) => `ランキング対象外: ${reasons}`,
   paused: "一時停止",
   upgradeHeading: (level) => `レベル ${level}\n強化を選択`,
+  extraUpgradeHeading: (extraLevel) => `EXTRA LEVEL ${extraLevel}\n限界強化を選択`,
   rank: "ランク",
   result: {
     title: "ラン終了",
@@ -61,6 +62,7 @@ export const uiText: UiText = {
   damageSource: {
     enemyContact: (enemyName) => `${enemyName}との接触`,
     enemyProjectile: "敵弾",
+    collapse: (stage) => `アリーナ崩壊（${stage}段階）`,
   },
   enemyNames: {
     chaser: "追跡体",

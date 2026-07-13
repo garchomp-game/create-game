@@ -626,7 +626,8 @@ describe("stepWorld", () => {
       healEnemyMultipliers: { chaser: 1 },
     });
     const world = createWorld(config);
-    world.encounter.rangedSurge.scheduledAt = 150;
+    world.encounter.director.currentId = "rangedSurge";
+    world.encounter.director.scheduledAt = 150;
     let randomCalls = 0;
     const random = () => {
       randomCalls += 1;
@@ -1112,7 +1113,7 @@ describe("stepWorld", () => {
     expect(world.state.status).toBe("playing");
     expect(world.progression.buildCompletedAt).toBe(240);
     expect(world.progression.xp).toBe(0);
-    expect(world.progression.xpToNext).toBe(0);
+    expect(world.progression.xpToNext).toBe(GAME_CONFIG.leveling.extra.baseXp);
     expect(selected.events).toContainEqual({ type: "build.completed", level: 1, elapsed: 240 });
     expect(world.stats.progressionMetrics.buildCompletedAt).toBe(240);
 
@@ -1126,11 +1127,11 @@ describe("stepWorld", () => {
       createRandomStreams(GAME_CONFIG.seed),
       GAME_CONFIG,
     );
-    expect(world.progression.xp).toBe(0);
+    expect(world.progression.xp).toBe(3);
     expect(world.stats.xpCollected).toBe(3);
   });
 
-  it("does not create rewardless XP pickups after the build is complete", () => {
+  it("continues creating XP pickups for extra levels after the build is complete", () => {
     const world = createWorld(GAME_CONFIG);
     world.progression.buildCompletedAt = 300;
     world.enemies.push(createTestEnemy("chaser"));
@@ -1144,12 +1145,12 @@ describe("stepWorld", () => {
       GAME_CONFIG,
     );
 
-    expect(world.pickups.some((pickup) => pickup.kind === "xp")).toBe(false);
+    expect(world.pickups.some((pickup) => pickup.kind === "xp")).toBe(true);
     expect(
       result.events.some(
         (event) => event.type === "pickup.spawned" && event.pickupKind === "xp",
       ),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it("applies each upgrade effect through selected upgrades", () => {

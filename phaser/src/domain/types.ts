@@ -32,6 +32,15 @@ export const UPGRADE_IDS = [
 ] as const;
 export type UpgradeId = (typeof UPGRADE_IDS)[number];
 
+export const EXTRA_UPGRADE_IDS = [
+  "limitPower",
+  "limitCycle",
+  "limitDrive",
+  "limitCore",
+] as const;
+export type ExtraUpgradeId = (typeof EXTRA_UPGRADE_IDS)[number];
+export type ProgressionChoiceId = UpgradeId | ExtraUpgradeId;
+
 export const UPGRADE_CATEGORIES = [
   "weapon",
   "mobility",
@@ -43,16 +52,18 @@ export type UpgradeCategory = (typeof UPGRADE_CATEGORIES)[number];
 
 export type SimulationFeatures = {
   pulseRicochet: boolean;
-  rangedSurge: boolean;
+  encounterDeck: boolean;
   endlessContract: boolean;
+  arenaCollapse: boolean;
 };
 
 export const CONTRACT_CHOICE_IDS = ["standard", "overdrive"] as const;
 export type ContractChoiceId = (typeof CONTRACT_CHOICE_IDS)[number];
 
-export type RangedSurgeSimulationConfig = {
-  minStart: number;
-  maxStart: number;
+export const ENCOUNTER_IDS = ["rangedSurge", "swarmRush", "bruteSiege"] as const;
+export type EncounterId = (typeof ENCOUNTER_IDS)[number];
+
+export type EncounterDefinitionSimulationConfig = {
   warningDuration: number;
   activeDuration: number;
   recoveryDuration: number;
@@ -61,15 +72,60 @@ export type RangedSurgeSimulationConfig = {
   enemyWeights: Partial<Record<EnemyTypeId, number>>;
 };
 
+export type EncounterDirectorSimulationConfig = {
+  minStart: number;
+  maxStart: number;
+  minInterval: number;
+  maxInterval: number;
+  minimumInterval: number;
+  intervalReductionPerThreatTier: number;
+  definitions: Record<EncounterId, EncounterDefinitionSimulationConfig>;
+};
+
 export type EndlessContractSimulationConfig = {
   offerAt: number;
   enemySpeedMultiplier: number;
   scoreMultiplier: number;
 };
 
+export type ArenaCollapseSimulationConfig = {
+  startsAt: number;
+  stepSeconds: number;
+  warningDuration: number;
+  insetPerStep: number;
+  damageInterval: number;
+  baseDamage: number;
+  damageGrowth: number;
+};
+
 export type EncounterSimulationConfig = {
-  rangedSurge: RangedSurgeSimulationConfig;
+  director: EncounterDirectorSimulationConfig;
   contract: EndlessContractSimulationConfig;
+  collapse: ArenaCollapseSimulationConfig;
+};
+
+export type ThreatSimulationConfig = {
+  pressureStartAt: number;
+  pressureStepSeconds: number;
+  spawnIntervalStep: number;
+  minimumSpawnInterval: number;
+  speedMultiplierStep: number;
+  maximumSpeedMultiplier: number;
+  maxEnemiesStep: number;
+  maximumEnemies: number;
+  spawnBudgetStepInterval: number;
+  maximumSpawnBudget: number;
+  statStartAt: number;
+  statStepSeconds: number;
+  enemyHpGrowth: number;
+  enemyDamageGrowth: number;
+  enemyScoreGrowth: number;
+  rangedProjectileSpeedGrowth: number;
+  maximumProjectileSpeedMultiplier: number;
+  rangedAttackSpeedGrowth: number;
+  maximumAttackSpeedMultiplier: number;
+  healDropDecay: number;
+  minimumHealDropMultiplier: number;
 };
 
 export type Difficulty = {
@@ -132,6 +188,12 @@ export type LevelingSimulationConfig = {
   growth: number;
   maxXp: number;
   upgradeChoiceCount: number;
+  extra: {
+    baseXp: number;
+    growth: number;
+    maxXp: number;
+    upgradeChoiceCount: number;
+  };
 };
 
 export type UpgradeEffect =
@@ -158,6 +220,20 @@ export type UpgradeDefinition = {
   weight: number;
   effect: UpgradeEffect;
   requirements?: UpgradeRequirements;
+};
+
+export type ExtraUpgradeEffect =
+  | { type: "projectileDamage"; amountPerRank: number }
+  | { type: "fireRate"; amountPerRank: number; maximumBonus: number }
+  | { type: "moveSpeed"; amountPerRank: number; maximumBonus: number }
+  | { type: "maxHp"; amountPerRank: number };
+
+export type ExtraUpgradeDefinition = {
+  id: ExtraUpgradeId;
+  title: string;
+  description: string;
+  weight: number;
+  effect: ExtraUpgradeEffect;
 };
 
 export type RangedEnemySimulationConfig = {
@@ -201,6 +277,8 @@ export type SimulationConfig = {
   pickup: PickupSimulationConfig;
   leveling: LevelingSimulationConfig;
   upgrades: Record<UpgradeId, UpgradeDefinition>;
+  extraUpgrades: Record<ExtraUpgradeId, ExtraUpgradeDefinition>;
+  threat: ThreatSimulationConfig;
   encounter: EncounterSimulationConfig;
   obstacles: Obstacle[];
 };
@@ -316,23 +394,37 @@ export type GameState = {
 
 export type ProgressionState = {
   level: number;
+  extraLevel: number;
   xp: number;
   xpToNext: number;
   buildCompletedAt: number | null;
-  pendingUpgradeChoices: UpgradeId[];
+  pendingUpgradeChoices: ProgressionChoiceId[];
   upgradeRanks: Record<UpgradeId, number>;
+  extraUpgradeRanks: Record<ExtraUpgradeId, number>;
 };
 
-export type RangedSurgePhase = "pending" | "warning" | "active" | "recovery" | "completed";
+export type EncounterPhase = "pending" | "warning" | "active" | "recovery";
+
+export type EncounterHistoryEntry = {
+  encounterId: EncounterId;
+  scheduledAt: number;
+  warningStartedAt: number;
+  activeStartedAt: number;
+  recoveryStartedAt: number;
+  completedAt: number;
+};
 
 export type EncounterState = {
-  rangedSurge: {
-    phase: RangedSurgePhase;
+  director: {
+    phase: EncounterPhase;
+    currentId: EncounterId | null;
     scheduledAt: number | null;
     warningStartedAt: number | null;
     activeStartedAt: number | null;
     recoveryStartedAt: number | null;
-    completedAt: number | null;
+    completedCount: number;
+    bag: EncounterId[];
+    history: EncounterHistoryEntry[];
   };
   contract: {
     status: "pending" | "offered" | "selected";
@@ -342,12 +434,18 @@ export type EncounterState = {
     enemySpeedMultiplier: number;
     scoreMultiplier: number;
   };
+  collapse: {
+    stage: number;
+    inset: number;
+    damageTimer: number;
+  };
 };
 
 export type RuntimeModifiers = {
   playerSpeedMultiplier: number;
   fireIntervalMultiplier: number;
   projectileSpeedMultiplier: number;
+  projectileDamageMultiplier: number;
   maxHpBonus: number;
   projectileCountBonus: number;
   hitCapacityBonus: number;
@@ -387,6 +485,14 @@ export type UpgradeSelectionRunStat = {
   rank: number;
 };
 
+export type ExtraUpgradeSelectionRunStat = {
+  elapsed: number;
+  level: number;
+  extraLevel: number;
+  extraUpgradeId: ExtraUpgradeId;
+  rank: number;
+};
+
 export type ProgressionRunStats = {
   firstOfferAt: number | null;
   firstSelectionAt: number | null;
@@ -395,6 +501,9 @@ export type ProgressionRunStats = {
   longestMeaningfulChoiceGap: number;
   offers: UpgradeOfferRunStat[];
   selections: UpgradeSelectionRunStat[];
+  extraStartedAt: number | null;
+  extraOffers: number;
+  extraSelections: ExtraUpgradeSelectionRunStat[];
 };
 
 export type CapstoneRunStats = {
@@ -429,15 +538,22 @@ export type EncounterRunStats = {
   contractOfferedAt: number | null;
   contractSelectedAt: number | null;
   contractChoice: ContractChoiceId | null;
+  eventCounts: Record<EncounterId, number>;
+  eventsCompleted: number;
+  collapseStartedAt: number | null;
+  peakCollapseStage: number;
+  collapseDamageTaken: number;
 };
 
 export type PlayerDamageSource =
   | { kind: "contact"; enemyId: string; enemyType: EnemyTypeId }
-  | { kind: "projectile"; projectileId: string };
+  | { kind: "projectile"; projectileId: string }
+  | { kind: "collapse"; stage: number };
 
 export type DamageTakenBySource = {
   contact: number;
   projectile: number;
+  collapse: number;
 };
 
 export type RunStats = {
@@ -453,6 +569,7 @@ export type RunStats = {
   healPickupsCollected: number;
   effectiveHealPickupsCollected: number;
   upgradesChosen: number;
+  extraUpgradesChosen: number;
   movementDistance: number;
   progressionMetrics: ProgressionRunStats;
   capstoneMetrics: CapstoneRunStats;
@@ -484,7 +601,10 @@ export type RunResultSummary = Omit<
   score: number;
   hp: number;
   level: number;
+  extraLevel: number;
   xp: number;
+  threatTier: number;
+  collapseStage: number;
   damageTakenBySource: DamageTakenBySource;
   lastDamageSource: PlayerDamageSource | null;
 };
@@ -615,11 +735,27 @@ export type GameEvent =
     }
   | { type: "upgrade.selected"; upgradeId: UpgradeId; rank: number; level: number; effect: UpgradeEffect }
   | { type: "build.completed"; level: number; elapsed: number }
-  | { type: "encounter.scheduled"; encounterId: "rangedSurge"; scheduledAt: number }
-  | { type: "encounter.warning.started"; encounterId: "rangedSurge"; elapsed: number }
-  | { type: "encounter.started"; encounterId: "rangedSurge"; elapsed: number }
-  | { type: "encounter.recovery.started"; encounterId: "rangedSurge"; elapsed: number }
-  | { type: "encounter.completed"; encounterId: "rangedSurge"; elapsed: number }
+  | { type: "extra.level_up"; level: number; extraLevel: number; choices: ExtraUpgradeId[] }
+  | {
+      type: "extra.upgrade.offered";
+      level: number;
+      extraLevel: number;
+      choices: ExtraUpgradeId[];
+    }
+  | {
+      type: "extra.upgrade.selected";
+      extraUpgradeId: ExtraUpgradeId;
+      rank: number;
+      level: number;
+      extraLevel: number;
+      effect: ExtraUpgradeEffect;
+    }
+  | { type: "encounter.scheduled"; encounterId: EncounterId; scheduledAt: number }
+  | { type: "encounter.warning.started"; encounterId: EncounterId; elapsed: number }
+  | { type: "encounter.started"; encounterId: EncounterId; elapsed: number }
+  | { type: "encounter.recovery.started"; encounterId: EncounterId; elapsed: number }
+  | { type: "encounter.completed"; encounterId: EncounterId; elapsed: number }
+  | { type: "collapse.advanced"; stage: number; inset: number; elapsed: number }
   | { type: "contract.offered"; elapsed: number }
   | {
       type: "contract.selected";
@@ -649,7 +785,9 @@ export type GameMetric =
         | "world.pickups"
         | "wave.start"
         | "wave.spawn_budget"
-        | "wave.max_enemies";
+        | "wave.max_enemies"
+        | "endless.threat_tier"
+        | "endless.collapse_stage";
       value: number;
     }
   | { type: "timing"; name: "frame.dt_ms" | "frame.raw_dt_ms"; valueMs: number };

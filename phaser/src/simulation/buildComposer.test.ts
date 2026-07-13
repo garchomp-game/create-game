@@ -31,6 +31,7 @@ describe("build composition", () => {
       playerSpeedMultiplier: 1.12 * 1.1,
       fireIntervalMultiplier: 0.85 ** 2,
       projectileSpeedMultiplier: 1.15,
+      projectileDamageMultiplier: 1,
       maxHpBonus: 20,
       projectileCountBonus: 1,
       hitCapacityBonus: 1,
@@ -66,5 +67,31 @@ describe("build composition", () => {
       composeBuild(SIMULATION_CONFIG, "spread", world.progression.upgradeRanks).modifiers
         .ricochetBonus,
     ).toBe(0);
+  });
+
+  it("keeps power and core scaling while capping fire-rate and movement extras", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    Object.assign(world.progression.extraUpgradeRanks, {
+      limitPower: 2,
+      limitCycle: 30,
+      limitDrive: 30,
+      limitCore: 3,
+    });
+
+    const result = composeBuild(
+      SIMULATION_CONFIG,
+      "pulse",
+      world.progression.upgradeRanks,
+      [],
+      world.progression.extraUpgradeRanks,
+    );
+
+    expect(result.modifiers).toMatchObject({
+      projectileDamageMultiplier: 1.16,
+      fireIntervalMultiplier: 1 / 1.5,
+      playerSpeedMultiplier: 1.3,
+      maxHpBonus: 24,
+    });
+    expect(result.contributions.filter((entry) => entry.source === "extra")).toHaveLength(4);
   });
 });

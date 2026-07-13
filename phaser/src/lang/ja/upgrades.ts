@@ -31,6 +31,25 @@ export const upgradeText: UpgradeText = {
       description: "パルス弾が障害物で1回跳弾する",
     },
   },
+  extraDefinitions: {
+    limitPower: {
+      title: "限界出力",
+      description: "弾の基礎ダメージを8%加算",
+    },
+    limitCycle: {
+      title: "過給サイクル",
+      description: "上限付きで連射速度を上昇",
+    },
+    limitDrive: {
+      title: "超過駆動",
+      description: "上限付きで移動速度を上昇",
+    },
+    limitCore: {
+      title: "増設コア",
+      description: "最大HPを8上昇",
+    },
+  },
+  extraCategoryLabel: "限界強化",
   categoryLabels: {
     weapon: "武器",
     mobility: "機動",

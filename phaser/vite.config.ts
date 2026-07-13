@@ -1,8 +1,13 @@
 import { execFileSync } from "node:child_process";
-import { mkdir, readdir, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rename, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { defineConfig, type Plugin } from "vite";
 import { APP_VERSION, RULESET_VERSION } from "./src/config/version";
+import {
+  createRunSummaryRow,
+  serializeRunSummary,
+  type RunSummaryRow,
+} from "./src/adapters/telemetry/RunSummary";
 
 const RUN_EXPORT_ENDPOINT = "/__arena/run-export";
 const MAX_RUN_EXPORT_BYTES = 2 * 1024 * 1024;
@@ -13,6 +18,11 @@ function arenaRunExportLogPlugin(): Plugin {
   return {
     name: "arena-run-export-log",
     configureServer(server) {
+      const manualRunDirectory = path.join(server.config.root, "logs", "runs");
+      void writeRunSummaryFiles(manualRunDirectory).catch((error) => {
+        server.config.logger.warn(`Run summaries could not be refreshed: ${getErrorMessage(error)}`);
+      });
+
       server.middlewares.use(RUN_EXPORT_ENDPOINT, async (request, response) => {
         if (request.method !== "POST") {
           response.statusCode = 405;
@@ -45,6 +55,15 @@ function arenaRunExportLogPlugin(): Plugin {
             server.config.logger.warn(
               `Run export saved, but retention cleanup failed: ${getErrorMessage(error)}`,
             );
+          }
+          if (runExport.runOrigin === "manual") {
+            try {
+              await writeRunSummaryFiles(path.dirname(outputPath));
+            } catch (error) {
+              server.config.logger.warn(
+                `Run export saved, but summaries could not be refreshed: ${getErrorMessage(error)}`,
+              );
+            }
           }
 
           response.statusCode = 200;
@@ -114,6 +133,35 @@ async function pruneRunExportLogs(directory: string, limit: number): Promise<voi
     .sort();
   const expired = files.slice(0, Math.max(0, files.length - limit));
   await Promise.all(expired.map((file) => unlink(path.join(directory, file))));
+}
+
+async function writeRunSummaryFiles(directory: string): Promise<void> {
+  await mkdir(directory, { recursive: true });
+  const files = (await readdir(directory))
+    .filter((file) => file.endsWith(".json"))
+    .sort();
+  const rows: RunSummaryRow[] = [];
+
+  for (const file of files) {
+    try {
+      const value = JSON.parse(await readFile(path.join(directory, file), "utf8")) as unknown;
+      const row = createRunSummaryRow(value);
+      if (row) rows.push(row);
+    } catch {
+      // A damaged historical log must not block new run persistence.
+    }
+  }
+
+  await Promise.all([
+    writeTextFileAtomically(path.join(directory, "summary.csv"), serializeRunSummary(rows, "csv")),
+    writeTextFileAtomically(path.join(directory, "summary.tsv"), serializeRunSummary(rows, "tsv")),
+  ]);
+}
+
+async function writeTextFileAtomically(outputPath: string, content: string): Promise<void> {
+  const temporaryPath = `${outputPath}.tmp`;
+  await writeFile(temporaryPath, content, "utf8");
+  await rename(temporaryPath, outputPath);
 }
 
 function readBuildCommit(): string {

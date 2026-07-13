@@ -81,12 +81,16 @@ function makeRecord(id: string, profileId: string, score: number): RunRecord {
     elapsed: 1,
     score,
     level: 1,
+    extraLevel: 0,
+    threatTier: 0,
+    collapseStage: 0,
     kills: 0,
     damageTaken: 0,
     lastDamageSource: null,
     shotsFired: 0,
     hpRecovered: 0,
     upgradesChosen: 0,
+    extraUpgradesChosen: 0,
     upgradeRanks: {
       rapidFire: 0,
       swiftStep: 0,
@@ -97,6 +101,8 @@ function makeRecord(id: string, profileId: string, score: number): RunRecord {
       pulseRicochet: 0,
     },
     upgradeSelections: [],
+    extraUpgradeRanks: { limitPower: 0, limitCycle: 0, limitDrive: 0, limitCore: 0 },
+    extraUpgradeSelections: [],
     buildCompletedAt: null,
     capstoneMetrics: {
       upgradeId: "pulseRicochet",
@@ -124,6 +130,11 @@ function makeRecord(id: string, profileId: string, score: number): RunRecord {
       contractOfferedAt: null,
       contractSelectedAt: null,
       contractChoice: null,
+      eventCounts: { rangedSurge: 0, swarmRush: 0, bruteSiege: 0 },
+      eventsCompleted: 0,
+      collapseStartedAt: null,
+      peakCollapseStage: 0,
+      collapseDamageTaken: 0,
     },
   };
 }

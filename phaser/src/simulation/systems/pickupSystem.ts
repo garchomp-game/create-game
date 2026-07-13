@@ -7,6 +7,7 @@ import type {
   WorldState,
 } from "../../domain/types";
 import { circleCircle, circleRect } from "../../math/geometry";
+import { getThreatMultipliers } from "../threatDirector";
 
 export function updatePickups(
   world: WorldState,
@@ -24,13 +25,17 @@ export function calculateHealDropChance(
   config: SimulationConfig,
   enemyType: EnemyTypeId,
   missCount: number,
+  threatMultiplier = 1,
 ): number {
   const pitySteps = Math.max(0, missCount - config.pickup.healDropPityThreshold + 1);
   const pityBonus = pitySteps * config.pickup.healDropPityBonus;
   const enemyMultiplier = config.pickup.healEnemyMultipliers[enemyType];
   return Math.min(
     config.pickup.healDropMaxChance,
-    Math.max(0, (config.pickup.healDropChance + pityBonus) * enemyMultiplier),
+    Math.max(
+      0,
+      (config.pickup.healDropChance + pityBonus) * enemyMultiplier * threatMultiplier,
+    ),
   );
 }
 
@@ -40,8 +45,9 @@ export function rollHealDrop(
   enemyType: EnemyTypeId,
   rollIndex: number,
   missCount: number,
+  threatMultiplier = 1,
 ): boolean {
-  const chance = calculateHealDropChance(config, enemyType, missCount);
+  const chance = calculateHealDropChance(config, enemyType, missCount, threatMultiplier);
   if (chance <= 0) return false;
   if (chance >= 1) return true;
 
@@ -59,7 +65,7 @@ function spawnPickupsFromKills(
 ): void {
   const killEvents = events.filter((event) => event.type === "enemy.killed");
   for (const event of killEvents) {
-    if (event.xpAwarded > 0 && world.progression.buildCompletedAt === null) {
+    if (event.xpAwarded > 0) {
       const xpPickup = createXpPickup(world, config, event.position, event.xpAwarded);
       world.pickups.push(xpPickup);
       events.push({
@@ -80,6 +86,7 @@ function spawnPickupsFromKills(
       event.enemyType,
       rollIndex,
       world.runtime.healDropMissCount,
+      getThreatMultipliers(config, world.state.elapsed).healDrop,
     );
     world.runtime.healDropRollIndex += 1;
 
@@ -179,9 +186,7 @@ function collectPickups(
     }
 
     if (pickup.kind === "xp") {
-      if (world.progression.buildCompletedAt === null) {
-        world.progression.xp += pickup.xpValue;
-      }
+      world.progression.xp += pickup.xpValue;
       events.push({
         type: "pickup.collected",
         pickupId: pickup.id,

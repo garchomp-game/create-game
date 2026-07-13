@@ -1,5 +1,7 @@
-import { UPGRADE_CATEGORIES, UPGRADE_IDS } from "../domain/types";
+import { EXTRA_UPGRADE_IDS, UPGRADE_CATEGORIES, UPGRADE_IDS } from "../domain/types";
 import type {
+  ExtraUpgradeEffect,
+  ExtraUpgradeId,
   RuntimeModifiers,
   SimulationConfig,
   UpgradeCategory,
@@ -13,6 +15,7 @@ export type CombatModifiers = Pick<
   | "playerSpeedMultiplier"
   | "fireIntervalMultiplier"
   | "projectileSpeedMultiplier"
+  | "projectileDamageMultiplier"
   | "maxHpBonus"
   | "projectileCountBonus"
   | "hitCapacityBonus"
@@ -20,10 +23,11 @@ export type CombatModifiers = Pick<
 >;
 
 export type BuildContribution = {
-  source: "upgrade" | "capstone" | "temporary";
+  source: "upgrade" | "capstone" | "extra" | "temporary";
   upgradeId: UpgradeId | null;
+  extraUpgradeId?: ExtraUpgradeId;
   rank: number;
-  effect: UpgradeEffect;
+  effect: UpgradeEffect | ExtraUpgradeEffect;
 };
 
 export type BuildComposition = {
@@ -44,6 +48,7 @@ export function composeBuild(
   weaponType: WeaponTypeId,
   upgradeRanks: Record<UpgradeId, number>,
   temporaryEffects: readonly UpgradeEffect[] = [],
+  extraUpgradeRanks: Record<ExtraUpgradeId, number> = createEmptyExtraUpgradeRanks(),
 ): BuildComposition {
   const modifiers = createBaseCombatModifiers();
   const categoryRanks = getCategoryRanks(config, upgradeRanks);
@@ -63,6 +68,20 @@ export function composeBuild(
     contributions.push({
       source: definition.category === "capstone" ? "capstone" : "upgrade",
       upgradeId,
+      rank,
+      effect: { ...definition.effect },
+    });
+  }
+
+  for (const extraUpgradeId of EXTRA_UPGRADE_IDS) {
+    const rank = Math.max(0, extraUpgradeRanks[extraUpgradeId]);
+    if (rank === 0) continue;
+    const definition = config.extraUpgrades[extraUpgradeId];
+    applyExtraEffect(modifiers, definition.effect, rank);
+    contributions.push({
+      source: "extra",
+      upgradeId: null,
+      extraUpgradeId,
       rank,
       effect: { ...definition.effect },
     });
@@ -140,11 +159,37 @@ function createBaseCombatModifiers(): CombatModifiers {
     playerSpeedMultiplier: 1,
     fireIntervalMultiplier: 1,
     projectileSpeedMultiplier: 1,
+    projectileDamageMultiplier: 1,
     maxHpBonus: 0,
     projectileCountBonus: 0,
     hitCapacityBonus: 0,
     ricochetBonus: 0,
   };
+}
+
+function createEmptyExtraUpgradeRanks(): Record<ExtraUpgradeId, number> {
+  return Object.fromEntries(EXTRA_UPGRADE_IDS.map((id) => [id, 0])) as Record<
+    ExtraUpgradeId,
+    number
+  >;
+}
+
+function applyExtraEffect(
+  modifiers: CombatModifiers,
+  effect: ExtraUpgradeEffect,
+  rank: number,
+): void {
+  if (effect.type === "projectileDamage") {
+    modifiers.projectileDamageMultiplier *= 1 + effect.amountPerRank * rank;
+  } else if (effect.type === "fireRate") {
+    const bonus = Math.min(effect.maximumBonus, effect.amountPerRank * rank);
+    modifiers.fireIntervalMultiplier /= 1 + bonus;
+  } else if (effect.type === "moveSpeed") {
+    const bonus = Math.min(effect.maximumBonus, effect.amountPerRank * rank);
+    modifiers.playerSpeedMultiplier *= 1 + bonus;
+  } else {
+    modifiers.maxHpBonus += effect.amountPerRank * rank;
+  }
 }
 
 function applyEffect(modifiers: CombatModifiers, effect: UpgradeEffect): void {

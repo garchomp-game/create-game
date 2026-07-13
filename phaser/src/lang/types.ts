@@ -1,5 +1,7 @@
 import type {
   EnemyTypeId,
+  EncounterId,
+  ExtraUpgradeId,
   UpgradeCategory,
   UpgradeId,
   WeaponTypeId,
@@ -53,6 +55,7 @@ export type UiText = {
   rankingIneligible: (reasons: string) => string;
   paused: string;
   upgradeHeading: (level: number) => string;
+  extraUpgradeHeading: (extraLevel: number) => string;
   rank: string;
   result: {
     title: string;
@@ -66,6 +69,7 @@ export type UiText = {
   damageSource: {
     enemyContact: (enemyName: string) => string;
     enemyProjectile: string;
+    collapse: (stage: number) => string;
   };
   enemyNames: Record<EnemyTypeId, string>;
 };
@@ -74,16 +78,19 @@ export type HudText = {
   hp: (current: number, max: number) => string;
   xp: (level: number, xp: number, next: number) => string;
   buildComplete: (level: number) => string;
+  extraXp: (extraLevel: number, xp: number, next: number) => string;
   meta: (time: string, score: number) => string;
   danger: (
-    wave: number,
+    threatTier: number,
     enemies: number,
     maxEnemies: number,
     weaponName: string,
   ) => string;
-  encounterWarning: (seconds: number) => string;
-  encounterActive: (seconds: number) => string;
-  encounterRecovery: (seconds: number) => string;
+  encounterWarning: (encounterName: string, seconds: number) => string;
+  encounterActive: (encounterName: string, seconds: number) => string;
+  encounterRecovery: (encounterName: string, seconds: number) => string;
+  collapseWarning: (seconds: number) => string;
+  collapseActive: (stage: number) => string;
   overdriveContract: string;
   weapon: (
     weaponName: string,
@@ -92,6 +99,7 @@ export type HudText = {
     extraPierce: number,
   ) => string;
   weaponNames: Record<WeaponTypeId, string>;
+  encounterNames: Record<EncounterId, string>;
 };
 
 export type UpgradeText = {
@@ -99,6 +107,11 @@ export type UpgradeText = {
     title: string;
     description: string;
   }>;
+  extraDefinitions: Record<ExtraUpgradeId, {
+    title: string;
+    description: string;
+  }>;
+  extraCategoryLabel: string;
   categoryLabels: Record<UpgradeCategory, string>;
   capstoneProgress: (current: number, required: number) => string;
   capstoneAcquired: string;

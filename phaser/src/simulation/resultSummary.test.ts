@@ -15,7 +15,7 @@ describe("createRunResultSummary", () => {
     world.stats.enemiesKilled = 12;
     world.stats.hitsTaken = 3;
     world.stats.damageTaken = 36;
-    world.stats.damageTakenBySource = { contact: 24, projectile: 12 };
+    world.stats.damageTakenBySource = { contact: 24, projectile: 12, collapse: 0 };
     world.stats.lastDamageSource = {
       kind: "projectile",
       projectileId: "enemy-projectile-test",
@@ -30,12 +30,15 @@ describe("createRunResultSummary", () => {
       score: 120,
       hp: 34,
       level: 4,
+      extraLevel: 0,
       xp: 2,
+      threatTier: 0,
+      collapseStage: 0,
       shotsFired: 18,
       enemiesKilled: 12,
       hitsTaken: 3,
       damageTaken: 36,
-      damageTakenBySource: { contact: 24, projectile: 12 },
+      damageTakenBySource: { contact: 24, projectile: 12, collapse: 0 },
       lastDamageSource: {
         kind: "projectile",
         projectileId: "enemy-projectile-test",
@@ -46,6 +49,7 @@ describe("createRunResultSummary", () => {
       healPickupsCollected: 0,
       effectiveHealPickupsCollected: 0,
       upgradesChosen: 0,
+      extraUpgradesChosen: 0,
       capstoneMetrics: {
         upgradeId: "pulseRicochet",
         acquiredAt: null,

@@ -398,9 +398,9 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   const runExport = await page.evaluate(() => window.__ARENA_DEBUG__?.getRunExport());
   expect(runExport).toBeTruthy();
   expect(runExport?.game).toBe("arena-core-phaser");
-  expect(runExport?.appVersion).toBe("0.6");
-  expect(runExport?.rulesetVersion).toBe("phaser-v0.6-build-identity-foundation");
-  expect(runExport?.configVersion).toBe("phaser-v0.6-build-identity-foundation");
+  expect(runExport?.appVersion).toBe("0.6.1");
+  expect(runExport?.rulesetVersion).toBe("phaser-v0.6.1-endless-escalation");
+  expect(runExport?.configVersion).toBe("phaser-v0.6.1-endless-escalation");
   expect(runExport?.buildCommit).toMatch(/^[0-9a-f]{12}$/);
   expect(runExport?.runOrigin).toBe("test");
   expect(runExport?.rankEligibility).toEqual({
@@ -876,7 +876,13 @@ test("loads local audio assets without page errors", async ({ page }) => {
   });
 
   await clickCanvasAt(page, 480, 307);
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "weaponSelect",
+  );
   await clickCanvasAt(page, 480, 325);
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "playing",
+  );
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().music.playing)).toBe(
     true,
   );
@@ -940,7 +946,7 @@ test("selects spread as the run weapon and preserves it on restart", async ({ pa
   expect(restarted?.seed).toBe(20260619);
 });
 
-test("replays the ranged surge timeline and excludes overdrive contracts from ranking", async ({ page }) => {
+test("replays the encounter deck timeline and excludes overdrive contracts from ranking", async ({ page }) => {
   await gotoArena(page, "/?seed=20260619");
   await page.evaluate(() => {
     const debug = window.__ARENA_DEBUG__;
@@ -948,7 +954,7 @@ test("replays the ranged surge timeline and excludes overdrive contracts from ra
     debug?.step({}, 1 / 60);
   });
   const scheduledAt = await page.evaluate(
-    () => window.__ARENA_DEBUG__?.getSnapshot().encounter.rangedSurge.scheduledAt,
+    () => window.__ARENA_DEBUG__?.getSnapshot().encounter.director.scheduledAt,
   );
   expect(scheduledAt).toBeGreaterThanOrEqual(135);
   expect(scheduledAt).toBeLessThanOrEqual(165);
@@ -960,13 +966,13 @@ test("replays the ranged surge timeline and excludes overdrive contracts from ra
     debug?.step({}, 1 / 60);
   }, scheduledAt!);
   await expect
-    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().encounter.rangedSurge.phase))
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().encounter.director.phase))
     .toBe("warning");
 
   await page.evaluate((scheduled) => {
     const debug = window.__ARENA_DEBUG__;
     if (scheduled === null) throw new Error("Encounter was not scheduled.");
-    debug?.setElapsed(scheduled + 27);
+    debug?.setElapsed(scheduled + 40);
     debug?.step({}, 1 / 60);
     debug?.setElapsed(240);
     debug?.step({}, 1 / 60);
@@ -992,6 +998,29 @@ test("replays the ranged surge timeline and excludes overdrive contracts from ra
   const record = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().latestRunRecord);
   expect(record?.encounterMetrics.contractChoice).toBe("overdrive");
   expect(record?.rankEligibility.eligible).toBe(false);
+});
+
+test("offers and applies an extra upgrade after the normal build is complete", async ({ page }) => {
+  await gotoArena(page, "/?seed=20260619");
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.restart();
+    window.__ARENA_DEBUG__?.forceExtraUpgradeSelect();
+  });
+
+  const offered = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+  expect(offered?.status).toBe("upgradeSelect");
+  expect(offered?.extraLevel).toBe(1);
+  expect(offered?.pendingUpgradeChoices).toContain("limitPower");
+
+  const choiceIndex = offered!.pendingUpgradeChoices.indexOf("limitPower");
+  await page.evaluate((index) => {
+    window.__ARENA_DEBUG__?.step({ upgradeChoicePressed: index }, 1 / 60);
+  }, choiceIndex);
+
+  const selected = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+  expect(selected?.status).toBe("playing");
+  expect(selected?.extraUpgradeRanks.limitPower).toBe(1);
+  expect(selected?.runtime.projectileDamageMultiplier).toBeCloseTo(1.08);
 });
 
 test("fits the canvas inside portrait and landscape mobile viewports", async ({ page }) => {

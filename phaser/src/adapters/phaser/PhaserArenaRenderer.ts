@@ -13,6 +13,8 @@ import { TEXT } from "../../lang";
 import { createRunResultSummary } from "../../simulation/resultSummary";
 import { getUpgradeRequirementProgress } from "../../simulation/buildComposer";
 import { createUpgradePreview, formatUpgradePreview } from "../../simulation/upgradePreview";
+import { isExtraUpgradeId } from "../../simulation/extraProgression";
+import { getCollapseSafeBounds } from "../../simulation/systems/collapseSystem";
 import { PhaserHud } from "./PhaserHud";
 import { getMenuButtons, getUpgradeChoiceButtons } from "./PhaserMenuLayout";
 import type { MenuAction } from "./PhaserMenuLayout";
@@ -97,6 +99,7 @@ export class PhaserArenaRenderer {
     g.clear();
     g.fillStyle(this.viewConfig.arena.background, 1);
     g.fillRect(0, 0, arena.width, arena.height);
+    this.drawCollapse(g, world);
     g.lineStyle(3, this.viewConfig.arena.border, 1);
     g.strokeRect(1.5, 1.5, arena.width - 3, arena.height - 3);
 
@@ -189,7 +192,11 @@ export class PhaserArenaRenderer {
         .setLineSpacing(10)
         .setWordWrapWidth(null)
         .setPosition(arena.width / 2, arena.height / 2 - 138)
-        .setText(TEXT.ui.upgradeHeading(world.progression.level))
+        .setText(
+          world.progression.buildCompletedAt === null
+            ? TEXT.ui.upgradeHeading(world.progression.level)
+            : TEXT.ui.extraUpgradeHeading(world.progression.extraLevel),
+        )
         .setVisible(true);
       this.detailText
         .setOrigin(0.5, 0)
@@ -197,8 +204,14 @@ export class PhaserArenaRenderer {
         .setFontSize(15)
         .setPosition(arena.width / 2, 158)
         .setWordWrapWidth(560)
-        .setText(this.formatCapstoneProgress(world))
-        .setVisible(world.state.weaponType === "pulse");
+        .setText(
+          world.progression.buildCompletedAt === null
+            ? this.formatCapstoneProgress(world)
+            : "通常ビルド完成 / 脅威は上昇し続けます",
+        )
+        .setVisible(
+          world.progression.buildCompletedAt !== null || world.state.weaponType === "pulse",
+        );
       this.drawUpgradeChoiceButtons(g, world);
     } else if (world.state.status === "contractSelect") {
       g.fillStyle(0x020617, 0.94);
@@ -294,6 +307,7 @@ export class PhaserArenaRenderer {
       TEXT.ui.result.scoreTime(summary.score, formatTime(summary.elapsed)),
       bestLine,
       TEXT.ui.result.levelKills(summary.level, summary.enemiesKilled),
+      `EX Lv ${summary.extraLevel}   脅威 ${summary.threatTier}   崩壊 ${summary.collapseStage}`,
       TEXT.ui.result.shotsRecovered(summary.shotsFired, summary.hpRecovered),
     ];
 
@@ -345,7 +359,14 @@ export class PhaserArenaRenderer {
       .sort(([, left], [, right]) => right - left)
       .slice(0, 3)
       .map(([id, rank]) => `${TEXT.upgrades.definitions[id as keyof typeof TEXT.upgrades.definitions].title} ${rank}`);
-    return upgrades.length > 0 ? `ビルド: ${upgrades.join(" / ")}` : "ビルド: 強化なし";
+    const extras = Object.entries(record.extraUpgradeRanks)
+      .filter(([, rank]) => rank > 0)
+      .map(
+        ([id, rank]) =>
+          `${TEXT.upgrades.extraDefinitions[id as keyof typeof TEXT.upgrades.extraDefinitions].title} ${rank}`,
+      );
+    const base = upgrades.length > 0 ? upgrades.join(" / ") : "強化なし";
+    return extras.length > 0 ? `ビルド: ${base}\n限界: ${extras.join(" / ")}` : `ビルド: ${base}`;
   }
 
   private formatRecordCapstone(record: RunRecord): string {
@@ -363,10 +384,18 @@ export class PhaserArenaRenderer {
         : metrics.contractChoice === "standard"
           ? "標準維持"
           : "未選択";
-    return `危険: 射撃体${metrics.rangedEnemiesSpawned} / 被ダメ${metrics.damageTakenDuringActive}  契約:${contract}`;
+    const events = Object.values(metrics.eventCounts).reduce((sum, count) => sum + count, 0);
+    return `危険: ${events}回 / 被ダメ${metrics.damageTakenDuringActive}  崩壊${metrics.peakCollapseStage}  契約:${contract}`;
   }
 
   private formatRecordSelections(record: RunRecord): string {
+    if (record.extraUpgradeSelections.length > 0) {
+      const selections = record.extraUpgradeSelections.slice(-3).map((selection) => {
+        const title = TEXT.upgrades.extraDefinitions[selection.extraUpgradeId].title;
+        return `${formatTime(selection.elapsed)} ${title}${selection.rank}`;
+      });
+      return `直近の限界強化: ${selections.join(" > ")}`;
+    }
     if (record.upgradeSelections.length === 0) return "選択順: 旧記録のため未記録";
     const selections = record.upgradeSelections.slice(-4).map((selection) => {
       const title = TEXT.upgrades.definitions[selection.upgradeId].title;
@@ -391,6 +420,15 @@ export class PhaserArenaRenderer {
   }
 
   private formatRecentSelections(world: WorldState): string {
+    const extraSelections = world.stats.progressionMetrics.extraSelections.slice(-3);
+    if (extraSelections.length > 0) {
+      return `直近: ${extraSelections
+        .map(
+          (selection) =>
+            `${TEXT.upgrades.extraDefinitions[selection.extraUpgradeId].title}${selection.rank}`,
+        )
+        .join(" / ")}`;
+    }
     const selections = world.stats.progressionMetrics.selections.slice(-3);
     if (selections.length === 0) return "選択履歴: まだなし";
     return `直近: ${selections
@@ -460,7 +498,7 @@ export class PhaserArenaRenderer {
       uiState.records.slice(start, start + pageSize).forEach((record, index) => {
         const eligibility = record.rankEligibility.eligible ? "対象" : "対象外";
         lines.push(
-          `${start + index + 1}. ${formatRecordDate(record.capturedAt)}  ${record.score.toString().padStart(6)}点  ${formatTime(record.elapsed)}  Lv${record.level}  ${TEXT.hud.weaponNames[record.weaponId]}  ${eligibility}`,
+          `${start + index + 1}. ${formatRecordDate(record.capturedAt)}  ${record.score.toString().padStart(6)}点  ${formatTime(record.elapsed)}  Lv${record.level}/EX${record.extraLevel}  ${TEXT.hud.weaponNames[record.weaponId]}  ${eligibility}`,
         );
       });
       const latest = uiState.records[0]!;
@@ -480,12 +518,36 @@ export class PhaserArenaRenderer {
     } else {
       uiState.ranking.slice(0, 10).forEach((record, index) => {
         lines.push(
-          `${String(index + 1).padStart(2)}. ${record.score.toString().padStart(6)}点  ${formatTime(record.elapsed)}  Lv${record.level}  ${TEXT.hud.weaponNames[record.weaponId]}  ${formatRecordDate(record.capturedAt)}`,
+          `${String(index + 1).padStart(2)}. ${record.score.toString().padStart(6)}点  ${formatTime(record.elapsed)}  EX${record.extraLevel}  ${TEXT.hud.weaponNames[record.weaponId]}  ${formatRecordDate(record.capturedAt)}`,
         );
       });
     }
     if (uiState.notice) lines.push("", uiState.notice);
     return lines.join("\n");
+  }
+
+  private drawCollapse(g: Phaser.GameObjects.Graphics, world: WorldState): void {
+    const inset = world.encounter.collapse.inset;
+    if (inset <= 0) return;
+    const { width, height } = this.simulationConfig.arena;
+    const bounds = getCollapseSafeBounds(this.simulationConfig, inset);
+
+    g.fillStyle(0x7f1d1d, 0.34);
+    g.fillRect(0, 0, width, Math.min(height, inset));
+    g.fillRect(0, Math.max(0, height - inset), width, Math.min(height, inset));
+    const middleHeight = Math.max(0, height - inset * 2);
+    g.fillRect(0, inset, Math.min(width, inset), middleHeight);
+    g.fillRect(Math.max(0, width - inset), inset, Math.min(width, inset), middleHeight);
+
+    if (bounds.right > bounds.left && bounds.bottom > bounds.top) {
+      g.lineStyle(3, 0xfca5a5, 0.9);
+      g.strokeRect(
+        bounds.left + 1.5,
+        bounds.top + 1.5,
+        Math.max(0, bounds.right - bounds.left - 3),
+        Math.max(0, bounds.bottom - bounds.top - 3),
+      );
+    }
   }
 
   private drawAimGuide(
@@ -786,8 +848,8 @@ export class PhaserArenaRenderer {
     if (source.kind === "contact") {
       return TEXT.ui.damageSource.enemyContact(TEXT.ui.enemyNames[source.enemyType]);
     }
-
-    return TEXT.ui.damageSource.enemyProjectile;
+    if (source.kind === "projectile") return TEXT.ui.damageSource.enemyProjectile;
+    return TEXT.ui.damageSource.collapse(source.stage);
   }
 
   private drawMenuButtons(
@@ -855,7 +917,22 @@ export class PhaserArenaRenderer {
       height,
     );
     buttons.forEach((button) => {
-      const upgradeId = world.progression.pendingUpgradeChoices[button.index]!;
+      const choiceId = world.progression.pendingUpgradeChoices[button.index]!;
+      if (isExtraUpgradeId(choiceId)) {
+        const definition = this.simulationConfig.extraUpgrades[choiceId];
+        const display = TEXT.upgrades.extraDefinitions[choiceId];
+        const currentRank = world.progression.extraUpgradeRanks[choiceId];
+        this.drawButton(g, button.x, button.y, button.width, button.height);
+        this.upgradeChoiceTexts[button.index]!
+          .setText(
+            `${button.index + 1}. [${TEXT.upgrades.extraCategoryLabel}] ${display.title}  ${TEXT.ui.rank} ${currentRank + 1}\n${display.description}\n${this.formatExtraUpgradePreview(definition.effect, currentRank)}`,
+          )
+          .setPosition(button.x + button.width / 2, button.y + button.height / 2)
+          .setVisible(true);
+        return;
+      }
+
+      const upgradeId = choiceId;
       const upgrade = this.simulationConfig.upgrades[upgradeId];
       const upgradeDisplay = TEXT.upgrades.definitions[upgradeId];
       const currentRank = world.progression.upgradeRanks[upgradeId];
@@ -878,6 +955,26 @@ export class PhaserArenaRenderer {
         .setPosition(button.x + button.width / 2, button.y + button.height / 2)
         .setVisible(true);
     });
+  }
+
+  private formatExtraUpgradePreview(
+    effect: SimulationConfig["extraUpgrades"][keyof SimulationConfig["extraUpgrades"]]["effect"],
+    currentRank: number,
+  ): string {
+    const nextRank = currentRank + 1;
+    if (effect.type === "projectileDamage") {
+      return `弾ダメージ x${(1 + effect.amountPerRank * currentRank).toFixed(2)} -> x${(
+        1 +
+        effect.amountPerRank * nextRank
+      ).toFixed(2)}`;
+    }
+    if (effect.type === "fireRate" || effect.type === "moveSpeed") {
+      const current = Math.min(effect.maximumBonus, effect.amountPerRank * currentRank);
+      const next = Math.min(effect.maximumBonus, effect.amountPerRank * nextRank);
+      const label = effect.type === "fireRate" ? "追加連射" : "追加移動速度";
+      return `${label} +${Math.round(current * 100)}% -> +${Math.round(next * 100)}%`;
+    }
+    return `追加HP +${effect.amountPerRank * currentRank} -> +${effect.amountPerRank * nextRank}`;
   }
 
   private drawButton(

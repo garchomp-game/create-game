@@ -7,6 +7,8 @@ import type {
   WorldState,
 } from "../../domain/types";
 import { getWaveBand, selectEnemyTypeForWave } from "../waveDirector";
+import { getThreatMultipliers } from "../threatDirector";
+import { getActiveEncounterDefinition } from "./encounterSystem";
 
 export function updateSpawner(
   world: WorldState,
@@ -52,6 +54,7 @@ function spawnEnemy(
   config: SimulationConfig,
 ): Enemy {
   const definition = config.enemies[typeId];
+  const threat = getThreatMultipliers(config, world.state.elapsed);
   const margin = 32;
   const side = Math.floor(random() * 4);
   let x = 0;
@@ -76,13 +79,13 @@ function spawnEnemy(
     typeId,
     position: { x, y },
     radius: definition.radius,
-    hp: definition.hp,
-    damage: definition.damage,
+    hp: Math.ceil(definition.hp * threat.hp),
+    damage: Math.ceil(definition.damage * threat.damage),
     speed:
       definition.speed *
       difficulty.speedMultiplier *
       world.encounter.contract.enemySpeedMultiplier,
-    score: definition.score,
+    score: Math.round(definition.score * threat.score),
     xpValue: definition.xpValue,
     behavior: definition.behavior,
     attackTimer: definition.ranged ? definition.ranged.attackInterval * 0.5 : 0,
@@ -94,12 +97,12 @@ function spawnEnemy(
 
 export function getSpawnWave(world: WorldState, config: SimulationConfig) {
   const wave = getWaveBand(config, world.state.elapsed);
-  if (world.encounter.rangedSurge.phase !== "active") return wave;
-  const surge = config.encounter.rangedSurge;
+  const encounter = getActiveEncounterDefinition(world, config);
+  if (!encounter) return wave;
   return {
     ...wave,
-    spawnInterval: Math.max(0.3, wave.spawnInterval * surge.spawnIntervalMultiplier),
-    spawnBudget: Math.max(wave.spawnBudget, surge.spawnBudget),
-    enemyWeights: { ...surge.enemyWeights },
+    spawnInterval: Math.max(0.2, wave.spawnInterval * encounter.spawnIntervalMultiplier),
+    spawnBudget: Math.max(wave.spawnBudget, encounter.spawnBudget),
+    enemyWeights: { ...encounter.enemyWeights },
   };
 }

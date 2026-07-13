@@ -366,21 +366,36 @@ test("matches the fixed upgrade selection frame", async ({ page }) => {
   });
 });
 
-test("matches the ranged surge warning frame", async ({ page }) => {
+test("matches the extra upgrade selection frame", async ({ page }) => {
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+  await expect(canvas).toHaveCount(1);
+
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.restart();
+    window.__ARENA_DEBUG__?.forceExtraUpgradeSelect();
+  });
+
+  await expect(canvas).toHaveScreenshot("arena-extra-upgrade-select.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("matches the encounter warning frame", async ({ page }) => {
   await gotoArena(page);
   const canvas = page.locator("canvas");
   await page.evaluate(() => {
     const debug = window.__ARENA_DEBUG__;
     debug?.restart();
     debug?.step({}, 1 / 60);
-    const scheduledAt = debug?.getSnapshot().encounter.rangedSurge.scheduledAt;
+    const scheduledAt = debug?.getSnapshot().encounter.director.scheduledAt;
     if (scheduledAt === null || scheduledAt === undefined) throw new Error("Encounter was not scheduled.");
     debug?.setElapsed(scheduledAt - 5);
     debug?.step({}, 1 / 60);
     debug?.setPaused(true);
   });
 
-  await expect(canvas).toHaveScreenshot("arena-ranged-surge-warning.png", {
+  await expect(canvas).toHaveScreenshot("arena-encounter-warning.png", {
     maxDiffPixelRatio: 0.01,
   });
 });
@@ -392,9 +407,9 @@ test("matches the endless contract selection frame", async ({ page }) => {
     const debug = window.__ARENA_DEBUG__;
     debug?.restart();
     debug?.step({}, 1 / 60);
-    const scheduledAt = debug?.getSnapshot().encounter.rangedSurge.scheduledAt;
+    const scheduledAt = debug?.getSnapshot().encounter.director.scheduledAt;
     if (scheduledAt === null || scheduledAt === undefined) throw new Error("Encounter was not scheduled.");
-    debug?.setElapsed(scheduledAt + 27);
+    debug?.setElapsed(scheduledAt + 40);
     debug?.step({}, 1 / 60);
     debug?.setElapsed(240);
     debug?.step({}, 1 / 60);
@@ -404,6 +419,29 @@ test("matches the endless contract selection frame", async ({ page }) => {
   );
 
   await expect(canvas).toHaveScreenshot("arena-endless-contract.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("matches the arena collapse frame", async ({ page }) => {
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
+    debug?.restart();
+    debug?.step({}, 1 / 60);
+    const scheduledAt = debug?.getSnapshot().encounter.director.scheduledAt;
+    if (scheduledAt === null || scheduledAt === undefined) throw new Error("Encounter was not scheduled.");
+    debug?.setElapsed(scheduledAt + 40);
+    debug?.step({}, 1 / 60);
+    debug?.setElapsed(600);
+    debug?.step({}, 1 / 60);
+    debug?.step({ contractChoicePressed: 0 }, 1 / 60);
+    debug?.step({}, 1 / 60);
+    debug?.setPaused(true);
+  });
+
+  await expect(canvas).toHaveScreenshot("arena-collapse.png", {
     maxDiffPixelRatio: 0.01,
   });
 });

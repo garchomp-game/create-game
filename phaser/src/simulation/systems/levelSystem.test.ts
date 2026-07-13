@@ -94,4 +94,47 @@ describe("level progression cadence", () => {
       "pulseRicochet",
     );
   });
+
+  it("continues with repeatable extra levels after every normal upgrade is maxed", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    for (const upgradeId of Object.keys(world.progression.upgradeRanks) as Array<
+      keyof typeof world.progression.upgradeRanks
+    >) {
+      world.progression.upgradeRanks[upgradeId] = SIMULATION_CONFIG.upgrades[upgradeId].maxRank;
+    }
+    world.progression.buildCompletedAt = 300;
+    world.progression.xpToNext = SIMULATION_CONFIG.leveling.extra.baseXp;
+    world.progression.xp = world.progression.xpToNext;
+    world.state.elapsed = 301;
+    const events: GameEvent[] = [];
+
+    updateLevelProgression(world, () => 0, SIMULATION_CONFIG, events);
+
+    expect(world.progression.extraLevel).toBe(1);
+    expect(world.state.status).toBe("upgradeSelect");
+    expect(world.progression.pendingUpgradeChoices[0]).toBe("limitPower");
+    expect(events).toContainEqual(
+      expect.objectContaining({ type: "extra.level_up", extraLevel: 1 }),
+    );
+
+    const selectedEvents: GameEvent[] = [];
+    chooseUpgrade(world, 0, SIMULATION_CONFIG, selectedEvents);
+    expect(world.progression.extraUpgradeRanks.limitPower).toBe(1);
+    expect(world.runtime.projectileDamageMultiplier).toBeCloseTo(1.08);
+    expect(world.state.status).toBe("playing");
+    expect(selectedEvents).toContainEqual(
+      expect.objectContaining({
+        type: "extra.upgrade.selected",
+        extraUpgradeId: "limitPower",
+        rank: 1,
+      }),
+    );
+
+    world.progression.xp = world.progression.xpToNext;
+    updateLevelProgression(world, () => 0, SIMULATION_CONFIG, []);
+    chooseUpgrade(world, 0, SIMULATION_CONFIG, []);
+    expect(world.progression.extraLevel).toBe(2);
+    expect(world.progression.extraUpgradeRanks.limitPower).toBe(2);
+    expect(world.runtime.projectileDamageMultiplier).toBeCloseTo(1.16);
+  });
 });

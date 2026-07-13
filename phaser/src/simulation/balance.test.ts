@@ -30,9 +30,9 @@ const balanceBaseline = {
   kiteCollectWaveReachedP50: 90,
   kiteCollectMaxEnemiesMax: 61,
   kiteCollectMaxBulletsMax: 48,
-  kiteCollectHpRecoveredP50: 72,
+  kiteCollectHpRecoveredP50: 122,
   kiteCollectHealPickupsCollectedP50: 31,
-  kiteCollectEffectiveHealPickupsCollectedP50: 6,
+  kiteCollectEffectiveHealPickupsCollectedP50: 9,
 };
 
 describe("balance simulation", () => {
@@ -148,15 +148,25 @@ describe("balance simulation", () => {
     expect(fixedAimShoot.healPickupsCollected.max).toBe(0);
   });
 
-  it("keeps a 15 minute accelerated endless run finite and bounded", () => {
+  it("keeps a long endless run bounded and eventually ends it through arena collapse", () => {
     const soakConfig = {
       ...SIMULATION_CONFIG,
-      player: { ...SIMULATION_CONFIG.player, maxHp: 1_000_000_000 },
+      player: { ...SIMULATION_CONFIG.player, maxHp: 500 },
+      enemies: {
+        chaser: { ...SIMULATION_CONFIG.enemies.chaser, damage: 0 },
+        brute: { ...SIMULATION_CONFIG.enemies.brute, damage: 0 },
+        fast: { ...SIMULATION_CONFIG.enemies.fast, damage: 0 },
+        ranged: {
+          ...SIMULATION_CONFIG.enemies.ranged,
+          damage: 0,
+          ranged: { ...SIMULATION_CONFIG.enemies.ranged.ranged!, projectileDamage: 0 },
+        },
+      },
     };
     const world = createWorld(soakConfig);
     const random = createRandomStreams(20260710);
     const frameRate = 30;
-    const frames = 15 * 60 * frameRate;
+    const frames = 24 * 60 * frameRate;
     let maxEnemies = 0;
     let maxProjectiles = 0;
     let maxPickups = 0;
@@ -208,12 +218,16 @@ describe("balance simulation", () => {
         world.bullets.length + world.enemyProjectiles.length,
       );
       maxPickups = Math.max(maxPickups, world.pickups.length);
+      if (world.state.status === "gameOver") break;
     }
 
-    expect(world.state.elapsed).toBeGreaterThanOrEqual(899);
-    expect(world.state.status).not.toBe("gameOver");
-    expect(maxEnemies).toBeLessThanOrEqual(76);
-    expect(maxProjectiles).toBeLessThanOrEqual(220);
+    expect(world.state.elapsed).toBeGreaterThanOrEqual(SIMULATION_CONFIG.encounter.collapse.startsAt);
+    expect(world.state.elapsed).toBeLessThan(24 * 60);
+    expect(world.state.status).toBe("gameOver");
+    expect(world.stats.lastDamageSource?.kind).toBe("collapse");
+    expect(world.stats.encounterMetrics.peakCollapseStage).toBeGreaterThanOrEqual(8);
+    expect(maxEnemies).toBeLessThanOrEqual(SIMULATION_CONFIG.threat.maximumEnemies);
+    expect(maxProjectiles).toBeLessThanOrEqual(300);
     expect(maxPickups).toBeLessThanOrEqual(2_000);
     expect(Number.isFinite(world.player.position.x)).toBe(true);
     expect(Number.isFinite(world.player.position.y)).toBe(true);

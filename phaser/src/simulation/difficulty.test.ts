@@ -34,7 +34,7 @@ describe("getDifficulty", () => {
     });
   });
 
-  it("adds capped endless pressure after the endurance band", () => {
+  it("keeps adding endless pressure while capping screen-density values", () => {
     expect(getDifficulty(150)).toEqual({
       spawnInterval: 0.535,
       speedMultiplier: 1.39,
@@ -44,6 +44,11 @@ describe("getDifficulty", () => {
       spawnInterval: 0.43,
       speedMultiplier: 1.67,
       maxEnemies: 76,
+    });
+    expect(getDifficulty(900)).toEqual({
+      spawnInterval: 0.355,
+      speedMultiplier: 1.87,
+      maxEnemies: 86,
     });
   });
 });

@@ -1,8 +1,10 @@
 import { z } from "zod";
-import { UPGRADE_IDS, WEAPON_TYPE_IDS } from "./types";
+import { EXTRA_UPGRADE_IDS, UPGRADE_IDS, WEAPON_TYPE_IDS } from "./types";
 import type {
   CapstoneRunStats,
   EncounterRunStats,
+  ExtraUpgradeId,
+  ExtraUpgradeSelectionRunStat,
   PlayerDamageSource,
   RunResultSummary,
   UpgradeId,
@@ -68,14 +70,20 @@ export type RunRecord = RunComparisonKey & {
   elapsed: number;
   score: number;
   level: number;
+  extraLevel: number;
+  threatTier: number;
+  collapseStage: number;
   kills: number;
   damageTaken: number;
   lastDamageSource: PlayerDamageSource | null;
   shotsFired: number;
   hpRecovered: number;
   upgradesChosen: number;
+  extraUpgradesChosen: number;
   upgradeRanks: Record<UpgradeId, number>;
   upgradeSelections: UpgradeSelectionRunStat[];
+  extraUpgradeRanks: Record<ExtraUpgradeId, number>;
+  extraUpgradeSelections: ExtraUpgradeSelectionRunStat[];
   buildCompletedAt: number | null;
   capstoneMetrics: CapstoneRunStats;
   encounterMetrics: EncounterRunStats;
@@ -87,6 +95,8 @@ export type CreateRunRecordInput = {
   summary: RunResultSummary;
   upgradeRanks: Record<UpgradeId, number>;
   upgradeSelections: UpgradeSelectionRunStat[];
+  extraUpgradeRanks?: Record<ExtraUpgradeId, number>;
+  extraUpgradeSelections?: ExtraUpgradeSelectionRunStat[];
   buildCompletedAt: number | null;
   encounterMetrics?: EncounterRunStats;
 };
@@ -100,6 +110,10 @@ const damageSourceSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("projectile"),
     projectileId: z.string().min(1),
+  }),
+  z.object({
+    kind: z.literal("collapse"),
+    stage: z.number().int().positive(),
   }),
 ]);
 
@@ -118,10 +132,24 @@ const legacyUpgradeRanksSchema = z.object({
   piercingRounds: z.number().int().nonnegative(),
 });
 
+const extraUpgradeRanksSchema = z.object(
+  Object.fromEntries(
+    EXTRA_UPGRADE_IDS.map((id) => [id, z.number().int().nonnegative()]),
+  ) as Record<ExtraUpgradeId, z.ZodNumber>,
+);
+
 const upgradeSelectionSchema = z.object({
   elapsed: z.number().nonnegative(),
   level: z.number().int().positive(),
   upgradeId: z.enum(UPGRADE_IDS),
+  rank: z.number().int().positive(),
+});
+
+const extraUpgradeSelectionSchema = z.object({
+  elapsed: z.number().nonnegative(),
+  level: z.number().int().positive(),
+  extraLevel: z.number().int().positive(),
+  extraUpgradeId: z.enum(EXTRA_UPGRADE_IDS),
   rank: z.number().int().positive(),
 });
 
@@ -164,6 +192,17 @@ const encounterMetricsSchema = z.object({
   contractOfferedAt: z.number().nonnegative().nullable(),
   contractSelectedAt: z.number().nonnegative().nullable(),
   contractChoice: z.enum(["standard", "overdrive"]).nullable(),
+  eventCounts: z
+    .object({
+      rangedSurge: z.number().int().nonnegative(),
+      swarmRush: z.number().int().nonnegative(),
+      bruteSiege: z.number().int().nonnegative(),
+    })
+    .default({ rangedSurge: 0, swarmRush: 0, bruteSiege: 0 }),
+  eventsCompleted: z.number().int().nonnegative().default(0),
+  collapseStartedAt: z.number().nonnegative().nullable().default(null),
+  peakCollapseStage: z.number().int().nonnegative().default(0),
+  collapseDamageTaken: z.number().nonnegative().default(0),
 });
 
 const runRecordV2Schema = z.object({
@@ -198,14 +237,20 @@ const runRecordV2Schema = z.object({
   elapsed: z.number().nonnegative(),
   score: z.number().int().nonnegative(),
   level: z.number().int().positive(),
+  extraLevel: z.number().int().nonnegative().default(0),
+  threatTier: z.number().int().nonnegative().default(0),
+  collapseStage: z.number().int().nonnegative().default(0),
   kills: z.number().int().nonnegative(),
   damageTaken: z.number().nonnegative(),
   lastDamageSource: damageSourceSchema.nullable(),
   shotsFired: z.number().int().nonnegative(),
   hpRecovered: z.number().nonnegative(),
   upgradesChosen: z.number().int().nonnegative(),
+  extraUpgradesChosen: z.number().int().nonnegative().default(0),
   upgradeRanks: upgradeRanksSchema,
   upgradeSelections: z.array(upgradeSelectionSchema),
+  extraUpgradeRanks: extraUpgradeRanksSchema.default(createEmptyExtraUpgradeRanks),
+  extraUpgradeSelections: z.array(extraUpgradeSelectionSchema).default([]),
   buildCompletedAt: z.number().nonnegative().nullable(),
   capstoneMetrics: capstoneMetricsSchema,
   encounterMetrics: encounterMetricsSchema.default(createEmptyEncounterMetrics),
@@ -231,6 +276,12 @@ export const runRecordSchema: z.ZodType<RunRecord> = z.union([
     schemaVersion: RUN_RECORD_SCHEMA_VERSION,
     upgradeRanks: { ...record.upgradeRanks, pulseRicochet: 0 },
     upgradeSelections: [],
+    extraUpgradeRanks: createEmptyExtraUpgradeRanks(),
+    extraUpgradeSelections: [],
+    extraUpgradesChosen: 0,
+    extraLevel: 0,
+    threatTier: 0,
+    collapseStage: 0,
     buildCompletedAt: null,
     capstoneMetrics: createEmptyCapstoneMetrics(),
     encounterMetrics: createEmptyEncounterMetrics(),
@@ -246,6 +297,13 @@ function createEmptyCapstoneMetrics(): CapstoneRunStats {
     followUpUniqueEnemiesHit: 0,
     maxFollowUpUniqueEnemiesPerVolley: 0,
   };
+}
+
+function createEmptyExtraUpgradeRanks(): Record<ExtraUpgradeId, number> {
+  return Object.fromEntries(EXTRA_UPGRADE_IDS.map((id) => [id, 0])) as Record<
+    ExtraUpgradeId,
+    number
+  >;
 }
 
 function createEmptyEncounterMetrics(): EncounterRunStats {
@@ -267,5 +325,10 @@ function createEmptyEncounterMetrics(): EncounterRunStats {
     contractOfferedAt: null,
     contractSelectedAt: null,
     contractChoice: null,
+    eventCounts: { rangedSurge: 0, swarmRush: 0, bruteSiege: 0 },
+    eventsCompleted: 0,
+    collapseStartedAt: null,
+    peakCollapseStage: 0,
+    collapseDamageTaken: 0,
   };
 }

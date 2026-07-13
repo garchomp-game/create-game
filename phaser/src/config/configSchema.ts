@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   ENEMY_TYPE_IDS,
+  EXTRA_UPGRADE_IDS,
   UPGRADE_CATEGORIES,
   UPGRADE_IDS,
   WEAPON_TYPE_IDS,
@@ -8,6 +9,7 @@ import {
 import type {
   EnemyViewConfig,
   EnemyTypeId,
+  ExtraUpgradeId,
   SimulationConfig,
   UpgradeId,
   ViewConfig,
@@ -93,6 +95,14 @@ const levelingSimulationSchema = z
     growth: z.number().finite().min(1),
     maxXp: z.number().int().positive(),
     upgradeChoiceCount: z.number().int().min(1).max(UPGRADE_IDS.length),
+    extra: z
+      .object({
+        baseXp: z.number().int().positive(),
+        growth: z.number().finite().min(1),
+        maxXp: z.number().int().positive(),
+        upgradeChoiceCount: z.number().int().min(1).max(EXTRA_UPGRADE_IDS.length),
+      })
+      .strict(),
   })
   .strict();
 
@@ -151,6 +161,54 @@ const upgradeDefinitionsSchema = z
           code: "custom",
           message: "upgrade definition id must match its record key",
           path: [upgradeId, "id"],
+        });
+      }
+    }
+  });
+
+const extraUpgradeEffectSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("projectileDamage"), amountPerRank: positiveNumber }).strict(),
+  z
+    .object({
+      type: z.literal("fireRate"),
+      amountPerRank: positiveNumber,
+      maximumBonus: positiveNumber,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("moveSpeed"),
+      amountPerRank: positiveNumber,
+      maximumBonus: positiveNumber,
+    })
+    .strict(),
+  z.object({ type: z.literal("maxHp"), amountPerRank: positiveNumber }).strict(),
+]);
+
+const extraUpgradeDefinitionSchema = z
+  .object({
+    id: z.enum(EXTRA_UPGRADE_IDS),
+    title: z.string().min(1),
+    description: z.string().min(1),
+    weight: positiveNumber,
+    effect: extraUpgradeEffectSchema,
+  })
+  .strict();
+
+const extraUpgradeDefinitionsSchema = z
+  .object(
+    Object.fromEntries(
+      EXTRA_UPGRADE_IDS.map((id) => [id, extraUpgradeDefinitionSchema]),
+    ) as Record<ExtraUpgradeId, typeof extraUpgradeDefinitionSchema>,
+  )
+  .strict()
+  .superRefine((value, context) => {
+    for (const id of EXTRA_UPGRADE_IDS) {
+      if (value[id].id !== id) {
+        context.addIssue({
+          code: "custom",
+          message: "extra upgrade definition id must match its record key",
+          path: [id, "id"],
         });
       }
     }
@@ -218,6 +276,17 @@ const waveBandSchema = z
     }
   });
 
+const encounterDefinitionSchema = z
+  .object({
+    warningDuration: positiveNumber,
+    activeDuration: positiveNumber,
+    recoveryDuration: positiveNumber,
+    spawnIntervalMultiplier: positiveNumber.max(1),
+    spawnBudget: z.number().int().positive(),
+    enemyWeights: z.partialRecord(z.enum(ENEMY_TYPE_IDS), positiveNumber),
+  })
+  .strict();
+
 const obstacleSchema = z
   .object({
     id: z.string().min(1),
@@ -234,8 +303,9 @@ export const simulationConfigSchema: z.ZodType<SimulationConfig> = z
     features: z
       .object({
         pulseRicochet: z.boolean(),
-        rangedSurge: z.boolean(),
+        encounterDeck: z.boolean(),
         endlessContract: z.boolean(),
+        arenaCollapse: z.boolean(),
       })
       .strict(),
     arena: arenaSimulationSchema,
@@ -260,28 +330,75 @@ export const simulationConfigSchema: z.ZodType<SimulationConfig> = z
     pickup: pickupSimulationSchema,
     leveling: levelingSimulationSchema,
     upgrades: upgradeDefinitionsSchema,
+    extraUpgrades: extraUpgradeDefinitionsSchema,
+    threat: z
+      .object({
+        pressureStartAt: nonNegativeNumber,
+        pressureStepSeconds: positiveNumber,
+        spawnIntervalStep: nonNegativeNumber,
+        minimumSpawnInterval: positiveNumber,
+        speedMultiplierStep: nonNegativeNumber,
+        maximumSpeedMultiplier: positiveNumber,
+        maxEnemiesStep: z.number().int().nonnegative(),
+        maximumEnemies: z.number().int().positive(),
+        spawnBudgetStepInterval: z.number().int().positive(),
+        maximumSpawnBudget: z.number().int().positive(),
+        statStartAt: nonNegativeNumber,
+        statStepSeconds: positiveNumber,
+        enemyHpGrowth: z.number().min(1),
+        enemyDamageGrowth: z.number().min(1),
+        enemyScoreGrowth: z.number().min(1),
+        rangedProjectileSpeedGrowth: z.number().min(1),
+        maximumProjectileSpeedMultiplier: z.number().min(1),
+        rangedAttackSpeedGrowth: z.number().min(1),
+        maximumAttackSpeedMultiplier: z.number().min(1),
+        healDropDecay: positiveNumber.max(1),
+        minimumHealDropMultiplier: positiveNumber.max(1),
+      })
+      .strict(),
     encounter: z
       .object({
-        rangedSurge: z
+        director: z
           .object({
             minStart: nonNegativeNumber,
             maxStart: positiveNumber,
-            warningDuration: positiveNumber,
-            activeDuration: positiveNumber,
-            recoveryDuration: positiveNumber,
-            spawnIntervalMultiplier: positiveNumber.max(1),
-            spawnBudget: z.number().int().positive(),
-            enemyWeights: z.partialRecord(z.enum(ENEMY_TYPE_IDS), positiveNumber),
+            minInterval: positiveNumber,
+            maxInterval: positiveNumber,
+            minimumInterval: positiveNumber,
+            intervalReductionPerThreatTier: nonNegativeNumber,
+            definitions: z
+              .object({
+                rangedSurge: encounterDefinitionSchema,
+                swarmRush: encounterDefinitionSchema,
+                bruteSiege: encounterDefinitionSchema,
+              })
+              .strict(),
           })
           .strict()
-          .refine((value) => value.maxStart >= value.minStart, {
-            message: "ranged surge maxStart must be at least minStart",
+          .superRefine((value, context) => {
+            if (value.maxStart < value.minStart) {
+              context.addIssue({ code: "custom", message: "maxStart must be at least minStart" });
+            }
+            if (value.maxInterval < value.minInterval) {
+              context.addIssue({ code: "custom", message: "maxInterval must be at least minInterval" });
+            }
           }),
         contract: z
           .object({
             offerAt: positiveNumber,
             enemySpeedMultiplier: positiveNumber,
             scoreMultiplier: positiveNumber,
+          })
+          .strict(),
+        collapse: z
+          .object({
+            startsAt: nonNegativeNumber,
+            stepSeconds: positiveNumber,
+            warningDuration: nonNegativeNumber,
+            insetPerStep: positiveNumber,
+            damageInterval: positiveNumber,
+            baseDamage: positiveNumber,
+            damageGrowth: z.number().min(1),
           })
           .strict(),
       })

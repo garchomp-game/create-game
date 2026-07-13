@@ -1,6 +1,7 @@
 import type { GameConfig } from "../domain/types";
 import { parseSimulationConfig, parseViewConfig } from "./configSchema";
 import { UPGRADE_DEFINITIONS } from "../content/upgradeCatalog";
+import { EXTRA_UPGRADE_DEFINITIONS } from "../content/extraUpgradeCatalog";
 import { RULESET_VERSION } from "./version";
 
 export const SIMULATION_CONFIG_VERSION = RULESET_VERSION;
@@ -9,8 +10,9 @@ const rawSimulationConfig = {
   seed: 20260619,
   features: {
     pulseRicochet: true,
-    rangedSurge: true,
+    encounterDeck: true,
     endlessContract: true,
+    arenaCollapse: true,
   },
   arena: {
     width: 960,
@@ -186,28 +188,100 @@ const rawSimulationConfig = {
     growth: 1.25,
     maxXp: 140,
     upgradeChoiceCount: 3,
+    extra: {
+      baseXp: 180,
+      growth: 1.12,
+      maxXp: 900,
+      upgradeChoiceCount: 3,
+    },
   },
   upgrades: UPGRADE_DEFINITIONS,
+  extraUpgrades: EXTRA_UPGRADE_DEFINITIONS,
+  threat: {
+    pressureStartAt: 90,
+    pressureStepSeconds: 60,
+    spawnIntervalStep: 0.015,
+    minimumSpawnInterval: 0.32,
+    speedMultiplierStep: 0.04,
+    maximumSpeedMultiplier: 2.15,
+    maxEnemiesStep: 2,
+    maximumEnemies: 96,
+    spawnBudgetStepInterval: 3,
+    maximumSpawnBudget: 8,
+    statStartAt: 240,
+    statStepSeconds: 45,
+    enemyHpGrowth: 1.12,
+    enemyDamageGrowth: 1.1,
+    enemyScoreGrowth: 1.08,
+    rangedProjectileSpeedGrowth: 1.04,
+    maximumProjectileSpeedMultiplier: 1.8,
+    rangedAttackSpeedGrowth: 1.05,
+    maximumAttackSpeedMultiplier: 2.4,
+    healDropDecay: 0.96,
+    minimumHealDropMultiplier: 0.35,
+  },
   encounter: {
-    rangedSurge: {
+    director: {
       minStart: 135,
       maxStart: 165,
-      warningDuration: 6,
-      activeDuration: 18,
-      recoveryDuration: 8,
-      spawnIntervalMultiplier: 0.72,
-      spawnBudget: 4,
-      enemyWeights: {
-        chaser: 0.35,
-        brute: 0.2,
-        fast: 0.3,
-        ranged: 3,
+      minInterval: 48,
+      maxInterval: 68,
+      minimumInterval: 26,
+      intervalReductionPerThreatTier: 1.4,
+      definitions: {
+        rangedSurge: {
+          warningDuration: 6,
+          activeDuration: 18,
+          recoveryDuration: 8,
+          spawnIntervalMultiplier: 0.72,
+          spawnBudget: 4,
+          enemyWeights: {
+            chaser: 0.35,
+            brute: 0.2,
+            fast: 0.3,
+            ranged: 3,
+          },
+        },
+        swarmRush: {
+          warningDuration: 5,
+          activeDuration: 16,
+          recoveryDuration: 7,
+          spawnIntervalMultiplier: 0.62,
+          spawnBudget: 5,
+          enemyWeights: {
+            chaser: 1.4,
+            fast: 3,
+            ranged: 0.15,
+          },
+        },
+        bruteSiege: {
+          warningDuration: 7,
+          activeDuration: 20,
+          recoveryDuration: 9,
+          spawnIntervalMultiplier: 0.78,
+          spawnBudget: 6,
+          enemyWeights: {
+            chaser: 0.35,
+            brute: 2.6,
+            fast: 0.2,
+            ranged: 0.9,
+          },
+        },
       },
     },
     contract: {
       offerAt: 240,
       enemySpeedMultiplier: 1.12,
       scoreMultiplier: 1.3,
+    },
+    collapse: {
+      startsAt: 600,
+      stepSeconds: 45,
+      warningDuration: 8,
+      insetPerStep: 18,
+      damageInterval: 0.5,
+      baseDamage: 6,
+      damageGrowth: 1.12,
     },
   },
   obstacles: [
