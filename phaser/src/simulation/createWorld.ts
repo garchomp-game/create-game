@@ -27,12 +27,14 @@ export function createWorld(config: SimulationConfig): WorldState {
     progression: {
       level: 1,
       extraLevel: 0,
+      extraCycle: 0,
       xp: 0,
       xpToNext: config.leveling.baseXp,
       buildCompletedAt: null,
       pendingUpgradeChoices: [],
       upgradeRanks,
       extraUpgradeRanks: createEmptyExtraUpgradeRanks(),
+      extraCycleRemaining: [],
     },
     runtime: {
       playerSpeedMultiplier: 1,
@@ -61,6 +63,12 @@ export function createWorld(config: SimulationConfig): WorldState {
       upgradesChosen: 0,
       extraUpgradesChosen: 0,
       movementDistance: 0,
+      navigationMetrics: {
+        directFrames: 0,
+        pathFrames: 0,
+        fallbackFrames: 0,
+        fieldBuilds: 0,
+      },
       progressionMetrics: {
         firstOfferAt: null,
         firstSelectionAt: null,

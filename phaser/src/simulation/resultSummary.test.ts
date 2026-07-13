@@ -31,6 +31,7 @@ describe("createRunResultSummary", () => {
       hp: 34,
       level: 4,
       extraLevel: 0,
+      extraCycle: 0,
       xp: 2,
       threatTier: 0,
       collapseStage: 0,

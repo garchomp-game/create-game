@@ -3,6 +3,7 @@ import { SIMULATION_CONFIG } from "../../config/gameConfig";
 import type { GameEvent } from "../../domain/types";
 import { createRandomStreams } from "../../math/random";
 import { createWorld } from "../createWorld";
+import { composeBuild } from "../buildComposer";
 import { updateLevelProgression } from "./levelSystem";
 import { updateRunStats } from "./statsSystem";
 import { chooseUpgrade } from "./upgradeSystem";
@@ -95,13 +96,18 @@ describe("level progression cadence", () => {
     );
   });
 
-  it("continues with repeatable extra levels after every normal upgrade is maxed", () => {
+  it("cycles every available extra once and auto-grants the final card", () => {
     const world = createWorld(SIMULATION_CONFIG);
     for (const upgradeId of Object.keys(world.progression.upgradeRanks) as Array<
       keyof typeof world.progression.upgradeRanks
     >) {
       world.progression.upgradeRanks[upgradeId] = SIMULATION_CONFIG.upgrades[upgradeId].maxRank;
     }
+    const normalModifiers = composeBuild(
+      SIMULATION_CONFIG,
+      world.state.weaponType,
+      world.progression.upgradeRanks,
+    ).modifiers;
     world.progression.buildCompletedAt = 300;
     world.progression.xpToNext = SIMULATION_CONFIG.leveling.extra.baseXp;
     world.progression.xp = world.progression.xpToNext;
@@ -111,10 +117,11 @@ describe("level progression cadence", () => {
     updateLevelProgression(world, () => 0, SIMULATION_CONFIG, events);
 
     expect(world.progression.extraLevel).toBe(1);
+    expect(world.progression.extraCycle).toBe(1);
     expect(world.state.status).toBe("upgradeSelect");
     expect(world.progression.pendingUpgradeChoices[0]).toBe("limitPower");
     expect(events).toContainEqual(
-      expect.objectContaining({ type: "extra.level_up", extraLevel: 1 }),
+      expect.objectContaining({ type: "extra.level_up", extraLevel: 1, cycle: 1 }),
     );
 
     const selectedEvents: GameEvent[] = [];
@@ -127,14 +134,54 @@ describe("level progression cadence", () => {
         type: "extra.upgrade.selected",
         extraUpgradeId: "limitPower",
         rank: 1,
+        cycle: 1,
+        automatic: false,
       }),
     );
 
+    for (let extraLevel = 2; extraLevel <= 3; extraLevel += 1) {
+      world.progression.xp = world.progression.xpToNext;
+      updateLevelProgression(world, () => 0, SIMULATION_CONFIG, []);
+      expect(world.progression.pendingUpgradeChoices).not.toContain("limitPower");
+      chooseUpgrade(world, 0, SIMULATION_CONFIG, []);
+    }
+
+    world.progression.xp = world.progression.xpToNext;
+    const automaticEvents: GameEvent[] = [];
+    updateLevelProgression(world, () => 0, SIMULATION_CONFIG, automaticEvents);
+
+    expect(world.progression.extraLevel).toBe(4);
+    expect(world.progression.extraUpgradeRanks).toEqual({
+      limitPower: 1,
+      limitCycle: 1,
+      limitDrive: 1,
+      limitCore: 1,
+    });
+    expect(world.runtime.projectileDamageMultiplier).toBeCloseTo(1.08);
+    expect(world.runtime.fireIntervalMultiplier).toBeCloseTo(
+      normalModifiers.fireIntervalMultiplier / 1.1,
+    );
+    expect(world.runtime.playerSpeedMultiplier).toBeCloseTo(
+      normalModifiers.playerSpeedMultiplier * 1.06,
+    );
+    expect(world.runtime.maxHpBonus).toBe(normalModifiers.maxHpBonus + 8);
+    expect(world.state.status).toBe("playing");
+    expect(automaticEvents).toContainEqual(
+      expect.objectContaining({
+        type: "extra.upgrade.selected",
+        extraUpgradeId: "limitCore",
+        automatic: true,
+      }),
+    );
+    expect(automaticEvents).toContainEqual({
+      type: "extra.cycle.completed",
+      cycle: 1,
+      extraLevel: 4,
+    });
+
     world.progression.xp = world.progression.xpToNext;
     updateLevelProgression(world, () => 0, SIMULATION_CONFIG, []);
-    chooseUpgrade(world, 0, SIMULATION_CONFIG, []);
-    expect(world.progression.extraLevel).toBe(2);
-    expect(world.progression.extraUpgradeRanks.limitPower).toBe(2);
-    expect(world.runtime.projectileDamageMultiplier).toBeCloseTo(1.16);
+    expect(world.progression.extraCycle).toBe(2);
+    expect(world.progression.pendingUpgradeChoices).toContain("limitPower");
   });
 });

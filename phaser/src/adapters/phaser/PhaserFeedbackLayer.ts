@@ -64,7 +64,7 @@ export class PhaserFeedbackLayer {
         }
       } else if (event.type === "pickup.collected" && event.pickupKind === "heal") {
         this.addImpact(world.player.position, world.player.radius + 8, 0x4ade80);
-      } else if (event.type === "player.level_up") {
+      } else if (event.type === "player.level_up" || event.type === "extra.level_up") {
         this.addImpact(world.player.position, world.player.radius + 12, 0x22d3ee);
         this.addBurst(world.player.position, 0x22d3ee);
       } else if (event.type === "encounter.warning.started") {

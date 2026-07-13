@@ -82,9 +82,11 @@ export function createArenaRunExport(input: CreateArenaRunExportInput): ArenaRun
     lastAim: { ...world.state.lastAim },
     buildCompletedAt: world.progression.buildCompletedAt,
     extraLevel: world.progression.extraLevel,
+    extraCycle: world.progression.extraCycle,
     pendingUpgradeChoices: [...world.progression.pendingUpgradeChoices],
     upgradeRanks: { ...world.progression.upgradeRanks },
     extraUpgradeRanks: { ...world.progression.extraUpgradeRanks },
+    extraCycleRemaining: [...world.progression.extraCycleRemaining],
     runtime: { ...world.runtime },
     buildComposition: composeBuild(
       input.runConfig,

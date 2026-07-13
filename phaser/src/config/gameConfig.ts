@@ -13,6 +13,7 @@ const rawSimulationConfig = {
     encounterDeck: true,
     endlessContract: true,
     arenaCollapse: true,
+    enemyNavigation: true,
   },
   arena: {
     width: 960,
@@ -197,6 +198,10 @@ const rawSimulationConfig = {
   },
   upgrades: UPGRADE_DEFINITIONS,
   extraUpgrades: EXTRA_UPGRADE_DEFINITIONS,
+  navigation: {
+    cellSize: 24,
+    obstacleClearance: 2,
+  },
   threat: {
     pressureStartAt: 90,
     pressureStepSeconds: 60,

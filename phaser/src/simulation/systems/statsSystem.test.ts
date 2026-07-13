@@ -92,6 +92,44 @@ describe("updateRunStats comparison metrics", () => {
     });
   });
 
+  it("records EX cycle and automatic-selection metadata", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.state.elapsed = 360;
+
+    updateRunStats(world, [
+      {
+        type: "extra.upgrade.offered",
+        level: 29,
+        extraLevel: 4,
+        cycle: 1,
+        choices: ["limitCore"],
+      },
+      {
+        type: "extra.upgrade.selected",
+        level: 29,
+        extraLevel: 4,
+        cycle: 1,
+        automatic: true,
+        extraUpgradeId: "limitCore",
+        rank: 1,
+        effect: { type: "maxHp", amountPerRank: 8 },
+      },
+    ]);
+
+    expect(world.stats.progressionMetrics.extraOffers).toBe(1);
+    expect(world.stats.progressionMetrics.extraSelections).toEqual([
+      {
+        elapsed: 360,
+        level: 29,
+        extraLevel: 4,
+        cycle: 1,
+        automatic: true,
+        extraUpgradeId: "limitCore",
+        rank: 1,
+      },
+    ]);
+  });
+
   it("tracks capstone acquisition, ricochets, and unique follow-up hits", () => {
     const world = createWorld(SIMULATION_CONFIG);
     world.state.elapsed = 72;

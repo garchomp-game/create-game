@@ -55,7 +55,7 @@ export type UiText = {
   rankingIneligible: (reasons: string) => string;
   paused: string;
   upgradeHeading: (level: number) => string;
-  extraUpgradeHeading: (extraLevel: number) => string;
+  extraUpgradeHeading: (extraLevel: number, cycle: number) => string;
   rank: string;
   result: {
     title: string;
@@ -78,7 +78,7 @@ export type HudText = {
   hp: (current: number, max: number) => string;
   xp: (level: number, xp: number, next: number) => string;
   buildComplete: (level: number) => string;
-  extraXp: (extraLevel: number, xp: number, next: number) => string;
+  extraXp: (extraLevel: number, cycle: number, xp: number, next: number) => string;
   meta: (time: string, score: number) => string;
   danger: (
     threatTier: number,

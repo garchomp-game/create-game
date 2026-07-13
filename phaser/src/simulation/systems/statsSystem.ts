@@ -117,6 +117,8 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
         elapsed: world.state.elapsed,
         level: event.level,
         extraLevel: event.extraLevel,
+        cycle: event.cycle,
+        automatic: event.automatic,
         extraUpgradeId: event.extraUpgradeId,
         rank: event.rank,
       });

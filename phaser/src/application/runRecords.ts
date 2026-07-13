@@ -55,6 +55,7 @@ export function createRunRecord(input: CreateRunRecordInput): RunRecord {
     score: summary.score,
     level: summary.level,
     extraLevel: summary.extraLevel,
+    extraCycle: summary.extraCycle,
     threatTier: summary.threatTier,
     collapseStage: summary.collapseStage,
     kills: summary.enemiesKilled,

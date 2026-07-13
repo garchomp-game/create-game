@@ -20,6 +20,7 @@ export const RUN_SUMMARY_COLUMNS = [
   "score_per_minute",
   "level",
   "extra_level",
+  "extra_cycle",
   "threat_tier",
   "collapse_stage",
   "build_completed_seconds",
@@ -39,6 +40,7 @@ export const RUN_SUMMARY_COLUMNS = [
   "effective_heal_pickups",
   "upgrades_chosen",
   "extra_upgrades_chosen",
+  "extra_automatic_upgrades",
   "rapid_fire_rank",
   "swift_step_rank",
   "vital_core_rank",
@@ -57,6 +59,11 @@ export const RUN_SUMMARY_COLUMNS = [
   "ranged_surges",
   "swarm_rushes",
   "brute_sieges",
+  "navigation_direct_frames",
+  "navigation_path_frames",
+  "navigation_fallback_frames",
+  "navigation_field_builds",
+  "navigation_path_ratio",
   "last_damage_kind",
   "last_damage_enemy_type",
 ] as const;
@@ -85,7 +92,17 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
   const contract = recordAt(encounter, "contract");
   const stats = recordAt(value, "stats");
   const encounterMetrics = recordAt(stats, "encounterMetrics");
+  const progressionMetrics = recordAt(stats, "progressionMetrics");
+  const navigationMetrics = recordAt(stats, "navigationMetrics");
   const eventCounts = recordAt(encounterMetrics, "eventCounts");
+  const extraSelections = unknownArrayAt(progressionMetrics, "extraSelections");
+  const automaticExtraSelections = extraSelections.filter(
+    (selection) => isRecord(selection) && selection.automatic === true,
+  ).length;
+  const navigationDirect = numberAt(navigationMetrics, "directFrames") ?? 0;
+  const navigationPath = numberAt(navigationMetrics, "pathFrames") ?? 0;
+  const navigationFallback = numberAt(navigationMetrics, "fallbackFrames") ?? 0;
+  const navigationFrames = navigationDirect + navigationPath + navigationFallback;
   const projectilesFired = sumWeaponMetric(weaponMetrics, "projectilesFired");
   const projectileHits = sumWeaponMetric(weaponMetrics, "hits");
   const kills = numberAt(result, "enemiesKilled") ?? 0;
@@ -114,6 +131,7 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
     score_per_minute: elapsed > 0 ? round((score * 60) / elapsed, 3) : null,
     level: numberAt(result, "level"),
     extra_level: numberAt(result, "extraLevel") ?? numberAt(value, "extraLevel") ?? 0,
+    extra_cycle: numberAt(result, "extraCycle") ?? numberAt(value, "extraCycle") ?? 0,
     threat_tier: numberAt(result, "threatTier") ?? 0,
     collapse_stage: numberAt(result, "collapseStage") ?? 0,
     build_completed_seconds: nullableRoundedNumber(value, "buildCompletedAt"),
@@ -134,6 +152,7 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
     effective_heal_pickups: numberAt(result, "effectiveHealPickupsCollected"),
     upgrades_chosen: numberAt(result, "upgradesChosen"),
     extra_upgrades_chosen: numberAt(result, "extraUpgradesChosen") ?? 0,
+    extra_automatic_upgrades: automaticExtraSelections,
     rapid_fire_rank: numberAt(upgradeRanks, "rapidFire"),
     swift_step_rank: numberAt(upgradeRanks, "swiftStep"),
     vital_core_rank: numberAt(upgradeRanks, "vitalCore"),
@@ -152,6 +171,12 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
     ranged_surges: numberAt(eventCounts, "rangedSurge") ?? 0,
     swarm_rushes: numberAt(eventCounts, "swarmRush") ?? 0,
     brute_sieges: numberAt(eventCounts, "bruteSiege") ?? 0,
+    navigation_direct_frames: navigationDirect,
+    navigation_path_frames: navigationPath,
+    navigation_fallback_frames: navigationFallback,
+    navigation_field_builds: numberAt(navigationMetrics, "fieldBuilds") ?? 0,
+    navigation_path_ratio:
+      navigationFrames > 0 ? round(navigationPath / navigationFrames, 4) : null,
     last_damage_kind: stringAt(lastDamageSource, "kind") ?? "",
     last_damage_enemy_type: stringAt(lastDamageSource, "enemyType") ?? "",
   };
@@ -232,6 +257,11 @@ function booleanAt(record: Record<string, unknown>, key: string): boolean | null
 function stringArrayAt(record: Record<string, unknown>, key: string): string[] {
   const value = record[key];
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
+function unknownArrayAt(record: Record<string, unknown>, key: string): unknown[] {
+  const value = record[key];
+  return Array.isArray(value) ? value : [];
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

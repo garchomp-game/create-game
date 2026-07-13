@@ -34,8 +34,9 @@ export function selectExtraUpgradeChoices(
   config: SimulationConfig,
   random: RandomSource,
   ranks: Record<ExtraUpgradeId, number> = createEmptyExtraUpgradeRanks(),
+  remaining: readonly ExtraUpgradeId[] = getAvailableExtraUpgradeIds(config, ranks),
 ): ExtraUpgradeId[] {
-  const available = EXTRA_UPGRADE_IDS.filter((id) => canIncreaseExtraUpgrade(config, id, ranks[id]));
+  const available = remaining.filter((id) => canIncreaseExtraUpgrade(config, id, ranks[id]));
   const choices: ExtraUpgradeId[] = [];
   while (
     available.length > 0 &&
@@ -60,12 +61,18 @@ export function selectExtraUpgradeChoices(
   return choices;
 }
 
+export function getAvailableExtraUpgradeIds(
+  config: SimulationConfig,
+  ranks: Record<ExtraUpgradeId, number>,
+): ExtraUpgradeId[] {
+  return EXTRA_UPGRADE_IDS.filter((id) => canIncreaseExtraUpgrade(config, id, ranks[id]));
+}
+
 export function canIncreaseExtraUpgrade(
   config: SimulationConfig,
   id: ExtraUpgradeId,
   rank: number,
 ): boolean {
-  const effect = config.extraUpgrades[id].effect;
-  if (effect.type !== "fireRate" && effect.type !== "moveSpeed") return true;
-  return effect.amountPerRank * rank < effect.maximumBonus;
+  const maxRank = config.extraUpgrades[id].maxRank;
+  return maxRank === null || rank < maxRank;
 }

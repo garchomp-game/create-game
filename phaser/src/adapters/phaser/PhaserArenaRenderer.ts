@@ -191,11 +191,14 @@ export class PhaserArenaRenderer {
         .setFontSize(24)
         .setLineSpacing(10)
         .setWordWrapWidth(null)
-        .setPosition(arena.width / 2, arena.height / 2 - 138)
+        .setPosition(arena.width / 2, arena.height / 2 - 164)
         .setText(
           world.progression.buildCompletedAt === null
             ? TEXT.ui.upgradeHeading(world.progression.level)
-            : TEXT.ui.extraUpgradeHeading(world.progression.extraLevel),
+            : TEXT.ui.extraUpgradeHeading(
+                world.progression.extraLevel,
+                world.progression.extraCycle,
+              ),
         )
         .setVisible(true);
       this.detailText
@@ -207,7 +210,7 @@ export class PhaserArenaRenderer {
         .setText(
           world.progression.buildCompletedAt === null
             ? this.formatCapstoneProgress(world)
-            : "通常ビルド完成 / 脅威は上昇し続けます",
+            : `通常ビルド完成 / EXサイクル C${world.progression.extraCycle} / 未取得 ${world.progression.extraCycleRemaining.length}`,
         )
         .setVisible(
           world.progression.buildCompletedAt !== null || world.state.weaponType === "pulse",
@@ -307,7 +310,7 @@ export class PhaserArenaRenderer {
       TEXT.ui.result.scoreTime(summary.score, formatTime(summary.elapsed)),
       bestLine,
       TEXT.ui.result.levelKills(summary.level, summary.enemiesKilled),
-      `EX Lv ${summary.extraLevel}   脅威 ${summary.threatTier}   崩壊 ${summary.collapseStage}`,
+      `EX Lv ${summary.extraLevel} / C${summary.extraCycle}   脅威 ${summary.threatTier}   崩壊 ${summary.collapseStage}`,
       TEXT.ui.result.shotsRecovered(summary.shotsFired, summary.hpRecovered),
     ];
 
@@ -392,7 +395,7 @@ export class PhaserArenaRenderer {
     if (record.extraUpgradeSelections.length > 0) {
       const selections = record.extraUpgradeSelections.slice(-3).map((selection) => {
         const title = TEXT.upgrades.extraDefinitions[selection.extraUpgradeId].title;
-        return `${formatTime(selection.elapsed)} ${title}${selection.rank}`;
+        return `${formatTime(selection.elapsed)} C${selection.cycle} ${title}${selection.rank}${selection.automatic ? "(自動)" : ""}`;
       });
       return `直近の限界強化: ${selections.join(" > ")}`;
     }
@@ -498,7 +501,7 @@ export class PhaserArenaRenderer {
       uiState.records.slice(start, start + pageSize).forEach((record, index) => {
         const eligibility = record.rankEligibility.eligible ? "対象" : "対象外";
         lines.push(
-          `${start + index + 1}. ${formatRecordDate(record.capturedAt)}  ${record.score.toString().padStart(6)}点  ${formatTime(record.elapsed)}  Lv${record.level}/EX${record.extraLevel}  ${TEXT.hud.weaponNames[record.weaponId]}  ${eligibility}`,
+          `${start + index + 1}. ${formatRecordDate(record.capturedAt)}  ${record.score.toString().padStart(6)}点  ${formatTime(record.elapsed)}  Lv${record.level}/EX${record.extraLevel}/C${record.extraCycle}  ${TEXT.hud.weaponNames[record.weaponId]}  ${eligibility}`,
         );
       });
       const latest = uiState.records[0]!;
@@ -518,7 +521,7 @@ export class PhaserArenaRenderer {
     } else {
       uiState.ranking.slice(0, 10).forEach((record, index) => {
         lines.push(
-          `${String(index + 1).padStart(2)}. ${record.score.toString().padStart(6)}点  ${formatTime(record.elapsed)}  EX${record.extraLevel}  ${TEXT.hud.weaponNames[record.weaponId]}  ${formatRecordDate(record.capturedAt)}`,
+          `${String(index + 1).padStart(2)}. ${record.score.toString().padStart(6)}点  ${formatTime(record.elapsed)}  EX${record.extraLevel}/C${record.extraCycle}  ${TEXT.hud.weaponNames[record.weaponId]}  ${formatRecordDate(record.capturedAt)}`,
         );
       });
     }
@@ -922,10 +925,12 @@ export class PhaserArenaRenderer {
         const definition = this.simulationConfig.extraUpgrades[choiceId];
         const display = TEXT.upgrades.extraDefinitions[choiceId];
         const currentRank = world.progression.extraUpgradeRanks[choiceId];
+        const nextRank = currentRank + 1;
+        const rank = definition.maxRank === null ? `${nextRank}` : `${nextRank}/${definition.maxRank}`;
         this.drawButton(g, button.x, button.y, button.width, button.height);
         this.upgradeChoiceTexts[button.index]!
           .setText(
-            `${button.index + 1}. [${TEXT.upgrades.extraCategoryLabel}] ${display.title}  ${TEXT.ui.rank} ${currentRank + 1}\n${display.description}\n${this.formatExtraUpgradePreview(definition.effect, currentRank)}`,
+            `${button.index + 1}. [${TEXT.upgrades.extraCategoryLabel}] ${display.title}  ${TEXT.ui.rank} ${rank}\n${display.description}\n${this.formatExtraUpgradePreview(definition.effect, currentRank)}`,
           )
           .setPosition(button.x + button.width / 2, button.y + button.height / 2)
           .setVisible(true);

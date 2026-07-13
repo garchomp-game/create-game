@@ -10,6 +10,18 @@ import { clamp } from "../../math/geometry";
 import { normalize } from "../../math/vector";
 import { moveCircleWithObstacles } from "./movement";
 import { getThreatMultipliers } from "../threatDirector";
+import {
+  getEnemyApproachNavigation,
+  hasClearNavigationPath,
+  type EnemyNavigationMode,
+} from "../navigationField";
+
+type EnemyMovement = {
+  direction: Vec2;
+  navigationMode: EnemyNavigationMode;
+  fieldBuilt: boolean;
+  hasLineOfSight?: boolean;
+};
 
 export function updateEnemies(
   world: WorldState,
@@ -20,9 +32,19 @@ export function updateEnemies(
   for (const enemy of world.enemies) {
     const directionToPlayer = getDirectionToPlayer(world, enemy);
     const movement = getEnemyMovement(enemy, directionToPlayer, world, config);
-    moveCircleWithObstacles(world, enemy, movement.x * enemy.speed * dt, 0);
-    moveCircleWithObstacles(world, enemy, 0, movement.y * enemy.speed * dt);
-    updateRangedAttack(world, enemy, directionToPlayer, dt, config, events);
+    world.stats.navigationMetrics[`${movement.navigationMode}Frames`] += 1;
+    if (movement.fieldBuilt) world.stats.navigationMetrics.fieldBuilds += 1;
+    moveCircleWithObstacles(world, enemy, movement.direction.x * enemy.speed * dt, 0);
+    moveCircleWithObstacles(world, enemy, 0, movement.direction.y * enemy.speed * dt);
+    updateRangedAttack(
+      world,
+      enemy,
+      directionToPlayer,
+      movement.hasLineOfSight,
+      dt,
+      config,
+      events,
+    );
 
     if (
       enemy.position.x >= enemy.radius &&
@@ -52,27 +74,69 @@ function getEnemyMovement(
   directionToPlayer: Vec2,
   world: WorldState,
   config: SimulationConfig,
-): Vec2 {
-  if (enemy.behavior !== "ranged") return directionToPlayer;
+): EnemyMovement {
+  if (enemy.behavior !== "ranged") {
+    const navigation = getEnemyApproachNavigation(
+      world,
+      enemy,
+      config,
+    );
+    return {
+      direction: navigation.direction,
+      navigationMode: navigation.mode,
+      fieldBuilt: navigation.fieldBuilt,
+    };
+  }
 
   const ranged = config.enemies[enemy.typeId].ranged;
-  if (!ranged) return directionToPlayer;
+  if (!ranged) {
+    return { direction: directionToPlayer, navigationMode: "fallback", fieldBuilt: false };
+  }
 
   const distanceToPlayer = Math.hypot(
     world.player.position.x - enemy.position.x,
     world.player.position.y - enemy.position.y,
   );
-  if (distanceToPlayer > ranged.preferredRange) return directionToPlayer;
-  if (distanceToPlayer < ranged.preferredRange * 0.65) {
-    return { x: -directionToPlayer.x, y: -directionToPlayer.y };
+  const hasLineOfSight = hasClearNavigationPath(
+    enemy.position,
+    world.player.position,
+    ranged.projectileRadius,
+    world.obstacles,
+  );
+  if (distanceToPlayer > ranged.preferredRange || !hasLineOfSight) {
+    const navigation = getEnemyApproachNavigation(
+      world,
+      enemy,
+      config,
+    );
+    return {
+      direction: navigation.direction,
+      navigationMode: navigation.mode,
+      fieldBuilt: navigation.fieldBuilt,
+      hasLineOfSight,
+    };
   }
-  return { x: 0, y: 0 };
+  if (distanceToPlayer < ranged.preferredRange * 0.65) {
+    return {
+      direction: { x: -directionToPlayer.x, y: -directionToPlayer.y },
+      navigationMode: "direct",
+      fieldBuilt: false,
+      hasLineOfSight,
+    };
+  }
+  return {
+    direction: { x: 0, y: 0 },
+    navigationMode: "direct",
+    fieldBuilt: false,
+    hasLineOfSight,
+  };
 }
 
 function updateRangedAttack(
   world: WorldState,
   enemy: Enemy,
   directionToPlayer: Vec2,
+  hasLineOfSight: boolean | undefined,
   dt: number,
   config: SimulationConfig,
   events: GameEvent[],
@@ -88,7 +152,11 @@ function updateRangedAttack(
     world.player.position.y - enemy.position.y,
   );
   enemy.attackTimer -= dt;
-  if (enemy.attackTimer > 0 || distanceToPlayer > ranged.preferredRange * 1.2) return;
+  if (
+    enemy.attackTimer > 0 ||
+    distanceToPlayer > ranged.preferredRange * 1.2 ||
+    hasLineOfSight === false
+  ) return;
 
   enemy.attackTimer += ranged.attackInterval / threat.attackSpeed;
   const offset = enemy.radius + ranged.projectileRadius + 2;

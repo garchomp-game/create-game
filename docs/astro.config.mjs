@@ -32,7 +32,7 @@ export default defineConfig({
             { label: "エンドレス後半", slug: "design/endless-escalation" },
             { label: "モードと戦闘展開", slug: "design/encounters-and-modes" },
             { label: "UI/UXとフィードバック", slug: "design/ui-ux" },
-            { label: "障害物と弾", slug: "design/obstacles-and-projectiles" },
+            { label: "障害物・敵経路・弾", slug: "design/obstacles-and-projectiles" },
             { label: "回復ピックアップ", slug: "design/healing-pickups" },
             { label: "アイテム", slug: "design/item-system" },
             { label: "ステージと装備", slug: "design/stages-and-equipment" },

@@ -1,11 +1,7 @@
-import type {
-  ExtraUpgradeId,
-  GameEvent,
-  SimulationConfig,
-  WorldState,
-} from "../../domain/types";
+import type { GameEvent, SimulationConfig, WorldState } from "../../domain/types";
 import { composeBuild } from "../buildComposer";
 import { isExtraUpgradeId } from "../extraProgression";
+import { applyExtraUpgrade } from "./extraUpgradeSystem";
 import { completeBuild, getAvailableUpgradeIds, getRemainingUpgradeIds } from "./levelSystem";
 
 export function chooseUpgrade(
@@ -17,7 +13,7 @@ export function chooseUpgrade(
   const choiceId = world.progression.pendingUpgradeChoices[choiceIndex];
   if (!choiceId) return;
   if (isExtraUpgradeId(choiceId)) {
-    chooseExtraUpgrade(world, choiceId, config, events);
+    applyExtraUpgrade(world, choiceId, config, events);
     return;
   }
 
@@ -66,38 +62,4 @@ export function chooseUpgrade(
   ) {
     completeBuild(world, config, events);
   }
-}
-
-function chooseExtraUpgrade(
-  world: WorldState,
-  extraUpgradeId: ExtraUpgradeId,
-  config: SimulationConfig,
-  events: GameEvent[],
-): void {
-  if (world.progression.buildCompletedAt === null) return;
-  if (!world.progression.pendingUpgradeChoices.includes(extraUpgradeId)) return;
-
-  const nextRank = world.progression.extraUpgradeRanks[extraUpgradeId] + 1;
-  world.progression.extraUpgradeRanks[extraUpgradeId] = nextRank;
-  const maxHpBonusBefore = world.runtime.maxHpBonus;
-  const composition = composeBuild(
-    config,
-    world.state.weaponType,
-    world.progression.upgradeRanks,
-    [],
-    world.progression.extraUpgradeRanks,
-  );
-  Object.assign(world.runtime, composition.modifiers);
-  world.state.hp += Math.max(0, world.runtime.maxHpBonus - maxHpBonusBefore);
-  world.state.hp = Math.min(world.state.hp, config.player.maxHp + world.runtime.maxHpBonus);
-  world.progression.pendingUpgradeChoices = [];
-  world.state.status = "playing";
-  events.push({
-    type: "extra.upgrade.selected",
-    extraUpgradeId,
-    rank: nextRank,
-    level: world.progression.level,
-    extraLevel: world.progression.extraLevel,
-    effect: config.extraUpgrades[extraUpgradeId].effect,
-  });
 }

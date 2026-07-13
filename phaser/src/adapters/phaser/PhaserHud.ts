@@ -73,8 +73,9 @@ export class PhaserHud {
     this.hpText.setText(TEXT.hud.hp(Math.ceil(world.state.hp), maxHp));
     this.xpText.setText(
       buildComplete
-        ? TEXT.hud.extraXp(
+          ? TEXT.hud.extraXp(
             world.progression.extraLevel,
+            world.progression.extraCycle,
             world.progression.xp,
             world.progression.xpToNext,
           )

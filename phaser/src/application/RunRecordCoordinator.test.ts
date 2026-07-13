@@ -141,6 +141,7 @@ function makeFinalizeInput() {
       hp: 0,
       level: 2,
       extraLevel: 0,
+      extraCycle: 0,
       xp: 0,
       threatTier: 0,
       collapseStage: 0,

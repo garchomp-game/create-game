@@ -52,6 +52,7 @@ describe("run records", () => {
       schemaVersion: 2,
       id: "run-1",
       score: 4200,
+      extraCycle: 0,
       kills: 80,
       modifierIds: ["auto-fire:on"],
       rankEligibility: { eligible: true, reasons: [] },
@@ -111,13 +112,36 @@ describe("run records", () => {
     delete (legacy as Partial<RunRecord>).upgradeSelections;
     delete (legacy as Partial<RunRecord>).buildCompletedAt;
     delete (legacy as Partial<RunRecord>).capstoneMetrics;
+    delete (legacy as Partial<RunRecord>).extraCycle;
 
     expect(runRecordSchema.parse(legacy)).toMatchObject({
       schemaVersion: 2,
       upgradeRanks: { rapidFire: 2, pulseRicochet: 0 },
       upgradeSelections: [],
+      extraCycle: 0,
       buildCompletedAt: null,
       capstoneMetrics: { acquiredAt: null, activations: 0 },
+    });
+  });
+
+  it("defaults cycle metadata on earlier v2 extra selections", () => {
+    const record = makeRecord();
+    const legacySelection = {
+      elapsed: 320,
+      level: 27,
+      extraLevel: 1,
+      extraUpgradeId: "limitPower" as const,
+      rank: 1,
+    };
+    const legacy = {
+      ...record,
+      extraCycle: undefined,
+      extraUpgradeSelections: [legacySelection],
+    };
+
+    expect(runRecordSchema.parse(legacy)).toMatchObject({
+      extraCycle: 0,
+      extraUpgradeSelections: [{ cycle: 0, automatic: false }],
     });
   });
 });
@@ -145,6 +169,7 @@ function makeSummary(overrides: Partial<RunResultSummary> = {}): RunResultSummar
     hp: 0,
     level: 8,
     extraLevel: 0,
+    extraCycle: 0,
     xp: 4,
     threatTier: 0,
     collapseStage: 0,

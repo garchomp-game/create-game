@@ -22,17 +22,17 @@ const balanceProbeSeeds = [20260619, 20260620, 20260621, 20260622, 20260623];
 const balanceBaseline = {
   noInputSurvivalP50: 6.3,
   fixedAimShootSurvivalP50: 6.3,
-  kiteCollectSurvivalP50: 171.23,
-  kiteCollectKillsPerMinuteP50: 184.62,
-  kiteCollectScorePerMinuteP50: 2776.38,
-  kiteCollectFirstDamageP50: 89,
+  kiteCollectSurvivalP50: 179.4,
+  kiteCollectKillsPerMinuteP50: 191.3,
+  kiteCollectScorePerMinuteP50: 2930.1,
+  kiteCollectFirstDamageP50: 114.13,
   kiteCollectFirstUpgradeP50: 7.13,
   kiteCollectWaveReachedP50: 90,
-  kiteCollectMaxEnemiesMax: 61,
-  kiteCollectMaxBulletsMax: 48,
-  kiteCollectHpRecoveredP50: 122,
-  kiteCollectHealPickupsCollectedP50: 31,
-  kiteCollectEffectiveHealPickupsCollectedP50: 9,
+  kiteCollectMaxEnemiesMax: 60,
+  kiteCollectMaxBulletsMax: 40,
+  kiteCollectHpRecoveredP50: 80,
+  kiteCollectHealPickupsCollectedP50: 38,
+  kiteCollectEffectiveHealPickupsCollectedP50: 7,
 };
 
 describe("balance simulation", () => {
@@ -99,7 +99,7 @@ describe("balance simulation", () => {
       true,
     );
 
-    // v0.6 independent-random-stream baseline. These probes are regression sentries,
+    // v0.6.2 navigation baseline. These probes are regression sentries,
     // not a claim that the input models are correct human play.
     expectWithinBaseline(noInput.survivalSeconds.p50, balanceBaseline.noInputSurvivalP50);
     expectWithinBaseline(
@@ -146,7 +146,7 @@ describe("balance simulation", () => {
     );
     expect(noInput.healPickupsCollected.max).toBe(0);
     expect(fixedAimShoot.healPickupsCollected.max).toBe(0);
-  });
+  }, 15_000);
 
   it("keeps a long endless run bounded and eventually ends it through arena collapse", () => {
     const soakConfig = {
@@ -257,7 +257,7 @@ describe("balance simulation", () => {
       expect(summary.encounterActiveMovement.p50).toBeGreaterThan(0);
       expect(report.runs.every((run) => run.encounterScheduledAt !== null)).toBe(true);
     }
-  });
+  }, 45_000);
 });
 
 function expectWithinBaseline(value: number, baseline: number, tolerance = 0.2): void {

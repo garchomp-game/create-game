@@ -71,6 +71,7 @@ export type RunRecord = RunComparisonKey & {
   score: number;
   level: number;
   extraLevel: number;
+  extraCycle: number;
   threatTier: number;
   collapseStage: number;
   kills: number;
@@ -149,6 +150,8 @@ const extraUpgradeSelectionSchema = z.object({
   elapsed: z.number().nonnegative(),
   level: z.number().int().positive(),
   extraLevel: z.number().int().positive(),
+  cycle: z.number().int().nonnegative().default(0),
+  automatic: z.boolean().default(false),
   extraUpgradeId: z.enum(EXTRA_UPGRADE_IDS),
   rank: z.number().int().positive(),
 });
@@ -238,6 +241,7 @@ const runRecordV2Schema = z.object({
   score: z.number().int().nonnegative(),
   level: z.number().int().positive(),
   extraLevel: z.number().int().nonnegative().default(0),
+  extraCycle: z.number().int().nonnegative().default(0),
   threatTier: z.number().int().nonnegative().default(0),
   collapseStage: z.number().int().nonnegative().default(0),
   kills: z.number().int().nonnegative(),
@@ -280,6 +284,7 @@ export const runRecordSchema: z.ZodType<RunRecord> = z.union([
     extraUpgradeSelections: [],
     extraUpgradesChosen: 0,
     extraLevel: 0,
+    extraCycle: 0,
     threatTier: 0,
     collapseStage: 0,
     buildCompletedAt: null,

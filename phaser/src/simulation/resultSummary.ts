@@ -12,6 +12,7 @@ export function createRunResultSummary(
     hp: world.state.hp,
     level: world.progression.level,
     extraLevel: world.progression.extraLevel,
+    extraCycle: world.progression.extraCycle,
     xp: world.progression.xp,
     threatTier: getThreatTier(config, world.state.elapsed),
     collapseStage: world.encounter.collapse.stage,

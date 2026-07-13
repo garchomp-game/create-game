@@ -55,6 +55,12 @@ export type SimulationFeatures = {
   encounterDeck: boolean;
   endlessContract: boolean;
   arenaCollapse: boolean;
+  enemyNavigation: boolean;
+};
+
+export type NavigationSimulationConfig = {
+  cellSize: number;
+  obstacleClearance: number;
 };
 
 export const CONTRACT_CHOICE_IDS = ["standard", "overdrive"] as const;
@@ -232,6 +238,7 @@ export type ExtraUpgradeDefinition = {
   id: ExtraUpgradeId;
   title: string;
   description: string;
+  maxRank: number | null;
   weight: number;
   effect: ExtraUpgradeEffect;
 };
@@ -278,6 +285,7 @@ export type SimulationConfig = {
   leveling: LevelingSimulationConfig;
   upgrades: Record<UpgradeId, UpgradeDefinition>;
   extraUpgrades: Record<ExtraUpgradeId, ExtraUpgradeDefinition>;
+  navigation: NavigationSimulationConfig;
   threat: ThreatSimulationConfig;
   encounter: EncounterSimulationConfig;
   obstacles: Obstacle[];
@@ -395,12 +403,14 @@ export type GameState = {
 export type ProgressionState = {
   level: number;
   extraLevel: number;
+  extraCycle: number;
   xp: number;
   xpToNext: number;
   buildCompletedAt: number | null;
   pendingUpgradeChoices: ProgressionChoiceId[];
   upgradeRanks: Record<UpgradeId, number>;
   extraUpgradeRanks: Record<ExtraUpgradeId, number>;
+  extraCycleRemaining: ExtraUpgradeId[];
 };
 
 export type EncounterPhase = "pending" | "warning" | "active" | "recovery";
@@ -489,6 +499,8 @@ export type ExtraUpgradeSelectionRunStat = {
   elapsed: number;
   level: number;
   extraLevel: number;
+  cycle: number;
+  automatic: boolean;
   extraUpgradeId: ExtraUpgradeId;
   rank: number;
 };
@@ -571,11 +583,19 @@ export type RunStats = {
   upgradesChosen: number;
   extraUpgradesChosen: number;
   movementDistance: number;
+  navigationMetrics: EnemyNavigationRunStats;
   progressionMetrics: ProgressionRunStats;
   capstoneMetrics: CapstoneRunStats;
   encounterMetrics: EncounterRunStats;
   weaponMetrics: Record<WeaponTypeId, WeaponRunStats>;
   weaponComparisonMetrics: Record<WeaponTypeId, WeaponComparisonRunStats>;
+};
+
+export type EnemyNavigationRunStats = {
+  directFrames: number;
+  pathFrames: number;
+  fallbackFrames: number;
+  fieldBuilds: number;
 };
 
 export type ActiveVolleyAnalytics = {
@@ -593,6 +613,7 @@ export type RunResultSummary = Omit<
   | "damageTakenBySource"
   | "lastDamageSource"
   | "movementDistance"
+  | "navigationMetrics"
   | "progressionMetrics"
   | "encounterMetrics"
   | "weaponComparisonMetrics"
@@ -602,6 +623,7 @@ export type RunResultSummary = Omit<
   hp: number;
   level: number;
   extraLevel: number;
+  extraCycle: number;
   xp: number;
   threatTier: number;
   collapseStage: number;
@@ -735,11 +757,18 @@ export type GameEvent =
     }
   | { type: "upgrade.selected"; upgradeId: UpgradeId; rank: number; level: number; effect: UpgradeEffect }
   | { type: "build.completed"; level: number; elapsed: number }
-  | { type: "extra.level_up"; level: number; extraLevel: number; choices: ExtraUpgradeId[] }
+  | {
+      type: "extra.level_up";
+      level: number;
+      extraLevel: number;
+      cycle: number;
+      choices: ExtraUpgradeId[];
+    }
   | {
       type: "extra.upgrade.offered";
       level: number;
       extraLevel: number;
+      cycle: number;
       choices: ExtraUpgradeId[];
     }
   | {
@@ -748,8 +777,11 @@ export type GameEvent =
       rank: number;
       level: number;
       extraLevel: number;
+      cycle: number;
+      automatic: boolean;
       effect: ExtraUpgradeEffect;
     }
+  | { type: "extra.cycle.completed"; cycle: number; extraLevel: number }
   | { type: "encounter.scheduled"; encounterId: EncounterId; scheduledAt: number }
   | { type: "encounter.warning.started"; encounterId: EncounterId; elapsed: number }
   | { type: "encounter.started"; encounterId: EncounterId; elapsed: number }

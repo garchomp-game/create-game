@@ -82,6 +82,7 @@ function makeRecord(id: string, profileId: string, score: number): RunRecord {
     score,
     level: 1,
     extraLevel: 0,
+    extraCycle: 0,
     threatTier: 0,
     collapseStage: 0,
     kills: 0,

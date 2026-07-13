@@ -73,8 +73,8 @@ describe("build composition", () => {
     const world = createWorld(SIMULATION_CONFIG);
     Object.assign(world.progression.extraUpgradeRanks, {
       limitPower: 2,
-      limitCycle: 30,
-      limitDrive: 30,
+      limitCycle: 5,
+      limitDrive: 5,
       limitCore: 3,
     });
 

@@ -21,7 +21,8 @@ export const uiText: UiText = {
   rankingIneligible: (reasons) => `ランキング対象外: ${reasons}`,
   paused: "一時停止",
   upgradeHeading: (level) => `レベル ${level}\n強化を選択`,
-  extraUpgradeHeading: (extraLevel) => `EXTRA LEVEL ${extraLevel}\n限界強化を選択`,
+  extraUpgradeHeading: (extraLevel, cycle) =>
+    `EXTRA LEVEL ${extraLevel} / CYCLE ${cycle}\n限界強化を選択`,
   rank: "ランク",
   result: {
     title: "ラン終了",

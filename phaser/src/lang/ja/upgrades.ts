@@ -38,11 +38,11 @@ export const upgradeText: UpgradeText = {
     },
     limitCycle: {
       title: "過給サイクル",
-      description: "上限付きで連射速度を上昇",
+      description: "基礎連射速度を10%加算（最大5段階）",
     },
     limitDrive: {
       title: "超過駆動",
-      description: "上限付きで移動速度を上昇",
+      description: "基礎移動速度を6%加算（最大5段階）",
     },
     limitCore: {
       title: "増設コア",

@@ -10,7 +10,13 @@ import {
   isUpgradeRelevant,
   meetsUpgradeRequirements,
 } from "../buildComposer";
-import { getExtraXpToNextLevel, selectExtraUpgradeChoices } from "../extraProgression";
+import {
+  canIncreaseExtraUpgrade,
+  getAvailableExtraUpgradeIds,
+  getExtraXpToNextLevel,
+  selectExtraUpgradeChoices,
+} from "../extraProgression";
+import { applyExtraUpgrade } from "./extraUpgradeSystem";
 
 export function updateLevelProgression(
   world: WorldState,
@@ -197,23 +203,40 @@ function updateExtraLevelProgression(
   world.progression.level += 1;
   world.progression.extraLevel += 1;
   world.progression.xpToNext = getExtraXpToNextLevel(world.progression.extraLevel, config);
+  world.progression.extraCycleRemaining = world.progression.extraCycleRemaining.filter((id) =>
+    canIncreaseExtraUpgrade(config, id, world.progression.extraUpgradeRanks[id]),
+  );
+  if (world.progression.extraCycleRemaining.length === 0) {
+    world.progression.extraCycle += 1;
+    world.progression.extraCycleRemaining = getAvailableExtraUpgradeIds(
+      config,
+      world.progression.extraUpgradeRanks,
+    );
+  }
   const choices = selectExtraUpgradeChoices(
     config,
     random,
     world.progression.extraUpgradeRanks,
+    world.progression.extraCycleRemaining,
   );
   world.progression.pendingUpgradeChoices = choices;
-  world.state.status = "upgradeSelect";
   events.push({
     type: "extra.level_up",
     level: world.progression.level,
     extraLevel: world.progression.extraLevel,
+    cycle: world.progression.extraCycle,
     choices: [...choices],
   });
   events.push({
     type: "extra.upgrade.offered",
     level: world.progression.level,
     extraLevel: world.progression.extraLevel,
+    cycle: world.progression.extraCycle,
     choices: [...choices],
   });
+  if (choices.length === 1) {
+    applyExtraUpgrade(world, choices[0]!, config, events, true);
+    return;
+  }
+  world.state.status = choices.length > 0 ? "upgradeSelect" : "playing";
 }

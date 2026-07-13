@@ -18,10 +18,12 @@ const EVENT_CUES: Partial<Record<GameEvent["type"], AudioCueId>> = {
   "enemy.killed": "kill",
   "pickup.collected": "pickup",
   "player.level_up": "levelUp",
+  "extra.level_up": "levelUp",
   "encounter.warning.started": "levelUp",
   "encounter.started": "damage",
   "contract.offered": "upgrade",
   "upgrade.selected": "upgrade",
+  "extra.upgrade.selected": "upgrade",
   "player.damaged": "damage",
   "game.over": "gameOver",
 };

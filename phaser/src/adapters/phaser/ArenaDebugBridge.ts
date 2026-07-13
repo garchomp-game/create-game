@@ -64,12 +64,14 @@ export type ArenaDebugSnapshot = {
   weaponType: WeaponTypeId;
   level: number;
   extraLevel: number;
+  extraCycle: number;
   xp: number;
   xpToNext: number;
   buildCompletedAt: number | null;
   pendingUpgradeChoices: ProgressionChoiceId[];
   upgradeRanks: Record<UpgradeId, number>;
   extraUpgradeRanks: Record<ExtraUpgradeId, number>;
+  extraCycleRemaining: ExtraUpgradeId[];
   runtime: RuntimeModifiers;
   buildComposition: BuildComposition;
   encounter: EncounterState;
@@ -124,9 +126,11 @@ export type ArenaRunExport = {
   lastAim: Vec2;
   buildCompletedAt: number | null;
   extraLevel: number;
+  extraCycle: number;
   pendingUpgradeChoices: ProgressionChoiceId[];
   upgradeRanks: Record<UpgradeId, number>;
   extraUpgradeRanks: Record<ExtraUpgradeId, number>;
+  extraCycleRemaining: ExtraUpgradeId[];
   runtime: RuntimeModifiers;
   buildComposition: BuildComposition;
   encounter: EncounterState;

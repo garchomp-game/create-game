@@ -4,7 +4,8 @@ export const hudText: HudText = {
   hp: (current, max) => `HP ${current}/${max}`,
   xp: (level, xp, next) => `Lv ${level}  経験値 ${xp}/${next}`,
   buildComplete: (level) => `Lv ${level}  ビルド完成`,
-  extraXp: (extraLevel, xp, next) => `EX Lv ${extraLevel}  経験値 ${xp}/${next}`,
+  extraXp: (extraLevel, cycle, xp, next) =>
+    `EX Lv ${extraLevel} / C${cycle}  経験値 ${xp}/${next}`,
   meta: (time, score) => `${time}  ${score}点`,
   danger: (threatTier, enemies, maxEnemies, weaponName) =>
     `脅威 ${threatTier}  敵 ${enemies}/${maxEnemies}  ${weaponName}`,

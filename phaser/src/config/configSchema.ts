@@ -190,6 +190,7 @@ const extraUpgradeDefinitionSchema = z
     id: z.enum(EXTRA_UPGRADE_IDS),
     title: z.string().min(1),
     description: z.string().min(1),
+    maxRank: z.number().int().positive().nullable(),
     weight: positiveNumber,
     effect: extraUpgradeEffectSchema,
   })
@@ -306,6 +307,7 @@ export const simulationConfigSchema: z.ZodType<SimulationConfig> = z
         encounterDeck: z.boolean(),
         endlessContract: z.boolean(),
         arenaCollapse: z.boolean(),
+        enemyNavigation: z.boolean(),
       })
       .strict(),
     arena: arenaSimulationSchema,
@@ -331,6 +333,12 @@ export const simulationConfigSchema: z.ZodType<SimulationConfig> = z
     leveling: levelingSimulationSchema,
     upgrades: upgradeDefinitionsSchema,
     extraUpgrades: extraUpgradeDefinitionsSchema,
+    navigation: z
+      .object({
+        cellSize: positiveNumber,
+        obstacleClearance: nonNegativeNumber,
+      })
+      .strict(),
     threat: z
       .object({
         pressureStartAt: nonNegativeNumber,

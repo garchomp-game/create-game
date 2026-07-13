@@ -203,6 +203,7 @@ function makeRecord(id: string, score: number, capturedAt = "2026-07-10T10:00:00
       hp: 0,
       level: 3,
       extraLevel: 0,
+      extraCycle: 0,
       xp: 0,
       threatTier: 0,
       collapseStage: 0,

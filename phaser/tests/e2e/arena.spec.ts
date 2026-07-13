@@ -398,9 +398,9 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   const runExport = await page.evaluate(() => window.__ARENA_DEBUG__?.getRunExport());
   expect(runExport).toBeTruthy();
   expect(runExport?.game).toBe("arena-core-phaser");
-  expect(runExport?.appVersion).toBe("0.6.1");
-  expect(runExport?.rulesetVersion).toBe("phaser-v0.6.1-endless-escalation");
-  expect(runExport?.configVersion).toBe("phaser-v0.6.1-endless-escalation");
+  expect(runExport?.appVersion).toBe("0.6.2");
+  expect(runExport?.rulesetVersion).toBe("phaser-v0.6.2-navigation-extra-cycle");
+  expect(runExport?.configVersion).toBe("phaser-v0.6.2-navigation-extra-cycle");
   expect(runExport?.buildCommit).toMatch(/^[0-9a-f]{12}$/);
   expect(runExport?.runOrigin).toBe("test");
   expect(runExport?.rankEligibility).toEqual({
@@ -414,6 +414,12 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   expect(runExport?.stats.healPickupsCollected).toBe(0);
   expect(runExport?.stats.progressionMetrics.offers).toHaveLength(1);
   expect(runExport?.stats.progressionMetrics.selections).toHaveLength(1);
+  expect(runExport?.stats.navigationMetrics).toEqual({
+    directFrames: 0,
+    pathFrames: 0,
+    fallbackFrames: 0,
+    fieldBuilds: 0,
+  });
   expect(runExport?.resultSummary.level).toBeGreaterThanOrEqual(2);
   expect(runExport?.wave.start).toBe(60);
   expect(runExport?.counts.enemyTypes).toEqual({ chaser: 0, brute: 0, fast: 0, ranged: 0 });
@@ -1010,6 +1016,13 @@ test("offers and applies an extra upgrade after the normal build is complete", a
   const offered = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
   expect(offered?.status).toBe("upgradeSelect");
   expect(offered?.extraLevel).toBe(1);
+  expect(offered?.extraCycle).toBe(1);
+  expect(offered?.extraCycleRemaining).toEqual([
+    "limitPower",
+    "limitCycle",
+    "limitDrive",
+    "limitCore",
+  ]);
   expect(offered?.pendingUpgradeChoices).toContain("limitPower");
 
   const choiceIndex = offered!.pendingUpgradeChoices.indexOf("limitPower");
@@ -1020,6 +1033,7 @@ test("offers and applies an extra upgrade after the normal build is complete", a
   const selected = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
   expect(selected?.status).toBe("playing");
   expect(selected?.extraUpgradeRanks.limitPower).toBe(1);
+  expect(selected?.extraCycleRemaining).not.toContain("limitPower");
   expect(selected?.runtime.projectileDamageMultiplier).toBeCloseTo(1.08);
 });
 
