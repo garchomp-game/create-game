@@ -90,7 +90,7 @@ test("renders canvas and accepts movement and shooting input", async ({ page }) 
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "weaponSelect",
   );
-  await clickCanvasAt(page, 480, 325);
+  await page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']").click();
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "playing",
   );
@@ -143,10 +143,13 @@ test("uses native cursor affordances outside active play", async ({ page }) => {
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "weaponSelect",
   );
-  await expect.poll(() => getCanvasCursor(page)).toBe("pointer");
-  await moveMouseToCanvasAt(page, 480, 325);
-  await expect.poll(() => getCanvasCursor(page)).toBe("pointer");
-  await clickCanvasAt(page, 480, 325);
+  const pulseChoice = page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']");
+  await expect(pulseChoice).toBeVisible();
+  await pulseChoice.hover();
+  await expect.poll(() => pulseChoice.evaluate((node) => getComputedStyle(node).cursor)).toBe(
+    "pointer",
+  );
+  await pulseChoice.click();
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "playing",
   );
@@ -182,11 +185,21 @@ test("uses native cursor affordances outside active play", async ({ page }) => {
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "upgradeSelect",
   );
-  await moveMouseToCanvasAt(page, 480, 234);
-  await expect.poll(() => getCanvasCursor(page)).toBe("pointer");
+  const upgradeChoice = page.locator("[data-choice-kind='upgrade']").first();
+  await upgradeChoice.hover();
+  await expect.poll(() => upgradeChoice.evaluate((node) => getComputedStyle(node).cursor)).toBe(
+    "pointer",
+  );
 
   await moveMouseToCanvasAt(page, 24, 24);
-  await expect.poll(() => getCanvasCursor(page)).toBe("default");
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const node = document.elementFromPoint(24, 24);
+        return node ? getComputedStyle(node).cursor : "";
+      }),
+    )
+    .toBe("default");
 });
 
 test("auto-fires after mouse aim is established during play", async ({ page }) => {
@@ -398,9 +411,9 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   const runExport = await page.evaluate(() => window.__ARENA_DEBUG__?.getRunExport());
   expect(runExport).toBeTruthy();
   expect(runExport?.game).toBe("arena-core-phaser");
-  expect(runExport?.appVersion).toBe("0.6.2");
-  expect(runExport?.rulesetVersion).toBe("phaser-v0.6.2-navigation-extra-cycle");
-  expect(runExport?.configVersion).toBe("phaser-v0.6.2-navigation-extra-cycle");
+  expect(runExport?.appVersion).toBe("0.6.3");
+  expect(runExport?.rulesetVersion).toBe("phaser-v0.6.3-weapon-identities");
+  expect(runExport?.configVersion).toBe("phaser-v0.6.3-weapon-identities");
   expect(runExport?.buildCommit).toMatch(/^[0-9a-f]{12}$/);
   expect(runExport?.runOrigin).toBe("test");
   expect(runExport?.rankEligibility).toEqual({
@@ -525,6 +538,25 @@ test("debug heal fixture separates full-HP collection from effective recovery", 
   expect(snapshot?.stats.effectiveHealPickupsCollected).toBe(0);
 });
 
+test("soak protection does not pollute healing metrics", async ({ page }) => {
+  await gotoArena(page);
+
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
+    debug?.restart();
+    debug?.restoreHealthForSoak();
+    debug?.setPaused(true);
+    debug?.setHealPickupFixture("full");
+    debug?.step({}, 1 / 60);
+  });
+
+  const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+  expect(snapshot?.status).toBe("playing");
+  expect(snapshot?.hp).toBe(100);
+  expect(snapshot?.stats.hpRecovered).toBe(0);
+  expect(snapshot?.stats.damageTaken).toBe(0);
+});
+
 test("debug fatal heal fixture cannot revive on the damage frame", async ({ page }) => {
   await gotoArena(page);
   const canvas = page.locator("canvas");
@@ -586,7 +618,7 @@ test("can enter upgrade selection and choose an upgrade", async ({ page }) => {
   const before = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
   expect(before?.pendingUpgradeChoices).toHaveLength(3);
 
-  await clickCanvasAt(page, 480, 234);
+  await page.locator("[data-choice-kind='upgrade']").first().click();
 
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "playing",
@@ -885,7 +917,7 @@ test("loads local audio assets without page errors", async ({ page }) => {
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "weaponSelect",
   );
-  await clickCanvasAt(page, 480, 325);
+  await page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']").click();
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "playing",
   );
@@ -934,7 +966,7 @@ test("selects spread as the run weapon and preserves it on restart", async ({ pa
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "weaponSelect",
   );
-  await clickCanvasAt(page, 480, 377);
+  await page.locator("[data-choice-kind='weapon'][data-choice-id='spread']").click();
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "playing",
   );
@@ -987,7 +1019,7 @@ test("replays the encounter deck timeline and excludes overdrive contracts from 
     "contractSelect",
   );
 
-  await clickCanvasAt(page, 480, 395);
+  await page.locator("[data-choice-kind='contract'][data-choice-id='overdrive']").click();
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "playing",
   );

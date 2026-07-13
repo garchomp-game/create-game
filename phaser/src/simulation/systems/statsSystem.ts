@@ -6,10 +6,12 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
       world.stats.shotsFired += 1;
       world.stats.weaponMetrics[event.weaponType].shotsFired += 1;
       world.stats.weaponMetrics[event.weaponType].projectilesFired += event.projectileCount;
-      world.analytics.activeVolleys[event.volleyId] = {
+      world.analytics.activeVolleys[event.volleyId] ??= {
         weaponType: event.weaponType,
         enemyIds: [],
         postRicochetEnemyIds: [],
+        spreadSweepEnemyIds: [],
+        spreadSweepTriggered: false,
       };
     } else if (event.type === "enemy.hit") {
       const weaponStats = world.stats.weaponMetrics[event.weaponType];
@@ -20,6 +22,8 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
         weaponType: event.weaponType,
         enemyIds: [],
         postRicochetEnemyIds: [],
+        spreadSweepEnemyIds: [],
+        spreadSweepTriggered: false,
       });
       if (!volley.enemyIds.includes(event.enemyId)) {
         if (volley.enemyIds.length === 0) comparisonStats.hitVolleys += 1;
@@ -43,6 +47,23 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
       }
     } else if (event.type === "bullet.ricocheted") {
       world.stats.capstoneMetrics.activations += 1;
+    } else if (event.type === "pulse.focus.hit") {
+      const metrics = world.stats.weaponIdentityMetrics.pulseFocus;
+      if (event.bonusDamage > 0) metrics.enhancedHits += 1;
+      metrics.bonusDamage += event.bonusDamage;
+      metrics.maxStacks = Math.max(metrics.maxStacks, event.stackAfter);
+      if (event.killed && event.stackBefore > 0) {
+        metrics.killsByEnemyType[event.enemyType] += 1;
+      }
+    } else if (event.type === "spread.sweep.triggered") {
+      world.stats.capstoneMetrics.activations += 1;
+      world.stats.capstoneMetrics.spreadSweepTriggers += 1;
+      const metrics = world.stats.weaponIdentityMetrics.spreadSweep;
+      metrics.triggers += 1;
+      metrics.maxDistinctTargets = Math.max(metrics.maxDistinctTargets, event.distinctTargets);
+    } else if (event.type === "spread.sweep.consumed") {
+      world.stats.capstoneMetrics.spreadSweepConsumes += 1;
+      world.stats.weaponIdentityMetrics.spreadSweep.consumes += 1;
     } else if (event.type === "enemy.killed") {
       world.stats.enemiesKilled += 1;
       const weaponStats = world.stats.weaponMetrics[event.weaponType];
@@ -105,7 +126,8 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
         upgradeId: event.upgradeId,
         rank: event.rank,
       });
-      if (event.upgradeId === "pulseRicochet") {
+      if (event.upgradeId === "pulseRicochet" || event.upgradeId === "spreadSweep") {
+        world.stats.capstoneMetrics.upgradeId = event.upgradeId;
         world.stats.capstoneMetrics.acquiredAt = world.state.elapsed;
       }
     } else if (event.type === "extra.upgrade.offered") {

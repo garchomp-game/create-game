@@ -14,6 +14,18 @@ export function updateShooting(
   const hitCapacity = weapon.hitCapacity + world.runtime.hitCapacityBonus;
   const directions = getProjectileDirections(aim, projectileCount, weapon.spreadAngle);
   const volleyId = world.nextVolleyId++;
+  const consumesSpreadSweep =
+    world.state.weaponType === "spread" &&
+    world.runtime.spreadSweepDistinctTargets > 0 &&
+    world.weaponIdentity.spreadSweepCharge;
+  if (consumesSpreadSweep) world.weaponIdentity.spreadSweepCharge = false;
+  world.analytics.activeVolleys[volleyId] = {
+    weaponType: world.state.weaponType,
+    enemyIds: [],
+    postRicochetEnemyIds: [],
+    spreadSweepEnemyIds: [],
+    spreadSweepTriggered: false,
+  };
   const bulletIds: string[] = [];
   for (const direction of directions) {
     const offset = config.player.radius + weapon.radius + 2;
@@ -40,7 +52,10 @@ export function updateShooting(
     world.bullets.push(bullet);
     bulletIds.push(bullet.id);
   }
-  world.state.shotTimer = Math.max(0.04, weapon.interval * world.runtime.fireIntervalMultiplier);
+  world.state.shotTimer = Math.max(
+    0.04,
+    weapon.interval * world.runtime.fireIntervalMultiplier,
+  );
   events.push({
     type: "shot.fired",
     volleyId,
@@ -50,6 +65,9 @@ export function updateShooting(
     direction: { ...aim },
     projectileCount: bulletIds.length,
   });
+  if (consumesSpreadSweep) {
+    events.push({ type: "spread.sweep.consumed", volleyId });
+  }
 }
 
 export function getProjectileDirections(

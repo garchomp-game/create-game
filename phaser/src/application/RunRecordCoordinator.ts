@@ -129,6 +129,7 @@ function cloneRecord(record: RunRecord): RunRecord {
     extraUpgradeRanks: { ...record.extraUpgradeRanks },
     extraUpgradeSelections: record.extraUpgradeSelections.map((selection) => ({ ...selection })),
     capstoneMetrics: { ...record.capstoneMetrics },
+    weaponIdentityMetrics: structuredClone(record.weaponIdentityMetrics),
     encounterMetrics: structuredClone(record.encounterMetrics),
   };
 }

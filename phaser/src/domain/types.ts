@@ -27,8 +27,10 @@ export const UPGRADE_IDS = [
   "vitalCore",
   "overdriveRounds",
   "splitShot",
+  "pulseFocus",
   "piercingRounds",
   "pulseRicochet",
+  "spreadSweep",
 ] as const;
 export type UpgradeId = (typeof UPGRADE_IDS)[number];
 
@@ -52,6 +54,9 @@ export type UpgradeCategory = (typeof UPGRADE_CATEGORIES)[number];
 
 export type SimulationFeatures = {
   pulseRicochet: boolean;
+  pulseFocus: boolean;
+  spreadSweep: boolean;
+  roleBasedEnemyHp: boolean;
   encounterDeck: boolean;
   endlessContract: boolean;
   arenaCollapse: boolean;
@@ -124,6 +129,7 @@ export type ThreatSimulationConfig = {
   statStartAt: number;
   statStepSeconds: number;
   enemyHpGrowth: number;
+  enemyHpGrowthByType: Record<EnemyTypeId, number>;
   enemyDamageGrowth: number;
   enemyScoreGrowth: number;
   rangedProjectileSpeedGrowth: number;
@@ -209,7 +215,18 @@ export type UpgradeEffect =
   | { type: "maxHp"; amount: number }
   | { type: "projectileCount"; amount: number }
   | { type: "hitCapacity"; amount: number }
-  | { type: "ricochet"; amount: number };
+  | { type: "ricochet"; amount: number }
+  | {
+      type: "pulseFocus";
+      bonusPerStack: number;
+      stacksPerRank: number;
+      duration: number;
+    }
+  | {
+      type: "spreadSweep";
+      distinctTargets: number;
+      nextIntervalMultiplier: number;
+    };
 
 export type UpgradeRequirements = {
   weaponIds?: WeaponTypeId[];
@@ -371,6 +388,8 @@ export type Enemy = CircleBody & {
   behavior: EnemyBehavior;
   attackTimer: number;
   enteredArena: boolean;
+  pulseFocusStacks?: number;
+  pulseFocusExpiresAt?: number;
 };
 
 export type EnemyProjectile = CircleBody & {
@@ -460,6 +479,11 @@ export type RuntimeModifiers = {
   projectileCountBonus: number;
   hitCapacityBonus: number;
   ricochetBonus: number;
+  pulseFocusBonusPerStack: number;
+  pulseFocusMaxStacks: number;
+  pulseFocusDuration: number;
+  spreadSweepDistinctTargets: number;
+  spreadSweepNextIntervalMultiplier: number;
   healDropMissCount: number;
   healDropRollIndex: number;
 };
@@ -519,12 +543,28 @@ export type ProgressionRunStats = {
 };
 
 export type CapstoneRunStats = {
-  upgradeId: "pulseRicochet";
+  upgradeId: "pulseRicochet" | "spreadSweep" | null;
   acquiredAt: number | null;
   activations: number;
   followUpHits: number;
   followUpUniqueEnemiesHit: number;
   maxFollowUpUniqueEnemiesPerVolley: number;
+  spreadSweepTriggers: number;
+  spreadSweepConsumes: number;
+};
+
+export type WeaponIdentityRunStats = {
+  pulseFocus: {
+    enhancedHits: number;
+    bonusDamage: number;
+    maxStacks: number;
+    killsByEnemyType: Record<EnemyTypeId, number>;
+  };
+  spreadSweep: {
+    triggers: number;
+    consumes: number;
+    maxDistinctTargets: number;
+  };
 };
 
 export type EncounterMovementWindow = {
@@ -586,6 +626,7 @@ export type RunStats = {
   navigationMetrics: EnemyNavigationRunStats;
   progressionMetrics: ProgressionRunStats;
   capstoneMetrics: CapstoneRunStats;
+  weaponIdentityMetrics: WeaponIdentityRunStats;
   encounterMetrics: EncounterRunStats;
   weaponMetrics: Record<WeaponTypeId, WeaponRunStats>;
   weaponComparisonMetrics: Record<WeaponTypeId, WeaponComparisonRunStats>;
@@ -602,10 +643,16 @@ export type ActiveVolleyAnalytics = {
   weaponType: WeaponTypeId;
   enemyIds: string[];
   postRicochetEnemyIds: string[];
+  spreadSweepEnemyIds: string[];
+  spreadSweepTriggered: boolean;
 };
 
 export type RunAnalyticsState = {
   activeVolleys: Record<string, ActiveVolleyAnalytics>;
+};
+
+export type WeaponIdentityState = {
+  spreadSweepCharge: boolean;
 };
 
 export type RunResultSummary = Omit<
@@ -637,6 +684,7 @@ export type WorldState = {
   runtime: RuntimeModifiers;
   stats: RunStats;
   analytics: RunAnalyticsState;
+  weaponIdentity: WeaponIdentityState;
   encounter: EncounterState;
   player: Player;
   bullets: Bullet[];
@@ -699,6 +747,21 @@ export type GameEvent =
       ricochetsUsed: number;
       ricochetsRemaining: number;
     }
+  | {
+      type: "pulse.focus.hit";
+      enemyId: string;
+      enemyType: EnemyTypeId;
+      stackBefore: number;
+      stackAfter: number;
+      bonusDamage: number;
+      killed: boolean;
+    }
+  | {
+      type: "spread.sweep.triggered";
+      volleyId: number;
+      distinctTargets: number;
+    }
+  | { type: "spread.sweep.consumed"; volleyId: number }
   | { type: "enemy.spawned"; enemyId: string; enemyType: EnemyTypeId; position: Vec2 }
   | {
       type: "enemy.killed";

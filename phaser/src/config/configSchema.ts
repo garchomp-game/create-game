@@ -114,6 +114,21 @@ const upgradeEffectSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("projectileCount"), amount: z.number().int().positive() }).strict(),
   z.object({ type: z.literal("hitCapacity"), amount: z.number().int().positive() }).strict(),
   z.object({ type: z.literal("ricochet"), amount: z.number().int().positive() }).strict(),
+  z
+    .object({
+      type: z.literal("pulseFocus"),
+      bonusPerStack: positiveNumber,
+      stacksPerRank: z.number().int().positive(),
+      duration: positiveNumber,
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal("spreadSweep"),
+      distinctTargets: z.number().int().min(2),
+      nextIntervalMultiplier: positiveNumber.max(1),
+    })
+    .strict(),
 ]);
 
 const categoryRankRequirementsSchema = z
@@ -130,7 +145,7 @@ const upgradeRequirementsSchema = z
   .object({
     weaponIds: z.array(z.enum(WEAPON_TYPE_IDS)).min(1).optional(),
     minimumCategoryRanks: categoryRankRequirementsSchema.optional(),
-    featureFlag: z.literal("pulseRicochet").optional(),
+    featureFlag: z.enum(["pulseRicochet", "pulseFocus", "spreadSweep"]).optional(),
   })
   .strict();
 
@@ -304,6 +319,9 @@ export const simulationConfigSchema: z.ZodType<SimulationConfig> = z
     features: z
       .object({
         pulseRicochet: z.boolean(),
+        pulseFocus: z.boolean(),
+        spreadSweep: z.boolean(),
+        roleBasedEnemyHp: z.boolean(),
         encounterDeck: z.boolean(),
         endlessContract: z.boolean(),
         arenaCollapse: z.boolean(),
@@ -354,6 +372,14 @@ export const simulationConfigSchema: z.ZodType<SimulationConfig> = z
         statStartAt: nonNegativeNumber,
         statStepSeconds: positiveNumber,
         enemyHpGrowth: z.number().min(1),
+        enemyHpGrowthByType: z
+          .object({
+            chaser: z.number().min(1),
+            brute: z.number().min(1),
+            fast: z.number().min(1),
+            ranged: z.number().min(1),
+          })
+          .strict(),
         enemyDamageGrowth: z.number().min(1),
         enemyScoreGrowth: z.number().min(1),
         rangedProjectileSpeedGrowth: z.number().min(1),

@@ -67,4 +67,26 @@ describe("PhaserAudioEventRouter", () => {
     router.handleEvents([shot]);
     expect(played.at(-1)).toEqual({ key: "shot", detune: 0 });
   });
+
+  it("gives Spread sweep a distinct cue without adding another audio asset", () => {
+    const played: Array<{ key: string; volume: number; detune?: number }> = [];
+    const scene = {
+      time: { now: 100 },
+      cache: { audio: { exists: () => true } },
+      sound: {
+        play: (key: string, options: { volume: number; detune?: number }) => {
+          played.push({ key, volume: options.volume, detune: options.detune });
+        },
+      },
+    } as unknown as Phaser.Scene;
+    const router = new PhaserAudioEventRouter(scene);
+
+    router.configure({ sfxVolume: 1, sfxMuted: false });
+    router.handleEvents([
+      { type: "spread.sweep.triggered", volleyId: 7, distinctTargets: 3 },
+    ]);
+
+    expect(played).toEqual([{ key: "upgrade", volume: 0.26, detune: 120 }]);
+    expect(router.getLastCues()).toEqual(["sweep"]);
+  });
 });

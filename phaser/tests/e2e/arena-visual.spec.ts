@@ -96,7 +96,7 @@ test("matches the fixed title frame", async ({ page }) => {
 
 test("matches the starting weapon selection frame", async ({ page }) => {
   await gotoArena(page);
-  const canvas = page.locator("canvas");
+  const game = page.locator("#game");
 
   await moveMouseToCanvasLogical(page, 480, 307);
   await page.mouse.down();
@@ -105,7 +105,7 @@ test("matches the starting weapon selection frame", async ({ page }) => {
     "weaponSelect",
   );
 
-  await expect(canvas).toHaveScreenshot("arena-weapon-select.png", {
+  await expect(game).toHaveScreenshot("arena-weapon-select.png", {
     maxDiffPixelRatio: 0.01,
   });
 });
@@ -272,21 +272,36 @@ test("matches the fixed shooting frame", async ({ page }) => {
   });
 });
 
-test("matches the fixed upgraded pulse split shot frame", async ({ page }) => {
+test("matches the fixed upgraded Spread split shot frame", async ({ page }) => {
   await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
+
+  await moveMouseToCanvasLogical(page, 480, 307);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.locator("[data-choice-kind='weapon'][data-choice-id='spread']").click();
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().weaponType)).toBe(
+    "spread",
+  );
 
   await page.evaluate(() => {
     const debug = window.__ARENA_DEBUG__;
     if (!debug) throw new Error("Debug API is not available.");
 
-    debug.restart();
-    debug.forceUpgradeSelect();
-    const splitShotIndex = debug.getSnapshot().pendingUpgradeChoices.indexOf("splitShot");
-    if (splitShotIndex < 0) throw new Error("splitShot upgrade is not available in fixture.");
-
-    debug.step({ upgradeChoicePressed: splitShotIndex }, 1 / 60);
+    let acquired = false;
+    // Drain deterministic offers until the weapon-specific upgrade appears.
+    for (let attempt = 0; attempt < 32; attempt += 1) {
+      debug.forceUpgradeSelect();
+      const choices = debug.getSnapshot().pendingUpgradeChoices;
+      const splitShotIndex = choices.indexOf("splitShot");
+      debug.step({ upgradeChoicePressed: splitShotIndex >= 0 ? splitShotIndex : 0 }, 1 / 60);
+      if (splitShotIndex >= 0) {
+        acquired = true;
+        break;
+      }
+    }
+    if (!acquired) throw new Error("splitShot upgrade is not available in fixture.");
     debug.setPaused(true);
     debug.step(
       {
@@ -298,7 +313,7 @@ test("matches the fixed upgraded pulse split shot frame", async ({ page }) => {
     debug.step({ aimWorld: { x: 640, y: 270 } }, 8 / 60);
   });
 
-  await expect(canvas).toHaveScreenshot("arena-upgraded-pulse-split-shot.png", {
+  await expect(canvas).toHaveScreenshot("arena-upgraded-spread-split-shot.png", {
     maxDiffPixelRatio: 0.01,
   });
 });
@@ -353,30 +368,43 @@ test("matches the fixed paused frame", async ({ page }) => {
 
 test("matches the fixed upgrade selection frame", async ({ page }) => {
   await gotoArena(page);
-  const canvas = page.locator("canvas");
-  await expect(canvas).toHaveCount(1);
+  const game = page.locator("#game");
 
   await page.evaluate(() => {
     window.__ARENA_DEBUG__?.restart();
     window.__ARENA_DEBUG__?.forceUpgradeSelect();
   });
 
-  await expect(canvas).toHaveScreenshot("arena-upgrade-select.png", {
+  await expect(game).toHaveScreenshot("arena-upgrade-select.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("matches the portrait upgrade selection frame", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await gotoArena(page);
+  const game = page.locator("#game");
+
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.restart();
+    window.__ARENA_DEBUG__?.forceUpgradeSelect();
+  });
+
+  await expect(game).toHaveScreenshot("arena-upgrade-select-portrait.png", {
     maxDiffPixelRatio: 0.01,
   });
 });
 
 test("matches the extra upgrade selection frame", async ({ page }) => {
   await gotoArena(page);
-  const canvas = page.locator("canvas");
-  await expect(canvas).toHaveCount(1);
+  const game = page.locator("#game");
 
   await page.evaluate(() => {
     window.__ARENA_DEBUG__?.restart();
     window.__ARENA_DEBUG__?.forceExtraUpgradeSelect();
   });
 
-  await expect(canvas).toHaveScreenshot("arena-extra-upgrade-select.png", {
+  await expect(game).toHaveScreenshot("arena-extra-upgrade-select.png", {
     maxDiffPixelRatio: 0.01,
   });
 });
@@ -402,7 +430,7 @@ test("matches the encounter warning frame", async ({ page }) => {
 
 test("matches the endless contract selection frame", async ({ page }) => {
   await gotoArena(page);
-  const canvas = page.locator("canvas");
+  const game = page.locator("#game");
   await page.evaluate(() => {
     const debug = window.__ARENA_DEBUG__;
     debug?.restart();
@@ -418,7 +446,7 @@ test("matches the endless contract selection frame", async ({ page }) => {
     "contractSelect",
   );
 
-  await expect(canvas).toHaveScreenshot("arena-endless-contract.png", {
+  await expect(game).toHaveScreenshot("arena-endless-contract.png", {
     maxDiffPixelRatio: 0.01,
   });
 });

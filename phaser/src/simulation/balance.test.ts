@@ -22,17 +22,17 @@ const balanceProbeSeeds = [20260619, 20260620, 20260621, 20260622, 20260623];
 const balanceBaseline = {
   noInputSurvivalP50: 6.3,
   fixedAimShootSurvivalP50: 6.3,
-  kiteCollectSurvivalP50: 179.4,
-  kiteCollectKillsPerMinuteP50: 191.3,
-  kiteCollectScorePerMinuteP50: 2930.1,
-  kiteCollectFirstDamageP50: 114.13,
-  kiteCollectFirstUpgradeP50: 7.13,
+  kiteCollectSurvivalP50: 127.1,
+  kiteCollectKillsPerMinuteP50: 163.34,
+  kiteCollectScorePerMinuteP50: 2234.3,
+  kiteCollectFirstDamageP50: 94.93,
+  kiteCollectFirstUpgradeP50: 7.2,
   kiteCollectWaveReachedP50: 90,
-  kiteCollectMaxEnemiesMax: 60,
-  kiteCollectMaxBulletsMax: 40,
-  kiteCollectHpRecoveredP50: 80,
-  kiteCollectHealPickupsCollectedP50: 38,
-  kiteCollectEffectiveHealPickupsCollectedP50: 7,
+  kiteCollectMaxEnemiesMax: 34,
+  kiteCollectMaxBulletsMax: 26,
+  kiteCollectHpRecoveredP50: 64,
+  kiteCollectHealPickupsCollectedP50: 22,
+  kiteCollectEffectiveHealPickupsCollectedP50: 6,
 };
 
 describe("balance simulation", () => {
@@ -99,7 +99,7 @@ describe("balance simulation", () => {
       true,
     );
 
-    // v0.6.2 navigation baseline. These probes are regression sentries,
+    // v0.6.3 single-line Pulse baseline. These probes are regression sentries,
     // not a claim that the input models are correct human play.
     expectWithinBaseline(noInput.survivalSeconds.p50, balanceBaseline.noInputSurvivalP50);
     expectWithinBaseline(
@@ -225,6 +225,9 @@ describe("balance simulation", () => {
     expect(world.state.elapsed).toBeLessThan(24 * 60);
     expect(world.state.status).toBe("gameOver");
     expect(world.stats.lastDamageSource?.kind).toBe("collapse");
+    expect(world.progression.buildCompletedAt).not.toBeNull();
+    expect(world.progression.buildCompletedAt!).toBeGreaterThanOrEqual(4 * 60);
+    expect(world.progression.buildCompletedAt!).toBeLessThanOrEqual(6 * 60);
     expect(world.stats.encounterMetrics.peakCollapseStage).toBeGreaterThanOrEqual(8);
     expect(maxEnemies).toBeLessThanOrEqual(SIMULATION_CONFIG.threat.maximumEnemies);
     expect(maxProjectiles).toBeLessThanOrEqual(300);
@@ -254,9 +257,22 @@ describe("balance simulation", () => {
       const summary = report.summary.byModel.kiteCollect;
       expect(summary.projectileHitRate.p50).toBeGreaterThan(0);
       expect(summary.uniqueEnemiesPerHitVolley.p50).toBeGreaterThanOrEqual(1);
-      expect(summary.encounterActiveMovement.p50).toBeGreaterThan(0);
+      expect(summary.encounterActiveMovement.max).toBeGreaterThan(0);
       expect(report.runs.every((run) => run.encounterScheduledAt !== null)).toBe(true);
     }
+    const pulse = comparison.pulse.summary.byModel.kiteCollect;
+    const spread = comparison.spread.summary.byModel.kiteCollect;
+    expectRelativeDifferenceWithin(pulse.survivalSeconds.p50, spread.survivalSeconds.p50, 0.2);
+    expectRelativeDifferenceWithin(pulse.killsPerMinute.p50, spread.killsPerMinute.p50, 0.2);
+    expectRelativeDifferenceWithin(pulse.scorePerMinute.p50, spread.scorePerMinute.p50, 0.2);
+    expect(spread.uniqueEnemiesPerHitVolley.p50).toBeGreaterThanOrEqual(
+      pulse.uniqueEnemiesPerHitVolley.p50 * 1.15,
+    );
+    expect(pulse.pulseFocusEnhancedHits.p50).toBeGreaterThan(0);
+    expect(pulse.pulseFocusBonusDamage.p50).toBeGreaterThan(0);
+    expect(pulse.pulseFocusMaxStacks.p50).toBeGreaterThanOrEqual(2);
+    expect(spread.spreadSweepTriggers.p50).toBeGreaterThan(0);
+    expect(spread.spreadSweepConsumes.p50).toBe(spread.spreadSweepTriggers.p50);
   }, 45_000);
 });
 
@@ -265,4 +281,12 @@ function expectWithinBaseline(value: number, baseline: number, tolerance = 0.2):
   const upper = baseline * (1 + tolerance);
   expect(value).toBeGreaterThanOrEqual(lower);
   expect(value).toBeLessThanOrEqual(upper);
+}
+
+function expectRelativeDifferenceWithin(left: number, right: number, tolerance: number): void {
+  const difference = Math.abs(left - right) / Math.max(left, right, Number.EPSILON);
+  expect(
+    difference,
+    `Expected ${left} and ${right} to differ by no more than ${tolerance * 100}%`,
+  ).toBeLessThanOrEqual(tolerance);
 }

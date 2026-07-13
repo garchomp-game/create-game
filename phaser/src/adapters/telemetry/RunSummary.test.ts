@@ -31,8 +31,10 @@ describe("run summary", () => {
         vitalCore: 3,
         overdriveRounds: 2,
         splitShot: 1,
+        pulseFocus: 2,
         piercingRounds: 2,
         pulseRicochet: 1,
+        spreadSweep: 0,
       },
       extraUpgradeRanks: {
         limitPower: 4,
@@ -75,6 +77,10 @@ describe("run summary", () => {
         extraUpgradesChosen: 4,
         lastDamageSource: { kind: "contact", enemyType: "brute" },
         capstoneMetrics: { acquiredAt: 64.1235, activations: 50, followUpHits: 12 },
+        weaponIdentityMetrics: {
+          pulseFocus: { enhancedHits: 80, bonusDamage: 34.5678, maxStacks: 4 },
+          spreadSweep: { triggers: 0, consumes: 0, maxDistinctTargets: 0 },
+        },
         weaponMetrics: {
           pulse: { shotsFired: 1000, projectilesFired: 2000, hits: 500 },
           spread: { shotsFired: 0, projectilesFired: 0, hits: 0 },
@@ -91,6 +97,7 @@ describe("run summary", () => {
       projectiles_fired: 2000,
       projectile_hits: 500,
       projectile_hit_rate: 0.25,
+      projectile_hits_per_kill: 1.667,
       rank_eligible: false,
       rank_ineligible_reasons: "debug|modifier",
       build_completed_seconds: 120.126,
@@ -110,6 +117,10 @@ describe("run summary", () => {
       navigation_field_builds: 12,
       navigation_path_ratio: 0.18,
       capstone_acquired_seconds: 64.124,
+      pulse_focus_rank: 2,
+      pulse_focus_enhanced_hits: 80,
+      pulse_focus_bonus_damage: 34.568,
+      pulse_focus_max_stacks: 4,
       last_damage_enemy_type: "brute",
     });
   });

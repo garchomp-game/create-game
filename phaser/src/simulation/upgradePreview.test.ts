@@ -10,8 +10,8 @@ describe("createUpgradePreview", () => {
 
     expect(createUpgradePreview(world, SIMULATION_CONFIG, "rapidFire")).toEqual({
       stat: "fireRate",
-      before: "7.4",
-      after: "8.7",
+      before: "9.8",
+      after: "11.5",
       unit: "perSecond",
     });
   });
@@ -72,6 +72,18 @@ describe("createUpgradePreview", () => {
     );
   });
 
+  it("previews weapon-specific focus and sweep effects", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    expect(createUpgradePreview(world, SIMULATION_CONFIG, "pulseFocus")).toEqual({
+      stat: "focusStacks",
+      before: "0",
+      after: "2",
+      unit: null,
+    });
+    expect(formatUpgradePreview(createUpgradePreview(world, SIMULATION_CONFIG, "spreadSweep")))
+      .toBe("Next volley reduction: 0% -> 30%");
+  });
+
   it("formats localized preview text", () => {
     const world = createWorld(SIMULATION_CONFIG);
 
@@ -86,9 +98,11 @@ describe("createUpgradePreview", () => {
           projectiles: "弾数",
           hitCapacity: "命中可能数",
           ricochets: "跳弾回数",
+          focusStacks: "集束上限",
+          nextVolleyReduction: "次射撃短縮",
         },
         { perSecond: "/秒" },
       ),
-    ).toBe("連射: 6.3/秒 -> 7.4/秒");
+    ).toBe("連射: 8.3/秒 -> 9.8/秒");
   });
 });

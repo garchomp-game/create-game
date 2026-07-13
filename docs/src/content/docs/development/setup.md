@@ -38,6 +38,13 @@ npm run build
 ARENA_LONG_SOAK=1 npx playwright test tests/e2e/arena-soak.spec.ts --workers=1
 ```
 
+ローカルPCが自動スリープする環境では、試験中のページ再読み込みを避けるためOS側でスリープを抑止します。systemd環境では次のように実行できます。
+
+```bash
+systemd-inhibit --what=sleep --mode=block \
+  env ARENA_LONG_SOAK=1 npx playwright test tests/e2e/arena-soak.spec.ts --workers=1 --trace=off
+```
+
 `npm run build` ではPhaser / Viteのバンドルサイズ警告が出ることがあります。ビルド自体が成功していれば、現時点では既知警告として扱います。
 
 ## ドキュメント
@@ -59,6 +66,7 @@ npm run build
 | パス | 責務 |
 | --- | --- |
 | `src/adapters/phaser` | Scene、入力、描画、音、デバッグ表示 |
+| `src/adapters/dom` | 高解像度の選択UIとブラウザ入力 |
 | `src/simulation` | ワールド更新とゲームルール |
 | `src/domain` | 型定義 |
 | `src/config` | ゲーム設定と検証スキーマ |

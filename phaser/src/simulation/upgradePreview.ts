@@ -7,7 +7,9 @@ export type UpgradePreviewStat =
   | "maxHp"
   | "projectiles"
   | "hitCapacity"
-  | "ricochets";
+  | "ricochets"
+  | "focusStacks"
+  | "nextVolleyReduction";
 
 export type UpgradePreviewLabels = Record<UpgradePreviewStat, string>;
 
@@ -15,7 +17,7 @@ export type UpgradePreview = {
   stat: UpgradePreviewStat;
   before: string;
   after: string;
-  unit: "perSecond" | null;
+  unit: "perSecond" | "percent" | null;
 };
 
 const DEFAULT_PREVIEW_LABELS: UpgradePreviewLabels = {
@@ -26,6 +28,8 @@ const DEFAULT_PREVIEW_LABELS: UpgradePreviewLabels = {
   projectiles: "Projectiles",
   hitCapacity: "Hit capacity",
   ricochets: "Ricochets",
+  focusStacks: "Focus stacks",
+  nextVolleyReduction: "Next volley reduction",
 };
 
 export function createUpgradePreview(
@@ -75,9 +79,26 @@ export function createUpgradePreview(
     return { stat: "hitCapacity", before: formatWhole(before), after: formatWhole(after), unit: null };
   }
 
-  const before = weapon.ricochetCount + world.runtime.ricochetBonus;
-  const after = before + effect.amount;
-  return { stat: "ricochets", before: formatWhole(before), after: formatWhole(after), unit: null };
+  if (effect.type === "ricochet") {
+    const before = weapon.ricochetCount + world.runtime.ricochetBonus;
+    const after = before + effect.amount;
+    return { stat: "ricochets", before: formatWhole(before), after: formatWhole(after), unit: null };
+  }
+
+  if (effect.type === "pulseFocus") {
+    const before = world.runtime.pulseFocusMaxStacks;
+    const after = before + effect.stacksPerRank;
+    return { stat: "focusStacks", before: formatWhole(before), after: formatWhole(after), unit: null };
+  }
+
+  const before = 0;
+  const after = (1 - effect.nextIntervalMultiplier) * 100;
+  return {
+    stat: "nextVolleyReduction",
+    before: formatWhole(before),
+    after: formatWhole(after),
+    unit: "percent",
+  };
 }
 
 export function formatUpgradePreview(
@@ -104,5 +125,6 @@ function formatWhole(value: number): string {
 
 function formatValue(value: string, unit: UpgradePreview["unit"], perSecond: string): string {
   if (unit === "perSecond") return `${value}${perSecond}`;
+  if (unit === "percent") return `${value}%`;
   return value;
 }

@@ -1174,8 +1174,15 @@ describe("stepWorld", () => {
       },
       {
         upgradeId: "splitShot" as const,
+        weaponType: "spread" as const,
         assert: (world: ReturnType<typeof createWorld>) =>
           expect(world.runtime.projectileCountBonus).toBe(1),
+      },
+      {
+        upgradeId: "pulseFocus" as const,
+        weaponType: "pulse" as const,
+        assert: (world: ReturnType<typeof createWorld>) =>
+          expect(world.runtime.pulseFocusMaxStacks).toBe(2),
       },
       {
         upgradeId: "piercingRounds" as const,
@@ -1186,6 +1193,7 @@ describe("stepWorld", () => {
 
     for (const item of cases) {
       const world = createWorld(GAME_CONFIG);
+      world.state.weaponType = item.weaponType ?? "pulse";
       world.state.status = "upgradeSelect";
       world.progression.pendingUpgradeChoices = [item.upgradeId];
 

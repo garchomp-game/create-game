@@ -66,7 +66,7 @@ describe("level progression cadence", () => {
     );
 
     world.progression.upgradeRanks.rapidFire = 5;
-    world.progression.upgradeRanks.splitShot = 2;
+    world.progression.upgradeRanks.pulseFocus = 2;
 
     expect(getAvailableUpgradeIds(SIMULATION_CONFIG, world.progression.upgradeRanks, "pulse")).toContain(
       "pulseRicochet",
@@ -79,6 +79,32 @@ describe("level progression cadence", () => {
         "pulse",
       )[0],
     ).toBe("pulseRicochet");
+  });
+
+  it("guarantees the Spread capstone while keeping weapon growth mutually exclusive", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    const random = createRandomStreams(SIMULATION_CONFIG.seed);
+    world.progression.upgradeRanks.rapidFire = 5;
+    world.progression.upgradeRanks.splitShot = 2;
+
+    expect(getRemainingUpgradeIds(SIMULATION_CONFIG, world.progression.upgradeRanks, "spread"))
+      .not.toContain("pulseFocus");
+    expect(getRemainingUpgradeIds(SIMULATION_CONFIG, world.progression.upgradeRanks, "pulse"))
+      .not.toContain("splitShot");
+    expect(
+      selectUpgradeChoices(
+        SIMULATION_CONFIG,
+        random.upgrade,
+        world.progression.upgradeRanks,
+        "spread",
+      )[0],
+    ).toBe("spreadSweep");
+
+    world.progression.upgradeRanks.spreadSweep = 1;
+    expect(getAvailableUpgradeIds(SIMULATION_CONFIG, world.progression.upgradeRanks, "spread"))
+      .not.toContain("spreadSweep");
+    expect(getMaxedUpgradeIds(SIMULATION_CONFIG, world.progression.upgradeRanks, "spread"))
+      .toContain("spreadSweep");
   });
 
   it("excludes the Pulse-only capstone from Spread and from disabled experiments", () => {

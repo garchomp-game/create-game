@@ -144,6 +144,26 @@ describe("run records", () => {
       extraUpgradeSelections: [{ cycle: 0, automatic: false }],
     });
   });
+
+  it("defaults weapon identity fields on v0.6.2 records", () => {
+    const legacy = structuredClone(makeRecord()) as unknown as Record<string, unknown>;
+    const ranks = legacy.upgradeRanks as Record<string, unknown>;
+    const capstone = legacy.capstoneMetrics as Record<string, unknown>;
+    delete ranks.pulseFocus;
+    delete ranks.spreadSweep;
+    delete capstone.spreadSweepTriggers;
+    delete capstone.spreadSweepConsumes;
+    delete legacy.weaponIdentityMetrics;
+
+    expect(runRecordSchema.parse(legacy)).toMatchObject({
+      upgradeRanks: { pulseFocus: 0, spreadSweep: 0 },
+      capstoneMetrics: { spreadSweepTriggers: 0, spreadSweepConsumes: 0 },
+      weaponIdentityMetrics: {
+        pulseFocus: { enhancedHits: 0, bonusDamage: 0, maxStacks: 0 },
+        spreadSweep: { triggers: 0, consumes: 0, maxDistinctTargets: 0 },
+      },
+    });
+  });
 });
 
 function makeContext(): RunContext {
@@ -193,6 +213,17 @@ function makeSummary(overrides: Partial<RunResultSummary> = {}): RunResultSummar
       followUpHits: 0,
       followUpUniqueEnemiesHit: 0,
       maxFollowUpUniqueEnemiesPerVolley: 0,
+      spreadSweepTriggers: 0,
+      spreadSweepConsumes: 0,
+    },
+    weaponIdentityMetrics: {
+      pulseFocus: {
+        enhancedHits: 0,
+        bonusDamage: 0,
+        maxStacks: 0,
+        killsByEnemyType: { chaser: 0, brute: 0, fast: 0, ranged: 0 },
+      },
+      spreadSweep: { triggers: 0, consumes: 0, maxDistinctTargets: 0 },
     },
     weaponMetrics: {
       pulse: { shotsFired: 200, projectilesFired: 200, hits: 90, kills: 80 },
@@ -210,8 +241,10 @@ function makeUpgradeRanks() {
     vitalCore: 0,
     overdriveRounds: 2,
     splitShot: 1,
+    pulseFocus: 0,
     piercingRounds: 1,
     pulseRicochet: 0,
+    spreadSweep: 0,
   };
 }
 

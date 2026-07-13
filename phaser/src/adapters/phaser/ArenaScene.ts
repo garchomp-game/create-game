@@ -86,9 +86,11 @@ import {
   getArenaObstacleContactCounts,
 } from "../telemetry/ArenaRunExport";
 import { DevRunExportClient } from "../telemetry/DevRunExportClient";
+import { ArenaChoiceOverlay } from "../dom/ArenaChoiceOverlay";
 
 export class ArenaScene extends Phaser.Scene {
   private inputAdapter!: PhaserInputAdapter;
+  private choiceOverlay!: ArenaChoiceOverlay;
   private arenaRenderer!: PhaserArenaRenderer;
   private debugOverlay!: PhaserDebugOverlay;
   private feedbackLayer!: PhaserFeedbackLayer;
@@ -160,6 +162,7 @@ export class ArenaScene extends Phaser.Scene {
     this.runRankings = loadedRecords.rankings;
     this.initializeProfile(storage);
     this.inputAdapter = new PhaserInputAdapter(this);
+    this.choiceOverlay = new ArenaChoiceOverlay(this.game.canvas, this.simulationConfig);
     this.arenaRenderer = new PhaserArenaRenderer(this, this.simulationConfig, this.viewConfig);
     this.feedbackLayer = new PhaserFeedbackLayer(this);
     this.feedbackLayer.configure(this.settings);
@@ -169,6 +172,7 @@ export class ArenaScene extends Phaser.Scene {
     this.musicController.configure(this.settings);
     this.debugOverlay = new PhaserDebugOverlay(this, this.metrics);
     this.resetGame("title");
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.choiceOverlay.destroy());
     if (import.meta.env.DEV) {
       this.debugBridge = new ArenaDebugBridge(window);
       this.installDebugHook();
@@ -177,13 +181,21 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   update(_time: number, deltaMs: number): void {
+    const choiceInput = this.choiceOverlay.consumeInput();
     const input = this.inputAdapter.read(
       this.world.state.status,
       this.world.progression.pendingUpgradeChoices.length,
       this.settings.autoFireEnabled,
       this.secondaryMenu,
     );
-    const menuAction = this.inputAdapter.consumeMenuAction();
+    if (choiceInput.upgradeChoice !== null) {
+      input.upgradeChoicePressed = choiceInput.upgradeChoice;
+    }
+    if (choiceInput.contractChoice !== null) {
+      input.contractChoicePressed = choiceInput.contractChoice;
+    }
+    const canvasMenuAction = this.inputAdapter.consumeMenuAction();
+    const menuAction = choiceInput.menuAction ?? canvasMenuAction;
     if (menuAction && this.handleMenuAction(menuAction)) {
       this.renderCurrentWorld();
       return;
@@ -226,6 +238,7 @@ export class ArenaScene extends Phaser.Scene {
     runOriginOverride?: RunOrigin,
   ): void {
     this.inputAdapter.clearTransientInput();
+    this.choiceOverlay.clearInput();
     const fixedSeed = this.getFixedRunSeed();
     this.runSeed = this.createRunSeed(fixedSeed);
     this.runConfig = { ...this.simulationConfig, seed: this.runSeed };
@@ -609,6 +622,7 @@ export class ArenaScene extends Phaser.Scene {
       this.inputAdapter.getPointerWorld(),
       this.createUiState(),
     );
+    this.choiceOverlay.render(this.world, this.secondaryMenu === null);
     this.musicController.sync(this.world.state.status);
     this.feedbackLayer.render();
     this.debugOverlay.render();
@@ -764,8 +778,13 @@ export class ArenaScene extends Phaser.Scene {
   private prepareSoakProtection(): void {
     if (!this.soakProtectionEnabled || this.world.state.status !== "playing") return;
 
-    // Keep renderer soak tests independent from late-game lethality without exposing debug HP.
-    this.world.state.hp = 1_000_000_000;
+    // Keep renderer soak tests alive without feeding synthetic health into run metrics.
+    this.normalizeSoakHealth();
+    this.world.state.damageCooldown = Math.max(this.world.state.damageCooldown, 60);
+    this.world.encounter.collapse.damageTimer = Math.max(
+      this.world.encounter.collapse.damageTimer,
+      60,
+    );
   }
 
   private normalizeSoakHealth(): void {

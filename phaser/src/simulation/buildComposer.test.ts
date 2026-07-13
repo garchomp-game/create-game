@@ -15,7 +15,7 @@ describe("build composition", () => {
       swiftStep: 1,
       vitalCore: 1,
       overdriveRounds: 1,
-      splitShot: 1,
+      pulseFocus: 1,
       piercingRounds: 1,
       pulseRicochet: 1,
     });
@@ -33,9 +33,14 @@ describe("build composition", () => {
       projectileSpeedMultiplier: 1.15,
       projectileDamageMultiplier: 1,
       maxHpBonus: 20,
-      projectileCountBonus: 1,
+      projectileCountBonus: 0,
       hitCapacityBonus: 1,
       ricochetBonus: 1,
+      pulseFocusBonusPerStack: 0.15,
+      pulseFocusMaxStacks: 2,
+      pulseFocusDuration: 0.9,
+      spreadSweepDistinctTargets: 0,
+      spreadSweepNextIntervalMultiplier: 1,
     });
     expect(result.categoryRanks).toEqual({
       weapon: 4,

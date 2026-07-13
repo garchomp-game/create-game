@@ -75,6 +75,7 @@ export function createRunRecord(input: CreateRunRecordInput): RunRecord {
     })),
     buildCompletedAt: input.buildCompletedAt,
     capstoneMetrics: { ...summary.capstoneMetrics },
+    weaponIdentityMetrics: structuredClone(summary.weaponIdentityMetrics),
     encounterMetrics: structuredClone(input.encounterMetrics ?? createEmptyEncounterMetrics()),
   };
 }

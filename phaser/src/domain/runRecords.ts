@@ -9,6 +9,7 @@ import type {
   RunResultSummary,
   UpgradeId,
   UpgradeSelectionRunStat,
+  WeaponIdentityRunStats,
   WeaponTypeId,
 } from "./types";
 
@@ -87,6 +88,7 @@ export type RunRecord = RunComparisonKey & {
   extraUpgradeSelections: ExtraUpgradeSelectionRunStat[];
   buildCompletedAt: number | null;
   capstoneMetrics: CapstoneRunStats;
+  weaponIdentityMetrics: WeaponIdentityRunStats;
   encounterMetrics: EncounterRunStats;
 };
 
@@ -118,11 +120,17 @@ const damageSourceSchema = z.discriminatedUnion("kind", [
   }),
 ]);
 
-const upgradeRanksSchema = z.object(
-  Object.fromEntries(
-    UPGRADE_IDS.map((id) => [id, z.number().int().nonnegative()]),
-  ) as Record<UpgradeId, z.ZodNumber>,
-);
+const upgradeRanksSchema = z.object({
+  rapidFire: z.number().int().nonnegative(),
+  swiftStep: z.number().int().nonnegative(),
+  vitalCore: z.number().int().nonnegative(),
+  overdriveRounds: z.number().int().nonnegative(),
+  splitShot: z.number().int().nonnegative(),
+  pulseFocus: z.number().int().nonnegative().default(0),
+  piercingRounds: z.number().int().nonnegative(),
+  pulseRicochet: z.number().int().nonnegative(),
+  spreadSweep: z.number().int().nonnegative().default(0),
+});
 
 const legacyUpgradeRanksSchema = z.object({
   rapidFire: z.number().int().nonnegative(),
@@ -157,12 +165,14 @@ const extraUpgradeSelectionSchema = z.object({
 });
 
 const capstoneMetricsSchema = z.object({
-  upgradeId: z.literal("pulseRicochet"),
+  upgradeId: z.enum(["pulseRicochet", "spreadSweep"]).nullable().default(null),
   acquiredAt: z.number().nonnegative().nullable(),
   activations: z.number().int().nonnegative(),
   followUpHits: z.number().int().nonnegative(),
   followUpUniqueEnemiesHit: z.number().int().nonnegative(),
   maxFollowUpUniqueEnemiesPerVolley: z.number().int().nonnegative(),
+  spreadSweepTriggers: z.number().int().nonnegative().default(0),
+  spreadSweepConsumes: z.number().int().nonnegative().default(0),
 });
 
 const encounterMovementWindowSchema = z.object({
@@ -175,6 +185,20 @@ const enemyTypeCountsSchema = z.object({
   brute: z.number().int().nonnegative(),
   fast: z.number().int().nonnegative(),
   ranged: z.number().int().nonnegative(),
+});
+
+const weaponIdentityMetricsSchema = z.object({
+  pulseFocus: z.object({
+    enhancedHits: z.number().int().nonnegative(),
+    bonusDamage: z.number().nonnegative(),
+    maxStacks: z.number().int().nonnegative(),
+    killsByEnemyType: enemyTypeCountsSchema,
+  }),
+  spreadSweep: z.object({
+    triggers: z.number().int().nonnegative(),
+    consumes: z.number().int().nonnegative(),
+    maxDistinctTargets: z.number().int().nonnegative(),
+  }),
 });
 
 const encounterMetricsSchema = z.object({
@@ -257,6 +281,7 @@ const runRecordV2Schema = z.object({
   extraUpgradeSelections: z.array(extraUpgradeSelectionSchema).default([]),
   buildCompletedAt: z.number().nonnegative().nullable(),
   capstoneMetrics: capstoneMetricsSchema,
+  weaponIdentityMetrics: weaponIdentityMetricsSchema.default(createEmptyWeaponIdentityMetrics),
   encounterMetrics: encounterMetricsSchema.default(createEmptyEncounterMetrics),
 });
 
@@ -278,7 +303,12 @@ export const runRecordSchema: z.ZodType<RunRecord> = z.union([
   runRecordV1Schema.transform((record) => ({
     ...record,
     schemaVersion: RUN_RECORD_SCHEMA_VERSION,
-    upgradeRanks: { ...record.upgradeRanks, pulseRicochet: 0 },
+    upgradeRanks: {
+      ...record.upgradeRanks,
+      pulseFocus: 0,
+      pulseRicochet: 0,
+      spreadSweep: 0,
+    },
     upgradeSelections: [],
     extraUpgradeRanks: createEmptyExtraUpgradeRanks(),
     extraUpgradeSelections: [],
@@ -295,12 +325,26 @@ export const runRecordSchema: z.ZodType<RunRecord> = z.union([
 
 function createEmptyCapstoneMetrics(): CapstoneRunStats {
   return {
-    upgradeId: "pulseRicochet",
+    upgradeId: null,
     acquiredAt: null,
     activations: 0,
     followUpHits: 0,
     followUpUniqueEnemiesHit: 0,
     maxFollowUpUniqueEnemiesPerVolley: 0,
+    spreadSweepTriggers: 0,
+    spreadSweepConsumes: 0,
+  };
+}
+
+function createEmptyWeaponIdentityMetrics(): WeaponIdentityRunStats {
+  return {
+    pulseFocus: {
+      enhancedHits: 0,
+      bonusDamage: 0,
+      maxStacks: 0,
+      killsByEnemyType: { chaser: 0, brute: 0, fast: 0, ranged: 0 },
+    },
+    spreadSweep: { triggers: 0, consumes: 0, maxDistinctTargets: 0 },
   };
 }
 

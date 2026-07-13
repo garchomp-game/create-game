@@ -1,4 +1,4 @@
-import type { SimulationConfig } from "../domain/types";
+import type { EnemyTypeId, SimulationConfig } from "../domain/types";
 
 export type ThreatMultipliers = {
   hp: number;
@@ -36,6 +36,18 @@ export function getThreatMultipliers(
       config.threat.healDropDecay ** exponent,
     ),
   };
+}
+
+export function getEnemyHpMultiplier(
+  config: SimulationConfig,
+  elapsed: number,
+  enemyType: EnemyTypeId,
+): number {
+  const exponent = Math.max(0, getThreatTier(config, elapsed) - 1);
+  const growth = config.features.roleBasedEnemyHp
+    ? config.threat.enemyHpGrowthByType[enemyType]
+    : config.threat.enemyHpGrowth;
+  return growth ** exponent;
 }
 
 export function getPressureStep(config: SimulationConfig, elapsed: number): number {

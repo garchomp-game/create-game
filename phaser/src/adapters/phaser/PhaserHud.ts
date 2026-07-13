@@ -37,7 +37,7 @@ export class PhaserHud {
       x: this.simulationConfig.arena.width - 286,
       y: 14,
       width: 270,
-      height: 72,
+      height: 82,
     };
     const maxHp = this.simulationConfig.player.maxHp + world.runtime.maxHpBonus;
     const hpRatio = maxHp > 0 ? world.state.hp / maxHp : 0;
@@ -84,13 +84,16 @@ export class PhaserHud {
     this.metaText.setText(
       TEXT.hud.meta(formatTime(world.state.elapsed), world.state.score),
     );
-    this.weaponText.setText(
-      TEXT.hud.danger(
+    const weaponStatus = TEXT.hud.danger(
         threatTier,
         world.enemies.length,
         wave.maxEnemies,
         TEXT.hud.weaponNames[world.state.weaponType],
-      ),
+      );
+    this.weaponText.setText(
+      world.state.weaponType === "spread" && world.weaponIdentity.spreadSweepCharge
+        ? `${weaponStatus}\n掃射循環 READY`
+        : weaponStatus,
     );
     const encounterLabel = this.getEncounterLabel(world);
     this.encounterText.setText(encounterLabel).setVisible(Boolean(encounterLabel));

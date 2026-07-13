@@ -22,6 +22,10 @@ export const upgradeText: UpgradeText = {
       title: "分裂射撃",
       description: "弾を1発追加",
     },
+    pulseFocus: {
+      title: "集束共鳴",
+      description: "同じ敵への連続命中で威力が上昇",
+    },
     piercingRounds: {
       title: "貫通弾",
       description: "1発あたりの命中可能数を1増加",
@@ -29,6 +33,10 @@ export const upgradeText: UpgradeText = {
     pulseRicochet: {
       title: "反響回路",
       description: "パルス弾が障害物で1回跳弾する",
+    },
+    spreadSweep: {
+      title: "掃射循環",
+      description: "3体以上への同時命中で次の射撃を加速",
     },
   },
   extraDefinitions: {
@@ -58,7 +66,7 @@ export const upgradeText: UpgradeText = {
     capstone: "最終強化",
   },
   capstoneProgress: (current, required) => `最終強化の解放: 武器強化 ${current}/${required}`,
-  capstoneAcquired: "最終強化: 反響回路 取得済み",
+  capstoneAcquired: (name) => `最終強化: ${name} 取得済み`,
   preview: {
     labels: {
       fireRate: "連射",
@@ -68,6 +76,8 @@ export const upgradeText: UpgradeText = {
       projectiles: "弾数",
       hitCapacity: "命中可能数",
       ricochets: "跳弾回数",
+      focusStacks: "集束上限",
+      nextVolleyReduction: "次射撃短縮",
     },
     perSecond: "/秒",
     separator: " -> ",

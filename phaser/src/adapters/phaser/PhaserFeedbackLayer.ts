@@ -74,6 +74,9 @@ export class PhaserFeedbackLayer {
         this.addBurst(world.player.position, 0xf97316);
       } else if (event.type === "contract.offered") {
         this.addImpact(world.player.position, world.player.radius + 18, 0x22d3ee);
+      } else if (event.type === "spread.sweep.triggered") {
+        this.addImpact(world.player.position, world.player.radius + 14, 0xfbbf24);
+        this.addBurst(world.player.position, 0xfbbf24);
       } else if (event.type === "game.over") {
         this.screenFlashAlpha = 0;
         this.scene.cameras.main.resetFX();

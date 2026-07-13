@@ -48,6 +48,7 @@ export type BalanceProbeRun = {
   projectileHitRate: number;
   hitVolleyRate: number;
   uniqueEnemiesPerHitVolley: number;
+  hitsPerKill: number;
   firstDamageAt: number | null;
   firstUpgradeAt: number | null;
   upgradeOffers: number;
@@ -66,6 +67,11 @@ export type BalanceProbeRun = {
   capstoneActivations: number;
   capstoneFollowUpHits: number;
   capstoneFollowUpUniqueEnemiesHit: number;
+  pulseFocusEnhancedHits: number;
+  pulseFocusBonusDamage: number;
+  pulseFocusMaxStacks: number;
+  spreadSweepTriggers: number;
+  spreadSweepConsumes: number;
   maxEnemies: number;
   maxBullets: number;
   maxPickups: number;
@@ -124,11 +130,17 @@ export type BalanceProbeModelSummary = {
   projectileHitRate: BalanceProbePercentiles;
   hitVolleyRate: BalanceProbePercentiles;
   uniqueEnemiesPerHitVolley: BalanceProbePercentiles;
+  hitsPerKill: BalanceProbePercentiles;
   damageTaken: BalanceProbePercentiles;
   encounterDamageTaken: BalanceProbePercentiles;
   encounterActiveMovement: BalanceProbePercentiles;
   capstoneActivations: BalanceProbePercentiles;
   capstoneFollowUpHits: BalanceProbePercentiles;
+  pulseFocusEnhancedHits: BalanceProbePercentiles;
+  pulseFocusBonusDamage: BalanceProbePercentiles;
+  pulseFocusMaxStacks: BalanceProbePercentiles;
+  spreadSweepTriggers: BalanceProbePercentiles;
+  spreadSweepConsumes: BalanceProbePercentiles;
 };
 
 export type BalanceProbeSummary = {
@@ -155,6 +167,8 @@ const BASE_INPUT: InputSnapshot = {
 
 const UPGRADE_PRIORITY = [
   "pulseRicochet",
+  "spreadSweep",
+  "pulseFocus",
   "splitShot",
   "rapidFire",
   "piercingRounds",
@@ -258,6 +272,7 @@ function runBalanceProbeOnce(options: BalanceProbeOptions & {
     uniqueEnemiesPerHitVolley: roundMetric(
       comparisonMetrics.uniqueEnemiesHit / Math.max(1, comparisonMetrics.hitVolleys),
     ),
+    hitsPerKill: roundMetric(weaponMetrics.hits / Math.max(1, world.stats.enemiesKilled)),
     firstDamageAt: firstDamageAt === null ? null : roundMetric(firstDamageAt),
     firstUpgradeAt: firstUpgradeAt === null ? null : roundMetric(firstUpgradeAt),
     upgradeOffers: world.stats.progressionMetrics.offers.length,
@@ -285,6 +300,13 @@ function runBalanceProbeOnce(options: BalanceProbeOptions & {
     capstoneFollowUpHits: world.stats.capstoneMetrics.followUpHits,
     capstoneFollowUpUniqueEnemiesHit:
       world.stats.capstoneMetrics.followUpUniqueEnemiesHit,
+    pulseFocusEnhancedHits: world.stats.weaponIdentityMetrics.pulseFocus.enhancedHits,
+    pulseFocusBonusDamage: roundMetric(
+      world.stats.weaponIdentityMetrics.pulseFocus.bonusDamage,
+    ),
+    pulseFocusMaxStacks: world.stats.weaponIdentityMetrics.pulseFocus.maxStacks,
+    spreadSweepTriggers: world.stats.weaponIdentityMetrics.spreadSweep.triggers,
+    spreadSweepConsumes: world.stats.weaponIdentityMetrics.spreadSweep.consumes,
     maxEnemies,
     maxBullets,
     maxPickups,
@@ -483,11 +505,17 @@ function summarizeModelRuns(runs: BalanceProbeRun[]): BalanceProbeModelSummary {
     uniqueEnemiesPerHitVolley: percentiles(
       runs.map((run) => run.uniqueEnemiesPerHitVolley),
     ),
+    hitsPerKill: percentiles(runs.map((run) => run.hitsPerKill)),
     damageTaken: percentiles(runs.map((run) => run.damageTaken)),
     encounterDamageTaken: percentiles(runs.map((run) => run.encounterDamageTaken)),
     encounterActiveMovement: percentiles(runs.map((run) => run.encounterActiveMovement)),
     capstoneActivations: percentiles(runs.map((run) => run.capstoneActivations)),
     capstoneFollowUpHits: percentiles(runs.map((run) => run.capstoneFollowUpHits)),
+    pulseFocusEnhancedHits: percentiles(runs.map((run) => run.pulseFocusEnhancedHits)),
+    pulseFocusBonusDamage: percentiles(runs.map((run) => run.pulseFocusBonusDamage)),
+    pulseFocusMaxStacks: percentiles(runs.map((run) => run.pulseFocusMaxStacks)),
+    spreadSweepTriggers: percentiles(runs.map((run) => run.spreadSweepTriggers)),
+    spreadSweepConsumes: percentiles(runs.map((run) => run.spreadSweepConsumes)),
   };
 }
 

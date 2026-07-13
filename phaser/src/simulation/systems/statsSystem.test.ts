@@ -175,6 +175,8 @@ describe("updateRunStats comparison metrics", () => {
       followUpHits: 2,
       followUpUniqueEnemiesHit: 1,
       maxFollowUpUniqueEnemiesPerVolley: 1,
+      spreadSweepTriggers: 0,
+      spreadSweepConsumes: 0,
     });
   });
 });

@@ -20,6 +20,11 @@ export type CombatModifiers = Pick<
   | "projectileCountBonus"
   | "hitCapacityBonus"
   | "ricochetBonus"
+  | "pulseFocusBonusPerStack"
+  | "pulseFocusMaxStacks"
+  | "pulseFocusDuration"
+  | "spreadSweepDistinctTargets"
+  | "spreadSweepNextIntervalMultiplier"
 >;
 
 export type BuildContribution = {
@@ -164,6 +169,11 @@ function createBaseCombatModifiers(): CombatModifiers {
     projectileCountBonus: 0,
     hitCapacityBonus: 0,
     ricochetBonus: 0,
+    pulseFocusBonusPerStack: 0,
+    pulseFocusMaxStacks: 0,
+    pulseFocusDuration: 0,
+    spreadSweepDistinctTargets: 0,
+    spreadSweepNextIntervalMultiplier: 1,
   };
 }
 
@@ -205,7 +215,17 @@ function applyEffect(modifiers: CombatModifiers, effect: UpgradeEffect): void {
     modifiers.projectileCountBonus += effect.amount;
   } else if (effect.type === "hitCapacity") {
     modifiers.hitCapacityBonus += effect.amount;
-  } else {
+  } else if (effect.type === "ricochet") {
     modifiers.ricochetBonus += effect.amount;
+  } else if (effect.type === "pulseFocus") {
+    modifiers.pulseFocusBonusPerStack = Math.max(
+      modifiers.pulseFocusBonusPerStack,
+      effect.bonusPerStack,
+    );
+    modifiers.pulseFocusMaxStacks += effect.stacksPerRank;
+    modifiers.pulseFocusDuration = Math.max(modifiers.pulseFocusDuration, effect.duration);
+  } else {
+    modifiers.spreadSweepDistinctTargets = effect.distinctTargets;
+    modifiers.spreadSweepNextIntervalMultiplier = effect.nextIntervalMultiplier;
   }
 }

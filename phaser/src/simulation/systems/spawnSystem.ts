@@ -7,7 +7,7 @@ import type {
   WorldState,
 } from "../../domain/types";
 import { getWaveBand, selectEnemyTypeForWave } from "../waveDirector";
-import { getThreatMultipliers } from "../threatDirector";
+import { getEnemyHpMultiplier, getThreatMultipliers } from "../threatDirector";
 import { getActiveEncounterDefinition } from "./encounterSystem";
 
 export function updateSpawner(
@@ -79,7 +79,7 @@ function spawnEnemy(
     typeId,
     position: { x, y },
     radius: definition.radius,
-    hp: Math.ceil(definition.hp * threat.hp),
+    hp: Math.ceil(definition.hp * getEnemyHpMultiplier(config, world.state.elapsed, typeId)),
     damage: Math.ceil(definition.damage * threat.damage),
     speed:
       definition.speed *

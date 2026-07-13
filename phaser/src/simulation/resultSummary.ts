@@ -34,6 +34,7 @@ export function createRunResultSummary(
     upgradesChosen: world.stats.upgradesChosen,
     extraUpgradesChosen: world.stats.extraUpgradesChosen,
     capstoneMetrics: { ...world.stats.capstoneMetrics },
+    weaponIdentityMetrics: structuredClone(world.stats.weaponIdentityMetrics),
     weaponMetrics: {
       pulse: { ...world.stats.weaponMetrics.pulse },
       spread: { ...world.stats.weaponMetrics.spread },

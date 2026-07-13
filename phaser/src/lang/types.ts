@@ -114,7 +114,7 @@ export type UpgradeText = {
   extraCategoryLabel: string;
   categoryLabels: Record<UpgradeCategory, string>;
   capstoneProgress: (current: number, required: number) => string;
-  capstoneAcquired: string;
+  capstoneAcquired: (name: string) => string;
   preview: {
     labels: Record<UpgradePreviewStat, string>;
     perSecond: string;

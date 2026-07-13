@@ -52,12 +52,23 @@ describe("createRunResultSummary", () => {
       upgradesChosen: 0,
       extraUpgradesChosen: 0,
       capstoneMetrics: {
-        upgradeId: "pulseRicochet",
+        upgradeId: null,
         acquiredAt: null,
         activations: 0,
         followUpHits: 0,
         followUpUniqueEnemiesHit: 0,
         maxFollowUpUniqueEnemiesPerVolley: 0,
+        spreadSweepTriggers: 0,
+        spreadSweepConsumes: 0,
+      },
+      weaponIdentityMetrics: {
+        pulseFocus: {
+          enhancedHits: 0,
+          bonusDamage: 0,
+          maxStacks: 0,
+          killsByEnemyType: { chaser: 0, brute: 0, fast: 0, ranged: 0 },
+        },
+        spreadSweep: { triggers: 0, consumes: 0, maxDistinctTargets: 0 },
       },
       weaponMetrics: {
         pulse: { shotsFired: 6, projectilesFired: 6, hits: 4, kills: 2 },

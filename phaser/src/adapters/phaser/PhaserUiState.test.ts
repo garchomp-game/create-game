@@ -98,8 +98,10 @@ function makeRecord(id: string, profileId: string, score: number): RunRecord {
       vitalCore: 0,
       overdriveRounds: 0,
       splitShot: 0,
+      pulseFocus: 0,
       piercingRounds: 0,
       pulseRicochet: 0,
+      spreadSweep: 0,
     },
     upgradeSelections: [],
     extraUpgradeRanks: { limitPower: 0, limitCycle: 0, limitDrive: 0, limitCore: 0 },
@@ -112,6 +114,17 @@ function makeRecord(id: string, profileId: string, score: number): RunRecord {
       followUpHits: 0,
       followUpUniqueEnemiesHit: 0,
       maxFollowUpUniqueEnemiesPerVolley: 0,
+      spreadSweepTriggers: 0,
+      spreadSweepConsumes: 0,
+    },
+    weaponIdentityMetrics: {
+      pulseFocus: {
+        enhancedHits: 0,
+        bonusDamage: 0,
+        maxStacks: 0,
+        killsByEnemyType: { chaser: 0, brute: 0, fast: 0, ranged: 0 },
+      },
+      spreadSweep: { triggers: 0, consumes: 0, maxDistinctTargets: 0 },
     },
     encounterMetrics: {
       scheduledAt: null,

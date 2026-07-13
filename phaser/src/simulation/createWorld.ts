@@ -45,6 +45,11 @@ export function createWorld(config: SimulationConfig): WorldState {
       projectileCountBonus: 0,
       hitCapacityBonus: 0,
       ricochetBonus: 0,
+      pulseFocusBonusPerStack: 0,
+      pulseFocusMaxStacks: 0,
+      pulseFocusDuration: 0,
+      spreadSweepDistinctTargets: 0,
+      spreadSweepNextIntervalMultiplier: 1,
       healDropMissCount: 0,
       healDropRollIndex: 0,
     },
@@ -82,12 +87,27 @@ export function createWorld(config: SimulationConfig): WorldState {
         extraSelections: [],
       },
       capstoneMetrics: {
-        upgradeId: "pulseRicochet",
+        upgradeId: null,
         acquiredAt: null,
         activations: 0,
         followUpHits: 0,
         followUpUniqueEnemiesHit: 0,
         maxFollowUpUniqueEnemiesPerVolley: 0,
+        spreadSweepTriggers: 0,
+        spreadSweepConsumes: 0,
+      },
+      weaponIdentityMetrics: {
+        pulseFocus: {
+          enhancedHits: 0,
+          bonusDamage: 0,
+          maxStacks: 0,
+          killsByEnemyType: { chaser: 0, brute: 0, fast: 0, ranged: 0 },
+        },
+        spreadSweep: {
+          triggers: 0,
+          consumes: 0,
+          maxDistinctTargets: 0,
+        },
       },
       encounterMetrics: {
         scheduledAt: null,
@@ -126,6 +146,9 @@ export function createWorld(config: SimulationConfig): WorldState {
     },
     analytics: {
       activeVolleys: {},
+    },
+    weaponIdentity: {
+      spreadSweepCharge: false,
     },
     encounter: {
       director: {

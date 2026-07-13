@@ -9,6 +9,7 @@ export type AudioCueId =
   | "pickup"
   | "levelUp"
   | "upgrade"
+  | "sweep"
   | "damage"
   | "gameOver";
 
@@ -24,6 +25,7 @@ const EVENT_CUES: Partial<Record<GameEvent["type"], AudioCueId>> = {
   "contract.offered": "upgrade",
   "upgrade.selected": "upgrade",
   "extra.upgrade.selected": "upgrade",
+  "spread.sweep.triggered": "sweep",
   "player.damaged": "damage",
   "game.over": "gameOver",
 };
@@ -35,6 +37,7 @@ const CUE_VOLUMES: Record<AudioCueId, number> = {
   pickup: 0.18,
   levelUp: 0.38,
   upgrade: 0.34,
+  sweep: 0.26,
   damage: 0.38,
   gameOver: 0.44,
 };
@@ -46,6 +49,7 @@ const CUE_ASSETS: Record<AudioCueId, readonly string[]> = {
   pickup: ["pickup", "pickupAlt1"],
   levelUp: ["levelUp"],
   upgrade: ["upgrade"],
+  sweep: ["upgrade"],
   damage: ["damage", "damageAlt1"],
   gameOver: ["gameOver"],
 };
@@ -57,6 +61,7 @@ const CUE_DETUNE: Record<AudioCueId, readonly number[]> = {
   pickup: [0, 18],
   levelUp: [0],
   upgrade: [0],
+  sweep: [120],
   damage: [0, -14],
   gameOver: [0],
 };
@@ -68,6 +73,7 @@ const CUE_COOLDOWNS: Record<AudioCueId, number> = {
   pickup: 50,
   levelUp: 150,
   upgrade: 150,
+  sweep: 120,
   damage: 100,
   gameOver: 300,
 };

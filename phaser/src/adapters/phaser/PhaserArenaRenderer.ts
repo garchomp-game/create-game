@@ -12,11 +12,9 @@ import { formatTime } from "../../format/time";
 import { TEXT } from "../../lang";
 import { createRunResultSummary } from "../../simulation/resultSummary";
 import { getUpgradeRequirementProgress } from "../../simulation/buildComposer";
-import { createUpgradePreview, formatUpgradePreview } from "../../simulation/upgradePreview";
-import { isExtraUpgradeId } from "../../simulation/extraProgression";
 import { getCollapseSafeBounds } from "../../simulation/systems/collapseSystem";
 import { PhaserHud } from "./PhaserHud";
-import { getMenuButtons, getUpgradeChoiceButtons } from "./PhaserMenuLayout";
+import { getMenuButtons } from "./PhaserMenuLayout";
 import type { MenuAction } from "./PhaserMenuLayout";
 import type { PhaserUiState } from "./PhaserUiState";
 
@@ -26,7 +24,6 @@ export class PhaserArenaRenderer {
   private readonly statusText: Phaser.GameObjects.Text;
   private readonly detailText: Phaser.GameObjects.Text;
   private readonly menuButtonTexts: Phaser.GameObjects.Text[];
-  private readonly upgradeChoiceTexts: Phaser.GameObjects.Text[];
 
   constructor(
     scene: Phaser.Scene,
@@ -67,19 +64,6 @@ export class PhaserArenaRenderer {
           fontSize: "18px",
           color: "#f8fafc",
           align: "center",
-        })
-        .setOrigin(0.5)
-        .setDepth(21)
-        .setVisible(false),
-    );
-    this.upgradeChoiceTexts = Array.from({ length: 3 }, () =>
-      scene.add
-        .text(0, 0, "", {
-          fontFamily: "Arial, sans-serif",
-          fontSize: "16px",
-          color: "#f8fafc",
-          align: "center",
-          lineSpacing: 3,
         })
         .setOrigin(0.5)
         .setDepth(21)
@@ -148,7 +132,7 @@ export class PhaserArenaRenderer {
     }
 
     for (const item of world.enemies) {
-      this.drawEnemy(g, item);
+      this.drawEnemy(g, item, world.state.elapsed);
     }
     this.drawOffscreenEnemyIndicators(g, world);
 
@@ -159,6 +143,7 @@ export class PhaserArenaRenderer {
     g.strokeCircle(world.player.position.x, world.player.position.y, world.player.radius);
 
     this.hideButtonTexts();
+    this.statusText.setVisible(false);
     this.detailText.setVisible(false);
     if (uiState?.secondaryMenu) {
       this.drawSecondaryMenu(g, world, uiState);
@@ -186,57 +171,9 @@ export class PhaserArenaRenderer {
     } else if (world.state.status === "upgradeSelect") {
       g.fillStyle(0x020617, 0.9);
       g.fillRect(0, 0, arena.width, arena.height);
-      this.statusText
-        .setOrigin(0.5)
-        .setFontSize(24)
-        .setLineSpacing(10)
-        .setWordWrapWidth(null)
-        .setPosition(arena.width / 2, arena.height / 2 - 164)
-        .setText(
-          world.progression.buildCompletedAt === null
-            ? TEXT.ui.upgradeHeading(world.progression.level)
-            : TEXT.ui.extraUpgradeHeading(
-                world.progression.extraLevel,
-                world.progression.extraCycle,
-              ),
-        )
-        .setVisible(true);
-      this.detailText
-        .setOrigin(0.5, 0)
-        .setAlign("center")
-        .setFontSize(15)
-        .setPosition(arena.width / 2, 158)
-        .setWordWrapWidth(560)
-        .setText(
-          world.progression.buildCompletedAt === null
-            ? this.formatCapstoneProgress(world)
-            : `通常ビルド完成 / EXサイクル C${world.progression.extraCycle} / 未取得 ${world.progression.extraCycleRemaining.length}`,
-        )
-        .setVisible(
-          world.progression.buildCompletedAt !== null || world.state.weaponType === "pulse",
-        );
-      this.drawUpgradeChoiceButtons(g, world);
     } else if (world.state.status === "contractSelect") {
       g.fillStyle(0x020617, 0.94);
       g.fillRect(0, 0, arena.width, arena.height);
-      this.statusText
-        .setOrigin(0.5)
-        .setAlign("center")
-        .setFontSize(32)
-        .setLineSpacing(8)
-        .setWordWrapWidth(arena.width - 160)
-        .setPosition(arena.width / 2, 132)
-        .setText(TEXT.ui.contractTitle)
-        .setVisible(true);
-      this.detailText
-        .setOrigin(0.5, 0)
-        .setAlign("center")
-        .setFontSize(17)
-        .setPosition(arena.width / 2, 194)
-        .setWordWrapWidth(620)
-        .setText(TEXT.ui.contractDescription)
-        .setVisible(true);
-      this.drawMenuButtons(g, world, uiState);
     } else if (world.state.status === "paused") {
       g.fillStyle(0x020617, 0.9);
       g.fillRect(0, 0, arena.width, arena.height);
@@ -262,24 +199,6 @@ export class PhaserArenaRenderer {
     } else if (world.state.status === "weaponSelect") {
       g.fillStyle(0x05070d, 0.94);
       g.fillRect(0, 0, arena.width, arena.height);
-      this.statusText
-        .setOrigin(0.5)
-        .setAlign("center")
-        .setFontSize(32)
-        .setLineSpacing(8)
-        .setWordWrapWidth(arena.width - 160)
-        .setPosition(arena.width / 2, 96)
-        .setText(TEXT.ui.weaponSelectTitle)
-        .setVisible(true);
-      this.detailText
-        .setOrigin(0, 0)
-        .setAlign("left")
-        .setFontSize(17)
-        .setPosition(220, 154)
-        .setWordWrapWidth(520)
-        .setText(TEXT.ui.weaponSelectDescription)
-        .setVisible(true);
-      this.drawMenuButtons(g, world, uiState);
     } else if (world.state.status === "title") {
       g.fillStyle(0x05070d, 0.86);
       g.fillRect(0, 0, arena.width, arena.height);
@@ -374,8 +293,12 @@ export class PhaserArenaRenderer {
 
   private formatRecordCapstone(record: RunRecord): string {
     const metrics = record.capstoneMetrics;
-    if (metrics.acquiredAt === null) return "最終強化: 未取得";
-    return `最終強化: 反響回路 ${formatTime(metrics.acquiredAt)}  跳弾${metrics.activations} / 追撃${metrics.followUpHits}`;
+    if (metrics.acquiredAt === null || metrics.upgradeId === null) return "最終強化: 未取得";
+    const title = TEXT.upgrades.definitions[metrics.upgradeId].title;
+    if (metrics.upgradeId === "spreadSweep") {
+      return `最終強化: ${title} ${formatTime(metrics.acquiredAt)}  発動${metrics.spreadSweepTriggers} / 消費${metrics.spreadSweepConsumes}`;
+    }
+    return `最終強化: ${title} ${formatTime(metrics.acquiredAt)}  跳弾${metrics.activations} / 追撃${metrics.followUpHits}`;
   }
 
   private formatRecordEncounter(record: RunRecord): string {
@@ -408,13 +331,26 @@ export class PhaserArenaRenderer {
   }
 
   private formatCapstoneProgress(world: WorldState): string {
-    if (world.state.weaponType !== "pulse" || !this.simulationConfig.features.pulseRicochet) {
+    const capstoneId =
+      world.state.weaponType === "pulse"
+        ? "pulseRicochet"
+        : world.state.weaponType === "spread"
+          ? "spreadSweep"
+          : null;
+    if (
+      capstoneId === null ||
+      (capstoneId === "pulseRicochet" && !this.simulationConfig.features.pulseRicochet) ||
+      (capstoneId === "spreadSweep" && !this.simulationConfig.features.spreadSweep)
+    ) {
       return "最終強化: この武器では未実装";
     }
-    if (world.progression.upgradeRanks.pulseRicochet > 0) return TEXT.upgrades.capstoneAcquired;
+    const title = TEXT.upgrades.definitions[capstoneId].title;
+    if (world.progression.upgradeRanks[capstoneId] > 0) {
+      return TEXT.upgrades.capstoneAcquired(title);
+    }
     const progress = getUpgradeRequirementProgress(
       this.simulationConfig,
-      "pulseRicochet",
+      capstoneId,
       world.progression.upgradeRanks,
     )[0];
     return progress
@@ -604,6 +540,7 @@ export class PhaserArenaRenderer {
   private drawEnemy(
     g: Phaser.GameObjects.Graphics,
     enemy: WorldState["enemies"][number],
+    elapsed: number,
   ): void {
     const view = this.viewConfig.enemy[enemy.typeId];
     const { x, y } = enemy.position;
@@ -633,6 +570,29 @@ export class PhaserArenaRenderer {
     }
 
     this.drawEnemyMark(g, enemy, view);
+    if (
+      (enemy.pulseFocusStacks ?? 0) > 0 &&
+      (enemy.pulseFocusExpiresAt ?? 0) >= elapsed
+    ) {
+      this.drawPulseFocusPips(g, x, y - r - 7, enemy.pulseFocusStacks ?? 0);
+    }
+  }
+
+  private drawPulseFocusPips(
+    g: Phaser.GameObjects.Graphics,
+    centerX: number,
+    y: number,
+    stackCount: number,
+  ): void {
+    const count = Math.max(0, Math.min(4, stackCount));
+    const spacing = 7;
+    const startX = centerX - ((count - 1) * spacing) / 2;
+    for (let index = 0; index < count; index += 1) {
+      g.fillStyle(index === count - 1 ? 0xfacc15 : 0x22d3ee, 1);
+      g.fillCircle(startX + index * spacing, y, 2.5);
+      g.lineStyle(1, 0xf8fafc, 0.9);
+      g.strokeCircle(startX + index * spacing, y, 3.5);
+    }
   }
 
   private drawOffscreenEnemyIndicators(g: Phaser.GameObjects.Graphics, world: WorldState): void {
@@ -912,76 +872,6 @@ export class PhaserArenaRenderer {
     };
   }
 
-  private drawUpgradeChoiceButtons(g: Phaser.GameObjects.Graphics, world: WorldState): void {
-    const { width, height } = this.simulationConfig.arena;
-    const buttons = getUpgradeChoiceButtons(
-      world.progression.pendingUpgradeChoices.length,
-      width,
-      height,
-    );
-    buttons.forEach((button) => {
-      const choiceId = world.progression.pendingUpgradeChoices[button.index]!;
-      if (isExtraUpgradeId(choiceId)) {
-        const definition = this.simulationConfig.extraUpgrades[choiceId];
-        const display = TEXT.upgrades.extraDefinitions[choiceId];
-        const currentRank = world.progression.extraUpgradeRanks[choiceId];
-        const nextRank = currentRank + 1;
-        const rank = definition.maxRank === null ? `${nextRank}` : `${nextRank}/${definition.maxRank}`;
-        this.drawButton(g, button.x, button.y, button.width, button.height);
-        this.upgradeChoiceTexts[button.index]!
-          .setText(
-            `${button.index + 1}. [${TEXT.upgrades.extraCategoryLabel}] ${display.title}  ${TEXT.ui.rank} ${rank}\n${display.description}\n${this.formatExtraUpgradePreview(definition.effect, currentRank)}`,
-          )
-          .setPosition(button.x + button.width / 2, button.y + button.height / 2)
-          .setVisible(true);
-        return;
-      }
-
-      const upgradeId = choiceId;
-      const upgrade = this.simulationConfig.upgrades[upgradeId];
-      const upgradeDisplay = TEXT.upgrades.definitions[upgradeId];
-      const currentRank = world.progression.upgradeRanks[upgradeId];
-      const category = TEXT.upgrades.categoryLabels[upgrade.category];
-      const preview = formatUpgradePreview(
-        createUpgradePreview(world, this.simulationConfig, upgradeId),
-        TEXT.upgrades.preview.labels,
-        {
-          perSecond: TEXT.upgrades.preview.perSecond,
-          separator: TEXT.upgrades.preview.separator,
-        },
-      );
-      this.drawButton(g, button.x, button.y, button.width, button.height);
-      this.upgradeChoiceTexts[button.index]!
-        .setText(
-          `${button.index + 1}. [${category}] ${upgradeDisplay.title}  ${TEXT.ui.rank} ${currentRank + 1}/${
-            upgrade.maxRank
-          }\n${upgradeDisplay.description}\n${preview}`,
-        )
-        .setPosition(button.x + button.width / 2, button.y + button.height / 2)
-        .setVisible(true);
-    });
-  }
-
-  private formatExtraUpgradePreview(
-    effect: SimulationConfig["extraUpgrades"][keyof SimulationConfig["extraUpgrades"]]["effect"],
-    currentRank: number,
-  ): string {
-    const nextRank = currentRank + 1;
-    if (effect.type === "projectileDamage") {
-      return `弾ダメージ x${(1 + effect.amountPerRank * currentRank).toFixed(2)} -> x${(
-        1 +
-        effect.amountPerRank * nextRank
-      ).toFixed(2)}`;
-    }
-    if (effect.type === "fireRate" || effect.type === "moveSpeed") {
-      const current = Math.min(effect.maximumBonus, effect.amountPerRank * currentRank);
-      const next = Math.min(effect.maximumBonus, effect.amountPerRank * nextRank);
-      const label = effect.type === "fireRate" ? "追加連射" : "追加移動速度";
-      return `${label} +${Math.round(current * 100)}% -> +${Math.round(next * 100)}%`;
-    }
-    return `追加HP +${effect.amountPerRank * currentRank} -> +${effect.amountPerRank * nextRank}`;
-  }
-
   private drawButton(
     g: Phaser.GameObjects.Graphics,
     x: number,
@@ -998,9 +888,6 @@ export class PhaserArenaRenderer {
 
   private hideButtonTexts(): void {
     for (const text of this.menuButtonTexts) {
-      text.setVisible(false);
-    }
-    for (const text of this.upgradeChoiceTexts) {
       text.setVisible(false);
     }
   }

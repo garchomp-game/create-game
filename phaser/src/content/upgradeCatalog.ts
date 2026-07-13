@@ -45,6 +45,27 @@ export const UPGRADE_DEFINITIONS: Record<UpgradeId, UpgradeDefinition> = {
     maxRank: 2,
     weight: 0.7,
     effect: { type: "projectileCount", amount: 1 },
+    requirements: {
+      weaponIds: ["spread"],
+    },
+  },
+  pulseFocus: {
+    id: "pulseFocus",
+    title: "Pulse Focus",
+    description: "Direct hits build damage against the same target",
+    category: "weapon",
+    maxRank: 2,
+    weight: 0.7,
+    effect: {
+      type: "pulseFocus",
+      bonusPerStack: 0.15,
+      stacksPerRank: 2,
+      duration: 0.9,
+    },
+    requirements: {
+      weaponIds: ["pulse"],
+      featureFlag: "pulseFocus",
+    },
   },
   piercingRounds: {
     id: "piercingRounds",
@@ -67,6 +88,24 @@ export const UPGRADE_DEFINITIONS: Record<UpgradeId, UpgradeDefinition> = {
       weaponIds: ["pulse"],
       minimumCategoryRanks: { weapon: 7 },
       featureFlag: "pulseRicochet",
+    },
+  },
+  spreadSweep: {
+    id: "spreadSweep",
+    title: "Spread Sweep",
+    description: "Hit three targets in one volley to accelerate the next volley",
+    category: "capstone",
+    maxRank: 1,
+    weight: 1,
+    effect: {
+      type: "spreadSweep",
+      distinctTargets: 3,
+      nextIntervalMultiplier: 0.7,
+    },
+    requirements: {
+      weaponIds: ["spread"],
+      minimumCategoryRanks: { weapon: 7 },
+      featureFlag: "spreadSweep",
     },
   },
 };

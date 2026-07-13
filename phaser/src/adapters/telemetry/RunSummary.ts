@@ -30,6 +30,7 @@ export const RUN_SUMMARY_COLUMNS = [
   "projectiles_fired",
   "projectile_hits",
   "projectile_hit_rate",
+  "projectile_hits_per_kill",
   "hits_taken",
   "damage_taken",
   "contact_damage",
@@ -46,15 +47,24 @@ export const RUN_SUMMARY_COLUMNS = [
   "vital_core_rank",
   "overdrive_rounds_rank",
   "split_shot_rank",
+  "pulse_focus_rank",
   "piercing_rounds_rank",
   "pulse_ricochet_rank",
+  "spread_sweep_rank",
   "limit_power_rank",
   "limit_cycle_rank",
   "limit_drive_rank",
   "limit_core_rank",
   "capstone_acquired_seconds",
+  "capstone_upgrade",
   "capstone_activations",
   "capstone_follow_up_hits",
+  "pulse_focus_enhanced_hits",
+  "pulse_focus_bonus_damage",
+  "pulse_focus_max_stacks",
+  "spread_sweep_triggers",
+  "spread_sweep_consumes",
+  "spread_sweep_max_targets",
   "encounters_completed",
   "ranged_surges",
   "swarm_rushes",
@@ -88,6 +98,9 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
   const damageBySource = recordAt(result, "damageTakenBySource");
   const lastDamageSource = recordAt(result, "lastDamageSource");
   const capstoneMetrics = recordAt(result, "capstoneMetrics");
+  const weaponIdentityMetrics = recordAt(result, "weaponIdentityMetrics");
+  const pulseFocusMetrics = recordAt(weaponIdentityMetrics, "pulseFocus");
+  const spreadSweepMetrics = recordAt(weaponIdentityMetrics, "spreadSweep");
   const encounter = recordAt(value, "encounter");
   const contract = recordAt(encounter, "contract");
   const stats = recordAt(value, "stats");
@@ -142,6 +155,7 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
     projectile_hits: projectileHits,
     projectile_hit_rate:
       projectilesFired > 0 ? round(projectileHits / projectilesFired, 4) : null,
+    projectile_hits_per_kill: kills > 0 ? round(projectileHits / kills, 3) : null,
     hits_taken: numberAt(result, "hitsTaken"),
     damage_taken: numberAt(result, "damageTaken"),
     contact_damage: numberAt(damageBySource, "contact"),
@@ -158,15 +172,24 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
     vital_core_rank: numberAt(upgradeRanks, "vitalCore"),
     overdrive_rounds_rank: numberAt(upgradeRanks, "overdriveRounds"),
     split_shot_rank: numberAt(upgradeRanks, "splitShot"),
+    pulse_focus_rank: numberAt(upgradeRanks, "pulseFocus") ?? 0,
     piercing_rounds_rank: numberAt(upgradeRanks, "piercingRounds"),
     pulse_ricochet_rank: numberAt(upgradeRanks, "pulseRicochet"),
+    spread_sweep_rank: numberAt(upgradeRanks, "spreadSweep") ?? 0,
     limit_power_rank: numberAt(extraUpgradeRanks, "limitPower") ?? 0,
     limit_cycle_rank: numberAt(extraUpgradeRanks, "limitCycle") ?? 0,
     limit_drive_rank: numberAt(extraUpgradeRanks, "limitDrive") ?? 0,
     limit_core_rank: numberAt(extraUpgradeRanks, "limitCore") ?? 0,
     capstone_acquired_seconds: nullableRoundedNumber(capstoneMetrics, "acquiredAt"),
+    capstone_upgrade: stringAt(capstoneMetrics, "upgradeId") ?? "",
     capstone_activations: numberAt(capstoneMetrics, "activations"),
     capstone_follow_up_hits: numberAt(capstoneMetrics, "followUpHits"),
+    pulse_focus_enhanced_hits: numberAt(pulseFocusMetrics, "enhancedHits") ?? 0,
+    pulse_focus_bonus_damage: round(numberAt(pulseFocusMetrics, "bonusDamage") ?? 0, 3),
+    pulse_focus_max_stacks: numberAt(pulseFocusMetrics, "maxStacks") ?? 0,
+    spread_sweep_triggers: numberAt(spreadSweepMetrics, "triggers") ?? 0,
+    spread_sweep_consumes: numberAt(spreadSweepMetrics, "consumes") ?? 0,
+    spread_sweep_max_targets: numberAt(spreadSweepMetrics, "maxDistinctTargets") ?? 0,
     encounters_completed: numberAt(encounterMetrics, "eventsCompleted") ?? 0,
     ranged_surges: numberAt(eventCounts, "rangedSurge") ?? 0,
     swarm_rushes: numberAt(eventCounts, "swarmRush") ?? 0,
