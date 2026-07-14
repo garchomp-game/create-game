@@ -47,7 +47,7 @@ describe("createUpgradePreview", () => {
     expect(createUpgradePreview(world, SIMULATION_CONFIG, "overdriveRounds")).toEqual({
       stat: "shotSpeed",
       before: "520",
-      after: "598",
+      after: "634",
       unit: null,
     });
     expect(createUpgradePreview(world, SIMULATION_CONFIG, "splitShot")).toEqual({
@@ -60,6 +60,18 @@ describe("createUpgradePreview", () => {
       stat: "hitCapacity",
       before: "2",
       after: "3",
+      unit: null,
+    });
+  });
+
+  it("keeps the standard projectile speed step for Spread", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.state.weaponType = "spread";
+
+    expect(createUpgradePreview(world, SIMULATION_CONFIG, "overdriveRounds")).toEqual({
+      stat: "shotSpeed",
+      before: "480",
+      after: "552",
       unit: null,
     });
   });

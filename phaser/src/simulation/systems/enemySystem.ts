@@ -159,6 +159,7 @@ function updateRangedAttack(
   ) return;
 
   enemy.attackTimer += ranged.attackInterval / threat.attackSpeed;
+  if (world.enemyProjectiles.length >= config.threat.maximumEnemyProjectiles) return;
   const offset = enemy.radius + ranged.projectileRadius + 2;
   const projectile: EnemyProjectile = {
     id: `enemy-projectile-${world.nextEnemyProjectileId++}`,

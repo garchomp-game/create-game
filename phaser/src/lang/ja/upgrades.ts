@@ -16,7 +16,7 @@ export const upgradeText: UpgradeText = {
     },
     overdriveRounds: {
       title: "加速弾",
-      description: "弾速を15%上昇",
+      description: "弾速を上昇（Pulse 22% / Spread 15%）",
     },
     splitShot: {
       title: "分裂射撃",
@@ -32,7 +32,7 @@ export const upgradeText: UpgradeText = {
     },
     pulseRicochet: {
       title: "反響回路",
-      description: "パルス弾が障害物で1回跳弾する",
+      description: "パルス弾が障害物または外周フィールドで1回跳弾する",
     },
     spreadSweep: {
       title: "掃射循環",

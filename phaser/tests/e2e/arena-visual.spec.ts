@@ -318,6 +318,72 @@ test("matches the fixed upgraded Spread split shot frame", async ({ page }) => {
   });
 });
 
+test("matches the Pulse ricochet boundary field frame", async ({ page }) => {
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+  await expect(canvas).toHaveCount(1);
+
+  await moveMouseToCanvasLogical(page, 480, 307);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']").click();
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const snapshot = window.__ARENA_DEBUG__?.getSnapshot();
+        return snapshot ? { status: snapshot.status, weaponType: snapshot.weaponType } : null;
+      }),
+    )
+    .toEqual({ status: "playing", weaponType: "pulse" });
+
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
+    if (!debug) throw new Error("Debug API is not available.");
+    const weaponUpgrades = new Set([
+      "rapidFire",
+      "overdriveRounds",
+      "pulseFocus",
+      "piercingRounds",
+    ]);
+
+    for (let attempt = 0; attempt < 80; attempt += 1) {
+      debug.forceUpgradeSelect();
+      const choices = debug.getSnapshot().pendingUpgradeChoices;
+      const capstoneIndex = choices.indexOf("pulseRicochet");
+      const weaponIndex = choices.findIndex((choice) => weaponUpgrades.has(choice));
+      debug.step(
+        { upgradeChoicePressed: capstoneIndex >= 0 ? capstoneIndex : Math.max(0, weaponIndex) },
+        1 / 60,
+      );
+      if (capstoneIndex >= 0) break;
+    }
+
+    if (debug.getSnapshot().upgradeRanks.pulseRicochet !== 1) {
+      throw new Error("pulseRicochet upgrade is not available in fixture.");
+    }
+    debug.setPaused(true);
+    debug.setElapsed(300);
+  });
+
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const snapshot = window.__ARENA_DEBUG__?.getSnapshot();
+        return snapshot
+          ? {
+              elapsed: snapshot.elapsed,
+              pulseRicochet: snapshot.upgradeRanks.pulseRicochet,
+            }
+          : null;
+      }),
+    )
+    .toEqual({ elapsed: 300, pulseRicochet: 1 });
+
+  await expect(canvas).toHaveScreenshot("arena-pulse-ricochet-boundary.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
 test("matches the fixed mouse aiming cursor frame", async ({ page }) => {
   await gotoArena(page);
   const canvas = page.locator("canvas");

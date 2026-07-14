@@ -57,6 +57,32 @@ describe("threat scaling integration", () => {
       expect.objectContaining({ type: "enemy.projectile.fired", enemyType: "ranged" }),
     );
   });
+
+  it("caps late-game enemy projectile density without banking a burst", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    const ranged = SIMULATION_CONFIG.enemies.ranged.ranged!;
+    world.enemies.push(createRangedEnemy(world));
+    world.enemyProjectiles = Array.from(
+      { length: SIMULATION_CONFIG.threat.maximumEnemyProjectiles },
+      (_, index) => ({
+        id: `enemy-projectile-existing-${index}`,
+        position: { x: 100, y: 100 },
+        velocity: { x: 0, y: 0 },
+        radius: ranged.projectileRadius,
+        lifetime: ranged.projectileLifetime,
+        damage: ranged.projectileDamage,
+      }),
+    );
+    const events: GameEvent[] = [];
+
+    updateEnemies(world, 0, SIMULATION_CONFIG, events);
+
+    expect(world.enemyProjectiles).toHaveLength(
+      SIMULATION_CONFIG.threat.maximumEnemyProjectiles,
+    );
+    expect(events.some((event) => event.type === "enemy.projectile.fired")).toBe(false);
+    expect(world.enemies[0]?.attackTimer).toBe(ranged.attackInterval);
+  });
 });
 
 function createRangedEnemy(world: ReturnType<typeof createWorld>): Enemy {

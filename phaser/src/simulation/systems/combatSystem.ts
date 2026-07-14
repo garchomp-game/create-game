@@ -6,78 +6,70 @@ import type {
   SimulationConfig,
   WorldState,
 } from "../../domain/types";
-import { circleCircle } from "../../math/geometry";
+import { circleCircle, segmentCircleFirstIntersection } from "../../math/geometry";
+import type { BulletFrameMotions, BulletMotionSegment } from "./bulletSystem";
 
 export function resolveCombat(
   world: WorldState,
   config: SimulationConfig,
   events: GameEvent[],
+  bulletMotions?: BulletFrameMotions,
 ): void {
   const remainingBullets: Bullet[] = [];
   const deadEnemies = new Set<Enemy>();
 
   for (const bullet of world.bullets) {
-    for (const enemy of world.enemies) {
-      if (
-        deadEnemies.has(enemy) ||
-        bullet.hitEnemyIds.includes(enemy.id) ||
-        !circleCircle(bullet, enemy)
-      ) {
-        continue;
+    const motion = bulletMotions?.get(bullet.id) ?? createStationaryMotion(bullet);
+    const segments = motion.segments;
+    let stoppedByHitCapacity = false;
+
+    for (const segment of segments) {
+      const intersections = world.enemies
+        .map((enemy, index) => ({
+          enemy,
+          index,
+          hit: segmentCircleFirstIntersection(segment.start, segment.end, enemy, bullet.radius),
+        }))
+        .filter(
+          (candidate) =>
+            candidate.hit !== null &&
+            !deadEnemies.has(candidate.enemy) &&
+            !bullet.hitEnemyIds.includes(candidate.enemy.id),
+        )
+        .sort((a, b) => a.hit!.t - b.hit!.t || a.index - b.index);
+
+      for (const { enemy } of intersections) {
+        if (deadEnemies.has(enemy) || bullet.hitEnemyIds.includes(enemy.id)) continue;
+        resolveBulletEnemyHit(world, bullet, enemy, segment.ricochetsUsed, deadEnemies, events);
+        if (bullet.hitsRemaining <= 0) {
+          stoppedByHitCapacity = true;
+          break;
+        }
       }
 
-      const focusHit = applyPulseFocus(world, bullet, enemy);
-      const damage = bullet.damage + focusHit.bonusDamage;
-      enemy.hp -= damage;
-      bullet.hitEnemyIds.push(enemy.id);
-      bullet.hitsRemaining -= 1;
-      registerSpreadSweepHit(world, bullet, enemy, events);
-      events.push({
-        type: "enemy.hit",
-        bulletId: bullet.id,
-        volleyId: bullet.volleyId,
-        enemyId: enemy.id,
-        enemyType: enemy.typeId,
-        weaponType: bullet.weaponType,
-        ricochetsUsed: bullet.ricochetsUsed,
-        damage,
-        hpAfter: Math.max(0, enemy.hp),
-      });
-
-      if (focusHit.applied) {
+      if (stoppedByHitCapacity) break;
+      if (segment.ricochetAfter) {
+        const ricochet = segment.ricochetAfter;
         events.push({
-          type: "pulse.focus.hit",
-          enemyId: enemy.id,
-          enemyType: enemy.typeId,
-          stackBefore: focusHit.stackBefore,
-          stackAfter: focusHit.stackAfter,
-          bonusDamage: focusHit.bonusDamage,
-          killed: enemy.hp <= 0,
-        });
-      }
-
-      if (enemy.hp <= 0) {
-        deadEnemies.add(enemy);
-        const scoreAwarded = Math.round(
-          enemy.score * world.encounter.contract.scoreMultiplier,
-        );
-        world.state.score += scoreAwarded;
-        events.push({
-          type: "enemy.killed",
+          type: "bullet.ricocheted",
           bulletId: bullet.id,
           volleyId: bullet.volleyId,
-          enemyId: enemy.id,
-          enemyType: enemy.typeId,
           weaponType: bullet.weaponType,
-          scoreAwarded,
-          xpAwarded: enemy.xpValue,
-          position: { ...enemy.position },
+          surfaceKind: ricochet.surface.kind,
+          obstacleId:
+            ricochet.surface.kind === "obstacle" ? ricochet.surface.obstacleId : null,
+          boundarySide:
+            ricochet.surface.kind === "arenaBoundary" ? ricochet.surface.side : null,
+          position: { ...ricochet.position },
+          ricochetsUsed: ricochet.ricochetsUsed,
+          ricochetsRemaining: ricochet.ricochetsRemaining,
         });
       }
-
-      if (bullet.hitsRemaining <= 0) break;
     }
-    if (bullet.hitsRemaining > 0) remainingBullets.push(bullet);
+
+    if (!stoppedByHitCapacity && bullet.hitsRemaining > 0 && motion.survives) {
+      remainingBullets.push(bullet);
+    }
   }
 
   world.bullets = remainingBullets;
@@ -107,10 +99,81 @@ export function resolveCombat(
   }
 }
 
+function createStationaryMotion(bullet: Bullet): { segments: BulletMotionSegment[]; survives: true } {
+  return {
+    segments: [
+      {
+        start: { ...bullet.position },
+        end: { ...bullet.position },
+        ricochetsUsed: bullet.ricochetsUsed,
+        ricochetAfter: null,
+      },
+    ],
+    survives: true,
+  };
+}
+
+function resolveBulletEnemyHit(
+  world: WorldState,
+  bullet: Bullet,
+  enemy: Enemy,
+  ricochetsUsed: number,
+  deadEnemies: Set<Enemy>,
+  events: GameEvent[],
+): void {
+  const focusHit = applyPulseFocus(world, bullet, enemy, ricochetsUsed);
+  const damage = bullet.damage + focusHit.bonusDamage;
+  enemy.hp -= damage;
+  bullet.hitEnemyIds.push(enemy.id);
+  bullet.hitsRemaining -= 1;
+  registerSpreadSweepHit(world, bullet, enemy, events);
+  events.push({
+    type: "enemy.hit",
+    bulletId: bullet.id,
+    volleyId: bullet.volleyId,
+    enemyId: enemy.id,
+    enemyType: enemy.typeId,
+    weaponType: bullet.weaponType,
+    ricochetsUsed,
+    damage,
+    hpAfter: Math.max(0, enemy.hp),
+  });
+
+  if (focusHit.applied) {
+    events.push({
+      type: "pulse.focus.hit",
+      enemyId: enemy.id,
+      enemyType: enemy.typeId,
+      stackBefore: focusHit.stackBefore,
+      stackAfter: focusHit.stackAfter,
+      bonusDamage: focusHit.bonusDamage,
+      killed: enemy.hp <= 0,
+    });
+  }
+
+  if (enemy.hp > 0) return;
+
+  deadEnemies.add(enemy);
+  const scoreAwarded = Math.round(enemy.score * world.encounter.contract.scoreMultiplier);
+  world.state.score += scoreAwarded;
+  events.push({
+    type: "enemy.killed",
+    bulletId: bullet.id,
+    volleyId: bullet.volleyId,
+    enemyId: enemy.id,
+    enemyType: enemy.typeId,
+    weaponType: bullet.weaponType,
+    scoreAwarded,
+    xpAwarded: enemy.xpValue,
+    position: { ...enemy.position },
+  });
+}
+
 function applyPulseFocus(
   world: WorldState,
   bullet: Bullet,
   enemy: Enemy,
+  ricochetsUsed: number,
 ): {
   applied: boolean;
   stackBefore: number;
@@ -119,7 +182,7 @@ function applyPulseFocus(
 } {
   if (
     bullet.weaponType !== "pulse" ||
-    bullet.ricochetsUsed > 0 ||
+    ricochetsUsed > 0 ||
     world.runtime.pulseFocusMaxStacks <= 0
   ) {
     return { applied: false, stackBefore: 0, stackAfter: 0, bonusDamage: 0 };

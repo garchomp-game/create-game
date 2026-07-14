@@ -1,4 +1,5 @@
 import type { SimulationConfig, UpgradeId, WorldState } from "../domain/types";
+import { getProjectileSpeedUpgradeMultiplier } from "./buildComposer";
 
 export type UpgradePreviewStat =
   | "fireRate"
@@ -57,7 +58,7 @@ export function createUpgradePreview(
 
   if (effect.type === "projectileSpeedMultiplier") {
     const before = weapon.speed * world.runtime.projectileSpeedMultiplier;
-    const after = before * effect.multiplier;
+    const after = before * getProjectileSpeedUpgradeMultiplier(effect, world.state.weaponType);
     return { stat: "shotSpeed", before: formatWhole(before), after: formatWhole(after), unit: null };
   }
 

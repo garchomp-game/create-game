@@ -109,7 +109,13 @@ const levelingSimulationSchema = z
 const upgradeEffectSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("fireIntervalMultiplier"), multiplier: positiveNumber.max(1) }).strict(),
   z.object({ type: z.literal("moveSpeedMultiplier"), multiplier: positiveNumber }).strict(),
-  z.object({ type: z.literal("projectileSpeedMultiplier"), multiplier: positiveNumber }).strict(),
+  z
+    .object({
+      type: z.literal("projectileSpeedMultiplier"),
+      multiplier: positiveNumber,
+      weaponMultipliers: z.partialRecord(z.enum(WEAPON_TYPE_IDS), positiveNumber).optional(),
+    })
+    .strict(),
   z.object({ type: z.literal("maxHp"), amount: positiveNumber }).strict(),
   z.object({ type: z.literal("projectileCount"), amount: z.number().int().positive() }).strict(),
   z.object({ type: z.literal("hitCapacity"), amount: z.number().int().positive() }).strict(),
@@ -319,6 +325,7 @@ export const simulationConfigSchema: z.ZodType<SimulationConfig> = z
     features: z
       .object({
         pulseRicochet: z.boolean(),
+        pulseBoundaryRicochet: z.boolean(),
         pulseFocus: z.boolean(),
         spreadSweep: z.boolean(),
         roleBasedEnemyHp: z.boolean(),
@@ -386,6 +393,7 @@ export const simulationConfigSchema: z.ZodType<SimulationConfig> = z
         maximumProjectileSpeedMultiplier: z.number().min(1),
         rangedAttackSpeedGrowth: z.number().min(1),
         maximumAttackSpeedMultiplier: z.number().min(1),
+        maximumEnemyProjectiles: z.number().int().positive(),
         healDropDecay: positiveNumber.max(1),
         minimumHealDropMultiplier: positiveNumber.max(1),
       })

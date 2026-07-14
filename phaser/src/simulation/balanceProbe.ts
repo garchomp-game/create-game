@@ -65,6 +65,8 @@ export type BalanceProbeRun = {
   encounterDirectionChangeDegrees: number | null;
   capstoneAcquiredAt: number | null;
   capstoneActivations: number;
+  capstoneObstacleRicochets: number;
+  capstoneBoundaryRicochets: number;
   capstoneFollowUpHits: number;
   capstoneFollowUpUniqueEnemiesHit: number;
   pulseFocusEnhancedHits: number;
@@ -135,6 +137,8 @@ export type BalanceProbeModelSummary = {
   encounterDamageTaken: BalanceProbePercentiles;
   encounterActiveMovement: BalanceProbePercentiles;
   capstoneActivations: BalanceProbePercentiles;
+  capstoneObstacleRicochets: BalanceProbePercentiles;
+  capstoneBoundaryRicochets: BalanceProbePercentiles;
   capstoneFollowUpHits: BalanceProbePercentiles;
   pulseFocusEnhancedHits: BalanceProbePercentiles;
   pulseFocusBonusDamage: BalanceProbePercentiles;
@@ -297,6 +301,8 @@ function runBalanceProbeOnce(options: BalanceProbeOptions & {
     ),
     capstoneAcquiredAt: world.stats.capstoneMetrics.acquiredAt,
     capstoneActivations: world.stats.capstoneMetrics.activations,
+    capstoneObstacleRicochets: world.stats.capstoneMetrics.obstacleRicochets,
+    capstoneBoundaryRicochets: world.stats.capstoneMetrics.boundaryRicochets,
     capstoneFollowUpHits: world.stats.capstoneMetrics.followUpHits,
     capstoneFollowUpUniqueEnemiesHit:
       world.stats.capstoneMetrics.followUpUniqueEnemiesHit,
@@ -510,6 +516,12 @@ function summarizeModelRuns(runs: BalanceProbeRun[]): BalanceProbeModelSummary {
     encounterDamageTaken: percentiles(runs.map((run) => run.encounterDamageTaken)),
     encounterActiveMovement: percentiles(runs.map((run) => run.encounterActiveMovement)),
     capstoneActivations: percentiles(runs.map((run) => run.capstoneActivations)),
+    capstoneObstacleRicochets: percentiles(
+      runs.map((run) => run.capstoneObstacleRicochets),
+    ),
+    capstoneBoundaryRicochets: percentiles(
+      runs.map((run) => run.capstoneBoundaryRicochets),
+    ),
     capstoneFollowUpHits: percentiles(runs.map((run) => run.capstoneFollowUpHits)),
     pulseFocusEnhancedHits: percentiles(runs.map((run) => run.pulseFocusEnhancedHits)),
     pulseFocusBonusDamage: percentiles(runs.map((run) => run.pulseFocusBonusDamage)),

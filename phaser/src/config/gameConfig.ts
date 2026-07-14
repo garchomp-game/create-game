@@ -10,6 +10,7 @@ const rawSimulationConfig = {
   seed: 20260619,
   features: {
     pulseRicochet: true,
+    pulseBoundaryRicochet: true,
     pulseFocus: true,
     spreadSweep: true,
     roleBasedEnemyHp: true,
@@ -231,6 +232,7 @@ const rawSimulationConfig = {
     maximumProjectileSpeedMultiplier: 1.8,
     rangedAttackSpeedGrowth: 1.05,
     maximumAttackSpeedMultiplier: 2.4,
+    maximumEnemyProjectiles: 256,
     healDropDecay: 0.96,
     minimumHealDropMultiplier: 0.35,
   },

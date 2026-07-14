@@ -20,6 +20,8 @@ export type EnemyBehavior = "chase" | "ranged";
 
 export const WEAPON_TYPE_IDS = ["pulse", "spread", "pierce"] as const;
 export type WeaponTypeId = (typeof WEAPON_TYPE_IDS)[number];
+export const ARENA_BOUNDARY_SIDES = ["left", "right", "top", "bottom"] as const;
+export type ArenaBoundarySide = (typeof ARENA_BOUNDARY_SIDES)[number];
 
 export const UPGRADE_IDS = [
   "rapidFire",
@@ -54,6 +56,7 @@ export type UpgradeCategory = (typeof UPGRADE_CATEGORIES)[number];
 
 export type SimulationFeatures = {
   pulseRicochet: boolean;
+  pulseBoundaryRicochet: boolean;
   pulseFocus: boolean;
   spreadSweep: boolean;
   roleBasedEnemyHp: boolean;
@@ -136,6 +139,7 @@ export type ThreatSimulationConfig = {
   maximumProjectileSpeedMultiplier: number;
   rangedAttackSpeedGrowth: number;
   maximumAttackSpeedMultiplier: number;
+  maximumEnemyProjectiles: number;
   healDropDecay: number;
   minimumHealDropMultiplier: number;
 };
@@ -211,7 +215,11 @@ export type LevelingSimulationConfig = {
 export type UpgradeEffect =
   | { type: "fireIntervalMultiplier"; multiplier: number }
   | { type: "moveSpeedMultiplier"; multiplier: number }
-  | { type: "projectileSpeedMultiplier"; multiplier: number }
+  | {
+      type: "projectileSpeedMultiplier";
+      multiplier: number;
+      weaponMultipliers?: Partial<Record<WeaponTypeId, number>>;
+    }
   | { type: "maxHp"; amount: number }
   | { type: "projectileCount"; amount: number }
   | { type: "hitCapacity"; amount: number }
@@ -549,6 +557,9 @@ export type CapstoneRunStats = {
   followUpHits: number;
   followUpUniqueEnemiesHit: number;
   maxFollowUpUniqueEnemiesPerVolley: number;
+  obstacleRicochets: number;
+  boundaryRicochets: number;
+  boundaryRicochetsBySide: Record<ArenaBoundarySide, number>;
   spreadSweepTriggers: number;
   spreadSweepConsumes: number;
 };
@@ -742,7 +753,9 @@ export type GameEvent =
       bulletId: string;
       volleyId: number;
       weaponType: WeaponTypeId;
-      obstacleId: string;
+      surfaceKind: "obstacle" | "arenaBoundary";
+      obstacleId: string | null;
+      boundarySide: ArenaBoundarySide | null;
       position: Vec2;
       ricochetsUsed: number;
       ricochetsRemaining: number;

@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const port = 5174;
+const isLongSoak = process.env.ARENA_LONG_SOAK === "1";
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -16,9 +17,9 @@ export default defineConfig({
   },
   use: {
     baseURL: `http://127.0.0.1:${port}/`,
-    trace: "retain-on-failure",
+    trace: isLongSoak ? "off" : "retain-on-failure",
     screenshot: "only-on-failure",
-    video: "retain-on-failure",
+    video: isLongSoak ? "off" : "retain-on-failure",
     launchOptions: {
       executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ?? "/usr/bin/google-chrome",
     },

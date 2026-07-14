@@ -68,7 +68,7 @@ export function composeBuild(
     const rank = Math.min(definition.maxRank, Math.max(0, upgradeRanks[upgradeId]));
     if (rank === 0 || !isUpgradeRelevant(config, definition.id, weaponType)) continue;
     for (let index = 0; index < rank; index += 1) {
-      applyEffect(modifiers, definition.effect);
+      applyEffect(modifiers, definition.effect, weaponType);
     }
     contributions.push({
       source: definition.category === "capstone" ? "capstone" : "upgrade",
@@ -93,7 +93,7 @@ export function composeBuild(
   }
 
   for (const effect of temporaryEffects) {
-    applyEffect(modifiers, effect);
+    applyEffect(modifiers, effect, weaponType);
     contributions.push({ source: "temporary", upgradeId: null, rank: 1, effect: { ...effect } });
   }
 
@@ -202,13 +202,24 @@ function applyExtraEffect(
   }
 }
 
-function applyEffect(modifiers: CombatModifiers, effect: UpgradeEffect): void {
+export function getProjectileSpeedUpgradeMultiplier(
+  effect: Extract<UpgradeEffect, { type: "projectileSpeedMultiplier" }>,
+  weaponType: WeaponTypeId,
+): number {
+  return effect.weaponMultipliers?.[weaponType] ?? effect.multiplier;
+}
+
+function applyEffect(
+  modifiers: CombatModifiers,
+  effect: UpgradeEffect,
+  weaponType: WeaponTypeId,
+): void {
   if (effect.type === "fireIntervalMultiplier") {
     modifiers.fireIntervalMultiplier *= effect.multiplier;
   } else if (effect.type === "moveSpeedMultiplier") {
     modifiers.playerSpeedMultiplier *= effect.multiplier;
   } else if (effect.type === "projectileSpeedMultiplier") {
-    modifiers.projectileSpeedMultiplier *= effect.multiplier;
+    modifiers.projectileSpeedMultiplier *= getProjectileSpeedUpgradeMultiplier(effect, weaponType);
   } else if (effect.type === "maxHp") {
     modifiers.maxHpBonus += effect.amount;
   } else if (effect.type === "projectileCount") {

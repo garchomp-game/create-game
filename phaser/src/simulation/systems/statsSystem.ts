@@ -47,6 +47,12 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
       }
     } else if (event.type === "bullet.ricocheted") {
       world.stats.capstoneMetrics.activations += 1;
+      if (event.surfaceKind === "obstacle") {
+        world.stats.capstoneMetrics.obstacleRicochets += 1;
+      } else if (event.boundarySide) {
+        world.stats.capstoneMetrics.boundaryRicochets += 1;
+        world.stats.capstoneMetrics.boundaryRicochetsBySide[event.boundarySide] += 1;
+      }
     } else if (event.type === "pulse.focus.hit") {
       const metrics = world.stats.weaponIdentityMetrics.pulseFocus;
       if (event.bonusDamage > 0) metrics.enhancedHits += 1;

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { SIMULATION_CONFIG } from "../../src/config/gameConfig";
 
 const SOAK_DURATION_MS = 15 * 60 * 1000;
 const SAMPLE_INTERVAL_MS = 500;
@@ -28,6 +29,8 @@ test("runs the rendered arena for fifteen real-time minutes with debug sustain",
   let directionIndex = -1;
   let maxEnemies = 0;
   let maxProjectiles = 0;
+  let maxPlayerBullets = 0;
+  let maxEnemyProjectiles = 0;
   let maxPickups = 0;
   let maxHeap = heapAtStart;
   let sampleIndex = 0;
@@ -70,6 +73,8 @@ test("runs the rendered arena for fifteen real-time minutes with debug sustain",
       maxProjectiles,
       snapshot.bulletCount + snapshot.enemyProjectileCount,
     );
+    maxPlayerBullets = Math.max(maxPlayerBullets, snapshot.bulletCount);
+    maxEnemyProjectiles = Math.max(maxEnemyProjectiles, snapshot.enemyProjectileCount);
     maxPickups = Math.max(maxPickups, snapshot.pickupCount);
     maxHeap = Math.max(maxHeap, await readHeap(page));
     sampleIndex += 1;
@@ -115,6 +120,8 @@ test("runs the rendered arena for fifteen real-time minutes with debug sustain",
     simulationSeconds: finalSnapshot.elapsed,
     maxEnemies,
     maxProjectiles,
+    maxPlayerBullets,
+    maxEnemyProjectiles,
     maxPickups,
     heapAtStart,
     maxHeap,
@@ -136,6 +143,10 @@ test("runs the rendered arena for fifteen real-time minutes with debug sustain",
   expect(finalSnapshot.encounter.collapse.stage).toBeGreaterThanOrEqual(7);
   expect(maxEnemies).toBeLessThanOrEqual(96);
   expect(maxProjectiles).toBeLessThanOrEqual(300);
+  expect(maxPlayerBullets).toBeLessThanOrEqual(60);
+  expect(maxEnemyProjectiles).toBeLessThanOrEqual(
+    SIMULATION_CONFIG.threat.maximumEnemyProjectiles,
+  );
   expect(maxPickups).toBeLessThanOrEqual(2_000);
   expect(maxHeap).toBeLessThan(512 * 1024 * 1024);
   expect(fpsAtEnd).toBeGreaterThan(15);

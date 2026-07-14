@@ -153,11 +153,20 @@ describe("run records", () => {
     delete ranks.spreadSweep;
     delete capstone.spreadSweepTriggers;
     delete capstone.spreadSweepConsumes;
+    delete capstone.obstacleRicochets;
+    delete capstone.boundaryRicochets;
+    delete capstone.boundaryRicochetsBySide;
     delete legacy.weaponIdentityMetrics;
 
     expect(runRecordSchema.parse(legacy)).toMatchObject({
       upgradeRanks: { pulseFocus: 0, spreadSweep: 0 },
-      capstoneMetrics: { spreadSweepTriggers: 0, spreadSweepConsumes: 0 },
+      capstoneMetrics: {
+        spreadSweepTriggers: 0,
+        spreadSweepConsumes: 0,
+        obstacleRicochets: 0,
+        boundaryRicochets: 0,
+        boundaryRicochetsBySide: { left: 0, right: 0, top: 0, bottom: 0 },
+      },
       weaponIdentityMetrics: {
         pulseFocus: { enhancedHits: 0, bonusDamage: 0, maxStacks: 0 },
         spreadSweep: { triggers: 0, consumes: 0, maxDistinctTargets: 0 },
@@ -213,6 +222,9 @@ function makeSummary(overrides: Partial<RunResultSummary> = {}): RunResultSummar
       followUpHits: 0,
       followUpUniqueEnemiesHit: 0,
       maxFollowUpUniqueEnemiesPerVolley: 0,
+      obstacleRicochets: 0,
+      boundaryRicochets: 0,
+      boundaryRicochetsBySide: { left: 0, right: 0, top: 0, bottom: 0 },
       spreadSweepTriggers: 0,
       spreadSweepConsumes: 0,
     },

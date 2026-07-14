@@ -77,6 +77,12 @@ export class PhaserFeedbackLayer {
       } else if (event.type === "spread.sweep.triggered") {
         this.addImpact(world.player.position, world.player.radius + 14, 0xfbbf24);
         this.addBurst(world.player.position, 0xfbbf24);
+      } else if (event.type === "bullet.ricocheted") {
+        this.addImpact(
+          event.position,
+          event.surfaceKind === "arenaBoundary" ? 10 : 7,
+          event.surfaceKind === "arenaBoundary" ? 0x22d3ee : 0xe2e8f0,
+        );
       } else if (event.type === "game.over") {
         this.screenFlashAlpha = 0;
         this.scene.cameras.main.resetFX();

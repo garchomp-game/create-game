@@ -171,6 +171,16 @@ const capstoneMetricsSchema = z.object({
   followUpHits: z.number().int().nonnegative(),
   followUpUniqueEnemiesHit: z.number().int().nonnegative(),
   maxFollowUpUniqueEnemiesPerVolley: z.number().int().nonnegative(),
+  obstacleRicochets: z.number().int().nonnegative().default(0),
+  boundaryRicochets: z.number().int().nonnegative().default(0),
+  boundaryRicochetsBySide: z
+    .object({
+      left: z.number().int().nonnegative(),
+      right: z.number().int().nonnegative(),
+      top: z.number().int().nonnegative(),
+      bottom: z.number().int().nonnegative(),
+    })
+    .default({ left: 0, right: 0, top: 0, bottom: 0 }),
   spreadSweepTriggers: z.number().int().nonnegative().default(0),
   spreadSweepConsumes: z.number().int().nonnegative().default(0),
 });
@@ -331,6 +341,9 @@ function createEmptyCapstoneMetrics(): CapstoneRunStats {
     followUpHits: 0,
     followUpUniqueEnemiesHit: 0,
     maxFollowUpUniqueEnemiesPerVolley: 0,
+    obstacleRicochets: 0,
+    boundaryRicochets: 0,
+    boundaryRicochetsBySide: { left: 0, right: 0, top: 0, bottom: 0 },
     spreadSweepTriggers: 0,
     spreadSweepConsumes: 0,
   };

@@ -411,9 +411,9 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   const runExport = await page.evaluate(() => window.__ARENA_DEBUG__?.getRunExport());
   expect(runExport).toBeTruthy();
   expect(runExport?.game).toBe("arena-core-phaser");
-  expect(runExport?.appVersion).toBe("0.6.3");
-  expect(runExport?.rulesetVersion).toBe("phaser-v0.6.3-weapon-identities");
-  expect(runExport?.configVersion).toBe("phaser-v0.6.3-weapon-identities");
+  expect(runExport?.appVersion).toBe("0.6.4");
+  expect(runExport?.rulesetVersion).toBe("phaser-v0.6.4-pulse-ballistics");
+  expect(runExport?.configVersion).toBe("phaser-v0.6.4-pulse-ballistics");
   expect(runExport?.buildCommit).toMatch(/^[0-9a-f]{12}$/);
   expect(runExport?.runOrigin).toBe("test");
   expect(runExport?.rankEligibility).toEqual({
@@ -425,6 +425,11 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   expect(runExport?.resultSummary.damageTaken).toBe(12);
   expect(runExport?.resultSummary.hpRecovered).toBe(0);
   expect(runExport?.stats.healPickupsCollected).toBe(0);
+  expect(runExport?.resultSummary.capstoneMetrics).toMatchObject({
+    obstacleRicochets: 0,
+    boundaryRicochets: 0,
+    boundaryRicochetsBySide: { left: 0, right: 0, top: 0, bottom: 0 },
+  });
   expect(runExport?.stats.progressionMetrics.offers).toHaveLength(1);
   expect(runExport?.stats.progressionMetrics.selections).toHaveLength(1);
   expect(runExport?.stats.navigationMetrics).toEqual({

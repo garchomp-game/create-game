@@ -31,11 +31,15 @@ export const UPGRADE_DEFINITIONS: Record<UpgradeId, UpgradeDefinition> = {
   overdriveRounds: {
     id: "overdriveRounds",
     title: "Overdrive Rounds",
-    description: "Projectiles fly 15% faster",
+    description: "Projectiles fly faster; Pulse gains 22% per rank",
     category: "weapon",
     maxRank: 5,
     weight: 0.9,
-    effect: { type: "projectileSpeedMultiplier", multiplier: 1.15 },
+    effect: {
+      type: "projectileSpeedMultiplier",
+      multiplier: 1.15,
+      weaponMultipliers: { pulse: 1.22 },
+    },
   },
   splitShot: {
     id: "splitShot",
@@ -79,7 +83,7 @@ export const UPGRADE_DEFINITIONS: Record<UpgradeId, UpgradeDefinition> = {
   pulseRicochet: {
     id: "pulseRicochet",
     title: "Pulse Ricochet",
-    description: "Pulse shots ricochet once from obstacles",
+    description: "Pulse shots ricochet once from obstacles or the arena boundary",
     category: "capstone",
     maxRank: 1,
     weight: 1,

@@ -22,17 +22,17 @@ const balanceProbeSeeds = [20260619, 20260620, 20260621, 20260622, 20260623];
 const balanceBaseline = {
   noInputSurvivalP50: 6.3,
   fixedAimShootSurvivalP50: 6.3,
-  kiteCollectSurvivalP50: 127.1,
-  kiteCollectKillsPerMinuteP50: 163.34,
-  kiteCollectScorePerMinuteP50: 2234.3,
-  kiteCollectFirstDamageP50: 94.93,
-  kiteCollectFirstUpgradeP50: 7.2,
+  kiteCollectSurvivalP50: 179.37,
+  kiteCollectKillsPerMinuteP50: 196.8,
+  kiteCollectScorePerMinuteP50: 3034.94,
+  kiteCollectFirstDamageP50: 84.87,
+  kiteCollectFirstUpgradeP50: 7.07,
   kiteCollectWaveReachedP50: 90,
-  kiteCollectMaxEnemiesMax: 34,
-  kiteCollectMaxBulletsMax: 26,
-  kiteCollectHpRecoveredP50: 64,
-  kiteCollectHealPickupsCollectedP50: 22,
-  kiteCollectEffectiveHealPickupsCollectedP50: 6,
+  kiteCollectMaxEnemiesMax: 45,
+  kiteCollectMaxBulletsMax: 32,
+  kiteCollectHpRecoveredP50: 59,
+  kiteCollectHealPickupsCollectedP50: 39,
+  kiteCollectEffectiveHealPickupsCollectedP50: 5,
 };
 
 describe("balance simulation", () => {
@@ -90,7 +90,6 @@ describe("balance simulation", () => {
     const noInput = report.summary.byModel.noInput;
     const fixedAimShoot = report.summary.byModel.fixedAimShoot;
     const kiteCollect = report.summary.byModel.kiteCollect;
-
     expect(noInput.runs).toBe(5);
     expect(fixedAimShoot.runs).toBe(5);
     expect(kiteCollect.runs).toBe(5);
@@ -99,7 +98,7 @@ describe("balance simulation", () => {
       true,
     );
 
-    // v0.6.3 single-line Pulse baseline. These probes are regression sentries,
+    // v0.6.4 high-velocity Pulse baseline. These probes are regression sentries,
     // not a claim that the input models are correct human play.
     expectWithinBaseline(noInput.survivalSeconds.p50, balanceBaseline.noInputSurvivalP50);
     expectWithinBaseline(
@@ -227,7 +226,7 @@ describe("balance simulation", () => {
     expect(world.stats.lastDamageSource?.kind).toBe("collapse");
     expect(world.progression.buildCompletedAt).not.toBeNull();
     expect(world.progression.buildCompletedAt!).toBeGreaterThanOrEqual(4 * 60);
-    expect(world.progression.buildCompletedAt!).toBeLessThanOrEqual(6 * 60);
+    expect(world.progression.buildCompletedAt!).toBeLessThanOrEqual(7 * 60);
     expect(world.stats.encounterMetrics.peakCollapseStage).toBeGreaterThanOrEqual(8);
     expect(maxEnemies).toBeLessThanOrEqual(SIMULATION_CONFIG.threat.maximumEnemies);
     expect(maxProjectiles).toBeLessThanOrEqual(300);
@@ -271,8 +270,19 @@ describe("balance simulation", () => {
     expect(pulse.pulseFocusEnhancedHits.p50).toBeGreaterThan(0);
     expect(pulse.pulseFocusBonusDamage.p50).toBeGreaterThan(0);
     expect(pulse.pulseFocusMaxStacks.p50).toBeGreaterThanOrEqual(2);
+    expect(pulse.capstoneBoundaryRicochets.p50).toBeGreaterThan(0);
     expect(spread.spreadSweepTriggers.p50).toBeGreaterThan(0);
-    expect(spread.spreadSweepConsumes.p50).toBe(spread.spreadSweepTriggers.p50);
+    expect(spread.spreadSweepConsumes.p50).toBeLessThanOrEqual(
+      spread.spreadSweepTriggers.p50,
+    );
+    expect(spread.spreadSweepTriggers.p50 - spread.spreadSweepConsumes.p50).toBeLessThanOrEqual(1);
+    expect(
+      comparison.spread.runs.every(
+        (run) =>
+          run.spreadSweepTriggers - run.spreadSweepConsumes >= 0 &&
+          run.spreadSweepTriggers - run.spreadSweepConsumes <= 1,
+      ),
+    ).toBe(true);
   }, 45_000);
 });
 

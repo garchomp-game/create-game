@@ -84,6 +84,7 @@ export class PhaserArenaRenderer {
     g.fillStyle(this.viewConfig.arena.background, 1);
     g.fillRect(0, 0, arena.width, arena.height);
     this.drawCollapse(g, world);
+    this.drawPulseBoundaryField(g, world);
     g.lineStyle(3, this.viewConfig.arena.border, 1);
     g.strokeRect(1.5, 1.5, arena.width - 3, arena.height - 3);
 
@@ -298,7 +299,22 @@ export class PhaserArenaRenderer {
     if (metrics.upgradeId === "spreadSweep") {
       return `最終強化: ${title} ${formatTime(metrics.acquiredAt)}  発動${metrics.spreadSweepTriggers} / 消費${metrics.spreadSweepConsumes}`;
     }
-    return `最終強化: ${title} ${formatTime(metrics.acquiredAt)}  跳弾${metrics.activations} / 追撃${metrics.followUpHits}`;
+    return `最終強化: ${title} ${formatTime(metrics.acquiredAt)}  障害物${metrics.obstacleRicochets} / 外周${metrics.boundaryRicochets} / 追撃${metrics.followUpHits}`;
+  }
+
+  private drawPulseBoundaryField(g: Phaser.GameObjects.Graphics, world: WorldState): void {
+    if (
+      !this.simulationConfig.features.pulseBoundaryRicochet ||
+      world.state.weaponType !== "pulse" ||
+      world.runtime.ricochetBonus <= 0
+    ) return;
+
+    const { width, height } = this.simulationConfig.arena;
+    const pulse = 0.42 + Math.sin(world.state.elapsed * 5) * 0.1;
+    g.lineStyle(5, 0x22d3ee, pulse);
+    g.strokeRect(4, 4, width - 8, height - 8);
+    g.lineStyle(1, 0xa5f3fc, 0.8);
+    g.strokeRect(8, 8, width - 16, height - 16);
   }
 
   private formatRecordEncounter(record: RunRecord): string {

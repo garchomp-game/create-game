@@ -30,7 +30,7 @@ describe("build composition", () => {
     expect(result.modifiers).toEqual({
       playerSpeedMultiplier: 1.12 * 1.1,
       fireIntervalMultiplier: 0.85 ** 2,
-      projectileSpeedMultiplier: 1.15,
+      projectileSpeedMultiplier: 1.22,
       projectileDamageMultiplier: 1,
       maxHpBonus: 20,
       projectileCountBonus: 0,
@@ -72,6 +72,33 @@ describe("build composition", () => {
       composeBuild(SIMULATION_CONFIG, "spread", world.progression.upgradeRanks).modifiers
         .ricochetBonus,
     ).toBe(0);
+  });
+
+  it("keeps maximum projectile-speed growth weapon-specific", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.progression.upgradeRanks.overdriveRounds = 5;
+
+    const pulse = composeBuild(
+      SIMULATION_CONFIG,
+      "pulse",
+      world.progression.upgradeRanks,
+    );
+    const spread = composeBuild(
+      SIMULATION_CONFIG,
+      "spread",
+      world.progression.upgradeRanks,
+    );
+
+    expect(pulse.modifiers.projectileSpeedMultiplier).toBeCloseTo(1.22 ** 5);
+    expect(spread.modifiers.projectileSpeedMultiplier).toBeCloseTo(1.15 ** 5);
+    expect(
+      SIMULATION_CONFIG.weapons.pulse.speed *
+        pulse.modifiers.projectileSpeedMultiplier,
+    ).toBeCloseTo(1_405.41, 2);
+    expect(
+      SIMULATION_CONFIG.weapons.spread.speed *
+        spread.modifiers.projectileSpeedMultiplier,
+    ).toBeCloseTo(965.45, 2);
   });
 
   it("keeps power and core scaling while capping fire-rate and movement extras", () => {

@@ -122,11 +122,11 @@ export function stepWorld(
   );
   updateArenaCollapse(world, dt, config, events);
   updateShooting(world, input.shootHeld, config, events);
-  updateBullets(world, dt, config, events);
+  const bulletMotions = updateBullets(world, dt, config);
   updateSpawner(world, dt, random.spawn, config, events);
   updateEnemies(world, dt, config, events);
   updateEnemyProjectiles(world, dt, config);
-  resolveCombat(world, config, events);
+  resolveCombat(world, config, events, bulletMotions);
   updatePickups(world, config, events, dt);
   updateLevelProgression(world, random.upgrade, config, events);
   updateGameOver(world, events);

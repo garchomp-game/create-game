@@ -58,6 +58,12 @@ export const RUN_SUMMARY_COLUMNS = [
   "capstone_acquired_seconds",
   "capstone_upgrade",
   "capstone_activations",
+  "capstone_obstacle_ricochets",
+  "capstone_boundary_ricochets",
+  "capstone_boundary_left",
+  "capstone_boundary_right",
+  "capstone_boundary_top",
+  "capstone_boundary_bottom",
   "capstone_follow_up_hits",
   "pulse_focus_enhanced_hits",
   "pulse_focus_bonus_damage",
@@ -98,6 +104,7 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
   const damageBySource = recordAt(result, "damageTakenBySource");
   const lastDamageSource = recordAt(result, "lastDamageSource");
   const capstoneMetrics = recordAt(result, "capstoneMetrics");
+  const boundaryRicochetsBySide = recordAt(capstoneMetrics, "boundaryRicochetsBySide");
   const weaponIdentityMetrics = recordAt(result, "weaponIdentityMetrics");
   const pulseFocusMetrics = recordAt(weaponIdentityMetrics, "pulseFocus");
   const spreadSweepMetrics = recordAt(weaponIdentityMetrics, "spreadSweep");
@@ -183,6 +190,12 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
     capstone_acquired_seconds: nullableRoundedNumber(capstoneMetrics, "acquiredAt"),
     capstone_upgrade: stringAt(capstoneMetrics, "upgradeId") ?? "",
     capstone_activations: numberAt(capstoneMetrics, "activations"),
+    capstone_obstacle_ricochets: numberAt(capstoneMetrics, "obstacleRicochets") ?? 0,
+    capstone_boundary_ricochets: numberAt(capstoneMetrics, "boundaryRicochets") ?? 0,
+    capstone_boundary_left: numberAt(boundaryRicochetsBySide, "left") ?? 0,
+    capstone_boundary_right: numberAt(boundaryRicochetsBySide, "right") ?? 0,
+    capstone_boundary_top: numberAt(boundaryRicochetsBySide, "top") ?? 0,
+    capstone_boundary_bottom: numberAt(boundaryRicochetsBySide, "bottom") ?? 0,
     capstone_follow_up_hits: numberAt(capstoneMetrics, "followUpHits"),
     pulse_focus_enhanced_hits: numberAt(pulseFocusMetrics, "enhancedHits") ?? 0,
     pulse_focus_bonus_damage: round(numberAt(pulseFocusMetrics, "bonusDamage") ?? 0, 3),
