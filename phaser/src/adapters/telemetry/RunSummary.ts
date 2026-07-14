@@ -23,6 +23,13 @@ export const RUN_SUMMARY_COLUMNS = [
   "extra_cycle",
   "threat_tier",
   "collapse_stage",
+  "performance_frame_samples",
+  "performance_actual_fps",
+  "performance_estimated_fps",
+  "performance_average_raw_dt_ms",
+  "performance_p95_raw_dt_ms",
+  "performance_max_raw_dt_ms",
+  "performance_frames_over_50_ms",
   "build_completed_seconds",
   "kills",
   "kills_per_minute",
@@ -65,6 +72,14 @@ export const RUN_SUMMARY_COLUMNS = [
   "capstone_boundary_top",
   "capstone_boundary_bottom",
   "capstone_follow_up_hits",
+  "capstone_obstacle_follow_up_hits",
+  "capstone_obstacle_follow_up_kills",
+  "capstone_boundary_follow_up_hits",
+  "capstone_boundary_follow_up_kills",
+  "capstone_boundary_follow_up_left",
+  "capstone_boundary_follow_up_right",
+  "capstone_boundary_follow_up_top",
+  "capstone_boundary_follow_up_bottom",
   "pulse_focus_enhanced_hits",
   "pulse_focus_bonus_damage",
   "pulse_focus_max_stacks",
@@ -105,6 +120,8 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
   const lastDamageSource = recordAt(result, "lastDamageSource");
   const capstoneMetrics = recordAt(result, "capstoneMetrics");
   const boundaryRicochetsBySide = recordAt(capstoneMetrics, "boundaryRicochetsBySide");
+  const boundaryFollowUpHitsBySide = recordAt(capstoneMetrics, "boundaryFollowUpHitsBySide");
+  const performance = recordAt(value, "performance");
   const weaponIdentityMetrics = recordAt(result, "weaponIdentityMetrics");
   const pulseFocusMetrics = recordAt(weaponIdentityMetrics, "pulseFocus");
   const spreadSweepMetrics = recordAt(weaponIdentityMetrics, "spreadSweep");
@@ -154,6 +171,13 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
     extra_cycle: numberAt(result, "extraCycle") ?? numberAt(value, "extraCycle") ?? 0,
     threat_tier: numberAt(result, "threatTier") ?? 0,
     collapse_stage: numberAt(result, "collapseStage") ?? 0,
+    performance_frame_samples: numberAt(performance, "frameSamples") ?? 0,
+    performance_actual_fps: roundedNumber(performance, "actualFps"),
+    performance_estimated_fps: roundedNumber(performance, "estimatedFps"),
+    performance_average_raw_dt_ms: roundedNumber(performance, "averageRawDtMs"),
+    performance_p95_raw_dt_ms: roundedNumber(performance, "p95RawDtMs"),
+    performance_max_raw_dt_ms: roundedNumber(performance, "maxRawDtMs"),
+    performance_frames_over_50_ms: numberAt(performance, "framesOver50Ms") ?? 0,
     build_completed_seconds: nullableRoundedNumber(value, "buildCompletedAt"),
     kills,
     kills_per_minute: elapsed > 0 ? round((kills * 60) / elapsed, 3) : null,
@@ -197,6 +221,14 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
     capstone_boundary_top: numberAt(boundaryRicochetsBySide, "top") ?? 0,
     capstone_boundary_bottom: numberAt(boundaryRicochetsBySide, "bottom") ?? 0,
     capstone_follow_up_hits: numberAt(capstoneMetrics, "followUpHits"),
+    capstone_obstacle_follow_up_hits: numberAt(capstoneMetrics, "obstacleFollowUpHits") ?? 0,
+    capstone_obstacle_follow_up_kills: numberAt(capstoneMetrics, "obstacleFollowUpKills") ?? 0,
+    capstone_boundary_follow_up_hits: numberAt(capstoneMetrics, "boundaryFollowUpHits") ?? 0,
+    capstone_boundary_follow_up_kills: numberAt(capstoneMetrics, "boundaryFollowUpKills") ?? 0,
+    capstone_boundary_follow_up_left: numberAt(boundaryFollowUpHitsBySide, "left") ?? 0,
+    capstone_boundary_follow_up_right: numberAt(boundaryFollowUpHitsBySide, "right") ?? 0,
+    capstone_boundary_follow_up_top: numberAt(boundaryFollowUpHitsBySide, "top") ?? 0,
+    capstone_boundary_follow_up_bottom: numberAt(boundaryFollowUpHitsBySide, "bottom") ?? 0,
     pulse_focus_enhanced_hits: numberAt(pulseFocusMetrics, "enhancedHits") ?? 0,
     pulse_focus_bonus_damage: round(numberAt(pulseFocusMetrics, "bonusDamage") ?? 0, 3),
     pulse_focus_max_stacks: numberAt(pulseFocusMetrics, "maxStacks") ?? 0,
@@ -262,6 +294,10 @@ function sumWeaponMetric(metrics: Record<string, unknown>, key: string): number 
 function nullableRoundedNumber(record: Record<string, unknown>, key: string): number | null {
   const value = numberAt(record, key);
   return value === null ? null : round(value, 3);
+}
+
+function roundedNumber(record: Record<string, unknown>, key: string): number {
+  return round(numberAt(record, key) ?? 0, 3);
 }
 
 function round(value: number, digits: number): number {

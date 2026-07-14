@@ -25,6 +25,7 @@ import { composeBuild } from "../../simulation/buildComposer";
 import { getWaveBand } from "../../simulation/waveDirector";
 import type {
   ArenaObstacleContactCounts,
+  ArenaPerformanceSnapshot,
   ArenaRunExport,
 } from "../phaser/ArenaDebugBridge";
 
@@ -39,6 +40,7 @@ export type CreateArenaRunExportInput = {
   randomStreams: RandomStreams;
   runConfig: SimulationConfig;
   world: WorldState;
+  performance: ArenaPerformanceSnapshot;
   lastEvents: readonly GameEvent[];
 };
 
@@ -66,6 +68,7 @@ export function createArenaRunExport(input: CreateArenaRunExportInput): ArenaRun
       seeds: { ...input.randomStreams.seeds },
     },
     status: world.state.status,
+    performance: { ...input.performance },
     elapsed: world.state.elapsed,
     wave: { ...getWaveBand(input.runConfig, world.state.elapsed) },
     resultSummary: createRunResultSummary(world, input.runConfig),

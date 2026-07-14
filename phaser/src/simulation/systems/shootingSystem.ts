@@ -47,6 +47,8 @@ export function updateShooting(
       hitsRemaining: hitCapacity,
       ricochetRemaining: weapon.ricochetCount + world.runtime.ricochetBonus,
       ricochetsUsed: 0,
+      ricochetSurfaceKind: null,
+      ricochetBoundarySide: null,
       hitEnemyIds: [],
     };
     world.bullets.push(bullet);

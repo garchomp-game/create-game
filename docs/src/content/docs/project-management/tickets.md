@@ -11,6 +11,7 @@ description: バージョン別のチケット番号、表示名、状態。
 - v0.6の計画: [直近フェーズ](../next-phase-plan/)
 - v0.6の詳細: [v0.6チケット詳細](../v06-tickets/)
 - v0.6の進捗: [GitHubマイルストーン](https://github.com/garchomp-game/create-game/milestone/2)
+- 公開ベータ候補: [GitHubマイルストーン](https://github.com/garchomp-game/create-game/milestone/3)
 
 ## v0.3
 
@@ -67,22 +68,29 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-V06-001` | [#13](https://github.com/garchomp-game/create-game/issues/13) | XP曲線と強化選択間隔の再設計 | P0 | 実装・自動検証済み |
 | `PH-V06-002` | [#14](https://github.com/garchomp-game/create-game/issues/14) | 開始武器選択の縦切り基盤 | P0 | 実装・自動検証済み |
 | `PH-V06-003` | [#15](https://github.com/garchomp-game/create-game/issues/15) | 強化分類と効果合成 | P0 | 実装・自動検証済み |
-| `PH-V06-004` | [#16](https://github.com/garchomp-game/create-game/issues/16) | 最初の武器最終強化試作 | P0 | 実装済み・手動評価待ち |
+| `PH-V06-004` | [#16](https://github.com/garchomp-game/create-game/issues/16) | 最初の武器最終強化試作 | P0 | 完了 |
 | `PH-V06-005` | [#17](https://github.com/garchomp-game/create-game/issues/17) | 強化選択UIとビルド要約 | P1 | 実装・画面確認済み |
-| `PH-V06-006` | [#18](https://github.com/garchomp-game/create-game/issues/18) | 予兆付き危険イベントと契約試作 | P1 | 実装済み・手動評価待ち |
+| `PH-V06-006` | [#18](https://github.com/garchomp-game/create-game/issues/18) | 予兆付き危険イベントと契約試作 | P1 | 完了 |
 | `PH-V06-007` | [#19](https://github.com/garchomp-game/create-game/issues/19) | 用途別乱数列の分離 | P0 | 実装・自動検証済み |
-| `PH-V06-008` | [#20](https://github.com/garchomp-game/create-game/issues/20) | ビルド多様性の計測と比較 | P0 | 10シード比較済み・手動待ち |
+| `PH-V06-008` | [#20](https://github.com/garchomp-game/create-game/issues/20) | ビルド多様性の計測と比較 | P0 | 完了 |
 | `PH-V06-009` | [#12](https://github.com/garchomp-game/create-game/issues/12) | Phaser画面とデバッグ責務の分割 | P0 | 実装・回帰確認済み |
 | `PH-V06-010` | [#21](https://github.com/garchomp-game/create-game/issues/21) | 弾・貫通・無敵時間ルールの監査 | P0 | 監査・固定配置試験済み |
-| `PH-V06-011` | [#22](https://github.com/garchomp-game/create-game/issues/22) | v0.6統合プレイテストと採否判定 | P0 | 自動QA済み・手動判定待ち |
+| `PH-V06-011` | [#22](https://github.com/garchomp-game/create-game/issues/22) | v0.6統合プレイテストと採否判定 | P0 | 完了 |
 | `PH-V06-012` | [#23](https://github.com/garchomp-game/create-game/issues/23) | EX進行と無制限脅威の実装 | P0 | 実装・自動検証済み |
-| `PH-V06-013` | [#24](https://github.com/garchomp-game/create-game/issues/24) | v0.6.4長時間プレイ判定 | P0 | Pulse再評価・長時間手動判定待ち |
+| `PH-V06-013` | [#24](https://github.com/garchomp-game/create-game/issues/24) | v0.6.4長時間プレイ判定 | P0 | 完了。600秒観測はベータへ移管 |
 | `PH-V06-014` | [#25](https://github.com/garchomp-game/create-game/issues/25) | 障害物対応の敵ナビゲーション | P0 | 実装・自動検証済み |
 | `PH-V06-015` | [#26](https://github.com/garchomp-game/create-game/issues/26) | 循環型EXアップグレード | P0 | 実装・自動検証済み |
 | `PH-V06-016` | [#27](https://github.com/garchomp-game/create-game/issues/27) | 武器固有成長と対称最終強化 | P0 | 実装・自動検証済み |
 | `PH-V06-017` | [#28](https://github.com/garchomp-game/create-game/issues/28) | 高解像度選択UI | P1 | 実装・自動検証済み |
 | `PH-V06-018` | [#29](https://github.com/garchomp-game/create-game/issues/29) | 敵役割別耐久と武器バランス | P0 | 実装・自動検証済み |
-| `PH-V06-019` | [#30](https://github.com/garchomp-game/create-game/issues/30) | Pulse高速弾と外周反射 | P0 | 実装・自動検証済み、手動評価待ち |
+| `PH-V06-019` | [#30](https://github.com/garchomp-game/create-game/issues/30) | Pulse高速弾と外周反射 | P0 | 完了 |
+| `PH-V06-020` | [#31](https://github.com/garchomp-game/create-game/issues/31) | 反響回路の成果帰属と実測性能ログ | P1 | 完了 |
+
+## 公開ベータ候補
+
+| ID | GitHub | チケット | 優先度 | 状態 |
+| --- | --- | --- | --- | --- |
+| `PH-BETA-001` | [#32](https://github.com/garchomp-game/create-game/issues/32) | エンドレス公開ベータ準備 | P0 | 着手可能 |
 
 ## v0.7 戦闘展開とステージ試作
 

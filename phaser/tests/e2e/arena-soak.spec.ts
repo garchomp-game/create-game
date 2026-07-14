@@ -98,6 +98,9 @@ test("runs the rendered arena for fifteen real-time minutes with debug sustain",
   }
   const fpsAtEnd = await measureFps(page);
   const heapAtEnd = await readHeap(page);
+  const runExport = await page.evaluate(() => window.__ARENA_DEBUG__?.getRunExport());
+  if (!runExport) throw new Error("Run export is not available.");
+  const longFrameRatio = runExport.performance.framesOver50Ms / runExport.performance.frameSamples;
   const storageBytes = await page.evaluate(() =>
     Object.entries(localStorage).reduce(
       (total, [key, value]) => total + (key.length + value.length) * 2,
@@ -128,6 +131,8 @@ test("runs the rendered arena for fifteen real-time minutes with debug sustain",
     heapAtEnd,
     fpsAtStart,
     fpsAtEnd,
+    performance: runExport.performance,
+    longFrameRatio,
     storageBytes,
     nonBlankSamples,
   };
@@ -150,6 +155,10 @@ test("runs the rendered arena for fifteen real-time minutes with debug sustain",
   expect(maxPickups).toBeLessThanOrEqual(2_000);
   expect(maxHeap).toBeLessThan(512 * 1024 * 1024);
   expect(fpsAtEnd).toBeGreaterThan(15);
+  expect(runExport.performance.frameSamples).toBeGreaterThan(1_000);
+  expect(runExport.performance.p95RawDtMs).toBeLessThanOrEqual(34);
+  expect(runExport.performance.actualFps).toBeGreaterThan(15);
+  expect(longFrameRatio).toBeLessThan(0.01);
   expect(nonBlankSamples).toBeGreaterThan(0);
   expect(consoleErrors).toEqual([]);
 });

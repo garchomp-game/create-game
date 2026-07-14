@@ -65,6 +65,8 @@ function createTestBullet(
     hitsRemaining: definition.hitCapacity,
     ricochetRemaining: definition.ricochetCount,
     ricochetsUsed: 0,
+    ricochetSurfaceKind: null,
+    ricochetBoundarySide: null,
     hitEnemyIds: [],
     ...overrides,
   };

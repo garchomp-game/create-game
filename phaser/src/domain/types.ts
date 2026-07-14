@@ -22,6 +22,7 @@ export const WEAPON_TYPE_IDS = ["pulse", "spread", "pierce"] as const;
 export type WeaponTypeId = (typeof WEAPON_TYPE_IDS)[number];
 export const ARENA_BOUNDARY_SIDES = ["left", "right", "top", "bottom"] as const;
 export type ArenaBoundarySide = (typeof ARENA_BOUNDARY_SIDES)[number];
+export type RicochetSurfaceKind = "obstacle" | "arenaBoundary";
 
 export const UPGRADE_IDS = [
   "rapidFire",
@@ -382,6 +383,8 @@ export type Bullet = CircleBody & {
   hitsRemaining: number;
   ricochetRemaining: number;
   ricochetsUsed: number;
+  ricochetSurfaceKind: RicochetSurfaceKind | null;
+  ricochetBoundarySide: ArenaBoundarySide | null;
   hitEnemyIds: string[];
 };
 
@@ -560,6 +563,11 @@ export type CapstoneRunStats = {
   obstacleRicochets: number;
   boundaryRicochets: number;
   boundaryRicochetsBySide: Record<ArenaBoundarySide, number>;
+  obstacleFollowUpHits: number;
+  obstacleFollowUpKills: number;
+  boundaryFollowUpHits: number;
+  boundaryFollowUpKills: number;
+  boundaryFollowUpHitsBySide: Record<ArenaBoundarySide, number>;
   spreadSweepTriggers: number;
   spreadSweepConsumes: number;
 };
@@ -745,6 +753,8 @@ export type GameEvent =
       enemyType: EnemyTypeId;
       weaponType: WeaponTypeId;
       ricochetsUsed: number;
+      ricochetSurfaceKind: RicochetSurfaceKind | null;
+      ricochetBoundarySide: ArenaBoundarySide | null;
       damage: number;
       hpAfter: number;
     }
@@ -753,7 +763,7 @@ export type GameEvent =
       bulletId: string;
       volleyId: number;
       weaponType: WeaponTypeId;
-      surfaceKind: "obstacle" | "arenaBoundary";
+      surfaceKind: RicochetSurfaceKind;
       obstacleId: string | null;
       boundarySide: ArenaBoundarySide | null;
       position: Vec2;

@@ -299,7 +299,7 @@ export class PhaserArenaRenderer {
     if (metrics.upgradeId === "spreadSweep") {
       return `最終強化: ${title} ${formatTime(metrics.acquiredAt)}  発動${metrics.spreadSweepTriggers} / 消費${metrics.spreadSweepConsumes}`;
     }
-    return `最終強化: ${title} ${formatTime(metrics.acquiredAt)}  障害物${metrics.obstacleRicochets} / 外周${metrics.boundaryRicochets} / 追撃${metrics.followUpHits}`;
+    return `最終強化: ${title} ${formatTime(metrics.acquiredAt)}  障${metrics.obstacleRicochets}→${metrics.obstacleFollowUpHits} / 外${metrics.boundaryRicochets}→${metrics.boundaryFollowUpHits} / 追撃破${metrics.obstacleFollowUpKills + metrics.boundaryFollowUpKills}`;
   }
 
   private drawPulseBoundaryField(g: Phaser.GameObjects.Graphics, world: WorldState): void {

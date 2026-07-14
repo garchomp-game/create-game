@@ -35,12 +35,23 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
         );
       }
       if (event.ricochetsUsed > 0) {
-        world.stats.capstoneMetrics.followUpHits += 1;
+        const capstone = world.stats.capstoneMetrics;
+        capstone.followUpHits += 1;
+        if (event.ricochetSurfaceKind === "obstacle") {
+          capstone.obstacleFollowUpHits += 1;
+          if (event.hpAfter <= 0) capstone.obstacleFollowUpKills += 1;
+        } else if (event.ricochetSurfaceKind === "arenaBoundary") {
+          capstone.boundaryFollowUpHits += 1;
+          if (event.hpAfter <= 0) capstone.boundaryFollowUpKills += 1;
+          if (event.ricochetBoundarySide) {
+            capstone.boundaryFollowUpHitsBySide[event.ricochetBoundarySide] += 1;
+          }
+        }
         if (!volley.postRicochetEnemyIds.includes(event.enemyId)) {
           volley.postRicochetEnemyIds.push(event.enemyId);
-          world.stats.capstoneMetrics.followUpUniqueEnemiesHit += 1;
-          world.stats.capstoneMetrics.maxFollowUpUniqueEnemiesPerVolley = Math.max(
-            world.stats.capstoneMetrics.maxFollowUpUniqueEnemiesPerVolley,
+          capstone.followUpUniqueEnemiesHit += 1;
+          capstone.maxFollowUpUniqueEnemiesPerVolley = Math.max(
+            capstone.maxFollowUpUniqueEnemiesPerVolley,
             volley.postRicochetEnemyIds.length,
           );
         }

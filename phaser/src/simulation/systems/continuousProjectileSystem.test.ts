@@ -63,7 +63,13 @@ describe("continuous projectile motion", () => {
       }),
     );
     expect(events).toContainEqual(
-      expect.objectContaining({ type: "enemy.hit", enemyId: "enemy-return", ricochetsUsed: 1 }),
+      expect.objectContaining({
+        type: "enemy.hit",
+        enemyId: "enemy-return",
+        ricochetsUsed: 1,
+        ricochetSurfaceKind: "arenaBoundary",
+        ricochetBoundarySide: "right",
+      }),
     );
   });
 
@@ -122,6 +128,36 @@ describe("continuous projectile motion", () => {
         type: "bullet.ricocheted",
         surfaceKind: "obstacle",
         obstacleId: "wall",
+      }),
+    );
+  });
+
+  it("keeps obstacle attribution when a reflected shot hits on a later frame", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.obstacles = [{ id: "wall", x: 140, y: 220, width: 20, height: 100 }];
+    world.bullets = [
+      createBullet(
+        { x: 120, y: 270 },
+        { x: 400, y: 0 },
+        1,
+        { ricochetRemaining: 1 },
+      ),
+    ];
+    const firstEvents: GameEvent[] = [];
+
+    const firstMotions = updateBullets(world, 0.05, SIMULATION_CONFIG);
+    resolveCombat(world, SIMULATION_CONFIG, firstEvents, firstMotions);
+    world.enemies = [createEnemy("enemy-later", "chaser", 100, 270)];
+    const secondEvents: GameEvent[] = [];
+    const secondMotions = updateBullets(world, 0.05, SIMULATION_CONFIG);
+    resolveCombat(world, SIMULATION_CONFIG, secondEvents, secondMotions);
+
+    expect(secondEvents).toContainEqual(
+      expect.objectContaining({
+        type: "enemy.hit",
+        enemyId: "enemy-later",
+        ricochetSurfaceKind: "obstacle",
+        ricochetBoundarySide: null,
       }),
     );
   });
@@ -289,6 +325,8 @@ function createBullet(
     hitsRemaining,
     ricochetRemaining: 0,
     ricochetsUsed: 0,
+    ricochetSurfaceKind: null,
+    ricochetBoundarySide: null,
     hitEnemyIds: [],
     ...overrides,
   };

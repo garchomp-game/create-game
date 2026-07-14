@@ -40,7 +40,7 @@ export function resolveCombat(
 
       for (const { enemy } of intersections) {
         if (deadEnemies.has(enemy) || bullet.hitEnemyIds.includes(enemy.id)) continue;
-        resolveBulletEnemyHit(world, bullet, enemy, segment.ricochetsUsed, deadEnemies, events);
+        resolveBulletEnemyHit(world, bullet, enemy, segment, deadEnemies, events);
         if (bullet.hitsRemaining <= 0) {
           stoppedByHitCapacity = true;
           break;
@@ -106,6 +106,8 @@ function createStationaryMotion(bullet: Bullet): { segments: BulletMotionSegment
         start: { ...bullet.position },
         end: { ...bullet.position },
         ricochetsUsed: bullet.ricochetsUsed,
+        ricochetSurfaceKind: bullet.ricochetSurfaceKind,
+        ricochetBoundarySide: bullet.ricochetBoundarySide,
         ricochetAfter: null,
       },
     ],
@@ -117,11 +119,11 @@ function resolveBulletEnemyHit(
   world: WorldState,
   bullet: Bullet,
   enemy: Enemy,
-  ricochetsUsed: number,
+  segment: BulletMotionSegment,
   deadEnemies: Set<Enemy>,
   events: GameEvent[],
 ): void {
-  const focusHit = applyPulseFocus(world, bullet, enemy, ricochetsUsed);
+  const focusHit = applyPulseFocus(world, bullet, enemy, segment.ricochetsUsed);
   const damage = bullet.damage + focusHit.bonusDamage;
   enemy.hp -= damage;
   bullet.hitEnemyIds.push(enemy.id);
@@ -134,7 +136,9 @@ function resolveBulletEnemyHit(
     enemyId: enemy.id,
     enemyType: enemy.typeId,
     weaponType: bullet.weaponType,
-    ricochetsUsed,
+    ricochetsUsed: segment.ricochetsUsed,
+    ricochetSurfaceKind: segment.ricochetSurfaceKind,
+    ricochetBoundarySide: segment.ricochetBoundarySide,
     damage,
     hpAfter: Math.max(0, enemy.hp),
   });

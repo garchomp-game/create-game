@@ -156,6 +156,11 @@ describe("run records", () => {
     delete capstone.obstacleRicochets;
     delete capstone.boundaryRicochets;
     delete capstone.boundaryRicochetsBySide;
+    delete capstone.obstacleFollowUpHits;
+    delete capstone.obstacleFollowUpKills;
+    delete capstone.boundaryFollowUpHits;
+    delete capstone.boundaryFollowUpKills;
+    delete capstone.boundaryFollowUpHitsBySide;
     delete legacy.weaponIdentityMetrics;
 
     expect(runRecordSchema.parse(legacy)).toMatchObject({
@@ -166,6 +171,11 @@ describe("run records", () => {
         obstacleRicochets: 0,
         boundaryRicochets: 0,
         boundaryRicochetsBySide: { left: 0, right: 0, top: 0, bottom: 0 },
+        obstacleFollowUpHits: 0,
+        obstacleFollowUpKills: 0,
+        boundaryFollowUpHits: 0,
+        boundaryFollowUpKills: 0,
+        boundaryFollowUpHitsBySide: { left: 0, right: 0, top: 0, bottom: 0 },
       },
       weaponIdentityMetrics: {
         pulseFocus: { enhancedHits: 0, bonusDamage: 0, maxStacks: 0 },
@@ -224,8 +234,13 @@ function makeSummary(overrides: Partial<RunResultSummary> = {}): RunResultSummar
       maxFollowUpUniqueEnemiesPerVolley: 0,
       obstacleRicochets: 0,
       boundaryRicochets: 0,
-      boundaryRicochetsBySide: { left: 0, right: 0, top: 0, bottom: 0 },
-      spreadSweepTriggers: 0,
+        boundaryRicochetsBySide: { left: 0, right: 0, top: 0, bottom: 0 },
+        obstacleFollowUpHits: 0,
+        obstacleFollowUpKills: 0,
+        boundaryFollowUpHits: 0,
+        boundaryFollowUpKills: 0,
+        boundaryFollowUpHitsBySide: { left: 0, right: 0, top: 0, bottom: 0 },
+        spreadSweepTriggers: 0,
       spreadSweepConsumes: 0,
     },
     weaponIdentityMetrics: {

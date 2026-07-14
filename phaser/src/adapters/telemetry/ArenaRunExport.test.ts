@@ -21,6 +21,15 @@ describe("createArenaRunExport", () => {
       randomStreams: createRandomStreams(42),
       runConfig: SIMULATION_CONFIG,
       world,
+      performance: {
+        frameSamples: 720,
+        averageRawDtMs: 16.67,
+        p95RawDtMs: 17,
+        maxRawDtMs: 22,
+        framesOver50Ms: 0,
+        estimatedFps: 59.99,
+        actualFps: 60.1,
+      },
       lastEvents: [{ type: "game.started" }],
     });
 
@@ -32,6 +41,11 @@ describe("createArenaRunExport", () => {
       seed: 42,
       randomStreams: { version: "arena-rng-v1", rootSeed: 42 },
       status: "playing",
+      performance: {
+        frameSamples: 720,
+        p95RawDtMs: 17,
+        actualFps: 60.1,
+      },
       elapsed: 12,
       lastEvents: [{ type: "game.started" }],
     });

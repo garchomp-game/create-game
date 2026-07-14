@@ -67,6 +67,10 @@ export type BalanceProbeRun = {
   capstoneActivations: number;
   capstoneObstacleRicochets: number;
   capstoneBoundaryRicochets: number;
+  capstoneObstacleFollowUpHits: number;
+  capstoneObstacleFollowUpKills: number;
+  capstoneBoundaryFollowUpHits: number;
+  capstoneBoundaryFollowUpKills: number;
   capstoneFollowUpHits: number;
   capstoneFollowUpUniqueEnemiesHit: number;
   pulseFocusEnhancedHits: number;
@@ -139,6 +143,10 @@ export type BalanceProbeModelSummary = {
   capstoneActivations: BalanceProbePercentiles;
   capstoneObstacleRicochets: BalanceProbePercentiles;
   capstoneBoundaryRicochets: BalanceProbePercentiles;
+  capstoneObstacleFollowUpHits: BalanceProbePercentiles;
+  capstoneObstacleFollowUpKills: BalanceProbePercentiles;
+  capstoneBoundaryFollowUpHits: BalanceProbePercentiles;
+  capstoneBoundaryFollowUpKills: BalanceProbePercentiles;
   capstoneFollowUpHits: BalanceProbePercentiles;
   pulseFocusEnhancedHits: BalanceProbePercentiles;
   pulseFocusBonusDamage: BalanceProbePercentiles;
@@ -303,6 +311,10 @@ function runBalanceProbeOnce(options: BalanceProbeOptions & {
     capstoneActivations: world.stats.capstoneMetrics.activations,
     capstoneObstacleRicochets: world.stats.capstoneMetrics.obstacleRicochets,
     capstoneBoundaryRicochets: world.stats.capstoneMetrics.boundaryRicochets,
+    capstoneObstacleFollowUpHits: world.stats.capstoneMetrics.obstacleFollowUpHits,
+    capstoneObstacleFollowUpKills: world.stats.capstoneMetrics.obstacleFollowUpKills,
+    capstoneBoundaryFollowUpHits: world.stats.capstoneMetrics.boundaryFollowUpHits,
+    capstoneBoundaryFollowUpKills: world.stats.capstoneMetrics.boundaryFollowUpKills,
     capstoneFollowUpHits: world.stats.capstoneMetrics.followUpHits,
     capstoneFollowUpUniqueEnemiesHit:
       world.stats.capstoneMetrics.followUpUniqueEnemiesHit,
@@ -521,6 +533,18 @@ function summarizeModelRuns(runs: BalanceProbeRun[]): BalanceProbeModelSummary {
     ),
     capstoneBoundaryRicochets: percentiles(
       runs.map((run) => run.capstoneBoundaryRicochets),
+    ),
+    capstoneObstacleFollowUpHits: percentiles(
+      runs.map((run) => run.capstoneObstacleFollowUpHits),
+    ),
+    capstoneObstacleFollowUpKills: percentiles(
+      runs.map((run) => run.capstoneObstacleFollowUpKills),
+    ),
+    capstoneBoundaryFollowUpHits: percentiles(
+      runs.map((run) => run.capstoneBoundaryFollowUpHits),
+    ),
+    capstoneBoundaryFollowUpKills: percentiles(
+      runs.map((run) => run.capstoneBoundaryFollowUpKills),
     ),
     capstoneFollowUpHits: percentiles(runs.map((run) => run.capstoneFollowUpHits)),
     pulseFocusEnhancedHits: percentiles(runs.map((run) => run.pulseFocusEnhancedHits)),

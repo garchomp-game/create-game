@@ -136,6 +136,12 @@ describe("updateRunStats comparison metrics", () => {
     const postRicochetHit = createHit("bullet-1", "enemy-a", "chaser");
     postRicochetHit.weaponType = "pulse";
     postRicochetHit.ricochetsUsed = 1;
+    postRicochetHit.ricochetSurfaceKind = "obstacle";
+    const boundaryHit = createHit("bullet-2", "enemy-b", "ranged");
+    boundaryHit.weaponType = "pulse";
+    boundaryHit.ricochetsUsed = 1;
+    boundaryHit.ricochetSurfaceKind = "arenaBoundary";
+    boundaryHit.ricochetBoundarySide = "right";
 
     updateRunStats(world, [
       {
@@ -179,19 +185,25 @@ describe("updateRunStats comparison metrics", () => {
         ricochetsRemaining: 0,
       },
       postRicochetHit,
-      postRicochetHit,
+      { ...postRicochetHit, hpAfter: 1 },
+      boundaryHit,
     ]);
 
     expect(world.stats.capstoneMetrics).toEqual({
       upgradeId: "pulseRicochet",
       acquiredAt: 72,
       activations: 2,
-      followUpHits: 2,
-      followUpUniqueEnemiesHit: 1,
-      maxFollowUpUniqueEnemiesPerVolley: 1,
+      followUpHits: 3,
+      followUpUniqueEnemiesHit: 2,
+      maxFollowUpUniqueEnemiesPerVolley: 2,
       obstacleRicochets: 1,
       boundaryRicochets: 1,
       boundaryRicochetsBySide: { left: 0, right: 1, top: 0, bottom: 0 },
+      obstacleFollowUpHits: 2,
+      obstacleFollowUpKills: 1,
+      boundaryFollowUpHits: 1,
+      boundaryFollowUpKills: 1,
+      boundaryFollowUpHitsBySide: { left: 0, right: 1, top: 0, bottom: 0 },
       spreadSweepTriggers: 0,
       spreadSweepConsumes: 0,
     });
@@ -211,6 +223,8 @@ function createHit(
     enemyType,
     weaponType: "spread",
     ricochetsUsed: 0,
+    ricochetSurfaceKind: null,
+    ricochetBoundarySide: null,
     damage: 1,
     hpAfter: 0,
   };

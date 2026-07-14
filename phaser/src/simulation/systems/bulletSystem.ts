@@ -28,6 +28,8 @@ export type BulletMotionSegment = {
   start: Vec2;
   end: Vec2;
   ricochetsUsed: number;
+  ricochetSurfaceKind: Bullet["ricochetSurfaceKind"];
+  ricochetBoundarySide: Bullet["ricochetBoundarySide"];
   ricochetAfter: BulletRicochetMotion | null;
 };
 
@@ -97,6 +99,8 @@ function advanceBullet(
         start,
         end: projectedEnd,
         ricochetsUsed: bullet.ricochetsUsed,
+        ricochetSurfaceKind: bullet.ricochetSurfaceKind,
+        ricochetBoundarySide: bullet.ricochetBoundarySide,
         ricochetAfter: null,
       });
       bullet.position = projectedEnd;
@@ -116,6 +120,8 @@ function advanceBullet(
       start,
       end: { ...collision.position },
       ricochetsUsed: bullet.ricochetsUsed,
+      ricochetSurfaceKind: bullet.ricochetSurfaceKind,
+      ricochetBoundarySide: bullet.ricochetBoundarySide,
       ricochetAfter: null,
     };
 
@@ -135,6 +141,9 @@ function advanceBullet(
     };
     segments.push(segment);
 
+    bullet.ricochetSurfaceKind = collision.surface.kind;
+    bullet.ricochetBoundarySide =
+      collision.surface.kind === "arenaBoundary" ? collision.surface.side : null;
     reflectVelocity(bullet.velocity, collision.normal);
     bullet.position = {
       x: collision.position.x + collision.normal.x * POSITION_EPSILON,

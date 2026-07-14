@@ -411,7 +411,7 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   const runExport = await page.evaluate(() => window.__ARENA_DEBUG__?.getRunExport());
   expect(runExport).toBeTruthy();
   expect(runExport?.game).toBe("arena-core-phaser");
-  expect(runExport?.appVersion).toBe("0.6.4");
+  expect(runExport?.appVersion).toBe("0.6.5");
   expect(runExport?.rulesetVersion).toBe("phaser-v0.6.4-pulse-ballistics");
   expect(runExport?.configVersion).toBe("phaser-v0.6.4-pulse-ballistics");
   expect(runExport?.buildCommit).toMatch(/^[0-9a-f]{12}$/);
@@ -421,6 +421,10 @@ test("debug run export includes playtest report metadata and KPI data", async ({
     reasons: ["automatedTest"],
   });
   expect(runExport?.seed).toBe(20260619);
+  expect(runExport?.performance.frameSamples).toBeGreaterThan(0);
+  expect(runExport?.performance.averageRawDtMs).toBeGreaterThan(0);
+  expect(runExport?.performance.p95RawDtMs).toBeGreaterThan(0);
+  expect(runExport?.performance.actualFps).toBeGreaterThan(0);
   expect(runExport?.resultSummary.elapsed).toBeCloseTo(61, 1);
   expect(runExport?.resultSummary.damageTaken).toBe(12);
   expect(runExport?.resultSummary.hpRecovered).toBe(0);
@@ -429,6 +433,8 @@ test("debug run export includes playtest report metadata and KPI data", async ({
     obstacleRicochets: 0,
     boundaryRicochets: 0,
     boundaryRicochetsBySide: { left: 0, right: 0, top: 0, bottom: 0 },
+    obstacleFollowUpHits: 0,
+    boundaryFollowUpHits: 0,
   });
   expect(runExport?.stats.progressionMetrics.offers).toHaveLength(1);
   expect(runExport?.stats.progressionMetrics.selections).toHaveLength(1);

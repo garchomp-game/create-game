@@ -49,6 +49,16 @@ export type ArenaRandomStreamSnapshot = Pick<RandomStreams, "version" | "rootSee
   seeds: Record<RandomStreamId, number>;
 };
 
+export type ArenaPerformanceSnapshot = {
+  frameSamples: number;
+  averageRawDtMs: number;
+  p95RawDtMs: number;
+  maxRawDtMs: number;
+  framesOver50Ms: number;
+  estimatedFps: number;
+  actualFps: number;
+};
+
 export type ArenaDebugSnapshot = {
   configVersion: string;
   buildCommit: string;
@@ -58,6 +68,7 @@ export type ArenaDebugSnapshot = {
   seed: number;
   randomStreams: ArenaRandomStreamSnapshot;
   status: GameStatus;
+  performance: ArenaPerformanceSnapshot;
   elapsed: number;
   hp: number;
   score: number;
@@ -110,6 +121,7 @@ export type ArenaRunExport = {
   seedCategory: SeedCategory;
   randomStreams: ArenaRandomStreamSnapshot;
   status: GameStatus;
+  performance: ArenaPerformanceSnapshot;
   elapsed: number;
   wave: WaveBand;
   resultSummary: RunResultSummary;

@@ -178,6 +178,8 @@ function createBullet(
     hitsRemaining: 1,
     ricochetRemaining: 0,
     ricochetsUsed: 0,
+    ricochetSurfaceKind: null,
+    ricochetBoundarySide: null,
     hitEnemyIds: [],
   };
 }

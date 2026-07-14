@@ -56,6 +56,7 @@ import { PhaserAudioEventRouter } from "./PhaserAudioEventRouter";
 import {
   ArenaDebugBridge,
   type ArenaDebugApi,
+  type ArenaPerformanceSnapshot,
   type ArenaRunExport,
 } from "./ArenaDebugBridge";
 import {
@@ -125,6 +126,7 @@ export class ArenaScene extends Phaser.Scene {
   private historyWeaponFilter: HistoryWeaponFilter = "all";
   private uiNotice: string | null = null;
   private debugBridge: ArenaDebugBridge | null = null;
+  private finalizedPerformance: ArenaPerformanceSnapshot | null = null;
   private readonly devRunExportClient = new DevRunExportClient();
 
   constructor() {
@@ -218,7 +220,7 @@ export class ArenaScene extends Phaser.Scene {
     this.prepareSoakProtection();
     const result = stepWorld(this.world, input, deltaMs / 1000, this.randomStreams, this.runConfig);
     this.normalizeSoakHealth();
-    this.recordResult(result);
+    this.recordResult(result, this.game.loop.rawDelta);
     if (result.events.some((event) => event.type === "game.restart.requested")) {
       this.resetGame("playing");
       this.renderCurrentWorld();
@@ -239,6 +241,8 @@ export class ArenaScene extends Phaser.Scene {
   ): void {
     this.inputAdapter.clearTransientInput();
     this.choiceOverlay.clearInput();
+    this.metrics.reset();
+    this.finalizedPerformance = null;
     const fixedSeed = this.getFixedRunSeed();
     this.runSeed = this.createRunSeed(fixedSeed);
     this.runConfig = { ...this.simulationConfig, seed: this.runSeed };
@@ -281,11 +285,18 @@ export class ArenaScene extends Phaser.Scene {
     this.audioRouter.reset();
   }
 
-  private recordResult(result: StepWorldResult): void {
-    for (const metric of result.metrics) {
+  private recordResult(result: StepWorldResult, observedRawDtMs?: number): void {
+    const metrics = result.metrics.map((metric) =>
+      metric.type === "timing" && metric.name === "frame.raw_dt_ms" && observedRawDtMs !== undefined
+        ? { ...metric, valueMs: observedRawDtMs }
+        : metric,
+    );
+    for (const metric of metrics) {
       this.metrics.record(metric);
     }
-    this.frameSpikeReporter.report(result.metrics);
+    this.frameSpikeReporter.report(metrics);
+    const gameOver = result.events.some((event) => event.type === "game.over");
+    if (gameOver) this.finalizedPerformance = this.getPerformanceSnapshot();
 
     for (const event of result.events) {
       this.lastEvents.push(event);
@@ -301,7 +312,7 @@ export class ArenaScene extends Phaser.Scene {
     this.lastEvents = this.lastEvents.slice(-20);
     this.feedbackLayer.handleEvents(result.events, this.world);
     this.audioRouter.handleEvents(result.events);
-    if (result.events.some((event) => event.type === "game.over")) {
+    if (gameOver) {
       this.finalizeRunRecord();
     }
   }
@@ -645,6 +656,7 @@ export class ArenaScene extends Phaser.Scene {
           seeds: { ...this.randomStreams.seeds },
         },
         status: this.world.state.status,
+        performance: this.finalizedPerformance ?? this.getPerformanceSnapshot(),
         elapsed: this.world.state.elapsed,
         hp: this.world.state.hp,
         score: this.world.state.score,
@@ -771,8 +783,23 @@ export class ArenaScene extends Phaser.Scene {
       randomStreams: this.randomStreams,
       runConfig: this.runConfig,
       world: this.world,
+      performance: this.finalizedPerformance ?? this.getPerformanceSnapshot(),
       lastEvents: this.lastEvents,
     });
+  }
+
+  private getPerformanceSnapshot(): ArenaPerformanceSnapshot {
+    const metrics = this.metrics.getSnapshot();
+    const actualFps = this.game?.loop?.actualFps ?? 0;
+    return {
+      frameSamples: metrics.frameSamples,
+      averageRawDtMs: metrics.averageRawDtMs,
+      p95RawDtMs: metrics.p95RawDtMs,
+      maxRawDtMs: metrics.maxRawDtMs,
+      framesOver50Ms: metrics.framesOver50Ms,
+      estimatedFps: metrics.averageRawDtMs > 0 ? 1_000 / metrics.averageRawDtMs : 0,
+      actualFps: Number.isFinite(actualFps) ? actualFps : 0,
+    };
   }
 
   private prepareSoakProtection(): void {

@@ -271,6 +271,15 @@ describe("balance simulation", () => {
     expect(pulse.pulseFocusBonusDamage.p50).toBeGreaterThan(0);
     expect(pulse.pulseFocusMaxStacks.p50).toBeGreaterThanOrEqual(2);
     expect(pulse.capstoneBoundaryRicochets.p50).toBeGreaterThan(0);
+    expect(
+      comparison.pulse.runs.every(
+        (run) =>
+          run.capstoneObstacleFollowUpHits + run.capstoneBoundaryFollowUpHits ===
+            run.capstoneFollowUpHits &&
+          run.capstoneObstacleFollowUpKills <= run.capstoneObstacleFollowUpHits &&
+          run.capstoneBoundaryFollowUpKills <= run.capstoneBoundaryFollowUpHits,
+      ),
+    ).toBe(true);
     expect(spread.spreadSweepTriggers.p50).toBeGreaterThan(0);
     expect(spread.spreadSweepConsumes.p50).toBeLessThanOrEqual(
       spread.spreadSweepTriggers.p50,
