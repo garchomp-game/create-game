@@ -17,6 +17,7 @@ import { PhaserHud } from "./PhaserHud";
 import { getMenuButtons } from "./PhaserMenuLayout";
 import type { MenuAction } from "./PhaserMenuLayout";
 import type { PhaserUiState } from "./PhaserUiState";
+import type { AutoPilotMode } from "../../simulation/autoPilot";
 
 export class PhaserArenaRenderer {
   private readonly graphics: Phaser.GameObjects.Graphics;
@@ -75,6 +76,8 @@ export class PhaserArenaRenderer {
     world: WorldState,
     pointerWorld: Vec2 | null = null,
     uiState?: PhaserUiState,
+    autoPilotEnabled = false,
+    autoPilotMode: AutoPilotMode | null = null,
   ): void {
     const g = this.graphics;
     const { arena } = this.simulationConfig;
@@ -217,7 +220,12 @@ export class PhaserArenaRenderer {
       this.statusText.setVisible(false);
     }
 
-    this.hud.render(world, uiState?.secondaryMenu === null || uiState?.secondaryMenu === undefined);
+    this.hud.render(
+      world,
+      uiState?.secondaryMenu === null || uiState?.secondaryMenu === undefined,
+      autoPilotEnabled,
+      autoPilotMode,
+    );
     this.drawCursor(g, pointerWorld);
   }
 

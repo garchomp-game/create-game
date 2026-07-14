@@ -5,6 +5,7 @@ import { TEXT } from "../../lang";
 import { getWaveBand } from "../../simulation/waveDirector";
 import { getThreatTier } from "../../simulation/threatDirector";
 import { getNextCollapseAt } from "../../simulation/systems/collapseSystem";
+import type { AutoPilotMode } from "../../simulation/autoPilot";
 
 export class PhaserHud {
   private readonly graphics: Phaser.GameObjects.Graphics;
@@ -13,6 +14,7 @@ export class PhaserHud {
   private readonly metaText: Phaser.GameObjects.Text;
   private readonly weaponText: Phaser.GameObjects.Text;
   private readonly encounterText: Phaser.GameObjects.Text;
+  private readonly autoPilotText: Phaser.GameObjects.Text;
 
   constructor(scene: Phaser.Scene, private readonly simulationConfig: SimulationConfig) {
     this.graphics = scene.add.graphics().setDepth(10);
@@ -23,9 +25,18 @@ export class PhaserHud {
     this.encounterText = this.createText(scene, simulationConfig.arena.width / 2, 102)
       .setOrigin(0.5, 0)
       .setFontSize(15);
+    this.autoPilotText = this.createText(scene, simulationConfig.arena.width / 2, 29)
+      .setOrigin(0.5)
+      .setColor("#67e8f9")
+      .setText("AI観戦");
   }
 
-  render(world: WorldState, enabled = true): void {
+  render(
+    world: WorldState,
+    enabled = true,
+    autoPilotEnabled = false,
+    autoPilotMode: AutoPilotMode | null = null,
+  ): void {
     const visible =
       enabled && (world.state.status === "playing" || world.state.status === "paused");
     this.setVisible(visible);
@@ -66,6 +77,22 @@ export class PhaserHud {
       rightPanel.height - 1,
       6,
     );
+    if (autoPilotEnabled) {
+      const badge = { x: this.simulationConfig.arena.width / 2 - 78, y: 14, width: 156, height: 30 };
+      this.graphics.fillStyle(0x083344, 0.9);
+      this.graphics.fillRoundedRect(badge.x, badge.y, badge.width, badge.height, 4);
+      this.graphics.lineStyle(1, 0x22d3ee, 0.95);
+      this.graphics.strokeRoundedRect(
+        badge.x + 0.5,
+        badge.y + 0.5,
+        badge.width - 1,
+        badge.height - 1,
+        4,
+      );
+    }
+    this.autoPilotText
+      .setText(formatAutoPilotMode(autoPilotMode))
+      .setVisible(autoPilotEnabled);
 
     this.drawBar(128, 27, 188, 10, hpRatio, 0xef4444);
     this.drawBar(128, 55, 188, 10, xpRatio, 0x22c55e);
@@ -147,6 +174,7 @@ export class PhaserHud {
     this.metaText.setVisible(visible);
     this.weaponText.setVisible(visible);
     this.encounterText.setVisible(visible && Boolean(this.encounterText.text));
+    this.autoPilotText.setVisible(false);
   }
 
   private getEncounterLabel(world: WorldState): string {
@@ -204,4 +232,19 @@ export class PhaserHud {
     if (world.encounter.contract.choice === "overdrive") labels.push(TEXT.hud.overdriveContract);
     return labels.join(" / ");
   }
+}
+
+function formatAutoPilotMode(mode: AutoPilotMode | null): string {
+  const labels: Record<AutoPilotMode, string> = {
+    contract: "契約選択",
+    upgrade: "強化選択",
+    projectileDodge: "弾回避",
+    enemyEvade: "接触回避",
+    healCollect: "HP回収",
+    xpCollect: "XP回収",
+    reposition: "射線確保",
+    engage: "交戦",
+    patrol: "周回",
+  };
+  return `AI観戦: ${mode ? labels[mode] : "待機"}`;
 }

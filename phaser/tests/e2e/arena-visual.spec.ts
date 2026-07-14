@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { SIMULATION_CONFIG } from "../../src/config/gameConfig";
 
 async function gotoArena(page: Page): Promise<void> {
   await page.goto(`/`);
@@ -90,6 +91,23 @@ test("matches the fixed title frame", async ({ page }) => {
   });
 
   await expect(canvas).toHaveScreenshot("arena-title.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("shows the observer auto pilot status without covering the HUD", async ({ page }) => {
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.startAutoPilot("pulse");
+    window.__ARENA_DEBUG__?.setPaused(true);
+  });
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().autoPilotEnabled))
+    .toBe(true);
+  await page.waitForTimeout(100);
+
+  await expect(canvas).toHaveScreenshot("arena-auto-pilot.png", {
     maxDiffPixelRatio: 0.01,
   });
 });
@@ -319,6 +337,10 @@ test("matches the fixed upgraded Spread split shot frame", async ({ page }) => {
 });
 
 test("matches the Pulse ricochet boundary field frame", async ({ page }) => {
+  test.skip(
+    !SIMULATION_CONFIG.features.pulseBoundaryRicochet,
+    "Pulse boundary ricochet is disabled for this comparison ruleset.",
+  );
   await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);

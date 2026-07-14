@@ -40,6 +40,11 @@ import { InMemoryMetrics } from "../telemetry/InMemoryMetrics";
 import { createRandomStreams, type RandomStreams } from "../../math/random";
 import { createWorld } from "../../simulation/createWorld";
 import { composeBuild } from "../../simulation/buildComposer";
+import {
+  AUTO_PILOT_MODIFIER_ID,
+  createAutoPilotDecision,
+  type AutoPilotMode,
+} from "../../simulation/autoPilot";
 import { createRunResultSummary } from "../../simulation/resultSummary";
 import { stepWorld } from "../../simulation/stepWorld";
 import {
@@ -118,6 +123,9 @@ export class ArenaScene extends Phaser.Scene {
   private world!: WorldState;
   private lastEvents: GameEvent[] = [];
   private debugPaused = false;
+  private autoPilotEnabled = false;
+  private autoPilotMode: AutoPilotMode | null = null;
+  private autoPilotTargetId: string | null = null;
   private soakProtectionEnabled = false;
   private secondaryMenu: SecondaryMenu | null = null;
   private historyClearPending = false;
@@ -174,6 +182,8 @@ export class ArenaScene extends Phaser.Scene {
     this.musicController.configure(this.settings);
     this.debugOverlay = new PhaserDebugOverlay(this, this.metrics);
     this.resetGame("title");
+    const requestedAutoPilotWeapon = this.getRequestedAutoPilotWeapon();
+    if (requestedAutoPilotWeapon) this.startAutoPilot(requestedAutoPilotWeapon);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.choiceOverlay.destroy());
     if (import.meta.env.DEV) {
       this.debugBridge = new ArenaDebugBridge(window);
@@ -183,18 +193,21 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   update(_time: number, deltaMs: number): void {
+    if (this.inputAdapter.readAutoPilotTogglePressed()) {
+      this.setAutoPilotEnabled(!this.autoPilotEnabled);
+    }
     const choiceInput = this.choiceOverlay.consumeInput();
-    const input = this.inputAdapter.read(
+    const manualInput = this.inputAdapter.read(
       this.world.state.status,
       this.world.progression.pendingUpgradeChoices.length,
       this.settings.autoFireEnabled,
       this.secondaryMenu,
     );
     if (choiceInput.upgradeChoice !== null) {
-      input.upgradeChoicePressed = choiceInput.upgradeChoice;
+      manualInput.upgradeChoicePressed = choiceInput.upgradeChoice;
     }
     if (choiceInput.contractChoice !== null) {
-      input.contractChoicePressed = choiceInput.contractChoice;
+      manualInput.contractChoicePressed = choiceInput.contractChoice;
     }
     const canvasMenuAction = this.inputAdapter.consumeMenuAction();
     const menuAction = choiceInput.menuAction ?? canvasMenuAction;
@@ -211,13 +224,14 @@ export class ArenaScene extends Phaser.Scene {
     }
     if (this.debugPaused) {
       this.feedbackLayer.update(0);
-      this.stepDebugControls(input);
+      this.stepDebugControls(manualInput);
       this.renderCurrentWorld();
       return;
     }
 
     this.feedbackLayer.update(deltaMs / 1000);
     this.prepareSoakProtection();
+    const input = this.resolveFrameInput(manualInput);
     const result = stepWorld(this.world, input, deltaMs / 1000, this.randomStreams, this.runConfig);
     this.normalizeSoakHealth();
     this.recordResult(result, this.game.loop.rawDelta);
@@ -239,6 +253,9 @@ export class ArenaScene extends Phaser.Scene {
     status: WorldState["state"]["status"] = "playing",
     runOriginOverride?: RunOrigin,
   ): void {
+    if (status === "title") this.autoPilotEnabled = false;
+    this.autoPilotMode = null;
+    this.autoPilotTargetId = null;
     this.inputAdapter.clearTransientInput();
     this.choiceOverlay.clearInput();
     this.metrics.reset();
@@ -251,7 +268,9 @@ export class ArenaScene extends Phaser.Scene {
     this.soakProtectionEnabled = false;
     this.world.state.weaponType = this.selectedWeapon;
     this.world.state.status = status;
-    const runOrigin = runOriginOverride ?? this.getBaseRunOrigin();
+    const runOrigin =
+      runOriginOverride ??
+      (this.autoPilotEnabled ? this.getDebugRunOrigin() : this.getBaseRunOrigin());
     this.runRecordCoordinator.reset(
       {
         id: this.createRunId(),
@@ -263,12 +282,15 @@ export class ArenaScene extends Phaser.Scene {
         rulesetVersion: RULESET_VERSION,
         seedCategory: resolveSeedCategory(fixedSeed),
         weaponId: this.world.state.weaponType,
-        modifierIds: [`auto-fire:${this.settings.autoFireEnabled ? "on" : "off"}`],
+        modifierIds: [
+          `auto-fire:${this.settings.autoFireEnabled ? "on" : "off"}`,
+          ...(this.autoPilotEnabled ? [AUTO_PILOT_MODIFIER_ID] : []),
+        ],
         appVersion: APP_VERSION,
         buildCommit: this.getBuildCommit(),
         seed: this.runSeed,
         runOrigin,
-        rankEligibility: createRankEligibility(runOrigin),
+        rankEligibility: createRankEligibility(runOrigin, !this.autoPilotEnabled),
       },
       status === "playing",
     );
@@ -630,8 +652,10 @@ export class ArenaScene extends Phaser.Scene {
     );
     this.arenaRenderer.render(
       this.world,
-      this.inputAdapter.getPointerWorld(),
+      this.autoPilotEnabled ? null : this.inputAdapter.getPointerWorld(),
       this.createUiState(),
+      this.autoPilotEnabled,
+      this.autoPilotMode,
     );
     this.choiceOverlay.render(this.world, this.secondaryMenu === null);
     this.musicController.sync(this.world.state.status);
@@ -656,6 +680,9 @@ export class ArenaScene extends Phaser.Scene {
           seeds: { ...this.randomStreams.seeds },
         },
         status: this.world.state.status,
+        autoPilotEnabled: this.autoPilotEnabled,
+        autoPilotMode: this.autoPilotMode,
+        autoPilotTargetId: this.autoPilotTargetId,
         performance: this.finalizedPerformance ?? this.getPerformanceSnapshot(),
         elapsed: this.world.state.elapsed,
         hp: this.world.state.hp,
@@ -742,6 +769,14 @@ export class ArenaScene extends Phaser.Scene {
       },
       restart: () => {
         this.resetGame("playing", this.getDebugRunOrigin());
+        this.renderCurrentWorld();
+      },
+      startAutoPilot: (weaponType: WeaponTypeId = "pulse") => {
+        this.startAutoPilot(weaponType === "spread" ? "spread" : "pulse");
+        this.renderCurrentWorld();
+      },
+      setAutoPilotEnabled: (enabled: boolean) => {
+        this.setAutoPilotEnabled(enabled);
         this.renderCurrentWorld();
       },
       setPaused: (paused: boolean) => {
@@ -1083,6 +1118,63 @@ export class ArenaScene extends Phaser.Scene {
 
   private getDebugRunOrigin(): RunOrigin {
     return this.getBaseRunOrigin() === "test" ? "test" : "debug";
+  }
+
+  private getRequestedAutoPilotWeapon(): WeaponTypeId | null {
+    const value = new URLSearchParams(window.location.search).get("autopilot")?.toLowerCase();
+    if (value === "spread") return "spread";
+    if (value === "pulse" || value === "1" || value === "true") return "pulse";
+    return null;
+  }
+
+  private startAutoPilot(weaponType: WeaponTypeId): void {
+    this.autoPilotEnabled = true;
+    this.autoPilotMode = null;
+    this.autoPilotTargetId = null;
+    this.selectedWeapon = weaponType;
+    this.resetGame("playing", this.getDebugRunOrigin());
+  }
+
+  private setAutoPilotEnabled(enabled: boolean): void {
+    if (enabled === this.autoPilotEnabled) return;
+    if (
+      enabled &&
+      (this.world.state.status === "title" ||
+        this.world.state.status === "weaponSelect" ||
+        this.world.state.status === "gameOver")
+    ) {
+      this.startAutoPilot(this.selectedWeapon);
+      return;
+    }
+
+    this.autoPilotEnabled = enabled;
+    if (!enabled) {
+      this.autoPilotMode = null;
+      this.autoPilotTargetId = null;
+      return;
+    }
+    this.runRecordCoordinator.markDebugMutation();
+    this.runRecordCoordinator.addModifier(AUTO_PILOT_MODIFIER_ID, false);
+  }
+
+  private resolveFrameInput(manualInput: InputSnapshot): InputSnapshot {
+    if (!this.autoPilotEnabled) return manualInput;
+
+    const decision = createAutoPilotDecision(this.world, this.runConfig);
+    this.autoPilotMode = decision.mode;
+    this.autoPilotTargetId = decision.targetId;
+    const autoInput = decision.input;
+    return {
+      ...autoInput,
+      startPressed: manualInput.startPressed,
+      restartPressed: manualInput.restartPressed,
+      pausePressed: manualInput.pausePressed,
+      quitToTitlePressed: manualInput.quitToTitlePressed,
+      upgradeChoicePressed:
+        manualInput.upgradeChoicePressed ?? autoInput.upgradeChoicePressed,
+      contractChoicePressed:
+        manualInput.contractChoicePressed ?? autoInput.contractChoicePressed,
+    };
   }
 
   private createRunId(): string {

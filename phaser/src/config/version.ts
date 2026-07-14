@@ -1,5 +1,5 @@
 export const APP_VERSION = "0.6.5";
-export const RULESET_VERSION = "phaser-v0.6.4-pulse-ballistics";
+export const RULESET_VERSION = "phaser-v0.6.5-obstacle-only-test";
 export const DEFAULT_MODE_ID = "endless";
 export const DEFAULT_STAGE_ID = "arena-default";
 export const DEFAULT_DIFFICULTY_ID = "standard";

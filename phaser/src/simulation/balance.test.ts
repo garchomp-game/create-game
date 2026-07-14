@@ -28,11 +28,12 @@ const balanceBaseline = {
   kiteCollectFirstDamageP50: 84.87,
   kiteCollectFirstUpgradeP50: 7.07,
   kiteCollectWaveReachedP50: 90,
-  kiteCollectMaxEnemiesMax: 45,
-  kiteCollectMaxBulletsMax: 32,
-  kiteCollectHpRecoveredP50: 59,
+  kiteCollectMaxEnemiesMax: SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 45 : 60,
+  kiteCollectMaxBulletsMax: SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 32 : 43,
+  kiteCollectHpRecoveredP50: SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 59 : 106,
   kiteCollectHealPickupsCollectedP50: 39,
-  kiteCollectEffectiveHealPickupsCollectedP50: 5,
+  kiteCollectEffectiveHealPickupsCollectedP50:
+    SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 5 : 9,
 };
 
 describe("balance simulation", () => {
@@ -270,7 +271,11 @@ describe("balance simulation", () => {
     expect(pulse.pulseFocusEnhancedHits.p50).toBeGreaterThan(0);
     expect(pulse.pulseFocusBonusDamage.p50).toBeGreaterThan(0);
     expect(pulse.pulseFocusMaxStacks.p50).toBeGreaterThanOrEqual(2);
-    expect(pulse.capstoneBoundaryRicochets.p50).toBeGreaterThan(0);
+    if (SIMULATION_CONFIG.features.pulseBoundaryRicochet) {
+      expect(pulse.capstoneBoundaryRicochets.p50).toBeGreaterThan(0);
+    } else {
+      expect(pulse.capstoneBoundaryRicochets.p50).toBe(0);
+    }
     expect(
       comparison.pulse.runs.every(
         (run) =>

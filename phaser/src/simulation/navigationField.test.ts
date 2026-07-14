@@ -5,6 +5,7 @@ import { circleRect } from "../math/geometry";
 import { createWorld } from "./createWorld";
 import {
   getEnemyApproachNavigation,
+  getPointNavigation,
   hasClearNavigationPath,
 } from "./navigationField";
 import { updateEnemies } from "./systems/enemySystem";
@@ -54,6 +55,23 @@ describe("enemy navigation field", () => {
     expect(firstResult.mode).toBe("path");
     expect(Math.abs(firstResult.direction.y)).toBeGreaterThan(0.1);
     expect(firstResult.direction).toEqual(secondResult.direction);
+  });
+
+  it("routes the player toward an arbitrary point around cover", () => {
+    const world = createBlockedWorld();
+    const start = { x: 180, y: 270 };
+    const target = { x: 380, y: 270 };
+
+    const result = getPointNavigation(
+      world,
+      start,
+      target,
+      SIMULATION_CONFIG.player.radius,
+      SIMULATION_CONFIG,
+    );
+
+    expect(result.mode).toBe("path");
+    expect(Math.abs(result.direction.y)).toBeGreaterThan(0.1);
   });
 
   it("allows a tangent route while rejecting a route through the obstacle", () => {

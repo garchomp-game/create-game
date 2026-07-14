@@ -26,6 +26,7 @@ type ArenaKeys = {
   upgrade1: Phaser.Input.Keyboard.Key;
   upgrade2: Phaser.Input.Keyboard.Key;
   upgrade3: Phaser.Input.Keyboard.Key;
+  autoPilot: Phaser.Input.Keyboard.Key;
   debug: Phaser.Input.Keyboard.Key;
 };
 
@@ -65,6 +66,7 @@ export class PhaserInputAdapter {
       upgrade1: "ONE",
       upgrade2: "TWO",
       upgrade3: "THREE",
+      autoPilot: "O",
       debug: "F3",
     }) as ArenaKeys;
 
@@ -196,6 +198,10 @@ export class PhaserInputAdapter {
 
   readDebugTogglePressed(): boolean {
     return Phaser.Input.Keyboard.JustDown(this.keys.debug);
+  }
+
+  readAutoPilotTogglePressed(): boolean {
+    return Phaser.Input.Keyboard.JustDown(this.keys.autoPilot);
   }
 
   consumeMenuAction(): MenuAction | null {

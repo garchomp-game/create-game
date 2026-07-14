@@ -53,8 +53,64 @@ export function getEnemyApproachNavigation(
     return { direction: directDirection, mode: "direct", fieldBuilt: false };
   }
 
-  const { field, built } = getNavigationField(world, enemy.radius, config);
-  const start = findNearestWalkableCell(toGridCell(enemy.position, config), field);
+  return getBlockedPointNavigation(
+    world,
+    enemy.position,
+    target,
+    enemy.radius,
+    config,
+  );
+}
+
+export function getPointNavigation(
+  world: WorldState,
+  startPosition: Vec2,
+  targetPosition: Vec2,
+  radius: number,
+  config: SimulationConfig,
+): EnemyNavigationResult {
+  const directDirection = normalize(
+    targetPosition.x - startPosition.x,
+    targetPosition.y - startPosition.y,
+  );
+  if (
+    hasClearNavigationPath(
+      startPosition,
+      targetPosition,
+      radius,
+      world.obstacles,
+    )
+  ) {
+    return { direction: directDirection, mode: "direct", fieldBuilt: false };
+  }
+
+  return getBlockedPointNavigation(
+    world,
+    startPosition,
+    targetPosition,
+    radius,
+    config,
+  );
+}
+
+function getBlockedPointNavigation(
+  world: WorldState,
+  startPosition: Vec2,
+  targetPosition: Vec2,
+  radius: number,
+  config: SimulationConfig,
+): EnemyNavigationResult {
+  const directDirection = normalize(
+    targetPosition.x - startPosition.x,
+    targetPosition.y - startPosition.y,
+  );
+  const { field, built } = getNavigationField(
+    world,
+    radius,
+    targetPosition,
+    config,
+  );
+  const start = findNearestWalkableCell(toGridCell(startPosition, config), field);
   if (!start) {
     return { direction: directDirection, mode: "fallback", fieldBuilt: built };
   }
@@ -62,8 +118,8 @@ export function getEnemyApproachNavigation(
   const waypoint = getWaypoint(
     field,
     start,
-    enemy.position,
-    enemy.radius,
+    startPosition,
+    radius,
     world.obstacles,
     config,
   );
@@ -73,8 +129,8 @@ export function getEnemyApproachNavigation(
 
   return {
     direction: normalize(
-      waypoint.x - enemy.position.x,
-      waypoint.y - enemy.position.y,
+      waypoint.x - startPosition.x,
+      waypoint.y - startPosition.y,
     ),
     mode: "path",
     fieldBuilt: built,
@@ -95,6 +151,7 @@ export function hasClearNavigationPath(
 function getNavigationField(
   world: WorldState,
   radius: number,
+  targetPosition: Vec2,
   config: SimulationConfig,
 ): { field: NavigationField; built: boolean } {
   let cache = navigationCaches.get(world);
@@ -111,7 +168,7 @@ function getNavigationField(
     navigationCaches.set(world, cache);
   }
 
-  const targetCell = toGridCell(world.player.position, config);
+  const targetCell = toGridCell(targetPosition, config);
   const targetKey = gridCellKey(targetCell);
   let fields = cache.targets.get(targetKey);
   if (!fields) {
@@ -129,7 +186,7 @@ function getNavigationField(
   const existing = fields.get(radiusKey);
   if (existing) return { field: existing, built: false };
 
-  const field = createNavigationField(world, radius, config);
+  const field = createNavigationField(world, radius, targetPosition, config);
   fields.set(radiusKey, field);
   return { field, built: true };
 }
@@ -137,6 +194,7 @@ function getNavigationField(
 function createNavigationField(
   world: WorldState,
   radius: number,
+  targetPosition: Vec2,
   config: SimulationConfig,
 ): NavigationField {
   const columns = Math.ceil(config.arena.width / config.navigation.cellSize);
@@ -152,9 +210,9 @@ function createNavigationField(
     );
   const target =
     findNearestWalkableCell(
-      toGridCell(world.player.position, config),
+      toGridCell(targetPosition, config),
       { columns, rows, isWalkable },
-    ) ?? toGridCell(world.player.position, config);
+    ) ?? toGridCell(targetPosition, config);
   const pathfinder = new Dijkstra(
     target.x,
     target.y,

@@ -128,6 +128,37 @@ test("renders canvas and accepts movement and shooting input", async ({ page }) 
   expect(consoleErrors).toEqual([]);
 });
 
+test("runs the observer auto pilot outside ranking and allows manual takeover", async ({ page }) => {
+  await gotoArena(page, "/?autopilot=pulse&seed=20260714");
+
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().autoPilotEnabled))
+    .toBe(true);
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "playing",
+  );
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().bulletCount))
+    .toBeGreaterThan(0);
+
+  const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+  expect(snapshot?.weaponType).toBe("pulse");
+  expect(snapshot?.runContext?.modifierIds).toContain("auto-pilot:tactical-observer-v1");
+  expect(snapshot?.runContext?.rankEligibility.eligible).toBe(false);
+  expect(snapshot?.autoPilotMode).not.toBeNull();
+
+  await page.locator("canvas").click();
+  await page.keyboard.down("KeyO");
+  await page.waitForTimeout(120);
+  await page.keyboard.up("KeyO");
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().autoPilotEnabled))
+    .toBe(false);
+  expect(
+    await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().runContext?.rankEligibility.eligible),
+  ).toBe(false);
+});
+
 test("uses native cursor affordances outside active play", async ({ page }) => {
   await gotoArena(page);
   const canvas = page.locator("canvas");
@@ -412,8 +443,8 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   expect(runExport).toBeTruthy();
   expect(runExport?.game).toBe("arena-core-phaser");
   expect(runExport?.appVersion).toBe("0.6.5");
-  expect(runExport?.rulesetVersion).toBe("phaser-v0.6.4-pulse-ballistics");
-  expect(runExport?.configVersion).toBe("phaser-v0.6.4-pulse-ballistics");
+  expect(runExport?.rulesetVersion).toBe("phaser-v0.6.5-obstacle-only-test");
+  expect(runExport?.configVersion).toBe("phaser-v0.6.5-obstacle-only-test");
   expect(runExport?.buildCommit).toMatch(/^[0-9a-f]{12}$/);
   expect(runExport?.runOrigin).toBe("test");
   expect(runExport?.rankEligibility).toEqual({

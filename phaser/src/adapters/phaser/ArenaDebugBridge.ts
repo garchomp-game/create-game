@@ -36,6 +36,7 @@ import type {
   WeaponTypeId,
 } from "../../domain/types";
 import type { BuildComposition } from "../../simulation/buildComposer";
+import type { AutoPilotMode } from "../../simulation/autoPilot";
 
 export type ArenaObstacleContactCounts = {
   player: number;
@@ -68,6 +69,9 @@ export type ArenaDebugSnapshot = {
   seed: number;
   randomStreams: ArenaRandomStreamSnapshot;
   status: GameStatus;
+  autoPilotEnabled: boolean;
+  autoPilotMode: AutoPilotMode | null;
+  autoPilotTargetId: string | null;
   performance: ArenaPerformanceSnapshot;
   elapsed: number;
   hp: number;
@@ -169,6 +173,8 @@ export type ArenaDebugApi = {
   forceUpgradeSelect(): void;
   forceExtraUpgradeSelect(): void;
   restart(): void;
+  startAutoPilot(weaponType?: WeaponTypeId): void;
+  setAutoPilotEnabled(enabled: boolean): void;
   setPaused(paused: boolean): void;
   setElapsed(elapsed: number): void;
   setEnemyVisualFixture(band?: "wave2" | "wave3"): void;

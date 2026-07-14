@@ -10,7 +10,7 @@ const rawSimulationConfig = {
   seed: 20260619,
   features: {
     pulseRicochet: true,
-    pulseBoundaryRicochet: true,
+    pulseBoundaryRicochet: false,
     pulseFocus: true,
     spreadSweep: true,
     roleBasedEnemyHp: true,
