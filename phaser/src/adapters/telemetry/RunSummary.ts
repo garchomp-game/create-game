@@ -94,6 +94,42 @@ export const RUN_SUMMARY_COLUMNS = [
   "ranged_surges",
   "swarm_rushes",
   "brute_sieges",
+  "expedition_outcome",
+  "expedition_reached_act",
+  "expedition_reached_acts",
+  "expedition_completed_seconds",
+  "expedition_cards_selected",
+  "expedition_cards_completed",
+  "expedition_cards_failed",
+  "expedition_cards_interrupted",
+  "expedition_cards_deferred",
+  "expedition_structured_enemies_spawned",
+  "expedition_structured_spawns_deferred",
+  "expedition_longest_meaningful_gap_seconds",
+  "commander_spawned",
+  "commander_killed",
+  "commander_trait_activations",
+  "commander_reinforcements_spawned",
+  "commander_average_lifetime_seconds",
+  "charger_spawned",
+  "charger_killed",
+  "charger_charges",
+  "charger_player_hits",
+  "charger_avoided",
+  "boss_id",
+  "boss_spawned_seconds",
+  "boss_defeated_seconds",
+  "boss_remaining_hp",
+  "boss_maximum_hp",
+  "boss_phase_reached",
+  "boss_targeted_salvos",
+  "boss_escort_pincers",
+  "boss_targeted_salvo_player_hits",
+  "boss_escort_pincer_player_hits",
+  "boss_targeted_salvo_damage",
+  "boss_escort_pincer_damage",
+  "boss_escorts_spawned",
+  "boss_defeated_by_weapon",
   "navigation_direct_frames",
   "navigation_path_frames",
   "navigation_fallback_frames",
@@ -136,6 +172,13 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
   const progressionMetrics = recordAt(stats, "progressionMetrics");
   const navigationMetrics = recordAt(stats, "navigationMetrics");
   const eventCounts = recordAt(encounterMetrics, "eventCounts");
+  const expeditionMetrics = recordAt(encounterMetrics, "expedition");
+  const commanderMetrics = recordAt(encounterMetrics, "commander");
+  const chargerMetrics = recordAt(encounterMetrics, "charger");
+  const bossMetrics = recordAt(encounterMetrics, "boss");
+  const bossAttacksExecuted = recordAt(bossMetrics, "attacksExecuted");
+  const bossPlayerHitsByAttack = recordAt(bossMetrics, "playerHitsByAttack");
+  const bossDamageTakenByAttack = recordAt(bossMetrics, "damageTakenByAttack");
   const extraSelections = unknownArrayAt(progressionMetrics, "extraSelections");
   const automaticExtraSelections = extraSelections.filter(
     (selection) => isRecord(selection) && selection.automatic === true,
@@ -144,6 +187,8 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
   const navigationPath = numberAt(navigationMetrics, "pathFrames") ?? 0;
   const navigationFallback = numberAt(navigationMetrics, "fallbackFrames") ?? 0;
   const navigationFrames = navigationDirect + navigationPath + navigationFallback;
+  const commandersKilled = numberAt(commanderMetrics, "killed") ?? 0;
+  const commanderLifetimeTotal = numberAt(commanderMetrics, "lifetimeTotal") ?? 0;
   const projectilesFired = sumWeaponMetric(weaponMetrics, "projectilesFired");
   const projectileHits = sumWeaponMetric(weaponMetrics, "hits");
   const kills = numberAt(result, "enemiesKilled") ?? 0;
@@ -255,6 +300,51 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
     ranged_surges: numberAt(eventCounts, "rangedSurge") ?? 0,
     swarm_rushes: numberAt(eventCounts, "swarmRush") ?? 0,
     brute_sieges: numberAt(eventCounts, "bruteSiege") ?? 0,
+    expedition_outcome: stringAt(expeditionMetrics, "outcome") ?? "",
+    expedition_reached_act: stringAt(expeditionMetrics, "reachedActId") ?? "",
+    expedition_reached_acts: stringArrayAt(expeditionMetrics, "reachedActIds").join("|"),
+    expedition_completed_seconds: nullableRoundedNumber(expeditionMetrics, "completedAt"),
+    expedition_cards_selected: numberAt(expeditionMetrics, "cardsSelected") ?? 0,
+    expedition_cards_completed: numberAt(expeditionMetrics, "cardsCompleted") ?? 0,
+    expedition_cards_failed: numberAt(expeditionMetrics, "cardsFailed") ?? 0,
+    expedition_cards_interrupted: numberAt(expeditionMetrics, "cardsInterrupted") ?? 0,
+    expedition_cards_deferred: numberAt(expeditionMetrics, "cardsDeferred") ?? 0,
+    expedition_structured_enemies_spawned:
+      numberAt(expeditionMetrics, "structuredEnemiesSpawned") ?? 0,
+    expedition_structured_spawns_deferred:
+      numberAt(expeditionMetrics, "structuredSpawnsDeferred") ?? 0,
+    expedition_longest_meaningful_gap_seconds:
+      roundedNumber(expeditionMetrics, "longestMeaningfulGap"),
+    commander_spawned: numberAt(commanderMetrics, "spawned") ?? 0,
+    commander_killed: commandersKilled,
+    commander_trait_activations: numberAt(commanderMetrics, "traitActivations") ?? 0,
+    commander_reinforcements_spawned:
+      numberAt(commanderMetrics, "reinforcementsSpawned") ?? 0,
+    commander_average_lifetime_seconds:
+      commandersKilled > 0 ? round(commanderLifetimeTotal / commandersKilled, 3) : null,
+    charger_spawned: numberAt(chargerMetrics, "spawned") ?? 0,
+    charger_killed: numberAt(chargerMetrics, "killed") ?? 0,
+    charger_charges: numberAt(chargerMetrics, "charges") ?? 0,
+    charger_player_hits: numberAt(chargerMetrics, "playerHits") ?? 0,
+    charger_avoided: numberAt(chargerMetrics, "avoided") ?? 0,
+    boss_id: stringAt(bossMetrics, "bossId") ?? "",
+    boss_spawned_seconds: nullableRoundedNumber(bossMetrics, "spawnedAt"),
+    boss_defeated_seconds: nullableRoundedNumber(bossMetrics, "defeatedAt"),
+    boss_remaining_hp: nullableRoundedNumber(bossMetrics, "remainingHp"),
+    boss_maximum_hp: nullableRoundedNumber(bossMetrics, "maximumHp"),
+    boss_phase_reached: numberAt(bossMetrics, "phaseReached") ?? 0,
+    boss_targeted_salvos: numberAt(bossAttacksExecuted, "targeted-salvo") ?? 0,
+    boss_escort_pincers: numberAt(bossAttacksExecuted, "escort-pincer") ?? 0,
+    boss_targeted_salvo_player_hits:
+      numberAt(bossPlayerHitsByAttack, "targeted-salvo") ?? 0,
+    boss_escort_pincer_player_hits:
+      numberAt(bossPlayerHitsByAttack, "escort-pincer") ?? 0,
+    boss_targeted_salvo_damage:
+      numberAt(bossDamageTakenByAttack, "targeted-salvo") ?? 0,
+    boss_escort_pincer_damage:
+      numberAt(bossDamageTakenByAttack, "escort-pincer") ?? 0,
+    boss_escorts_spawned: numberAt(bossMetrics, "escortsSpawned") ?? 0,
+    boss_defeated_by_weapon: stringAt(bossMetrics, "defeatedByWeapon") ?? "",
     navigation_direct_frames: navigationDirect,
     navigation_path_frames: navigationPath,
     navigation_fallback_frames: navigationFallback,
