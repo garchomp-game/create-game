@@ -20,6 +20,16 @@ arena-core Worker
 - Workersサブドメイン: `garchomp-game.workers.dev`
 - 設定: `phaser/wrangler.jsonc`
 
+現在の公開基準:
+
+| 項目 | 値 |
+| --- | --- |
+| アプリ版 | `0.6.8` |
+| ルール版 | `phaser-v0.6.8-pulse-boundary-ricochet` |
+| Git commit | `ff686f992a65` |
+| Cloudflare Version ID | `e86f90b8-ea15-4d1d-b01b-59e4f9fea78e` |
+| 公開確認日 | 2026-07-17 |
+
 静的ファイルの取得ではWorkerスクリプトを実行しません。ランキング、共有履歴、アカウントAPIは公開ベータ後に`/api/*`として追加し、それまではプロフィール、履歴、ローカルランキングをブラウザの`localStorage`へ保存します。
 
 ## 初回認証
@@ -91,6 +101,14 @@ npm run deploy:cloudflare
 curl -fsSL https://arena-core.garchomp-game.workers.dev/ \
   | rg 'arena-(app-version|ruleset-version|build-commit)'
 ```
+
+公開UIを実ブラウザで一巡する場合:
+
+```bash
+npm run smoke:production
+```
+
+このスモークはデバッグhookを使わず、タイトル、設定保存、ランキング、履歴、武器選択、自然終了、RunRecord、リトライ、一時停止、ベータ情報、ライセンスを確認します。2026-07-17の基準ではコンソールエラー、ページ例外、失敗リクエスト、HTTP 4xx / 5xxは0件でした。ルートHTMLは`no-cache`、ハッシュ付きゲームJSは`max-age=31536000, immutable`、CSPとPermissions Policyも配信されています。
 
 ## GitHub連携
 

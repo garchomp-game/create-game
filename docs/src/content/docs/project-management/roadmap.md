@@ -92,7 +92,7 @@ description: v0.4からv1.0までの目的と主要チケット。
 
 ## 公開ベータ候補 エンドレス
 
-状態: v0.6.8候補で外周反射、ルール版、公開情報、ブラウザ互換を固定。基準commitのCloudflare配信とproduction smokeを確認中。
+状態: v0.6.8をCloudflareへ公開済み。外周反射、ルール版、公開情報、ブラウザ互換、production smokeを基準commit `ff686f992a65`で固定。
 
 目的:
 

@@ -22,10 +22,11 @@ npm run typecheck
 npm test
 npm run test:e2e
 npm run build:deploy
+npm run smoke:production
 npm audit --audit-level=high
 ```
 
-`test:e2e`は機能・画像回帰に加え、Chromeの960 x 540 / 390 x 844とFirefoxの960 x 540で公開経路を確認します。公開経路だけを再実行する場合:
+`test:e2e`は機能・画像回帰に加え、Chromeの960 x 540 / 390 x 844とFirefoxの960 x 540で公開経路を確認します。`smoke:production`は公開URLを通常UIだけで一巡し、保存された版情報まで検査します。公開経路だけを再実行する場合:
 
 ```bash
 npm run test:e2e:release -- --workers=1

@@ -526,3 +526,22 @@ description: 主要な方針変更と、その判断理由。
 - HTML meta、タイトル、リザルト、RunRecord、詳細JSONでアプリ版、ルール版、build commitを追跡できるようにする。
 - 公開版は端末内保存だけとし、詳細ランJSONを自動送信しない。開発ログAPI、debug hook、fixtureをproduction bundle検査で拒否する。
 - 公開ベータの複数ラン分布で一方的な優位が確認された場合は、新しいルール版で再評価する。
+
+## 2026-07-17: v0.6.8を公開ベータ基準として配信する
+
+決定: commit `ff686f992a65`をv0.6.8公開ベータ基準とし、Cloudflare Worker `arena-core`のVersion ID `e86f90b8-ea15-4d1d-b01b-59e4f9fea78e`として配信する。Wave 0を完了し、以後のv0.7ルール変更はこの基準から分離する。
+
+根拠:
+
+- 単体試験は286件成功・2件skip、E2Eは64件成功・長時間耐久1件skip、Starlightは81ページをbuildできた。
+- production artifactはapp `0.6.8`、ruleset `phaser-v0.6.8-pulse-boundary-ricochet`、build `ff686f992a65`で一致し、debug hook、fixture、開発ログAPI、source map、ログ、レビュー資料を含まない。
+- 公開URLの通常UIスモークで、設定、ランキング、履歴、Pulse開始、自然終了、RunRecord、リトライ、一時停止、タイトル復帰、ベータ情報、第三者ライセンスを確認した。
+- 公開RunRecordも三つの版情報が一致し、自動ブラウザ由来のランは意図どおりランキング対象外だった。
+- ルートHTMLは`no-cache`、ハッシュ付きJSは1年`immutable`で、CSP、Permissions Policy、`nosniff`を配信している。
+- `npm audit --audit-level=high`はHigh / Critical 0件で、既知のLow 1件はWindowsの開発サーバーに限られ、公開artifactへ直接影響しない。
+
+制約:
+
+- 公開ベータはゲスト、端末内履歴、端末内ランキングに限定し、アカウント、オンライン同期、解析、自動ログ送信を追加しない。
+- production不具合の修正はv0.6.8のルールを変えない範囲に限定し、ルール変更時は新しいrulesetへ分ける。
+- 公開ベータの複数ラン観測は継続するが、単一高得点や600秒以降の所感だけで公開版を先回りして調整しない。

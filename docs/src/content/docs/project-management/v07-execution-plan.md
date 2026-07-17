@@ -15,18 +15,21 @@ GitHub上の進捗は[Arena Core Roadmap](https://github.com/users/garchomp-game
 
 ## 現在地
 
-- v0.6.8候補、Phaser 4.2.1 WebGL、Cloudflare Workers Static Assetsでproduction耐久まで完了しています。
-- `PH-BETA-003`は外周反射の有効採用、ルール版分離、公開情報の実装まで完了し、production証跡待ちです。
+- v0.6.8公開ベータ、Phaser 4.2.1 WebGL、Cloudflare Workers Static Assetsでproduction配信まで完了しています。
+- `PH-BETA-003`は外周反射の有効採用、ルール版分離、公開情報、production証跡まで完了しました。
 - ルール版は`phaser-v0.6.8-pulse-boundary-ricochet`で、旧ランキング比較条件と分離します。
+- 公開基準はcommit `ff686f992a65`、Cloudflare Version ID `e86f90b8-ea15-4d1d-b01b-59e4f9fea78e`です。
 - `PhaserArenaRenderer`の分割とMenu Controller抽出は完了しています。
 - `ArenaScene`は1129行で、session / run lifecycle、debug / AI / performanceの分離が残っています。
-- 現在の作業ブランチは`experiment/auto-pilot-observer`で、未コミット変更を含みます。v0.7実装前に意図した基準コミットへ整理し、既存変更を破棄しません。
+- 公開基準は`experiment/auto-pilot-observer`へcommit・push済みです。v0.7実装はレビュー可能な別ブランチへ分け、既存の検証資料を破棄しません。
 
 ## 入口ゲート
 
 ### Gate 0: 公開ルールを固定する
 
-v0.7のルール変更と公開ベータの記録を混ぜないため、先に次を完了します。
+状態: 2026-07-17完了。
+
+v0.7のルール変更と公開ベータの記録を混ぜないため、次を完了しました。
 
 - 外周反射はPulse固有の地形判断として有効採用する。
 - 設定、説明、`RULESET_VERSION`、ランキング比較条件を一致させる。
@@ -267,7 +270,7 @@ PH-ARCH-006: PH-ARCH-005後に開始し、PH-V07-008前までに完了
 
 | Wave | 内容 | 終了判定 |
 | --- | --- | --- |
-| 0 | 公開ルール、基準コミット、公開ベータ | #32を閉じ、比較可能なproduction URLがある |
+| 0 | 公開ルール、基準コミット、公開ベータ | 完了。比較可能なproduction URLと証跡を固定 |
 | 1 | `PH-ARCH-005`、`006` | Endlessの同一hashと全回帰が通る |
 | 2 | `PH-V07-001`、`002` | data-driven stageと決定論的card列が純粋試験で成立 |
 | 3 | `PH-V07-003`、`004`、`005` | 構造化出現、優先標的、予兆回避をfixtureで確認 |

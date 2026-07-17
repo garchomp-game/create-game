@@ -122,9 +122,9 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 
 | ID | GitHub | チケット | 優先度 | 状態 |
 | --- | --- | --- | --- | --- |
-| `PH-BETA-001` | [#32](https://github.com/garchomp-game/create-game/issues/32) | エンドレス公開ベータ準備 | P0 | production検証中 |
+| `PH-BETA-001` | [#32](https://github.com/garchomp-game/create-game/issues/32) | エンドレス公開ベータ準備 | P0 | 完了。v0.6.8公開済み |
 | `PH-BETA-002` | [#37](https://github.com/garchomp-game/create-game/issues/37) | 長時間HUDの可変桁・重なり改善 | P1 | 完了 |
-| `PH-BETA-003` | [#52](https://github.com/garchomp-game/create-game/issues/52) | 公開ルールと外周反射の採否固定 | P0 | 実装完了・production証跡待ち |
+| `PH-BETA-003` | [#52](https://github.com/garchomp-game/create-game/issues/52) | 公開ルールと外周反射の採否固定 | P0 | 完了。外周反射を有効採用 |
 
 ## Phaser 4移行
 
