@@ -1,8 +1,8 @@
 import { expect, type Page, test } from "@playwright/test";
 import { probeVisibleCanvasSamples, probeWebglCanvas } from "./webglCanvasProbe";
 
-const APP_VERSION = "0.6.8";
-const RULESET_VERSION = "phaser-v0.6.8-pulse-boundary-ricochet";
+const APP_VERSION = "0.7.0";
+const RULESET_VERSION = "phaser-v0.7.0-first-expedition";
 
 test("exposes the release identity and completes the primary input path", async ({ page }) => {
   const consoleErrors: string[] = [];

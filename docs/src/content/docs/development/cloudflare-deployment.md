@@ -124,6 +124,14 @@ npm run smoke:production
 
 プレビューブランチは`npx wrangler versions upload`でVersion URLだけを作り、本番へ昇格しません。Cloudflare GitHub Appを使う場合、GitHub SecretsへAPIトークンを保存する必要はありません。
 
+v0.7候補はこのVersion Preview方式を使います。最終commitから`npm run build:deploy`を実行した後、次で新Versionを作ります。
+
+```bash
+npx wrangler versions upload
+```
+
+表示されたVersion URLへ対して`ARENA_PUBLIC_URL`、候補の版情報、commitを明示して`scripts/smoke-production.mjs`を実行します。`wrangler deploy`やtraffic昇格は手動採否が終わるまで実行しません。
+
 GitHub Actionsから直接デプロイする方式へ変更する場合だけ、CloudflareのScoped API TokenとAccount IDをSecretsへ追加します。Global API Keyは使いません。
 
 ## ヘッダーとキャッシュ

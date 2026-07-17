@@ -1,5 +1,5 @@
 import type { MenuAction, SecondaryMenu } from "../application/ArenaMenuTypes";
-import { APP_VERSION } from "../config/version";
+import { APP_VERSION, RELEASE_CHANNEL_LABEL } from "../config/version";
 import type { RankIneligibilityReason, RunRecord } from "../domain/runRecords";
 import type {
   GameStatus,
@@ -98,7 +98,7 @@ export function createArenaScreenViewModel(
       return {
         ...base,
         kind: "title",
-        statusText: `${TEXT.ui.titleScreen}\nENDLESS / EXPEDITION\n生存限界か、最初の作戦か\n公開ベータ v${uiState?.releaseIdentity.appVersion ?? APP_VERSION}`,
+        statusText: `${TEXT.ui.titleScreen}\nENDLESS / EXPEDITION\n生存限界か、最初の作戦か\n${RELEASE_CHANNEL_LABEL} v${uiState?.releaseIdentity.appVersion ?? APP_VERSION}`,
         detailText: null,
       };
     default:

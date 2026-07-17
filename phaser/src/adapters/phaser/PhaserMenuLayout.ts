@@ -33,7 +33,7 @@ const DEFAULT_MENU_LABELS: Record<MenuAction, string> = {
   history: "ラン履歴",
   ranking: "ランキング",
   settings: "設定",
-  betaInfo: "ベータ情報",
+  betaInfo: "プレビュー情報",
   back: "戻る",
   historyPrevious: "前のページ",
   historyNext: "次のページ",

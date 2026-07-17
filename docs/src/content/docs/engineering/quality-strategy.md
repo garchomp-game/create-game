@@ -169,3 +169,16 @@ Phaser 4.2.1移行後は、headless Chromeが実GPUではなくSwiftShaderを使
 同じIntel GPUのdev耐久は平均15.84ms、p95 34ms、最大76.4ms、50ms超過9件、終端外部FPS31.69でした。productionはp95と長フレームを改善しましたが、後半の終端FPSは同等です。build有無よりrenderer、GPU、画面読取設定の差が大きいため、比較時は起動条件を必ず記録します。
 
 性能計装は[Phaser TimeStep](https://docs.phaser.io/api-documentation/class/core-timestep)の`rawDelta`と`actualFps`を使います。[Web Vitals](https://github.com/GoogleChrome/web-vitals)はLCP / INP / CLS、[Long Tasks API](https://www.w3.org/TR/longtasks-1/)は50ms以上のメインスレッド占有を対象とするため、現段階では実行時依存を追加しません。
+
+## v0.7 Expedition統合QA
+
+通常ゲートに加え、明示実行の到達性probeを使います。
+
+```bash
+cd phaser
+npm run probe:v07
+```
+
+このprobeはPulse / Spreadへ同じ3 seedを与え、10分以内の勝利、5 Act、ボス第2段階、2攻撃、最長展開空白、敵・弾・Pickup上限を検査します。同一seedを再実行し、イベント列と終了worldのhashも比較します。通常の`npm test`へ含めず、統合QAとルール変更時に明示実行します。
+
+2026-07-17の候補版は、単体348件、Playwright 69件、画像30件に成功しました。6ランは9分02秒から9分51秒で勝利し、最大敵35、総弾38、Pickup 124でした。自動入力は人間採否を代替しないため、production昇格には別途Pulse / Spread各3本の通常UIプレイを必要とします。詳細は[v0.7 統合QAレポート](../../playtest/v07-qa-report/)を参照してください。

@@ -147,7 +147,7 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-V07-005` | [#50](https://github.com/garchomp-game/create-game/issues/50) | 予兆付き突進敵 | P1 | 完了 |
 | `PH-V07-006` | [#48](https://github.com/garchomp-game/create-game/issues/48) | 最初のエクスペディション | P0 | 完了。5 Actとボス撃破勝利を接続 |
 | `PH-V07-007` | [#58](https://github.com/garchomp-game/create-game/issues/58) | 最初のボス戦 | P0 | 完了 |
-| `PH-V07-008` | [#59](https://github.com/garchomp-game/create-game/issues/59) | 統合QAと採否判定 | P0 | 次に実施 |
+| `PH-V07-008` | [#59](https://github.com/garchomp-game/create-game/issues/59) | 統合QAと採否判定 | P0 | 技術QA完了。手動採否待ち |
 
 ## v0.8 チャレンジと熟練度
 

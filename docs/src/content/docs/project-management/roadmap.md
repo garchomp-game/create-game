@@ -116,7 +116,7 @@ description: v0.4からv1.0までの目的と主要チケット。
 
 ## v0.7 最初のエクスペディション
 
-状態: 2026-07-17に体験要件、対象外、実行Wave、受け入れ条件を固定。実装未着手。
+状態: 2026-07-17にWave 0から5と技術QAを完了。`0.7.0`をCloudflare Version Previewへ進め、production昇格とv0.8着手はPulse / Spread各3本の手動採否待ち。
 
 目的:
 
