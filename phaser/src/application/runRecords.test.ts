@@ -101,6 +101,31 @@ describe("run records", () => {
     expect(runRecordSchema.safeParse(record).success).toBe(false);
   });
 
+  it("preserves boss attack attribution in result records", () => {
+    const record = makeRecord();
+    record.lastDamageSource = {
+      kind: "projectile",
+      projectileId: "boss-projectile-1",
+      bossId: "first-command-ship",
+      bossAttackId: "targeted-salvo",
+    };
+
+    expect(runRecordSchema.parse(record).lastDamageSource).toEqual(
+      record.lastDamageSource,
+    );
+
+    record.lastDamageSource = {
+      kind: "contact",
+      enemyId: "escort-1",
+      enemyType: "fast",
+      bossId: "first-command-ship",
+      bossAttackId: "escort-pincer",
+    };
+    expect(runRecordSchema.parse(record).lastDamageSource).toEqual(
+      record.lastDamageSource,
+    );
+  });
+
   it("migrates v1 records without discarding existing rank data", () => {
     const current = makeRecord();
     const { pulseRicochet: _pulseRicochet, ...legacyRanks } = current.upgradeRanks;

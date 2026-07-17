@@ -22,6 +22,10 @@ import { planStructuredSpawn } from "./structuredSpawnPlanner";
 import { spawnTelegraphCharger } from "./systems/chargerEnemySystem";
 import { spawnCommanderElite } from "./systems/commanderEliteSystem";
 import {
+  spawnFirstExpeditionBoss,
+  updateFirstExpeditionBoss,
+} from "./systems/bossSystem";
+import {
   getSpawnWave,
   spawnEnemyAtPosition,
 } from "./systems/spawnSystem";
@@ -30,7 +34,8 @@ const ACT_OBJECTIVES: Record<string, string> = {
   deployment: "展開地点を確保する",
   "first-assault": "第一波を迎撃する",
   counterattack: "指揮個体を崩し反撃する",
-  breakthrough: "包囲を突破し作戦限界まで耐える",
+  breakthrough: "包囲を突破し決戦へ進む",
+  "command-ship": "敵指揮艦を撃破する",
 };
 
 export class ExpeditionController {
@@ -57,6 +62,7 @@ export class ExpeditionController {
       currentGeometryId: null,
       spawnOverride: null,
       deployedCardKey: null,
+      boss: null,
       outcome: null,
       completedAt: null,
     };
@@ -90,12 +96,21 @@ export class ExpeditionController {
       return [this.complete(world, "defeat")];
     }
 
-    const events: GameEvent[] = [];
+    const bossEvents = updateFirstExpeditionBoss(
+      world,
+      random,
+      config,
+      baseEvents,
+    );
+    const events: GameEvent[] = [...bossEvents];
     const directorEvents = this.director.update(
       expedition.director,
       {
         elapsed: world.state.elapsed,
         threatTier: getThreatTier(config, world.state.elapsed),
+        signals: bossEvents.some((event) => event.type === "boss.defeated")
+          ? ["boss-defeated"]
+          : [],
       },
       random.encounter,
     );
@@ -103,10 +118,14 @@ export class ExpeditionController {
       events.push(...this.applyDirectorEvent(world, event, random, config));
     }
 
+    const defeatedBoss = bossEvents.find(
+      (event): event is Extract<GameEvent, { type: "boss.defeated" }> =>
+        event.type === "boss.defeated",
+    );
     if (
-      this.stage.clearCondition.type === "survive" &&
-      world.state.status === "playing" &&
-      world.state.elapsed >= this.stage.clearCondition.durationSeconds
+      this.stage.clearCondition.type === "bossDefeat" &&
+      defeatedBoss?.bossId === this.stage.clearCondition.bossId &&
+      world.state.status === "playing"
     ) {
       events.push(this.complete(world, "victory"));
       events.push({
@@ -160,6 +179,15 @@ export class ExpeditionController {
     if (event.type === "encounter.card.telegraph.started") return [];
     if (event.type === "encounter.card.active.started") {
       const card = this.director.getCard(event.cardId);
+      if (card.tags.includes("boss")) {
+        const bossEvents: GameEvent[] = [{
+          type: "expedition.encounter.active.started",
+          cardId: card.id,
+          elapsed: event.elapsed,
+        }];
+        spawnFirstExpeditionBoss(world, bossEvents);
+        return bossEvents;
+      }
       expedition.spawnOverride = {
         intervalMultiplier: card.spawn.intervalMultiplier,
         budget: card.spawn.budget,

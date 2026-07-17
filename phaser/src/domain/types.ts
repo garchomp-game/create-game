@@ -24,6 +24,9 @@ export const ENEMY_TYPE_IDS = ["chaser", "brute", "fast", "ranged"] as const;
 export type EnemyTypeId = (typeof ENEMY_TYPE_IDS)[number];
 export type EnemyBehavior = "chase" | "ranged";
 
+export const BOSS_ATTACK_IDS = ["targeted-salvo", "escort-pincer"] as const;
+export type BossAttackId = (typeof BOSS_ATTACK_IDS)[number];
+
 export const WEAPON_TYPE_IDS = ["pulse", "spread", "pierce"] as const;
 export type WeaponTypeId = (typeof WEAPON_TYPE_IDS)[number];
 export const ARENA_BOUNDARY_SIDES = ["left", "right", "top", "bottom"] as const;
@@ -406,6 +409,8 @@ export type Enemy = CircleBody & {
   behavior: EnemyBehavior;
   attackTimer: number;
   enteredArena: boolean;
+  boss?: { bossId: string };
+  bossAttackSource?: { bossId: string; bossAttackId: BossAttackId };
   elite?: CommanderEliteState;
   support?: CommanderSupportState;
   action?: ChargerActionState;
@@ -447,6 +452,7 @@ export type EnemyProjectile = CircleBody & {
   velocity: Vec2;
   lifetime: number;
   damage: number;
+  source?: { bossId: string; bossAttackId: BossAttackId };
 };
 
 export type Pickup = CircleBody & {
@@ -522,6 +528,30 @@ export type EncounterState = {
 
 export type ExpeditionOutcome = "victory" | "defeat";
 
+export type BossActionPhase = "telegraph" | "execute" | "recovery";
+
+export type ExpeditionBossActionState = {
+  attackId: BossAttackId;
+  phase: BossActionPhase;
+  startedAt: number;
+  endsAt: number;
+  aimDirection: Vec2 | null;
+  ingressDirection: EncounterDirection | null;
+};
+
+export type ExpeditionBossState = {
+  bossId: string;
+  enemyId: string;
+  status: "active" | "defeated";
+  maxHp: number;
+  phase: 1 | 2;
+  phaseChangedAt: number | null;
+  spawnedAt: number;
+  defeatedAt: number | null;
+  nextAttackIndex: number;
+  action: ExpeditionBossActionState;
+};
+
 export type ExpeditionState = {
   status: "active" | ExpeditionOutcome;
   director: EncounterDirectorState;
@@ -539,6 +569,7 @@ export type ExpeditionState = {
     enemyWeights: Partial<Record<EnemyTypeId, number>>;
   } | null;
   deployedCardKey: string | null;
+  boss: ExpeditionBossState | null;
   outcome: ExpeditionOutcome | null;
   completedAt: number | null;
 };
@@ -684,6 +715,7 @@ export type EncounterRunStats = {
   commander?: CommanderEncounterRunStats;
   charger?: ChargerEncounterRunStats;
   expedition?: ExpeditionEncounterRunStats;
+  boss?: BossEncounterRunStats;
 };
 
 export type ExpeditionEncounterRunStats = {
@@ -700,6 +732,23 @@ export type ExpeditionEncounterRunStats = {
   structuredSpawnsDeferred: number;
   longestMeaningfulGap: number;
   completedAt: number | null;
+};
+
+export type BossEncounterRunStats = {
+  bossId: string | null;
+  spawnedAt: number | null;
+  defeatedAt: number | null;
+  remainingHp: number | null;
+  maximumHp: number | null;
+  phaseReached: 0 | 1 | 2;
+  phaseChanges: number;
+  lastAttackId: BossAttackId | null;
+  attacksTelegraphed: Record<BossAttackId, number>;
+  attacksExecuted: Record<BossAttackId, number>;
+  playerHitsByAttack: Record<BossAttackId, number>;
+  damageTakenByAttack: Record<BossAttackId, number>;
+  escortsSpawned: number;
+  defeatedByWeapon: WeaponTypeId | null;
 };
 
 export type CommanderEncounterRunStats = {
@@ -728,8 +777,19 @@ export type ChargerEncounterRunStats = {
 };
 
 export type PlayerDamageSource =
-  | { kind: "contact"; enemyId: string; enemyType: EnemyTypeId }
-  | { kind: "projectile"; projectileId: string }
+  | {
+      kind: "contact";
+      enemyId: string;
+      enemyType: EnemyTypeId;
+      bossId?: string;
+      bossAttackId?: BossAttackId;
+    }
+  | {
+      kind: "projectile";
+      projectileId: string;
+      bossId?: string;
+      bossAttackId?: BossAttackId;
+    }
   | { kind: "collapse"; stage: number };
 
 export type DamageTakenBySource = {
@@ -1125,6 +1185,73 @@ export type GameEvent =
       type: "expedition.spawn.deferred";
       cardId: string;
       reason: string;
+      elapsed: number;
+    }
+  | {
+      type: "boss.spawned";
+      bossId: string;
+      enemyId: string;
+      position: Vec2;
+      maximumHp: number;
+      elapsed: number;
+    }
+  | {
+      type: "boss.phase.changed";
+      bossId: string;
+      enemyId: string;
+      phase: 2;
+      elapsed: number;
+    }
+  | {
+      type: "boss.attack.telegraphed";
+      bossId: string;
+      enemyId: string;
+      attackId: BossAttackId;
+      phase: 1 | 2;
+      duration: number;
+      aimDirection: Vec2 | null;
+      ingressDirection: EncounterDirection | null;
+      elapsed: number;
+    }
+  | {
+      type: "boss.attack.executed";
+      bossId: string;
+      enemyId: string;
+      attackId: BossAttackId;
+      phase: 1 | 2;
+      projectileIds: string[];
+      elapsed: number;
+    }
+  | {
+      type: "boss.attack.recovery.started";
+      bossId: string;
+      enemyId: string;
+      attackId: BossAttackId;
+      phase: 1 | 2;
+      recoveryEndsAt: number;
+      elapsed: number;
+    }
+  | {
+      type: "boss.escort.deployed";
+      bossId: string;
+      attackId: "escort-pincer";
+      direction: EncounterDirection;
+      enemyIds: string[];
+      elapsed: number;
+    }
+  | {
+      type: "boss.escort.deferred";
+      bossId: string;
+      attackId: "escort-pincer";
+      reason: string;
+      elapsed: number;
+    }
+  | {
+      type: "boss.defeated";
+      bossId: string;
+      enemyId: string;
+      weaponType: WeaponTypeId;
+      position: Vec2;
       elapsed: number;
     }
   | {

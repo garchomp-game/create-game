@@ -146,6 +146,15 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
       if (event.source?.kind === "collapse") {
         world.stats.encounterMetrics.collapseDamageTaken += event.damage;
       }
+      if (
+        event.source &&
+        event.source.kind !== "collapse" &&
+        event.source.bossAttackId
+      ) {
+        const boss = getBossMetrics(world);
+        boss.playerHitsByAttack[event.source.bossAttackId] += 1;
+        boss.damageTakenByAttack[event.source.bossAttackId] += event.damage;
+      }
     } else if (event.type === "pickup.collected") {
       world.stats.pickupsCollected += 1;
       if (event.pickupKind === "xp") {
@@ -241,6 +250,30 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
       getExpeditionMetrics(world).structuredEnemiesSpawned += event.enemyIds.length;
     } else if (event.type === "expedition.spawn.deferred") {
       getExpeditionMetrics(world).structuredSpawnsDeferred += 1;
+    } else if (event.type === "boss.spawned") {
+      const metrics = getBossMetrics(world);
+      metrics.bossId = event.bossId;
+      metrics.spawnedAt = event.elapsed;
+      metrics.remainingHp = event.maximumHp;
+      metrics.maximumHp = event.maximumHp;
+      metrics.phaseReached = 1;
+    } else if (event.type === "boss.phase.changed") {
+      const metrics = getBossMetrics(world);
+      metrics.phaseReached = event.phase;
+      metrics.phaseChanges += 1;
+    } else if (event.type === "boss.attack.telegraphed") {
+      getBossMetrics(world).attacksTelegraphed[event.attackId] += 1;
+    } else if (event.type === "boss.attack.executed") {
+      const metrics = getBossMetrics(world);
+      metrics.attacksExecuted[event.attackId] += 1;
+      metrics.lastAttackId = event.attackId;
+    } else if (event.type === "boss.escort.deployed") {
+      getBossMetrics(world).escortsSpawned += event.enemyIds.length;
+    } else if (event.type === "boss.defeated") {
+      const metrics = getBossMetrics(world);
+      metrics.defeatedAt = event.elapsed;
+      metrics.remainingHp = 0;
+      metrics.defeatedByWeapon = event.weaponType;
     } else if (
       event.type === "expedition.completed" ||
       event.type === "expedition.failed"
@@ -274,6 +307,12 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
   const activeVolleyIds = new Set(world.bullets.map((bullet) => String(bullet.volleyId)));
   for (const volleyId of Object.keys(world.analytics.activeVolleys)) {
     if (!activeVolleyIds.has(volleyId)) delete world.analytics.activeVolleys[volleyId];
+  }
+
+  const activeBoss = world.expedition?.boss;
+  if (activeBoss) {
+    const enemy = world.enemies.find((candidate) => candidate.id === activeBoss.enemyId);
+    if (enemy) getBossMetrics(world).remainingHp = Math.max(0, enemy.hp);
   }
 }
 
@@ -321,5 +360,24 @@ function getExpeditionMetrics(world: WorldState) {
     structuredSpawnsDeferred: 0,
     longestMeaningfulGap: 0,
     completedAt: null,
+  });
+}
+
+function getBossMetrics(world: WorldState) {
+  return (world.stats.encounterMetrics.boss ??= {
+    bossId: null,
+    spawnedAt: null,
+    defeatedAt: null,
+    remainingHp: null,
+    maximumHp: null,
+    phaseReached: 0,
+    phaseChanges: 0,
+    lastAttackId: null,
+    attacksTelegraphed: { "targeted-salvo": 0, "escort-pincer": 0 },
+    attacksExecuted: { "targeted-salvo": 0, "escort-pincer": 0 },
+    playerHitsByAttack: { "targeted-salvo": 0, "escort-pincer": 0 },
+    damageTakenByAttack: { "targeted-salvo": 0, "escort-pincer": 0 },
+    escortsSpawned: 0,
+    defeatedByWeapon: null,
   });
 }

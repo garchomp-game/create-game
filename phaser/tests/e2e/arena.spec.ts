@@ -136,7 +136,14 @@ test("runs the first expedition from mode selection through result and retry", a
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().expedition?.actId))
     .toBe("deployment");
 
-  await page.evaluate(() => window.__ARENA_DEBUG__?.setElapsed(420));
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
+    if (!debug) throw new Error("Debug API is unavailable.");
+    debug.setPaused(true);
+    debug.setExpeditionBossFixture("targeted-salvo", 2);
+    debug.armExpeditionBossDefeat();
+    debug.step({}, 1 / 60);
+  });
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "gameOver",
   );
@@ -144,7 +151,15 @@ test("runs the first expedition from mode selection through result and retry", a
   expect(completed?.latestRunRecord).toMatchObject({
     modeId: "expedition",
     stageId: "first-expedition",
-    encounterMetrics: { expedition: { outcome: "victory" } },
+    encounterMetrics: {
+      expedition: { outcome: "victory", reachedActId: "command-ship" },
+      boss: {
+        bossId: "first-command-ship",
+        phaseReached: 2,
+        remainingHp: 0,
+        defeatedByWeapon: "pulse",
+      },
+    },
   });
 
   await clickCanvasAt(page, 480, 415);
@@ -826,7 +841,7 @@ test("persists accessibility settings and disables automatic fire", async ({ pag
 test("supports keyboard navigation and Escape on secondary menus", async ({ page }) => {
   await gotoArena(page);
   await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
-  for (const key of ["ArrowDown", "ArrowDown", "Enter"]) {
+  for (const key of ["ArrowDown", "ArrowDown", "ArrowDown", "Enter"]) {
     await page.keyboard.down(key);
     await page.waitForTimeout(80);
     await page.keyboard.up(key);

@@ -1,4 +1,5 @@
 import type { GameContentDefinitions } from "../domain/gameContent";
+import { FIRST_COMMAND_SHIP_BOSS_ID } from "./bossCatalog";
 import { ENDLESS_ENCOUNTER_DECK_ID } from "./endlessEncounterCards";
 import { FIRST_EXPEDITION_ENCOUNTER_DECK_ID } from "./expeditionEncounterCards";
 
@@ -30,7 +31,8 @@ export const FIRST_EXPEDITION_STAGE_DEFINITION = {
   })),
   encounterDeckId: FIRST_EXPEDITION_ENCOUNTER_DECK_ID,
   enemyPoolId: "expedition-core",
-  clearCondition: { type: "survive", durationSeconds: 420 },
+  clearCondition: { type: "bossDefeat", bossId: FIRST_COMMAND_SHIP_BOSS_ID },
+  bossId: FIRST_COMMAND_SHIP_BOSS_ID,
 } satisfies GameContentDefinitions["stages"][number];
 
 export const GAME_CONTENT_DEFINITIONS = {
@@ -65,5 +67,5 @@ export const GAME_CONTENT_DEFINITIONS = {
     ENDLESS_ENCOUNTER_DECK_ID,
     FIRST_EXPEDITION_ENCOUNTER_DECK_ID,
   ],
-  bossIds: [],
+  bossIds: [FIRST_COMMAND_SHIP_BOSS_ID],
 } satisfies GameContentDefinitions;

@@ -212,7 +212,11 @@ function formatRecordEncounter(record: RunRecord): string {
         : expedition.outcome === "defeat"
           ? "敗退"
           : "進行中";
-    return `遠征: ${outcome} / ${formatActName(expedition.reachedActId)} / 遭遇${expedition.cardsCompleted}/${expedition.cardsSelected} / 編隊${expedition.structuredEnemiesSpawned}`;
+    const boss = metrics.boss;
+    const bossLine = boss?.spawnedAt !== null && boss?.spawnedAt !== undefined
+      ? `\n指揮艦: PHASE ${boss.phaseReached} / HP ${Math.ceil(boss.remainingHp ?? 0)} / 最終攻撃 ${formatBossAttack(boss.lastAttackId)} / 被弾 ${Object.values(boss.playerHitsByAttack).reduce((sum, count) => sum + count, 0)}`
+      : "";
+    return `遠征: ${outcome} / ${formatActName(expedition.reachedActId)} / 遭遇${expedition.cardsCompleted}/${expedition.cardsSelected} / 編隊${expedition.structuredEnemiesSpawned}${bossLine}`;
   }
   if (metrics.activeStartedAt === null) return "危険イベント: 未到達";
   const contract =
@@ -369,7 +373,11 @@ function createMenuLabels(
 }
 
 function formatDamageSource(source: PlayerDamageSource): string {
+  if (source.kind !== "collapse" && source.bossAttackId) {
+    return `指揮艦 ${formatBossAttack(source.bossAttackId)}`;
+  }
   if (source.kind === "contact") {
+    if (source.bossId) return "指揮艦 接触";
     return TEXT.ui.damageSource.enemyContact(TEXT.ui.enemyNames[source.enemyType]);
   }
   if (source.kind === "projectile") return TEXT.ui.damageSource.enemyProjectile;
@@ -411,6 +419,15 @@ function formatActName(actId: string | null): string {
     "first-assault": "Act 2 第一波",
     counterattack: "Act 3 反撃",
     breakthrough: "Act 4 突破",
+    "command-ship": "Act 5 指揮艦決戦",
   };
   return actId ? (names[actId] ?? actId) : "未到達";
+}
+
+function formatBossAttack(
+  attackId: "targeted-salvo" | "escort-pincer" | null,
+): string {
+  if (attackId === "targeted-salvo") return "照準斉射";
+  if (attackId === "escort-pincer") return "挟撃護衛";
+  return "未実行";
 }

@@ -208,6 +208,103 @@ describe("updateRunStats comparison metrics", () => {
       spreadSweepConsumes: 0,
     });
   });
+
+  it("records boss phases, attacks, escorts, damage, and defeat", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    updateRunStats(world, [
+      {
+        type: "boss.spawned",
+        bossId: "first-command-ship",
+        enemyId: "boss-1",
+        position: { x: 480, y: 92 },
+        maximumHp: 3_600,
+        elapsed: 421,
+      },
+      {
+        type: "boss.attack.telegraphed",
+        bossId: "first-command-ship",
+        enemyId: "boss-1",
+        attackId: "targeted-salvo",
+        phase: 1,
+        duration: 1.45,
+        aimDirection: { x: 0, y: 1 },
+        ingressDirection: null,
+        elapsed: 421,
+      },
+      {
+        type: "boss.attack.executed",
+        bossId: "first-command-ship",
+        enemyId: "boss-1",
+        attackId: "targeted-salvo",
+        phase: 1,
+        projectileIds: ["boss-projectile-1"],
+        elapsed: 422.45,
+      },
+      {
+        type: "player.damaged",
+        damage: 10,
+        hpAfter: 90,
+        source: {
+          kind: "projectile",
+          projectileId: "boss-projectile-1",
+          bossId: "first-command-ship",
+          bossAttackId: "targeted-salvo",
+        },
+      },
+      {
+        type: "boss.phase.changed",
+        bossId: "first-command-ship",
+        enemyId: "boss-1",
+        phase: 2,
+        elapsed: 450,
+      },
+      {
+        type: "boss.escort.deployed",
+        bossId: "first-command-ship",
+        attackId: "escort-pincer",
+        direction: "east",
+        enemyIds: ["escort-1", "escort-2"],
+        elapsed: 452,
+      },
+      {
+        type: "player.damaged",
+        damage: 7,
+        hpAfter: 83,
+        source: {
+          kind: "contact",
+          enemyId: "escort-1",
+          enemyType: "fast",
+          bossId: "first-command-ship",
+          bossAttackId: "escort-pincer",
+        },
+      },
+      {
+        type: "boss.defeated",
+        bossId: "first-command-ship",
+        enemyId: "boss-1",
+        weaponType: "pulse",
+        position: { x: 480, y: 92 },
+        elapsed: 480,
+      },
+    ]);
+
+    expect(world.stats.encounterMetrics.boss).toEqual({
+      bossId: "first-command-ship",
+      spawnedAt: 421,
+      defeatedAt: 480,
+      remainingHp: 0,
+      maximumHp: 3_600,
+      phaseReached: 2,
+      phaseChanges: 1,
+      lastAttackId: "targeted-salvo",
+      attacksTelegraphed: { "targeted-salvo": 1, "escort-pincer": 0 },
+      attacksExecuted: { "targeted-salvo": 1, "escort-pincer": 0 },
+      playerHitsByAttack: { "targeted-salvo": 1, "escort-pincer": 1 },
+      damageTakenByAttack: { "targeted-salvo": 10, "escort-pincer": 7 },
+      escortsSpawned: 2,
+      defeatedByWeapon: "pulse",
+    });
+  });
 });
 
 function createHit(

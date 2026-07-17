@@ -45,7 +45,8 @@ describe("GameContentRegistry", () => {
         id: "first-expedition",
         encounterDeckId: "first-expedition-v1",
         enemyPoolId: "expedition-core",
-        clearCondition: { type: "survive", durationSeconds: 420 },
+        bossId: "first-command-ship",
+        clearCondition: { type: "bossDefeat", bossId: "first-command-ship" },
       },
     });
   });

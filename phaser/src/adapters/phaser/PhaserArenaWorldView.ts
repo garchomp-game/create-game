@@ -73,7 +73,14 @@ export class PhaserArenaWorldView {
     }
 
     for (const item of world.enemies) {
-      this.drawEnemy(graphics, item, world.state.elapsed);
+      this.drawEnemy(
+        graphics,
+        item,
+        world.state.elapsed,
+        world.expedition?.boss?.enemyId === item.id
+          ? world.expedition.boss.phase
+          : null,
+      );
     }
     this.drawOffscreenEnemyIndicators(graphics, world);
 
@@ -143,6 +150,11 @@ export class PhaserArenaWorldView {
       graphics.strokeCircle(width / 2, height / 2, 66 + actAge * 22);
     }
 
+    if (expedition.boss?.status === "active") {
+      this.drawBossSituation(graphics, world);
+      return;
+    }
+
     const direction = expedition.currentDirection;
     const phase = expedition.director.phase;
     if (!direction || (phase !== "telegraph" && phase !== "active")) return;
@@ -157,6 +169,67 @@ export class PhaserArenaWorldView {
         phase === "active",
       );
     }
+  }
+
+  private drawBossSituation(
+    graphics: Phaser.GameObjects.Graphics,
+    world: WorldState,
+  ): void {
+    const boss = world.expedition!.boss!;
+    const enemy = world.enemies.find((candidate) => candidate.id === boss.enemyId);
+    if (!enemy) return;
+
+    if (boss.phaseChangedAt !== null) {
+      const age = world.state.elapsed - boss.phaseChangedAt;
+      if (age >= 0 && age <= 1.4) {
+        const alpha = 1 - age / 1.4;
+        graphics.lineStyle(4, 0xfb7185, alpha * 0.8);
+        graphics.strokeCircle(
+          enemy.position.x,
+          enemy.position.y,
+          enemy.radius + 16 + age * 38,
+        );
+      }
+    }
+
+    const action = boss.action;
+    if (action.phase === "recovery") return;
+    if (action.attackId === "escort-pincer" && action.ingressDirection) {
+      this.drawIngressDirection(
+        graphics,
+        action.ingressDirection,
+        action.phase === "execute",
+      );
+      this.drawIngressDirection(
+        graphics,
+        oppositeDirection(action.ingressDirection),
+        action.phase === "execute",
+      );
+      return;
+    }
+    if (!action.aimDirection) return;
+
+    const color = action.phase === "telegraph" ? 0xfacc15 : 0xf97316;
+    const alpha = action.phase === "telegraph" ? 0.68 : 0.42;
+    const spread = boss.phase === 2 ? 0.36 : 0.28;
+    const directions = [
+      rotateDirection(action.aimDirection, -spread),
+      action.aimDirection,
+      rotateDirection(action.aimDirection, spread),
+    ];
+    directions.forEach((direction, index) => {
+      const start = {
+        x: enemy.position.x + direction.x * (enemy.radius + 4),
+        y: enemy.position.y + direction.y * (enemy.radius + 4),
+      };
+      graphics.lineStyle(index === 1 ? 3 : 2, color, index === 1 ? alpha : alpha * 0.72);
+      graphics.lineBetween(
+        start.x,
+        start.y,
+        start.x + direction.x * 720,
+        start.y + direction.y * 720,
+      );
+    });
   }
 
   private drawIngressDirection(
@@ -266,10 +339,22 @@ export class PhaserArenaWorldView {
     graphics: Phaser.GameObjects.Graphics,
     enemy: WorldState["enemies"][number],
     elapsed: number,
+    bossPhase: 1 | 2 | null,
   ): void {
     const view = this.viewConfig.enemy[enemy.typeId];
     const { x, y } = enemy.position;
     const r = enemy.radius;
+
+    if (enemy.boss) {
+      this.drawCommandShip(graphics, enemy, elapsed, bossPhase ?? 1);
+      if (
+        (enemy.pulseFocusStacks ?? 0) > 0 &&
+        (enemy.pulseFocusExpiresAt ?? 0) >= elapsed
+      ) {
+        this.drawPulseFocusPips(graphics, x, y - r - 14, enemy.pulseFocusStacks ?? 0);
+      }
+      return;
+    }
 
     if (view.shape === "circle") {
       graphics.fillStyle(view.color, 1);
@@ -322,6 +407,50 @@ export class PhaserArenaWorldView {
     ) {
       this.drawPulseFocusPips(graphics, x, y - r - 7, enemy.pulseFocusStacks ?? 0);
     }
+  }
+
+  private drawCommandShip(
+    graphics: Phaser.GameObjects.Graphics,
+    enemy: WorldState["enemies"][number],
+    elapsed: number,
+    phase: 1 | 2,
+  ): void {
+    const { x, y } = enemy.position;
+    const radius = enemy.radius;
+    const accent = phase === 2 ? 0xfb7185 : 0xfacc15;
+    const wing = [
+      { x: x - radius * 1.65, y: y - radius * 0.25 },
+      { x: x - radius * 0.55, y: y - radius * 0.72 },
+      { x: x + radius * 0.55, y: y - radius * 0.72 },
+      { x: x + radius * 1.65, y: y - radius * 0.25 },
+      { x: x + radius * 1.25, y: y + radius * 0.62 },
+      { x: x, y: y + radius * 0.9 },
+      { x: x - radius * 1.25, y: y + radius * 0.62 },
+    ];
+    this.drawPolygon(graphics, wing, 0x3f1d4b, accent);
+    this.drawPolygon(
+      graphics,
+      this.getRegularPolygonPoints(x, y, radius, 6, Math.PI / 6),
+      0x172554,
+      0xf8fafc,
+    );
+    graphics.lineStyle(3, accent, 0.92);
+    graphics.strokeCircle(x, y, radius * 0.55);
+    graphics.fillStyle(phase === 2 ? 0xfda4af : 0xfef3c7, 1);
+    graphics.fillCircle(x, y, radius * 0.24);
+    graphics.lineStyle(2, 0x67e8f9, 0.8);
+    const ring = this.getRegularPolygonPoints(
+      x,
+      y,
+      radius + 10,
+      8,
+      elapsed * 0.22,
+    );
+    this.tracePolygon(graphics, ring);
+    graphics.strokePath();
+    graphics.lineStyle(3, accent, 0.95);
+    graphics.lineBetween(x - radius * 1.5, y, x - radius * 0.72, y);
+    graphics.lineBetween(x + radius * 0.72, y, x + radius * 1.5, y);
   }
 
   private drawPulseFocusPips(
@@ -629,6 +758,7 @@ export class PhaserArenaWorldView {
     const { x, y } = projectile.position;
     const r = projectile.radius + 3;
     const view = this.viewConfig.enemyProjectile;
+    const bossProjectile = Boolean(projectile.source?.bossAttackId);
     this.drawPolygon(
       graphics,
       [
@@ -637,14 +767,18 @@ export class PhaserArenaWorldView {
         { x, y: y + r },
         { x: x - r, y },
       ],
-      view.color,
-      view.stroke,
+      bossProjectile ? 0x9f1239 : view.color,
+      bossProjectile ? 0xfef08a : view.stroke,
     );
     graphics.lineStyle(1, view.core, 0.95);
     graphics.lineBetween(x - r * 0.45, y, x + r * 0.45, y);
     graphics.lineBetween(x, y - r * 0.45, x, y + r * 0.45);
     graphics.fillStyle(view.core, 1);
     graphics.fillCircle(x, y, Math.max(2, projectile.radius * 0.35));
+    if (bossProjectile) {
+      graphics.lineStyle(2, 0xfb7185, 0.9);
+      graphics.strokeCircle(x, y, r + 3);
+    }
   }
 
   private drawPolygon(
@@ -697,4 +831,13 @@ export class PhaserArenaWorldView {
 function oppositeDirection(direction: EncounterDirection): EncounterDirection {
   const directions: EncounterDirection[] = ["north", "east", "south", "west"];
   return directions[(directions.indexOf(direction) + 2) % directions.length]!;
+}
+
+function rotateDirection(direction: Vec2, radians: number): Vec2 {
+  const cosine = Math.cos(radians);
+  const sine = Math.sin(radians);
+  return {
+    x: direction.x * cosine - direction.y * sine,
+    y: direction.x * sine + direction.y * cosine,
+  };
 }

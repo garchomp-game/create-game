@@ -44,6 +44,32 @@ async function showExpeditionCommanderPresentation(page: Page): Promise<void> {
     .toBeGreaterThan(0);
 }
 
+async function showExpeditionBossPresentation(
+  page: Page,
+  attackId: "targeted-salvo" | "escort-pincer",
+  phase: 1 | 2,
+): Promise<void> {
+  await moveMouseToCanvasLogical(page, 480, 339);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']").click();
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "playing",
+  );
+  await page.evaluate(
+    ({ selectedAttackId, selectedPhase }) => {
+      const debug = window.__ARENA_DEBUG__;
+      if (!debug) throw new Error("Debug API is not available.");
+      debug.setPaused(true);
+      debug.setExpeditionBossFixture(selectedAttackId, selectedPhase);
+    },
+    { selectedAttackId: attackId, selectedPhase: phase },
+  );
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().expedition?.boss?.status))
+    .toBe("active");
+}
+
 async function seedVisualRunRecords(page: Page): Promise<void> {
   await gotoArena(page);
   await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
@@ -184,6 +210,38 @@ test("keeps the Expedition visual slice readable in a portrait viewport", async 
   await showExpeditionCommanderPresentation(page);
 
   await expect(game).toHaveScreenshot("arena-expedition-commander-portrait.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("shows the phase-two command ship and targeted salvo", async ({ page }) => {
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+  await showExpeditionBossPresentation(page, "targeted-salvo", 2);
+
+  const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+  expect(snapshot?.expedition?.boss).toMatchObject({
+    bossId: "first-command-ship",
+    phase: 2,
+    action: { attackId: "targeted-salvo", phase: "telegraph" },
+  });
+  expect(snapshot?.renderPerformance.staticBackground.drawCount).toBe(1);
+  expect(snapshot?.renderPerformance.renderedFrames).toBeGreaterThan(0);
+  expect(snapshot?.renderPerformance.dynamicWorld.averageMs).toBeLessThan(8);
+  expect(snapshot?.renderPerformance.screenHud.averageMs).toBeLessThan(5);
+  expect(snapshot?.renderPerformance.feedback.averageMs).toBeLessThan(3);
+  await expect(canvas).toHaveScreenshot("arena-expedition-boss-salvo.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("keeps the escort pincer and boss HUD readable in portrait", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await gotoArena(page);
+  const game = page.locator("#game");
+  await showExpeditionBossPresentation(page, "escort-pincer", 1);
+
+  await expect(game).toHaveScreenshot("arena-expedition-boss-portrait.png", {
     maxDiffPixelRatio: 0.01,
   });
 });

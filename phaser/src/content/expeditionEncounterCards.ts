@@ -12,6 +12,7 @@ export const FIRST_EXPEDITION_ACTS: EncounterActDefinition[] = [
   { id: "first-assault", titleKey: "act.first-assault.title", startsAt: 75 },
   { id: "counterattack", titleKey: "act.counterattack.title", startsAt: 180 },
   { id: "breakthrough", titleKey: "act.breakthrough.title", startsAt: 300 },
+  { id: "command-ship", titleKey: "act.command-ship.title", startsAt: 390 },
 ];
 
 export const FIRST_EXPEDITION_ENCOUNTER_CARDS: EncounterCardDefinition[] = [
@@ -107,6 +108,25 @@ export const FIRST_EXPEDITION_ENCOUNTER_CARDS: EncounterCardDefinition[] = [
     cooldownSeconds: 150,
     weight: 2,
     completionCondition: { type: "duration" },
+    failureSignalIds: [],
+    interruptSignalIds: [],
+  },
+  {
+    id: "command-ship-showdown",
+    titleKey: "encounter.command-ship-showdown.title",
+    tags: ["boss"],
+    actIds: ["command-ship"],
+    timing: { telegraphSeconds: 2.4, activeSeconds: 240, recoverySeconds: 2.5 },
+    spawn: {
+      intervalMultiplier: 1,
+      budget: 1,
+      enemyWeights: { brute: 1 },
+      geometryId: "escort",
+    },
+    minimumThreatTier: 0,
+    cooldownSeconds: 600,
+    weight: 1,
+    completionCondition: { type: "signal", signalId: "boss-defeated" },
     failureSignalIds: [],
     interruptSignalIds: [],
   },

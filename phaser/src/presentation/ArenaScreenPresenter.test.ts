@@ -79,6 +79,53 @@ describe("createArenaScreenViewModel", () => {
     expect(viewModel.statusText).toContain("1234");
     expect(viewModel.detailText).toBe("記録を保存できませんでした");
   });
+
+  it("names the boss attack that ended an Expedition", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.state.status = "gameOver";
+    world.state.hp = 0;
+    world.stats.lastDamageSource = {
+      kind: "projectile",
+      projectileId: "boss-projectile-1",
+      bossId: "first-command-ship",
+      bossAttackId: "targeted-salvo",
+    };
+    world.stats.encounterMetrics.expedition = {
+      outcome: "defeat",
+      reachedActId: "command-ship",
+      reachedActIds: ["command-ship"],
+      actChanges: 1,
+      cardsSelected: 1,
+      cardsCompleted: 0,
+      cardsFailed: 0,
+      cardsInterrupted: 0,
+      cardsDeferred: 0,
+      structuredEnemiesSpawned: 0,
+      structuredSpawnsDeferred: 0,
+      longestMeaningfulGap: 0,
+      completedAt: 430,
+    };
+
+    const viewModel = createArenaScreenViewModel(
+      world,
+      SIMULATION_CONFIG,
+      createUiState(),
+    );
+
+    expect(viewModel.statusText).toContain("遠征失敗");
+    expect(viewModel.statusText).toContain("指揮艦 照準斉射");
+
+    world.stats.lastDamageSource = {
+      kind: "contact",
+      enemyId: "escort-1",
+      enemyType: "fast",
+      bossId: "first-command-ship",
+      bossAttackId: "escort-pincer",
+    };
+    expect(
+      createArenaScreenViewModel(world, SIMULATION_CONFIG, createUiState()).statusText,
+    ).toContain("指揮艦 挟撃護衛");
+  });
 });
 
 function createUiState(

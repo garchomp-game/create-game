@@ -21,6 +21,7 @@ import type {
 } from "../../math/random";
 import type {
   EnemyTypeId,
+  BossAttackId,
   EncounterState,
   ExpeditionState,
   ExtraUpgradeId,
@@ -187,6 +188,8 @@ export type ArenaDebugApi = {
   setHealPickupFixture(mode?: "damaged" | "full" | "fatal" | "visual"): void;
   setOffscreenEnemyIndicatorFixture(): void;
   setExpeditionCommanderFixture(): void;
+  setExpeditionBossFixture(attackId?: BossAttackId, phase?: 1 | 2): void;
+  armExpeditionBossDefeat(): void;
   step(input?: Partial<InputSnapshot>, deltaSeconds?: number): void;
 };
 

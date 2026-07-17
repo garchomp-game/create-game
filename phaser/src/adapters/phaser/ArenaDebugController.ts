@@ -6,6 +6,7 @@ import type {
 } from "../../domain/profile";
 import type { RunOrigin } from "../../domain/runRecords";
 import type {
+  BossAttackId,
   GameEvent,
   InputSnapshot,
   StepWorldResult,
@@ -42,7 +43,9 @@ import type {
   ArenaRunExport,
 } from "./ArenaDebugBridge";
 import {
+  armExpeditionBossDefeatFixture,
   applyEnemyVisualFixture,
+  applyExpeditionBossFixture,
   applyExpeditionCommanderFixture,
   applyHealPickupFixture,
   applyHudStressFixture,
@@ -192,6 +195,9 @@ export class ArenaDebugController {
         this.setOffscreenEnemyIndicatorFixture(),
       setExpeditionCommanderFixture: () =>
         this.setExpeditionCommanderFixture(),
+      setExpeditionBossFixture: (attackId = "targeted-salvo", phase = 1) =>
+        this.setExpeditionBossFixture(attackId, phase),
+      armExpeditionBossDefeat: () => this.armExpeditionBossDefeat(),
       step: (input = {}, deltaSeconds = 1 / 60) =>
         this.stepWorld(input, deltaSeconds),
     };
@@ -503,6 +509,23 @@ export class ArenaDebugController {
   private setExpeditionCommanderFixture(): void {
     this.markMutation();
     if (applyExpeditionCommanderFixture(this.world, this.config)) {
+      this.dependencies.render();
+    }
+  }
+
+  private setExpeditionBossFixture(
+    attackId: BossAttackId,
+    phase: 1 | 2,
+  ): void {
+    this.markMutation();
+    if (applyExpeditionBossFixture(this.world, this.config, attackId, phase)) {
+      this.dependencies.render();
+    }
+  }
+
+  private armExpeditionBossDefeat(): void {
+    this.markMutation();
+    if (armExpeditionBossDefeatFixture(this.world)) {
       this.dependencies.render();
     }
   }

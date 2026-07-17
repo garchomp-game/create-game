@@ -66,7 +66,8 @@ describe("ArenaSession", () => {
     expect(session.modeId).toBe("expedition");
     expect(session.stage).toMatchObject({
       id: "first-expedition",
-      clearCondition: { type: "survive", durationSeconds: 420 },
+      bossId: "first-command-ship",
+      clearCondition: { type: "bossDefeat", bossId: "first-command-ship" },
     });
     expect(session.config.features).toMatchObject({
       encounterDeck: false,
@@ -77,6 +78,7 @@ describe("ArenaSession", () => {
       status: "active",
       actId: "deployment",
       objective: "展開地点を確保する",
+      boss: null,
     });
 
     const result = session.step({ ...input, shootHeld: false }, 0);

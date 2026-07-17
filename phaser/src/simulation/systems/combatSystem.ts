@@ -98,6 +98,8 @@ export function resolveCombat(
             kind: "contact",
             enemyId: touchingEnemy.id,
             enemyType: touchingEnemy.typeId,
+            ...(touchingEnemy.boss ? { bossId: touchingEnemy.boss.bossId } : {}),
+            ...(touchingEnemy.bossAttackSource ?? {}),
           },
         });
       }
@@ -313,6 +315,7 @@ function resolveEnemyProjectileHits(
         source: {
           kind: "projectile",
           projectileId: projectile.id,
+          ...(projectile.source ?? {}),
         },
       });
     }

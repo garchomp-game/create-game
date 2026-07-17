@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { EXTRA_UPGRADE_IDS, UPGRADE_IDS, WEAPON_TYPE_IDS } from "./types";
+import {
+  BOSS_ATTACK_IDS,
+  EXTRA_UPGRADE_IDS,
+  UPGRADE_IDS,
+  WEAPON_TYPE_IDS,
+} from "./types";
 import type {
   CapstoneRunStats,
   EncounterRunStats,
@@ -109,10 +114,14 @@ const damageSourceSchema = z.discriminatedUnion("kind", [
     kind: z.literal("contact"),
     enemyId: z.string().min(1),
     enemyType: z.enum(["chaser", "brute", "fast", "ranged"]),
+    bossId: z.string().min(1).optional(),
+    bossAttackId: z.enum(BOSS_ATTACK_IDS).optional(),
   }),
   z.object({
     kind: z.literal("projectile"),
     projectileId: z.string().min(1),
+    bossId: z.string().min(1).optional(),
+    bossAttackId: z.enum(BOSS_ATTACK_IDS).optional(),
   }),
   z.object({
     kind: z.literal("collapse"),
@@ -306,6 +315,36 @@ const encounterMetricsSchema = z.object({
       structuredSpawnsDeferred: z.number().int().nonnegative(),
       longestMeaningfulGap: z.number().nonnegative(),
       completedAt: z.number().nonnegative().nullable(),
+    })
+    .optional(),
+  boss: z
+    .object({
+      bossId: z.string().min(1).nullable(),
+      spawnedAt: z.number().nonnegative().nullable(),
+      defeatedAt: z.number().nonnegative().nullable(),
+      remainingHp: z.number().nonnegative().nullable(),
+      maximumHp: z.number().positive().nullable(),
+      phaseReached: z.union([z.literal(0), z.literal(1), z.literal(2)]),
+      phaseChanges: z.number().int().nonnegative(),
+      lastAttackId: z.enum(BOSS_ATTACK_IDS).nullable(),
+      attacksTelegraphed: z.object({
+        "targeted-salvo": z.number().int().nonnegative(),
+        "escort-pincer": z.number().int().nonnegative(),
+      }),
+      attacksExecuted: z.object({
+        "targeted-salvo": z.number().int().nonnegative(),
+        "escort-pincer": z.number().int().nonnegative(),
+      }),
+      playerHitsByAttack: z.object({
+        "targeted-salvo": z.number().int().nonnegative(),
+        "escort-pincer": z.number().int().nonnegative(),
+      }),
+      damageTakenByAttack: z.object({
+        "targeted-salvo": z.number().nonnegative(),
+        "escort-pincer": z.number().nonnegative(),
+      }),
+      escortsSpawned: z.number().int().nonnegative(),
+      defeatedByWeapon: z.enum(WEAPON_TYPE_IDS).nullable(),
     })
     .optional(),
 });

@@ -1,4 +1,5 @@
 import type {
+  BossAttackId,
   Enemy,
   EnemyProjectile,
   EnemyTypeId,
@@ -8,6 +9,8 @@ import type {
   WorldState,
 } from "../../domain/types";
 import { COMMANDER_ELITE_DEFINITION } from "../../content/eliteCatalog";
+import { FIRST_COMMAND_SHIP_DEFINITION } from "../../content/bossCatalog";
+import { spawnFirstExpeditionBoss } from "../../simulation/systems/bossSystem";
 
 export type EnemyVisualFixtureBand = "wave2" | "wave3";
 export type HealPickupFixtureMode = "damaged" | "full" | "fatal" | "visual";
@@ -289,6 +292,125 @@ export function applyExpeditionCommanderFixture(
   ];
   world.nextEnemyId = 5;
   world.stats.encounterMetrics.commander!.spawned = 1;
+  return true;
+}
+
+export function applyExpeditionBossFixture(
+  world: WorldState,
+  config: SimulationConfig,
+  attackId: BossAttackId = "targeted-salvo",
+  phase: 1 | 2 = 1,
+): boolean {
+  const expedition = world.expedition;
+  if (!expedition) return false;
+
+  world.state.status = "playing";
+  world.state.elapsed = 421.4;
+  world.state.score = 15_800;
+  world.player.position = { x: 300, y: 310 };
+  world.state.lastAim = { x: 0.72, y: -0.69 };
+  world.enemies = [];
+  world.enemyProjectiles = [];
+  world.bullets = [];
+  world.pickups = [];
+  world.nextEnemyId = 1;
+  expedition.status = "active";
+  expedition.actId = "command-ship";
+  expedition.actTitleKey = "act.command-ship.title";
+  expedition.actStartedAt = 390;
+  expedition.objective = "指揮艦を撃破する";
+  expedition.reachedActIds = [
+    "deployment",
+    "first-assault",
+    "counterattack",
+    "breakthrough",
+    "command-ship",
+  ];
+  expedition.currentCardTitleKey = "encounter.command-ship-showdown.title";
+  expedition.currentDirection = "north";
+  expedition.currentGeometryId = "escort";
+  expedition.deployedCardKey = null;
+  expedition.spawnOverride = null;
+  expedition.boss = null;
+  expedition.director = {
+    ...expedition.director,
+    phase: "active",
+    actId: "command-ship",
+    selectedActId: "command-ship",
+    cardId: "command-ship-showdown",
+    direction: "north",
+    selectedAt: 419,
+    activeStartedAt: 421.4,
+    recoveryStartedAt: null,
+    finishedAt: null,
+    completionReason: null,
+  };
+
+  spawnFirstExpeditionBoss(world, []);
+  const boss = expedition.boss!;
+  const enemy = world.enemies.find((candidate) => candidate.id === boss.enemyId)!;
+  enemy.hp = phase === 2 ? 1_620 : 2_880;
+  boss.phase = phase;
+  boss.phaseChangedAt = phase === 2 ? world.state.elapsed - 0.35 : null;
+  boss.action = {
+    attackId,
+    phase: "telegraph",
+    startedAt: world.state.elapsed,
+    endsAt:
+      world.state.elapsed +
+      (attackId === "targeted-salvo"
+        ? FIRST_COMMAND_SHIP_DEFINITION.targetedSalvo.telegraphSeconds[phase - 1]
+        : FIRST_COMMAND_SHIP_DEFINITION.escortPincer.telegraphSeconds[phase - 1]),
+    aimDirection:
+      attackId === "targeted-salvo" ? { x: -0.2, y: 0.98 } : null,
+    ingressDirection: attackId === "escort-pincer" ? "east" : null,
+  };
+  world.stats.encounterMetrics.boss = {
+    bossId: boss.bossId,
+    spawnedAt: 421.4,
+    defeatedAt: null,
+    remainingHp: enemy.hp,
+    maximumHp: boss.maxHp,
+    phaseReached: phase,
+    phaseChanges: phase - 1,
+    lastAttackId: null,
+    attacksTelegraphed: {
+      "targeted-salvo": attackId === "targeted-salvo" ? 1 : 0,
+      "escort-pincer": attackId === "escort-pincer" ? 1 : 0,
+    },
+    attacksExecuted: { "targeted-salvo": 0, "escort-pincer": 0 },
+    playerHitsByAttack: { "targeted-salvo": 0, "escort-pincer": 0 },
+    damageTakenByAttack: { "targeted-salvo": 0, "escort-pincer": 0 },
+    escortsSpawned: 0,
+    defeatedByWeapon: null,
+  };
+  return true;
+}
+
+export function armExpeditionBossDefeatFixture(world: WorldState): boolean {
+  const boss = world.expedition?.boss;
+  if (!boss || boss.status !== "active") return false;
+  const enemy = world.enemies.find((candidate) => candidate.id === boss.enemyId);
+  if (!enemy) return false;
+
+  enemy.hp = 1;
+  const volleyId = world.nextVolleyId++;
+  world.bullets.push({
+    id: `bullet-${world.nextBulletId++}`,
+    volleyId,
+    weaponType: world.state.weaponType,
+    position: { ...enemy.position },
+    velocity: { x: 0, y: 0 },
+    radius: 4,
+    lifetime: 1,
+    damage: 2,
+    hitsRemaining: 1,
+    ricochetRemaining: 0,
+    ricochetsUsed: 0,
+    ricochetSurfaceKind: null,
+    ricochetBoundarySide: null,
+    hitEnemyIds: [],
+  });
   return true;
 }
 
