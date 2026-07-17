@@ -12,6 +12,8 @@ import type {
 import { createRandomStreams, type RandomStreams } from "../math/random";
 import { createWorld } from "../simulation/createWorld";
 import { stepWorld } from "../simulation/stepWorld";
+import { ExpeditionController } from "../simulation/ExpeditionController";
+import { updateRunStats } from "../simulation/systems/statsSystem";
 import { DEFAULT_MODE_ID, DEFAULT_STAGE_ID } from "../config/version";
 import type { GameContentRegistry } from "./GameContentRegistry";
 import { DEFAULT_GAME_CONTENT_REGISTRY } from "./defaultGameContentRegistry";
@@ -31,6 +33,7 @@ type ActiveArenaSession = {
   world: WorldState;
   mode: ModeDefinition;
   stage: StageDefinition;
+  expeditionController: ExpeditionController | null;
 };
 
 export class ArenaSession {
@@ -48,29 +51,49 @@ export class ArenaSession {
       input.modeId ?? DEFAULT_MODE_ID,
       input.stageId ?? DEFAULT_STAGE_ID,
     );
-    const config = applyStageToConfig(this.baseConfig, stage, seed);
+    const config = applyStageToConfig(this.baseConfig, mode, stage, seed);
     const world = createWorld(config);
     world.state.weaponType = input.weaponType;
     world.state.status = input.status ?? "playing";
+    const expeditionController =
+      mode.runtimeKind === "expedition"
+        ? new ExpeditionController(stage)
+        : null;
+    const randomStreams = createRandomStreams(seed);
+    expeditionController?.initialize(world, randomStreams);
     this.active = {
       seed,
       config,
-      randomStreams: createRandomStreams(seed),
+      randomStreams,
       world,
       mode,
       stage,
+      expeditionController,
     };
   }
 
   step(input: InputSnapshot, deltaSeconds: number): StepWorldResult {
     const active = this.requireActive();
-    return stepWorld(
+    const result = stepWorld(
       active.world,
       input,
       deltaSeconds,
       active.randomStreams,
       active.config,
     );
+    if (active.expeditionController) {
+      const expeditionEvents = active.expeditionController.update(
+        active.world,
+        active.randomStreams,
+        active.config,
+        result.events,
+      );
+      if (expeditionEvents.length > 0) {
+        result.events.push(...expeditionEvents);
+        updateRunStats(active.world, expeditionEvents);
+      }
+    }
+    return result;
   }
 
   get seed(): number {
@@ -109,12 +132,22 @@ export class ArenaSession {
 
 function applyStageToConfig(
   baseConfig: SimulationConfig,
+  mode: ModeDefinition,
   stage: StageDefinition,
   seed: number,
 ): SimulationConfig {
   return {
     ...baseConfig,
     seed,
+    features:
+      mode.runtimeKind === "expedition"
+        ? {
+            ...baseConfig.features,
+            encounterDeck: false,
+            endlessContract: false,
+            arenaCollapse: false,
+          }
+        : { ...baseConfig.features },
     arena: {
       width: stage.arena.width,
       height: stage.arena.height,

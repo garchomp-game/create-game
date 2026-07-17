@@ -1,3 +1,8 @@
+import type {
+  EncounterDirection,
+  EncounterDirectorState,
+} from "./encounterDirector";
+
 export type Vec2 = {
   x: number;
   y: number;
@@ -514,6 +519,27 @@ export type EncounterState = {
   };
 };
 
+export type ExpeditionOutcome = "victory" | "defeat";
+
+export type ExpeditionState = {
+  status: "active" | ExpeditionOutcome;
+  director: EncounterDirectorState;
+  actId: string;
+  actTitleKey: string;
+  objective: string;
+  reachedActIds: string[];
+  currentCardTitleKey: string | null;
+  currentDirection: EncounterDirection | null;
+  spawnOverride: {
+    intervalMultiplier: number;
+    budget: number;
+    enemyWeights: Partial<Record<EnemyTypeId, number>>;
+  } | null;
+  deployedCardKey: string | null;
+  outcome: ExpeditionOutcome | null;
+  completedAt: number | null;
+};
+
 export type RuntimeModifiers = {
   playerSpeedMultiplier: number;
   fireIntervalMultiplier: number;
@@ -654,6 +680,23 @@ export type EncounterRunStats = {
   collapseDamageTaken: number;
   commander?: CommanderEncounterRunStats;
   charger?: ChargerEncounterRunStats;
+  expedition?: ExpeditionEncounterRunStats;
+};
+
+export type ExpeditionEncounterRunStats = {
+  outcome: ExpeditionOutcome | null;
+  reachedActId: string | null;
+  reachedActIds: string[];
+  actChanges: number;
+  cardsSelected: number;
+  cardsCompleted: number;
+  cardsFailed: number;
+  cardsInterrupted: number;
+  cardsDeferred: number;
+  structuredEnemiesSpawned: number;
+  structuredSpawnsDeferred: number;
+  longestMeaningfulGap: number;
+  completedAt: number | null;
 };
 
 export type CommanderEncounterRunStats = {
@@ -776,6 +819,7 @@ export type WorldState = {
     chargerIds: string[];
   };
   encounter: EncounterState;
+  expedition?: ExpeditionState;
   player: Player;
   bullets: Bullet[];
   enemies: Enemy[];
@@ -1037,6 +1081,61 @@ export type GameEvent =
   | { type: "encounter.started"; encounterId: EncounterId; elapsed: number }
   | { type: "encounter.recovery.started"; encounterId: EncounterId; elapsed: number }
   | { type: "encounter.completed"; encounterId: EncounterId; elapsed: number }
+  | {
+      type: "expedition.act.changed";
+      actId: string;
+      titleKey: string;
+      elapsed: number;
+    }
+  | {
+      type: "expedition.encounter.selected";
+      cardId: string;
+      titleKey: string;
+      actId: string;
+      direction: EncounterDirection;
+      elapsed: number;
+    }
+  | {
+      type:
+        | "expedition.encounter.active.started"
+        | "expedition.encounter.recovery.started";
+      cardId: string;
+      elapsed: number;
+    }
+  | {
+      type:
+        | "expedition.encounter.completed"
+        | "expedition.encounter.failed"
+        | "expedition.encounter.interrupted";
+      cardId: string;
+      elapsed: number;
+      reason: string;
+    }
+  | { type: "expedition.encounter.deferred"; actId: string; elapsed: number }
+  | {
+      type: "expedition.spawn.deployed";
+      cardId: string;
+      enemyIds: string[];
+      elapsed: number;
+    }
+  | {
+      type: "expedition.spawn.deferred";
+      cardId: string;
+      reason: string;
+      elapsed: number;
+    }
+  | {
+      type: "expedition.completed";
+      actId: string;
+      elapsed: number;
+      score: number;
+    }
+  | {
+      type: "expedition.failed";
+      actId: string;
+      elapsed: number;
+      score: number;
+    }
   | { type: "collapse.advanced"; stage: number; inset: number; elapsed: number }
   | { type: "contract.offered"; elapsed: number }
   | {

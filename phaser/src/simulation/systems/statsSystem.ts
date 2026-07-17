@@ -216,6 +216,39 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
     } else if (event.type === "encounter.completed") {
       world.stats.encounterMetrics.completedAt = event.elapsed;
       world.stats.encounterMetrics.eventsCompleted += 1;
+    } else if (event.type === "expedition.act.changed") {
+      const metrics = getExpeditionMetrics(world);
+      metrics.actChanges += 1;
+      metrics.reachedActId = event.actId;
+      if (!metrics.reachedActIds.includes(event.actId)) {
+        metrics.reachedActIds.push(event.actId);
+      }
+    } else if (event.type === "expedition.encounter.selected") {
+      const metrics = getExpeditionMetrics(world);
+      metrics.cardsSelected += 1;
+      metrics.longestMeaningfulGap =
+        world.expedition?.director.metrics.longestMeaningfulGap ??
+        metrics.longestMeaningfulGap;
+    } else if (event.type === "expedition.encounter.completed") {
+      getExpeditionMetrics(world).cardsCompleted += 1;
+    } else if (event.type === "expedition.encounter.failed") {
+      getExpeditionMetrics(world).cardsFailed += 1;
+    } else if (event.type === "expedition.encounter.interrupted") {
+      getExpeditionMetrics(world).cardsInterrupted += 1;
+    } else if (event.type === "expedition.encounter.deferred") {
+      getExpeditionMetrics(world).cardsDeferred += 1;
+    } else if (event.type === "expedition.spawn.deployed") {
+      getExpeditionMetrics(world).structuredEnemiesSpawned += event.enemyIds.length;
+    } else if (event.type === "expedition.spawn.deferred") {
+      getExpeditionMetrics(world).structuredSpawnsDeferred += 1;
+    } else if (
+      event.type === "expedition.completed" ||
+      event.type === "expedition.failed"
+    ) {
+      const metrics = getExpeditionMetrics(world);
+      metrics.outcome = event.type === "expedition.completed" ? "victory" : "defeat";
+      metrics.reachedActId = event.actId;
+      metrics.completedAt = event.elapsed;
     } else if (event.type === "collapse.advanced") {
       world.stats.encounterMetrics.collapseStartedAt ??= event.elapsed;
       world.stats.encounterMetrics.peakCollapseStage = Math.max(
@@ -270,5 +303,23 @@ function getChargerMetrics(world: WorldState) {
     recoveries: 0,
     killed: 0,
     killsByWeapon: { pulse: 0, spread: 0, pierce: 0 },
+  });
+}
+
+function getExpeditionMetrics(world: WorldState) {
+  return (world.stats.encounterMetrics.expedition ??= {
+    outcome: null,
+    reachedActId: null,
+    reachedActIds: [],
+    actChanges: 0,
+    cardsSelected: 0,
+    cardsCompleted: 0,
+    cardsFailed: 0,
+    cardsInterrupted: 0,
+    cardsDeferred: 0,
+    structuredEnemiesSpawned: 0,
+    structuredSpawnsDeferred: 0,
+    longestMeaningfulGap: 0,
+    completedAt: null,
   });
 }

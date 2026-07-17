@@ -54,6 +54,44 @@ describe("ArenaSession", () => {
     });
   });
 
+  it("starts the first expedition with isolated runtime features and progress state", () => {
+    const session = new ArenaSession(SIMULATION_CONFIG);
+    session.start({
+      seed: 20260717,
+      weaponType: "pulse",
+      modeId: "expedition",
+      stageId: "first-expedition",
+    });
+
+    expect(session.modeId).toBe("expedition");
+    expect(session.stage).toMatchObject({
+      id: "first-expedition",
+      clearCondition: { type: "survive", durationSeconds: 420 },
+    });
+    expect(session.config.features).toMatchObject({
+      encounterDeck: false,
+      endlessContract: false,
+      arenaCollapse: false,
+    });
+    expect(session.world.expedition).toMatchObject({
+      status: "active",
+      actId: "deployment",
+      objective: "展開地点を確保する",
+    });
+
+    const result = session.step({ ...input, shootHeld: false }, 0);
+    expect(result.events).toContainEqual({
+      type: "expedition.act.changed",
+      actId: "deployment",
+      titleKey: "act.deployment.title",
+      elapsed: 0,
+    });
+    expect(session.world.stats.encounterMetrics.expedition).toMatchObject({
+      reachedActId: "deployment",
+      actChanges: 1,
+    });
+  });
+
   it("requires an active run before exposing state", () => {
     const session = new ArenaSession(SIMULATION_CONFIG);
     expect(() => session.world).toThrow("ArenaSession has not been started.");

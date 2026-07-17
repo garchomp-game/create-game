@@ -291,6 +291,23 @@ const encounterMetricsSchema = z.object({
       }),
     })
     .optional(),
+  expedition: z
+    .object({
+      outcome: z.enum(["victory", "defeat"]).nullable(),
+      reachedActId: z.string().min(1).nullable(),
+      reachedActIds: z.array(z.string().min(1)),
+      actChanges: z.number().int().nonnegative(),
+      cardsSelected: z.number().int().nonnegative(),
+      cardsCompleted: z.number().int().nonnegative(),
+      cardsFailed: z.number().int().nonnegative(),
+      cardsInterrupted: z.number().int().nonnegative(),
+      cardsDeferred: z.number().int().nonnegative(),
+      structuredEnemiesSpawned: z.number().int().nonnegative(),
+      structuredSpawnsDeferred: z.number().int().nonnegative(),
+      longestMeaningfulGap: z.number().nonnegative(),
+      completedAt: z.number().nonnegative().nullable(),
+    })
+    .optional(),
 });
 
 const runRecordV2Schema = z.object({

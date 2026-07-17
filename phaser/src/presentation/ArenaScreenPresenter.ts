@@ -98,7 +98,7 @@ export function createArenaScreenViewModel(
       return {
         ...base,
         kind: "title",
-        statusText: `${TEXT.ui.titleScreen}\n${TEXT.ui.endlessMode}\n公開ベータ v${uiState?.releaseIdentity.appVersion ?? APP_VERSION}`,
+        statusText: `${TEXT.ui.titleScreen}\nENDLESS / EXPEDITION\n生存限界か、最初の作戦か\n公開ベータ v${uiState?.releaseIdentity.appVersion ?? APP_VERSION}`,
         detailText: null,
       };
     default:
@@ -110,8 +110,13 @@ function formatGameOverText(world: WorldState, uiState?: ArenaUiState): string {
   const summary = createRunResultSummary(world);
   const record = uiState?.latestRunRecord;
   const bestLine = formatBestLine(record, uiState?.previousBest ?? null);
+  const expeditionOutcome = world.stats.encounterMetrics.expedition?.outcome;
   const lines = [
-    TEXT.ui.result.title,
+    expeditionOutcome === "victory"
+      ? "作戦完遂"
+      : expeditionOutcome === "defeat"
+        ? "遠征失敗"
+        : TEXT.ui.result.title,
     TEXT.ui.result.scoreTime(summary.score, formatTime(summary.elapsed)),
     bestLine,
     TEXT.ui.result.levelKills(summary.level, summary.enemiesKilled),
@@ -135,6 +140,7 @@ function formatGameOverDetails(uiState?: ArenaUiState): string {
         record.rankEligibility.reasons.map(formatRankReason).join(" / "),
       );
   return [
+    `モード: ${formatModeName(record.modeId)} / ステージ: ${formatStageName(record.stageId)}`,
     `開始武器: ${TEXT.hud.weaponNames[record.weaponId]}`,
     formatRecordCapstone(record),
     formatRecordEncounter(record),
@@ -198,6 +204,16 @@ function formatRecordCapstone(record: RunRecord): string {
 
 function formatRecordEncounter(record: RunRecord): string {
   const metrics = record.encounterMetrics;
+  if (metrics.expedition) {
+    const expedition = metrics.expedition;
+    const outcome =
+      expedition.outcome === "victory"
+        ? "作戦完遂"
+        : expedition.outcome === "defeat"
+          ? "敗退"
+          : "進行中";
+    return `遠征: ${outcome} / ${formatActName(expedition.reachedActId)} / 遭遇${expedition.cardsCompleted}/${expedition.cardsSelected} / 編隊${expedition.structuredEnemiesSpawned}`;
+  }
   if (metrics.activeStartedAt === null) return "危険イベント: 未到達";
   const contract =
     metrics.contractChoice === "overdrive"
@@ -289,7 +305,7 @@ function formatHistory(uiState: ArenaUiState): string {
     uiState.records.slice(start, start + pageSize).forEach((record, index) => {
       const eligibility = record.rankEligibility.eligible ? "対象" : "対象外";
       lines.push(
-        `${start + index + 1}. ${formatRecordDate(record.capturedAt)}  ${record.score.toString().padStart(6)}点  ${formatTime(record.elapsed)}  Lv${record.level}/EX${record.extraLevel}/C${record.extraCycle}  ${TEXT.hud.weaponNames[record.weaponId]}  ${eligibility}`,
+        `${start + index + 1}. ${formatRecordDate(record.capturedAt)}  ${record.score.toString().padStart(6)}点  ${formatTime(record.elapsed)}  ${formatModeName(record.modeId)}  Lv${record.level}/EX${record.extraLevel}/C${record.extraCycle}  ${TEXT.hud.weaponNames[record.weaponId]}  ${eligibility}`,
       );
     });
     const latest = uiState.records[0]!;
@@ -303,7 +319,12 @@ function formatHistory(uiState: ArenaUiState): string {
 }
 
 function formatRanking(uiState: ArenaUiState): string {
-  const lines = [TEXT.ui.rankingTitle, "エンドレス / 標準 / 現在のルールセット", ""];
+  const context = uiState.runContext ?? uiState.ranking[0] ?? uiState.latestRunRecord;
+  const lines = [
+    TEXT.ui.rankingTitle,
+    `${formatModeName(context?.modeId)} / ${formatStageName(context?.stageId)} / 標準`,
+    "",
+  ];
   if (uiState.ranking.length === 0) {
     lines.push(TEXT.ui.noRecords);
   } else {
@@ -370,4 +391,26 @@ function formatRecordDate(capturedAt: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(capturedAt);
   if (!match) return capturedAt.slice(0, 16);
   return `${match[2]}/${match[3]} ${match[4]}:${match[5]}`;
+}
+
+function formatModeName(modeId: string | null | undefined): string {
+  if (modeId === "expedition") return "初回遠征";
+  if (modeId === "endless") return "エンドレス";
+  return modeId ?? "未選択";
+}
+
+function formatStageName(stageId: string | null | undefined): string {
+  if (stageId === "first-expedition") return "最初の出撃";
+  if (stageId === "arena-default") return "標準アリーナ";
+  return stageId ?? "未選択";
+}
+
+function formatActName(actId: string | null): string {
+  const names: Record<string, string> = {
+    deployment: "Act 1 展開",
+    "first-assault": "Act 2 第一波",
+    counterattack: "Act 3 反撃",
+    breakthrough: "Act 4 突破",
+  };
+  return actId ? (names[actId] ?? actId) : "未到達";
 }

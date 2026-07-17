@@ -108,6 +108,18 @@ export function spawnEnemyAtPosition(
 
 export function getSpawnWave(world: WorldState, config: SimulationConfig) {
   const wave = getWaveBand(config, world.state.elapsed);
+  const expedition = world.expedition?.spawnOverride;
+  if (expedition) {
+    return {
+      ...wave,
+      spawnInterval: Math.max(
+        0.2,
+        wave.spawnInterval * expedition.intervalMultiplier,
+      ),
+      spawnBudget: Math.max(wave.spawnBudget, expedition.budget),
+      enemyWeights: { ...expedition.enemyWeights },
+    };
+  }
   const encounter = getActiveEncounterDefinition(world, config);
   if (!encounter) return wave;
   return {

@@ -261,6 +261,7 @@ export class ArenaDebugController {
         world.progression.extraUpgradeRanks,
       ),
       encounter: structuredClone(world.encounter),
+      expedition: world.expedition ? structuredClone(world.expedition) : null,
       wave: { ...getWaveBand(config, world.state.elapsed) },
       stats: copyRunStats(world),
       resultSummary: createRunResultSummary(world, config),

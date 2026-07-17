@@ -116,6 +116,55 @@ test("renders canvas and accepts movement and shooting input", async ({ page }) 
   expect(consoleErrors).toEqual([]);
 });
 
+test("runs the first expedition from mode selection through result and retry", async ({ page }) => {
+  await gotoArena(page, "/?seed=20260717");
+
+  await clickCanvasAt(page, 480, 339);
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "weaponSelect",
+  );
+  await expect(page.locator(".arena-choice-title")).toContainText("初回遠征");
+  expect(
+    await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().runContext),
+  ).toMatchObject({ modeId: "expedition", stageId: "first-expedition" });
+
+  await page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']").click();
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "playing",
+  );
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().expedition?.actId))
+    .toBe("deployment");
+
+  await page.evaluate(() => window.__ARENA_DEBUG__?.setElapsed(420));
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "gameOver",
+  );
+  const completed = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+  expect(completed?.latestRunRecord).toMatchObject({
+    modeId: "expedition",
+    stageId: "first-expedition",
+    encounterMetrics: { expedition: { outcome: "victory" } },
+  });
+
+  await clickCanvasAt(page, 480, 415);
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
+    .toBe("ranking");
+  await page.keyboard.press("Escape");
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
+    .toBeNull();
+
+  await clickCanvasAt(page, 480, 387);
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "playing",
+  );
+  expect(
+    await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().runContext),
+  ).toMatchObject({ modeId: "expedition", stageId: "first-expedition" });
+});
+
 test("runs the observer auto pilot outside ranking and allows manual takeover", async ({ page }) => {
   await gotoArena(page, "/?autopilot=pulse&seed=20260714");
 
@@ -913,7 +962,7 @@ test("navigates from results to history and back to title", async ({ page }) => 
     window.__ARENA_DEBUG__?.forceGameOver();
   });
 
-  await clickCanvasAt(page, 480, 439);
+  await clickCanvasAt(page, 480, 463);
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
     .toBe("history");

@@ -77,6 +77,8 @@ export class ArenaScene extends Phaser.Scene {
   private simulationConfig: SimulationConfig = SIMULATION_CONFIG;
   private viewConfig: ViewConfig = VIEW_CONFIG;
   private selectedWeapon: WeaponTypeId = SIMULATION_CONFIG.defaultWeapon;
+  private selectedModeId = DEFAULT_MODE_ID;
+  private selectedStageId = DEFAULT_STAGE_ID;
   private session!: ArenaSession;
   private runRecordStore!: LocalRunRecordStore;
   private runLifecycle!: RunLifecycleController;
@@ -214,7 +216,7 @@ export class ArenaScene extends Phaser.Scene {
       return;
     }
     if (result.events.some((event) => event.type === "game.title.requested")) {
-      this.resetGame("title");
+      this.showTitle();
       this.renderCurrentWorld();
       return;
     }
@@ -236,8 +238,8 @@ export class ArenaScene extends Phaser.Scene {
       seed: runSeed,
       weaponType: this.selectedWeapon,
       status,
-      modeId: DEFAULT_MODE_ID,
-      stageId: DEFAULT_STAGE_ID,
+      modeId: this.selectedModeId,
+      stageId: this.selectedStageId,
     });
     this.debugController?.resetRun();
     const runOrigin =
@@ -465,7 +467,9 @@ export class ArenaScene extends Phaser.Scene {
     const command = outcome.command;
     if (!command) return;
     if (command.type === "showWeaponSelect") {
-      this.world.state.status = "weaponSelect";
+      this.selectedModeId = command.modeId;
+      this.selectedStageId = command.stageId;
+      this.resetGame("weaponSelect");
       return;
     }
     if (command.type === "startRun") {
@@ -474,7 +478,7 @@ export class ArenaScene extends Phaser.Scene {
       return;
     }
     if (command.type === "showTitle") {
-      this.resetGame("title");
+      this.showTitle();
       return;
     }
     if (command.type === "showBetaInfo") {
@@ -483,7 +487,7 @@ export class ArenaScene extends Phaser.Scene {
     }
 
     this.profile = command.profile;
-    this.resetGame("title");
+    this.showTitle();
     this.menuController.open("settings", "ゲストIDを再生成しました");
   }
 
@@ -557,6 +561,12 @@ export class ArenaScene extends Phaser.Scene {
     if (value === "spread") return "spread";
     if (value === "pulse" || value === "1" || value === "true") return "pulse";
     return null;
+  }
+
+  private showTitle(): void {
+    this.selectedModeId = DEFAULT_MODE_ID;
+    this.selectedStageId = DEFAULT_STAGE_ID;
+    this.resetGame("title");
   }
 
   private startAutoPilot(weaponType: WeaponTypeId): void {

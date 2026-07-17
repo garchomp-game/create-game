@@ -13,6 +13,7 @@ const modeDefinitionSchema = z
   .object({
     id: contentId,
     titleKey: z.string().min(1),
+    runtimeKind: z.enum(["endless", "expedition"]),
     stageIds: z.array(contentId).min(1),
     defaultStageId: contentId,
   })

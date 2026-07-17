@@ -4,6 +4,7 @@ export const uiText: UiText = {
   libraryLabel: "ライブラリ: Phaser",
   titleScreen: "ARENA CORE",
   endlessMode: "ENDLESS\n照準と位置取りで、押し寄せる敵を生き延びろ",
+  expeditionMode: "EXPEDITION\nActを突破し、最初の作戦を完遂せよ",
   weaponSelectTitle: "開始武器を選択",
   weaponSelectDescription:
     "パルス: 連射と継続照準に優れた標準型\n拡散: 近距離で複数の敵を捉える広角型",
@@ -34,6 +35,7 @@ export const uiText: UiText = {
   },
   menu: {
     start: "エンドレス開始",
+    startExpedition: "初回遠征を開始",
     selectPulse: "パルスを選ぶ",
     selectSpread: "拡散を選ぶ",
     contractStandard: "標準を維持",

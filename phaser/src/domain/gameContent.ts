@@ -3,6 +3,7 @@ import type { EnemyTypeId, Obstacle, Vec2 } from "./types";
 export type ModeDefinition = {
   id: string;
   titleKey: string;
+  runtimeKind: "endless" | "expedition";
   stageIds: string[];
   defaultStageId: string;
 };

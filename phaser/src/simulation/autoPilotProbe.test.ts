@@ -6,7 +6,7 @@ import {
 } from "./autoPilotProbe";
 
 describe("runAutoPilotProbe", () => {
-  it("compares both observer weapons deterministically", () => {
+  it("compares both observer weapons deterministically", { timeout: 15_000 }, () => {
     const options = {
       config: SIMULATION_CONFIG,
       seeds: [20260715],

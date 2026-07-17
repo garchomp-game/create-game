@@ -134,10 +134,10 @@ export class PhaserArenaScreenView {
       this.statusText
         .setOrigin(0.5)
         .setAlign("center")
-        .setFontSize(36)
-        .setLineSpacing(8)
+        .setFontSize(32)
+        .setLineSpacing(4)
         .setWordWrapWidth(width - 160)
-        .setPosition(width / 2, 164)
+        .setPosition(width / 2, 116)
         .setText(screen.statusText ?? "")
         .setVisible(true);
       this.drawMenuButtons(graphics, world, screen);

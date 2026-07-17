@@ -142,13 +142,15 @@ export class PhaserHud {
         x: this.simulationConfig.arena.width / 2 - 350,
         y: 104,
         width: 700,
-        height: 34,
+        height: world.expedition ? 44 : 34,
       };
       this.graphics.fillStyle(0x020617, 0.88);
       this.graphics.fillRoundedRect(banner.x, banner.y, banner.width, banner.height, 6);
       this.graphics.lineStyle(
         2,
-        world.encounter.director.phase === "active" || world.encounter.collapse.stage > 0
+        world.encounter.director.phase === "active" ||
+            world.expedition?.director.phase === "active" ||
+            world.encounter.collapse.stage > 0
           ? 0xf97316
           : 0xfacc15,
         0.95,
@@ -199,6 +201,24 @@ export class PhaserHud {
 
   private getEncounterLabel(world: WorldState): string {
     const labels: string[] = [];
+    if (world.expedition) {
+      const expedition = world.expedition;
+      const phase = expedition.director.phase;
+      const card = formatExpeditionCard(expedition.currentCardTitleKey);
+      const direction = formatExpeditionDirection(expedition.currentDirection);
+      const phaseLabel =
+        phase === "telegraph"
+          ? `予告 ${direction} > ${card}`
+          : phase === "active"
+            ? `交戦中 ${card}`
+            : phase === "recovery"
+              ? `制圧確認 ${card}`
+              : null;
+      labels.push(
+        `${formatExpeditionAct(expedition.actId)}: ${expedition.objective}${phaseLabel ? `\n${phaseLabel}` : ""}`,
+      );
+      return labels.join(" / ");
+    }
     const director = world.encounter.director;
     const scheduledAt = director.scheduledAt;
     const encounterId = director.currentId;
@@ -252,6 +272,39 @@ export class PhaserHud {
     if (world.encounter.contract.choice === "overdrive") labels.push(TEXT.hud.overdriveContract);
     return labels.join(" / ");
   }
+}
+
+function formatExpeditionAct(actId: string): string {
+  const labels: Record<string, string> = {
+    deployment: "ACT 1 展開",
+    "first-assault": "ACT 2 第一波",
+    counterattack: "ACT 3 反撃",
+    breakthrough: "ACT 4 突破",
+  };
+  return labels[actId] ?? actId;
+}
+
+function formatExpeditionCard(titleKey: string | null): string {
+  if (!titleKey) return "次の遭遇";
+  const labels: Record<string, string> = {
+    "encounter.vanguard-arc.title": "前衛弧状波",
+    "encounter.crossfire-pincer.title": "十字挟撃",
+    "encounter.heavy-escort.title": "重装護衛隊",
+    "encounter.commander-counterattack.title": "指揮個体反撃",
+    "encounter.charger-breakthrough.title": "突撃突破隊",
+  };
+  return labels[titleKey] ?? titleKey;
+}
+
+function formatExpeditionDirection(
+  direction: WorldState["expedition"] extends infer T
+    ? T extends { currentDirection: infer D }
+      ? D
+      : never
+    : never,
+): string {
+  const labels = { north: "北", east: "東", south: "南", west: "西" } as const;
+  return direction ? labels[direction] : "外周";
 }
 
 function getHpBarColor(ratio: number): number {

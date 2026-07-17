@@ -22,6 +22,7 @@ import type {
 import type {
   EnemyTypeId,
   EncounterState,
+  ExpeditionState,
   ExtraUpgradeId,
   GameEvent,
   GameStatus,
@@ -88,6 +89,7 @@ export type ArenaDebugSnapshot = {
   runtime: RuntimeModifiers;
   buildComposition: BuildComposition;
   encounter: EncounterState;
+  expedition: ExpeditionState | null;
   wave: WaveBand;
   stats: RunStats;
   resultSummary: RunResultSummary;
@@ -148,6 +150,7 @@ export type ArenaRunExport = {
   runtime: RuntimeModifiers;
   buildComposition: BuildComposition;
   encounter: EncounterState;
+  expedition: ExpeditionState | null;
   lastEvents: GameEvent[];
 };
 

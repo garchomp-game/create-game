@@ -99,6 +99,7 @@ export function createArenaRunExport(input: CreateArenaRunExportInput): ArenaRun
       world.progression.extraUpgradeRanks,
     ),
     encounter: structuredClone(world.encounter),
+    expedition: world.expedition ? structuredClone(world.expedition) : null,
     lastEvents: input.lastEvents.map((event) => structuredClone(event)),
   };
 }

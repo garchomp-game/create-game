@@ -9,6 +9,12 @@ import type {
   MenuAction,
   SecondaryMenu,
 } from "./ArenaMenuTypes";
+import {
+  DEFAULT_MODE_ID,
+  DEFAULT_STAGE_ID,
+  EXPEDITION_MODE_ID,
+  FIRST_EXPEDITION_STAGE_ID,
+} from "../config/version";
 
 export type ArenaMenuState = {
   secondaryMenu: SecondaryMenu | null;
@@ -27,7 +33,7 @@ export type ArenaMenuActionContext = {
 };
 
 export type ArenaMenuCommand =
-  | { type: "showWeaponSelect" }
+  | { type: "showWeaponSelect"; modeId: string; stageId: string }
   | { type: "startRun"; weaponType: WeaponTypeId }
   | { type: "showTitle" }
   | { type: "showBetaInfo" }
@@ -83,7 +89,20 @@ export class ArenaMenuController {
   ): ArenaMenuActionOutcome {
     if (action === "start" && context.status === "title") {
       this.setNotice(null);
-      return handled({ type: "showWeaponSelect" });
+      return handled({
+        type: "showWeaponSelect",
+        modeId: DEFAULT_MODE_ID,
+        stageId: DEFAULT_STAGE_ID,
+      });
+    }
+
+    if (action === "startExpedition" && context.status === "title") {
+      this.setNotice(null);
+      return handled({
+        type: "showWeaponSelect",
+        modeId: EXPEDITION_MODE_ID,
+        stageId: FIRST_EXPEDITION_STAGE_ID,
+      });
     }
 
     if (action === "selectPulse" || action === "selectSpread") {

@@ -5,6 +5,7 @@ describe("PhaserMenuLayout", () => {
   it("exposes public beta information from the title menu", () => {
     expect(getMenuButtons("title", 960, 540).map((button) => button.action)).toEqual([
       "start",
+      "startExpedition",
       "ranking",
       "history",
       "settings",

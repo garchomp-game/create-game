@@ -30,6 +30,7 @@ export type ArenaUiState = {
   focusedMenuAction: MenuAction | null;
   notice: string | null;
   releaseIdentity: ReleaseIdentity;
+  runContext?: RunContext | null;
 };
 
 export type CreateArenaUiStateInput = {
@@ -78,5 +79,6 @@ export function createArenaUiState(input: CreateArenaUiStateInput): ArenaUiState
     focusedMenuAction: input.focusedMenuAction,
     notice: input.notice,
     releaseIdentity: { ...input.releaseIdentity },
+    runContext: input.runContext ? { ...input.runContext } : null,
   };
 }

@@ -32,6 +32,24 @@ describe("GameContentRegistry", () => {
     );
   });
 
+  it("resolves the first Expedition as a separate data-driven run", () => {
+    const registry = new GameContentRegistry(GAME_CONTENT_DEFINITIONS);
+
+    expect(registry.resolveRun("expedition", "first-expedition")).toMatchObject({
+      mode: {
+        id: "expedition",
+        runtimeKind: "expedition",
+        defaultStageId: "first-expedition",
+      },
+      stage: {
+        id: "first-expedition",
+        encounterDeckId: "first-expedition-v1",
+        enemyPoolId: "expedition-core",
+        clearCondition: { type: "survive", durationSeconds: 420 },
+      },
+    });
+  });
+
   it("rejects unknown mode, stage, and mode-stage combinations", () => {
     const registry = new GameContentRegistry(GAME_CONTENT_DEFINITIONS);
     expect(() => registry.resolveRun("missing", "arena-default")).toThrow(
