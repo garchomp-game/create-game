@@ -215,7 +215,7 @@ v0.6の手動採否、外周反射の公開固定、長時間HUD、Phaser 4.2.1 
 
 RC3は`赤 -> 大型黄 -> 小型黄緑 -> 紫`の順で敵を解禁し、大型黄だけHPを3から8へ上げます。最終ボスはプレイヤーを追跡し、通常ウェーブを止めず、広域射撃と挟撃増援を継続します。固定3シードの早送りではPulse 1勝2敗、Spread 3勝で、全6ランがCommanderを撃破しボス第2段階へ到達しました。最大敵76、最大総弾99、最大Pickup 196で上限内です。
 
-判定はRC3の全回帰と手動再評価待ちです。v0.6.8 productionを維持したままVersion Previewで採否し、詳細は[v0.7 統合QAレポート](../../playtest/v07-qa-report/)へ集約します。
+自動回帰は完了し、commit `7fc7a67953b7`、Cloudflare Version `0a4ebb54-f788-485c-96ee-3828377be5aa`を`https://v07-final-expedition-arena-core.garchomp-game.workers.dev`へ公開しました。v0.6.8 productionを維持したまま、残るPulse / Spread各3本の手動採否を行います。詳細は[v0.7 統合QAレポート](../../playtest/v07-qa-report/)へ集約します。
 
 ## 次の優先順
 

@@ -116,7 +116,7 @@ description: v0.4からv1.0までの目的と主要チケット。
 
 ## v0.7 最終遠征プロトタイプ
 
-状態: Wave 0から5とRC2技術QAを完了。手動所感を受け、現行縦切りを第10ステージへ再分類したRC3を実装し、全回帰とVersion Preview更新を進めています。
+状態: Wave 0から5、最終遠征RC3実装、全回帰、Version Preview公開まで完了。production昇格はRC3のPulse / Spread各3本の手動採否待ちです。
 
 目的:
 

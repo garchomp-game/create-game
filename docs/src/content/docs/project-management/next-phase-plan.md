@@ -11,7 +11,7 @@ v0.6.8公開ベータはcommit `ff686f992a65`、Cloudflare Version ID `e86f90b8-
 
 RC1とRC2の手動所感から、道中に対してボスが易しい難度逆転と、初心者向け学習ステージとしては道中が難しすぎることが分かりました。現行縦切りを第10ステージへ再分類し、候補版を`0.7.0` / `phaser-v0.7.0-final-expedition-rc3`へ更新しています。
 
-RC3は敵を`赤 -> 大型黄 -> 小型黄緑 -> 紫`の順で解禁し、大型黄をHP 8、CommanderをHP 500にします。最終ボスはプレイヤーを追跡し、通常ウェーブを止めず、広域射撃と挟撃増援を続けます。次の作業は全回帰とVersion Preview更新、その後のPulse / Spread各3本の手動採否です。
+RC3は敵を`赤 -> 大型黄 -> 小型黄緑 -> 紫`の順で解禁し、大型黄をHP 8、CommanderをHP 500にします。最終ボスはプレイヤーを追跡し、通常ウェーブを止めず、広域射撃と挟撃増援を続けます。全回帰とVersion Preview更新は完了し、次の作業はPulse / Spread各3本の手動採否です。
 
 - 体験要件: [v0.7 最終遠征プロトタイプ](../../design/v07-first-expedition/)
 - 実装順と受け入れ条件: [v0.7 実行計画](../v07-execution-plan/)
@@ -23,6 +23,11 @@ RC3は敵を`赤 -> 大型黄 -> 小型黄緑 -> 紫`の順で解禁し、大型
 ## 現在の移行点
 
 productionはv0.6.8のまま維持します。v0.7はCloudflare Version Previewだけへ公開し、手動採否が終わるまで`wrangler deploy`やtraffic昇格を行いません。保存比較は新しいルール版へ分かれるため、旧履歴を残してもランキングへ混ざりません。
+
+- RC3 Preview: `https://v07-final-expedition-arena-core.garchomp-game.workers.dev`
+- commit: `7fc7a67953b7`
+- Cloudflare Version: `0a4ebb54-f788-485c-96ee-3828377be5aa`
+- production: Version `e86f90b8-ea15-4d1d-b01b-59e4f9fea78e` 100%を維持
 
 ## 入口ゲート
 
@@ -67,7 +72,7 @@ Session、Run Lifecycle、Debug、AI、Performanceを単一所有者へ分け、
 4. 完了: `PH-V07-006`、`PH-ARCH-007`でExpeditionと視覚縦切りを統合。
 5. 完了: `PH-V07-007`でボスと勝利条件を接続。
 6. 完了: RC2までの`PH-V07-008`自動回帰、到達性、性能、preview準備。
-7. 進行中: 最終遠征RC3の敵順、Commander、ボス追跡、増援継続、広域射撃を再検証。
+7. 完了: 最終遠征RC3の敵順、Commander、ボス追跡、増援継続、広域射撃を再検証し、Version Previewへ公開。
 8. 残り: RC3 Version PreviewでPulse / Spread各3本の手動採否。
 9. 次段: 端末内進行、ステージ選択、第1から第4の学習ステージを依存順に実装。
 
