@@ -116,7 +116,7 @@ description: v0.4からv1.0までの目的と主要チケット。
 
 ## v0.7 最初のエクスペディション
 
-状態: 2026-07-17にWave 0から5と技術QAを完了。`0.7.0`をCloudflare Version Previewへ進め、production昇格とv0.8着手はPulse / Spread各3本の手動採否待ち。
+状態: 2026-07-17にWave 0から5とRC1技術QAを完了。Pulse手動2ランを反映したRC2の全回帰とVersion Preview更新を進め、production昇格とv0.8着手はRC2のPulse / Spread各3本の手動採否待ち。
 
 目的:
 
@@ -138,7 +138,7 @@ description: v0.4からv1.0までの目的と主要チケット。
 - [`PH-V07-007` #58](https://github.com/garchomp-game/create-game/issues/58) 最初のボス戦。
 - [`PH-V07-008` #59](https://github.com/garchomp-game/create-game/issues/59) 統合QAと採否判定。
 
-## v0.8 チャレンジと熟練度
+## v0.8 チャレンジ、熟練度、遠征進行
 
 目的:
 
@@ -153,6 +153,7 @@ description: v0.4からv1.0までの目的と主要チケット。
 - `PH-V08-004` 武器熟練度と評価。
 - `PH-V08-005` プロフィール統計と収集画面。
 - `PH-V08-006` アカウント同期の要件判断。
+- [`PH-V08-007` #62](https://github.com/garchomp-game/create-game/issues/62) エクスペディション進行とステージ選択基盤。
 
 ## v0.9 コンテンツ完成とリリース準備
 

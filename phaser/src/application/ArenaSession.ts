@@ -136,6 +136,7 @@ function applyStageToConfig(
   stage: StageDefinition,
   seed: number,
 ): SimulationConfig {
+  const difficulty = stage.difficulty;
   return {
     ...baseConfig,
     seed,
@@ -157,6 +158,44 @@ function applyStageToConfig(
       x: stage.arena.playerStart.x,
       y: stage.arena.playerStart.y,
     },
+    enemies: difficulty
+      ? Object.fromEntries(
+          Object.entries(baseConfig.enemies).map(([typeId, enemy]) => [
+            typeId,
+            {
+              ...enemy,
+              xpValue: Math.ceil(
+                enemy.xpValue * difficulty.rewardScaling.enemyXpMultiplier,
+              ),
+              score: Math.round(
+                enemy.score * difficulty.rewardScaling.enemyScoreMultiplier,
+              ),
+            },
+          ]),
+        ) as SimulationConfig["enemies"]
+      : baseConfig.enemies,
+    pickup: difficulty
+      ? {
+          ...baseConfig.pickup,
+          healDropChance: Math.min(
+            1,
+            baseConfig.pickup.healDropChance *
+              difficulty.rewardScaling.healDropChanceMultiplier,
+          ),
+        }
+      : baseConfig.pickup,
+    waves: difficulty
+      ? difficulty.waves.map((wave) => ({
+          ...wave,
+          enemyWeights: { ...wave.enemyWeights },
+        }))
+      : baseConfig.waves,
+    threat: difficulty
+      ? {
+          ...baseConfig.threat,
+          ...difficulty.threat,
+        }
+      : baseConfig.threat,
     obstacles: stage.obstacles.map((obstacle) => ({ ...obstacle })),
   };
 }

@@ -7,7 +7,7 @@ import { ExpeditionController } from "../ExpeditionController";
 import { createWorld } from "../createWorld";
 import { resolveCombat } from "./combatSystem";
 import { updateEnemyProjectiles } from "./enemyProjectileSystem";
-import { getSpawnWave } from "./spawnSystem";
+import { getSpawnWave, spawnEnemyAtPosition } from "./spawnSystem";
 import {
   getActiveBossEnemy,
   spawnFirstExpeditionBoss,
@@ -15,6 +15,35 @@ import {
 } from "./bossSystem";
 
 describe("first Expedition boss", () => {
+  it("clears carried road pressure before starting the command-ship duel", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    const random = createRandomStreams(7);
+    new ExpeditionController(FIRST_EXPEDITION_STAGE_DEFINITION).initialize(
+      world,
+      random,
+    );
+    spawnEnemyAtPosition(
+      world,
+      "chaser",
+      getSpawnWave(world, SIMULATION_CONFIG),
+      { x: 100, y: 100 },
+      SIMULATION_CONFIG,
+    );
+    world.enemyProjectiles.push({
+      id: "enemy-projectile-road",
+      position: { x: 200, y: 200 },
+      velocity: { x: 100, y: 0 },
+      radius: 5,
+      lifetime: 2,
+      damage: 8,
+    });
+
+    const boss = spawnFirstExpeditionBoss(world, []);
+
+    expect(world.enemies).toEqual([boss]);
+    expect(world.enemyProjectiles).toEqual([]);
+  });
+
   it.each<WeaponTypeId>(["pulse", "spread"])(
     "lets %s avoid the locked targeted salvo without damage",
     (weaponType) => {
@@ -63,8 +92,8 @@ describe("first Expedition boss", () => {
         attackId: "escort-pincer",
         phase: "telegraph",
         startedAt: 400,
-        endsAt: 401.7,
-        aimDirection: null,
+        endsAt: 401.55,
+        aimDirection: { x: 0, y: 1 },
         ingressDirection: "north",
       };
       fixture.world.state.elapsed = boss.action.endsAt;
@@ -79,11 +108,18 @@ describe("first Expedition boss", () => {
         (event): event is Extract<GameEvent, { type: "boss.escort.deployed" }> =>
           event.type === "boss.escort.deployed",
       );
-      expect(deployed?.enemyIds).toHaveLength(4);
+      expect(deployed?.enemyIds).toHaveLength(3);
       const escorts = fixture.world.enemies.filter((enemy) =>
         deployed?.enemyIds.includes(enemy.id),
       );
-      expect(escorts).toHaveLength(4);
+      expect(escorts).toHaveLength(3);
+      expect(fixture.world.enemyProjectiles).toHaveLength(3);
+      expect(
+        fixture.world.enemyProjectiles.every(
+          (projectile) =>
+            projectile.source?.bossAttackId === "escort-pincer",
+        ),
+      ).toBe(true);
       expect(
         escorts.every(
           (enemy) => enemy.bossAttackSource?.bossAttackId === "escort-pincer",
@@ -139,6 +175,40 @@ describe("first Expedition boss", () => {
       phase: 2,
       action: { phase: "recovery", endsAt: 431.1 },
     });
+  });
+
+  it("raises both escort and suppressive-fire counts in phase two", () => {
+    const fixture = createBossFixture(1234, "spread");
+    const boss = fixture.world.expedition!.boss!;
+    boss.phase = 2;
+    boss.action = {
+      attackId: "escort-pincer",
+      phase: "telegraph",
+      startedAt: 450,
+      endsAt: 451.15,
+      aimDirection: { x: 0, y: 1 },
+      ingressDirection: "east",
+    };
+    fixture.world.state.elapsed = boss.action.endsAt;
+
+    const events = updateFirstExpeditionBoss(
+      fixture.world,
+      fixture.random,
+      SIMULATION_CONFIG,
+      [],
+    );
+
+    expect(fixture.world.enemyProjectiles).toHaveLength(6);
+    const escortEvent = events.find(
+      (event): event is Extract<GameEvent, { type: "boss.escort.deployed" }> =>
+        event.type === "boss.escort.deployed",
+    );
+    const attackEvent = events.find(
+      (event): event is Extract<GameEvent, { type: "boss.attack.executed" }> =>
+        event.type === "boss.attack.executed",
+    );
+    expect(escortEvent?.enemyIds).toHaveLength(5);
+    expect(attackEvent?.projectileIds).toHaveLength(6);
   });
 
   it("completes the Expedition once when the registered boss is defeated", () => {

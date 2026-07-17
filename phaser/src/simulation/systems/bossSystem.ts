@@ -28,6 +28,10 @@ export function spawnFirstExpeditionBoss(
   const expedition = world.expedition;
   if (!expedition || expedition.boss?.status === "active") return null;
 
+  // The command ship starts a separate duel instead of inheriting road pressure.
+  world.enemies.length = 0;
+  world.enemyProjectiles.length = 0;
+
   const enemy: Enemy = {
     id: `enemy-${world.nextEnemyId++}`,
     typeId: definition.baseEnemyTypeId,
@@ -140,7 +144,13 @@ export function updateFirstExpeditionBoss(
       const projectileIds =
         boss.action.attackId === "targeted-salvo"
           ? executeTargetedSalvo(world, enemy, boss.phase, config, definition)
-          : [];
+          : executeEscortSuppressiveSalvo(
+              world,
+              enemy,
+              boss.phase,
+              config,
+              definition,
+            );
       if (boss.action.attackId === "escort-pincer") {
         events.push(...executeEscortPincer(world, random, config, definition));
       }
@@ -232,10 +242,7 @@ function createAttackState(
       : definition.escortPincer.telegraphSeconds,
     phase,
   );
-  const aimDirection =
-    attackId === "targeted-salvo"
-      ? directionBetween(enemy.position, world.player.position)
-      : null;
+  const aimDirection = directionBetween(enemy.position, world.player.position);
   const ingressDirection =
     attackId === "escort-pincer"
       ? INGRESS_DIRECTIONS[attackIndex % INGRESS_DIRECTIONS.length]!
@@ -277,11 +284,63 @@ function executeTargetedSalvo(
   definition: FirstCommandShipDefinition,
 ): string[] {
   const action = world.expedition!.boss!.action;
-  const aim = action.aimDirection ?? directionBetween(enemy.position, world.player.position);
-  const count = phaseValue(definition.targetedSalvo.projectileCount, phase);
-  const spread = phaseValue(definition.targetedSalvo.spreadRadians, phase);
-  const speed = phaseValue(definition.targetedSalvo.projectileSpeed, phase);
-  const damage = phaseValue(definition.targetedSalvo.projectileDamage, phase);
+  const aim =
+    action.aimDirection ??
+    directionBetween(enemy.position, world.player.position);
+  return spawnBossSalvo(
+    world,
+    enemy,
+    aim,
+    phaseValue(definition.targetedSalvo.projectileCount, phase),
+    phaseValue(definition.targetedSalvo.spreadRadians, phase),
+    definition.targetedSalvo.projectileRadius,
+    phaseValue(definition.targetedSalvo.projectileSpeed, phase),
+    definition.targetedSalvo.projectileLifetime,
+    phaseValue(definition.targetedSalvo.projectileDamage, phase),
+    "targeted-salvo",
+    config,
+  );
+}
+
+function executeEscortSuppressiveSalvo(
+  world: WorldState,
+  enemy: Enemy,
+  phase: 1 | 2,
+  config: SimulationConfig,
+  definition: FirstCommandShipDefinition,
+): string[] {
+  const salvo = definition.escortPincer.suppressiveSalvo;
+  const aim =
+    world.expedition!.boss!.action.aimDirection ??
+    directionBetween(enemy.position, world.player.position);
+  return spawnBossSalvo(
+    world,
+    enemy,
+    aim,
+    phaseValue(salvo.projectileCount, phase),
+    phaseValue(salvo.spreadRadians, phase),
+    salvo.projectileRadius,
+    phaseValue(salvo.projectileSpeed, phase),
+    salvo.projectileLifetime,
+    phaseValue(salvo.projectileDamage, phase),
+    "escort-pincer",
+    config,
+  );
+}
+
+function spawnBossSalvo(
+  world: WorldState,
+  enemy: Enemy,
+  aim: Vec2,
+  count: number,
+  spread: number,
+  radius: number,
+  speed: number,
+  lifetime: number,
+  damage: number,
+  attackId: BossAttackId,
+  config: SimulationConfig,
+): string[] {
   const available = Math.max(
     0,
     Math.min(
@@ -293,7 +352,7 @@ function executeTargetedSalvo(
   for (let index = 0; index < available; index += 1) {
     const offsetRatio = available <= 1 ? 0 : index / (available - 1) - 0.5;
     const direction = rotate(aim, spread * offsetRatio);
-    const spawnOffset = enemy.radius + definition.targetedSalvo.projectileRadius + 4;
+    const spawnOffset = enemy.radius + radius + 4;
     const projectile: EnemyProjectile = {
       id: `enemy-projectile-${world.nextEnemyProjectileId++}`,
       position: {
@@ -301,12 +360,12 @@ function executeTargetedSalvo(
         y: enemy.position.y + direction.y * spawnOffset,
       },
       velocity: { x: direction.x * speed, y: direction.y * speed },
-      radius: definition.targetedSalvo.projectileRadius,
-      lifetime: definition.targetedSalvo.projectileLifetime,
+      radius,
+      lifetime,
       damage,
       source: {
-        bossId: definition.id,
-        bossAttackId: "targeted-salvo",
+        bossId: world.expedition!.boss!.bossId,
+        bossAttackId: attackId,
       },
     };
     world.enemyProjectiles.push(projectile);

@@ -1,25 +1,35 @@
 import { describe, expect, it } from "vitest";
 import { ArenaSession } from "../src/application/ArenaSession";
 import { SIMULATION_CONFIG } from "../src/config/gameConfig";
-import type { GameEvent, WeaponTypeId } from "../src/domain/types";
+import type {
+  GameEvent,
+  PlayerDamageSource,
+  WeaponTypeId,
+} from "../src/domain/types";
 import { createAutoPilotAgent } from "../src/simulation/autoPilot";
 
 const SEEDS = [20260717, 20260718, 20260719] as const;
 const WEAPONS: WeaponTypeId[] = ["pulse", "spread"];
 const FRAME_RATE = 30;
-const MAX_SECONDS = 10 * 60;
+const MAX_SECONDS = 10 * 60 + 30;
 
 type ProbeResult = {
   weaponType: WeaponTypeId;
   seed: number;
   elapsed: number;
   score: number;
+  level: number;
+  extraLevel: number;
+  enemiesKilled: number;
+  xpCollected: number;
   outcome: "victory" | "defeat" | null;
   reachedActId: string | null;
   longestMeaningfulGap: number;
   bossSpawnedAt: number | null;
   bossPhaseReached: number;
   bossAttacksExecuted: Record<string, number>;
+  bossHpRemaining: number | null;
+  lastDamageSource: PlayerDamageSource | null;
   maximumEnemies: number;
   maximumProjectiles: number;
   maximumPickups: number;
@@ -34,6 +44,8 @@ describe("v0.7 first Expedition release probe", () => {
     );
     const replay = runExpedition("pulse", SEEDS[0]);
 
+    console.log(JSON.stringify(results, null, 2));
+
     for (const result of results) {
       expect(result.outcome).toBe("victory");
       expect(result.reachedActId).toBe("command-ship");
@@ -44,16 +56,13 @@ describe("v0.7 first Expedition release probe", () => {
       expect(result.bossPhaseReached).toBe(2);
       expect(result.bossAttacksExecuted["targeted-salvo"]).toBeGreaterThan(0);
       expect(result.bossAttacksExecuted["escort-pincer"]).toBeGreaterThan(0);
-      expect(result.maximumEnemies).toBeLessThanOrEqual(
-        SIMULATION_CONFIG.threat.maximumEnemies,
-      );
-      expect(result.maximumProjectiles).toBeLessThanOrEqual(300);
+      expect(result.maximumEnemies).toBeLessThanOrEqual(36);
+      expect(result.maximumProjectiles).toBeLessThanOrEqual(64);
       expect(result.maximumPickups).toBeLessThanOrEqual(2_000);
     }
 
     expect(replay.eventHash).toBe(results[0]!.eventHash);
     expect(replay.worldHash).toBe(results[0]!.worldHash);
-    console.log(JSON.stringify(results, null, 2));
   }, 240_000);
 });
 
@@ -90,17 +99,24 @@ function runExpedition(weaponType: WeaponTypeId, seed: number): ProbeResult {
 
   const expedition = session.world.stats.encounterMetrics.expedition;
   const boss = session.world.stats.encounterMetrics.boss;
+  const activeBoss = session.world.enemies.find((enemy) => enemy.boss);
   return {
     weaponType,
     seed,
     elapsed: session.world.state.elapsed,
     score: session.world.state.score,
+    level: session.world.progression.level,
+    extraLevel: session.world.progression.extraLevel,
+    enemiesKilled: session.world.stats.enemiesKilled,
+    xpCollected: session.world.stats.xpCollected,
     outcome: expedition?.outcome ?? null,
     reachedActId: expedition?.reachedActId ?? null,
     longestMeaningfulGap: expedition?.longestMeaningfulGap ?? Number.POSITIVE_INFINITY,
     bossSpawnedAt: boss?.spawnedAt ?? null,
     bossPhaseReached: boss?.phaseReached ?? 0,
     bossAttacksExecuted: { ...(boss?.attacksExecuted ?? {}) },
+    bossHpRemaining: activeBoss?.hp ?? null,
+    lastDamageSource: session.world.stats.lastDamageSource,
     maximumEnemies,
     maximumProjectiles,
     maximumPickups,

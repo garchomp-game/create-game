@@ -55,6 +55,63 @@ const clearConditionSchema = z.discriminatedUnion("type", [
     .strict(),
 ]);
 
+const stageWaveSchema = z
+  .object({
+    start: coordinate,
+    spawnInterval: positiveNumber,
+    speedMultiplier: positiveNumber,
+    maxEnemies: z.number().int().positive(),
+    spawnBudget: positiveNumber,
+    enemyWeights: z.partialRecord(z.enum(ENEMY_TYPE_IDS), positiveNumber),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    if (Object.keys(value.enemyWeights).length === 0) {
+      context.addIssue({
+        code: "custom",
+        message: "stage wave enemyWeights must include at least one enemy type",
+        path: ["enemyWeights"],
+      });
+    }
+  });
+
+const stageDifficultySchema = z
+  .object({
+    waves: z.array(stageWaveSchema).min(1),
+    threat: z
+      .object({
+        pressureStartAt: coordinate,
+        statStartAt: coordinate,
+      })
+      .strict(),
+    rewardScaling: z
+      .object({
+        enemyXpMultiplier: positiveNumber,
+        enemyScoreMultiplier: positiveNumber,
+        healDropChanceMultiplier: positiveNumber,
+      })
+      .strict(),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    if (value.waves[0]?.start !== 0) {
+      context.addIssue({
+        code: "custom",
+        message: "the first stage wave must start at 0 seconds",
+        path: ["waves", 0, "start"],
+      });
+    }
+    for (let index = 1; index < value.waves.length; index += 1) {
+      if (value.waves[index]!.start <= value.waves[index - 1]!.start) {
+        context.addIssue({
+          code: "custom",
+          message: "stage wave starts must be strictly ascending",
+          path: ["waves", index, "start"],
+        });
+      }
+    }
+  });
+
 const stageDefinitionSchema = z
   .object({
     id: contentId,
@@ -63,6 +120,7 @@ const stageDefinitionSchema = z
     obstacles: z.array(obstacleDefinitionSchema),
     encounterDeckId: contentId,
     enemyPoolId: contentId,
+    difficulty: stageDifficultySchema.optional(),
     clearCondition: clearConditionSchema,
     bossId: contentId.optional(),
   })

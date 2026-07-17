@@ -117,6 +117,7 @@ function createFixture() {
     getMusicSnapshot: () => ({
       loaded: false,
       playing: false,
+      track: null,
       volume: 0,
       muted: false,
     }),

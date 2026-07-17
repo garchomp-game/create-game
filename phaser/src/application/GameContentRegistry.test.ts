@@ -46,6 +46,26 @@ describe("GameContentRegistry", () => {
         encounterDeckId: "first-expedition-v1",
         enemyPoolId: "expedition-core",
         bossId: "first-command-ship",
+        difficulty: {
+          waves: [
+            expect.objectContaining({
+              start: 0,
+              enemyWeights: { chaser: 1 },
+            }),
+            expect.anything(),
+            expect.anything(),
+            expect.objectContaining({
+              start: 300,
+              enemyWeights: expect.objectContaining({ ranged: 0.38 }),
+            }),
+          ],
+          threat: { pressureStartAt: 540, statStartAt: 540 },
+          rewardScaling: {
+            enemyXpMultiplier: 1.75,
+            enemyScoreMultiplier: 1.5,
+            healDropChanceMultiplier: 1.35,
+          },
+        },
         clearCondition: { type: "bossDefeat", bossId: "first-command-ship" },
       },
     });
@@ -89,6 +109,14 @@ describe("GameContentRegistry", () => {
     outsideArena.stages[0]!.obstacles[0]!.x = 900;
     expect(() => new GameContentRegistry(outsideArena)).toThrow(
       'obstacle "block-a" is outside the arena',
+    );
+  });
+
+  it("rejects invalid stage difficulty wave ordering", () => {
+    const invalidDifficulty = cloneDefinitions();
+    invalidDifficulty.stages[1]!.difficulty!.waves[1]!.start = 0;
+    expect(() => new GameContentRegistry(invalidDifficulty)).toThrow(
+      "stage wave starts must be strictly ascending",
     );
   });
 });

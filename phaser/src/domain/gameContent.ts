@@ -1,4 +1,4 @@
-import type { EnemyTypeId, Obstacle, Vec2 } from "./types";
+import type { EnemyTypeId, Obstacle, Vec2, WaveBand } from "./types";
 
 export type ModeDefinition = {
   id: string;
@@ -21,6 +21,19 @@ export type ClearConditionDefinition =
   | { type: "survive"; durationSeconds: number }
   | { type: "bossDefeat"; bossId: string };
 
+export type StageDifficultyDefinition = {
+  waves: WaveBand[];
+  threat: {
+    pressureStartAt: number;
+    statStartAt: number;
+  };
+  rewardScaling: {
+    enemyXpMultiplier: number;
+    enemyScoreMultiplier: number;
+    healDropChanceMultiplier: number;
+  };
+};
+
 export type StageDefinition = {
   id: string;
   titleKey: string;
@@ -28,6 +41,7 @@ export type StageDefinition = {
   obstacles: ObstacleDefinition[];
   encounterDeckId: string;
   enemyPoolId: string;
+  difficulty?: StageDifficultyDefinition;
   clearCondition: ClearConditionDefinition;
   bossId?: string;
 };

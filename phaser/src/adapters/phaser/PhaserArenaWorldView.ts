@@ -205,7 +205,6 @@ export class PhaserArenaWorldView {
         oppositeDirection(action.ingressDirection),
         action.phase === "execute",
       );
-      return;
     }
     if (!action.aimDirection) return;
 

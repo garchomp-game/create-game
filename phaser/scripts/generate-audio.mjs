@@ -468,6 +468,72 @@ function makeGameOver() {
   return finalize(buffer, 0.8, 0.008);
 }
 
+function makeExpeditionClearLoop() {
+  const duration = 12.8;
+  const beat = 0.4;
+  const bar = beat * 4;
+  const buffer = createBuffer(duration);
+  const melodic = createBuffer(duration);
+  const progression = [
+    { root: 48, chord: [60, 64, 67, 72] },
+    { root: 53, chord: [65, 69, 72, 77] },
+    { root: 55, chord: [67, 71, 74, 79] },
+    { root: 57, chord: [69, 72, 76, 81] },
+  ];
+  const melody = [72, 76, 79, 84, 81, 79, 76, 79];
+
+  for (let barIndex = 0; barIndex < 8; barIndex += 1) {
+    const chord = progression[barIndex % progression.length];
+    const start = barIndex * bar;
+    for (const [index, note] of chord.chord.slice(0, 3).entries()) {
+      addTone(buffer, {
+        start,
+        duration: bar * 0.96,
+        frequency: midiToFrequency(note),
+        gain: 0.065,
+        wave: "triangle",
+        attack: 0.035,
+        release: 0.18,
+        pan: (index - 1) * 0.34,
+        harmonics: [{ multiple: 2, gain: 0.14 }],
+      });
+    }
+    for (let beatIndex = 0; beatIndex < 4; beatIndex += 1) {
+      const beatStart = start + beatIndex * beat;
+      addTone(buffer, {
+        start: beatStart,
+        duration: beat * 0.7,
+        frequency: midiToFrequency(chord.root + (beatIndex === 3 ? 7 : 0)),
+        gain: 0.18,
+        wave: "triangle",
+        attack: 0.006,
+        release: 0.12,
+      });
+      addKick(buffer, beatStart, beatIndex === 0 ? 0.32 : 0.24);
+      if (beatIndex === 1 || beatIndex === 3) addSnare(buffer, beatStart, 0.17);
+    }
+    for (let eighth = 0; eighth < 8; eighth += 1) {
+      const note = melody[(eighth + barIndex * 2) % melody.length];
+      addTone(melodic, {
+        start: start + eighth * (beat / 2),
+        duration: beat * 0.38,
+        frequency: midiToFrequency(note),
+        gain: 0.1,
+        wave: "triangle",
+        attack: 0.008,
+        release: 0.1,
+        pan: eighth % 2 === 0 ? -0.22 : 0.22,
+        harmonics: [{ multiple: 2.01, gain: 0.18 }],
+      });
+    }
+  }
+
+  addCircularDelay(melodic, 0.2, 0.16, true);
+  addCircularDelay(melodic, 0.4, 0.08, false);
+  mix(buffer, melodic);
+  return finalize(buffer, 0.74, 0.01);
+}
+
 function addKick(buffer, start, gain = 0.34) {
   addTone(buffer, {
     start,
@@ -634,9 +700,10 @@ const assets = [
   ["damage-alt-1", makeDamage(1)],
   ["game-over", makeGameOver()],
   ["arena-loop", makeArenaLoop()],
+  ["expedition-clear-loop", makeExpeditionClearLoop()],
 ];
 
 for (const [name, buffer] of assets) {
-  encodeOgg(name, buffer, name === "arena-loop" ? 6 : 5);
+  encodeOgg(name, buffer, name.endsWith("-loop") ? 6 : 5);
   process.stdout.write(`generated public/audio/${name}.ogg\n`);
 }

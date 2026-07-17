@@ -34,6 +34,7 @@ export default defineConfig({
             { label: "エンドレス後半", slug: "design/endless-escalation" },
             { label: "モードと戦闘展開", slug: "design/encounters-and-modes" },
             { label: "v0.7 最初のエクスペディション", slug: "design/v07-first-expedition" },
+            { label: "エクスペディション展開", slug: "design/expedition-campaign" },
             { label: "世界観と試合内ドラマ", slug: "design/narrative-and-match-drama" },
             { label: "UI/UXとフィードバック", slug: "design/ui-ux" },
             { label: "障害物・敵経路・弾", slug: "design/obstacles-and-projectiles" },

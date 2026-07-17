@@ -161,6 +161,12 @@ test("runs the first expedition from mode selection through result and retry", a
       },
     },
   });
+  expect(completed?.music).toMatchObject({
+    loaded: true,
+    playing: true,
+    track: "victory",
+  });
+  expect(completed?.audioCues).not.toContain("gameOver");
 
   await clickCanvasAt(page, 480, 415);
   await expect
@@ -178,6 +184,9 @@ test("runs the first expedition from mode selection through result and retry", a
   expect(
     await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().runContext),
   ).toMatchObject({ modeId: "expedition", stageId: "first-expedition" });
+  expect(
+    await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().music.track),
+  ).toBe("arena");
 });
 
 test("runs the observer auto pilot outside ranking and allows manual takeover", async ({ page }) => {
@@ -497,8 +506,8 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   expect(runExport).toBeTruthy();
   expect(runExport?.game).toBe("arena-core-phaser");
   expect(runExport?.appVersion).toBe("0.7.0");
-  expect(runExport?.rulesetVersion).toBe("phaser-v0.7.0-first-expedition");
-  expect(runExport?.configVersion).toBe("phaser-v0.7.0-first-expedition");
+  expect(runExport?.rulesetVersion).toBe("phaser-v0.7.0-first-expedition-rc2");
+  expect(runExport?.configVersion).toBe("phaser-v0.7.0-first-expedition-rc2");
   expect(runExport?.buildCommit).toMatch(/^[0-9a-f]{12}$/);
   expect(runExport?.runOrigin).toBe("test");
   expect(runExport?.rankEligibility).toEqual({
@@ -1038,6 +1047,7 @@ test("loads local audio assets without page errors", async ({ page }) => {
       "arena-loop.ogg",
       "damage-alt-1.ogg",
       "damage.ogg",
+      "expedition-clear-loop.ogg",
       "game-over.ogg",
       "hit-alt-1.ogg",
       "hit-alt-2.ogg",

@@ -30,7 +30,7 @@ describe("ExpeditionController", () => {
     );
     expect(world.enemies.length).toBeGreaterThanOrEqual(2);
     expect(world.enemies.every((enemy) => !enemy.enteredArena)).toBe(true);
-    expect(world.expedition!.spawnOverride).toMatchObject({ budget: 4 });
+    expect(world.expedition!.spawnOverride).toMatchObject({ budget: 2 });
   });
 
   it("reserves the counterattack and breakthrough Acts for their signature enemies", () => {

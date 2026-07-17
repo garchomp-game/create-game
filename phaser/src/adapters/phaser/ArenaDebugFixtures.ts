@@ -448,8 +448,7 @@ export function applyExpeditionBossFixture(
       (attackId === "targeted-salvo"
         ? FIRST_COMMAND_SHIP_DEFINITION.targetedSalvo.telegraphSeconds[phase - 1]
         : FIRST_COMMAND_SHIP_DEFINITION.escortPincer.telegraphSeconds[phase - 1]),
-    aimDirection:
-      attackId === "targeted-salvo" ? { x: -0.2, y: 0.98 } : null,
+    aimDirection: { x: -0.2, y: 0.98 },
     ingressDirection: attackId === "escort-pincer" ? "east" : null,
   };
   world.stats.encounterMetrics.boss = {

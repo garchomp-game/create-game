@@ -31,6 +31,56 @@ export const FIRST_EXPEDITION_STAGE_DEFINITION = {
   })),
   encounterDeckId: FIRST_EXPEDITION_ENCOUNTER_DECK_ID,
   enemyPoolId: "expedition-core",
+  difficulty: {
+    waves: [
+      {
+        start: 0,
+        spawnInterval: 1.05,
+        speedMultiplier: 1,
+        maxEnemies: 18,
+        spawnBudget: 1,
+        enemyWeights: { chaser: 1 },
+      },
+      {
+        start: 75,
+        spawnInterval: 0.86,
+        speedMultiplier: 1.04,
+        maxEnemies: 24,
+        spawnBudget: 2,
+        enemyWeights: { chaser: 1, fast: 0.55 },
+      },
+      {
+        start: 180,
+        spawnInterval: 0.72,
+        speedMultiplier: 1.08,
+        maxEnemies: 30,
+        spawnBudget: 3,
+        enemyWeights: { chaser: 1, brute: 0.42, fast: 0.65 },
+      },
+      {
+        start: 300,
+        spawnInterval: 0.62,
+        speedMultiplier: 1.14,
+        maxEnemies: 36,
+        spawnBudget: 3,
+        enemyWeights: {
+          chaser: 0.9,
+          brute: 0.42,
+          fast: 0.8,
+          ranged: 0.38,
+        },
+      },
+    ],
+    threat: {
+      pressureStartAt: 540,
+      statStartAt: 540,
+    },
+    rewardScaling: {
+      enemyXpMultiplier: 1.75,
+      enemyScoreMultiplier: 1.5,
+      healDropChanceMultiplier: 1.35,
+    },
+  },
   clearCondition: { type: "bossDefeat", bossId: FIRST_COMMAND_SHIP_BOSS_ID },
   bossId: FIRST_COMMAND_SHIP_BOSS_ID,
 } satisfies GameContentDefinitions["stages"][number];

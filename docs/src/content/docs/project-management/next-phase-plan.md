@@ -9,13 +9,14 @@ description: v0.7技術previewを手動採否し、production昇格とv0.8着手
 
 v0.6.8公開ベータはcommit `ff686f992a65`、Cloudflare Version ID `e86f90b8-ea15-4d1d-b01b-59e4f9fea78e`としてproductionへ固定しています。v0.7では責務分離、Stage / Encounter基盤、構造化出現、Commander、Charger、5 ActのExpedition、2攻撃・2段階の指揮艦ボスまで実装しました。
 
-候補版`0.7.0` / `phaser-v0.7.0-first-expedition`は自動QAを通過し、技術previewとして採用しました。次の作業は新機能ではなく、Version PreviewでPulse / Spread各3本を人間がプレイし、production昇格とv0.8着手を判断することです。
+RC1のPulse 2ランから、道中の物量に対してボスが易しい難度逆転が見つかりました。候補版を`0.7.0` / `phaser-v0.7.0-first-expedition-rc2`へ分け、段階ウェーブ、報酬補正、継続ボス射撃、勝利BGMを反映しました。次の作業はRC2のVersion PreviewでPulse / Spread各3本を人間がプレイし、production昇格とv0.8着手を判断することです。
 
 - 体験要件: [v0.7 最初のエクスペディション](../../design/v07-first-expedition/)
 - 実装順と受け入れ条件: [v0.7 実行計画](../v07-execution-plan/)
 - 中長期の範囲: [中長期作業計画](../gameplay-expansion-plan/)
 - 現在の実装: [現在地](../../game/current-state/)
 - QA結果と手動項目: [v0.7 統合QAレポート](../../playtest/v07-qa-report/)
+- 複数ステージへの展開: [エクスペディション展開設計](../../design/expedition-campaign/)
 
 ## 現在の移行点
 

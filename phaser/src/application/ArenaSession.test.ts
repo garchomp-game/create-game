@@ -74,6 +74,29 @@ describe("ArenaSession", () => {
       endlessContract: false,
       arenaCollapse: false,
     });
+    expect(session.config.waves).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          start: 0,
+          maxEnemies: 18,
+          enemyWeights: { chaser: 1 },
+        }),
+        expect.objectContaining({
+          start: 300,
+          maxEnemies: 36,
+          enemyWeights: expect.objectContaining({ ranged: 0.38 }),
+        }),
+      ]),
+    );
+    expect(session.config.threat).toMatchObject({
+      pressureStartAt: 540,
+      statStartAt: 540,
+    });
+    expect(session.config.enemies).toMatchObject({
+      chaser: { xpValue: 2, score: 15 },
+      brute: { xpValue: 6, score: 45 },
+    });
+    expect(session.config.pickup.healDropChance).toBeCloseTo(0.108);
     expect(session.world.expedition).toMatchObject({
       status: "active",
       actId: "deployment",

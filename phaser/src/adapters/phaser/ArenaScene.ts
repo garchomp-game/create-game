@@ -101,6 +101,7 @@ export class ArenaScene extends Phaser.Scene {
 
   preload(): void {
     this.load.audio("bgmEndless", "/audio/arena-loop.ogg");
+    this.load.audio("bgmVictory", "/audio/expedition-clear-loop.ogg");
     this.load.audio("shot", "/audio/shot.ogg");
     this.load.audio("shotAlt1", "/audio/shot-alt-1.ogg");
     this.load.audio("shotAlt2", "/audio/shot-alt-2.ogg");
@@ -360,7 +361,10 @@ export class ArenaScene extends Phaser.Scene {
       autoPilot.mode,
     );
     this.choiceOverlay.render(this.world, secondaryMenu === null);
-    this.musicController.sync(this.world.state.status);
+    this.musicController.sync(
+      this.world.state.status,
+      this.world.expedition?.outcome ?? null,
+    );
     const feedbackStartedAt = now();
     this.feedbackLayer.render();
     this.arenaRenderer.recordFeedbackRender(now() - feedbackStartedAt);

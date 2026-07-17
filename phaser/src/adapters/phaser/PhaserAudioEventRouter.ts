@@ -110,7 +110,11 @@ export class PhaserAudioEventRouter {
   }
 
   handleEvents(events: GameEvent[]): void {
+    const expeditionVictory = events.some(
+      (event) => event.type === "expedition.completed",
+    );
     for (const event of events) {
+      if (expeditionVictory && event.type === "game.over") continue;
       const cue = EVENT_CUES[event.type];
       if (!cue) continue;
 
