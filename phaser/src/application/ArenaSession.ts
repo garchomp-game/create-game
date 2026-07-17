@@ -1,4 +1,5 @@
 import type {
+  EnemyTypeId,
   InputSnapshot,
   SimulationConfig,
   StepWorldResult,
@@ -164,6 +165,10 @@ function applyStageToConfig(
             typeId,
             {
               ...enemy,
+              hp: Math.ceil(
+                enemy.hp *
+                  (difficulty.enemyHpMultipliers?.[typeId as EnemyTypeId] ?? 1),
+              ),
               xpValue: Math.ceil(
                 enemy.xpValue * difficulty.rewardScaling.enemyXpMultiplier,
               ),

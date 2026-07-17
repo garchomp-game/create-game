@@ -98,7 +98,7 @@ export function createArenaScreenViewModel(
       return {
         ...base,
         kind: "title",
-        statusText: `${TEXT.ui.titleScreen}\nENDLESS / EXPEDITION\n生存限界か、最初の作戦か\n${RELEASE_CHANNEL_LABEL} v${uiState?.releaseIdentity.appVersion ?? APP_VERSION}`,
+        statusText: `${TEXT.ui.titleScreen}\nENDLESS / EXPEDITION\n生存限界か、最終決戦か\n${RELEASE_CHANNEL_LABEL} v${uiState?.releaseIdentity.appVersion ?? APP_VERSION}`,
         detailText: null,
       };
     default:
@@ -402,24 +402,24 @@ function formatRecordDate(capturedAt: string): string {
 }
 
 function formatModeName(modeId: string | null | undefined): string {
-  if (modeId === "expedition") return "初回遠征";
+  if (modeId === "expedition") return "最終遠征";
   if (modeId === "endless") return "エンドレス";
   return modeId ?? "未選択";
 }
 
 function formatStageName(stageId: string | null | undefined): string {
-  if (stageId === "first-expedition") return "最初の出撃";
+  if (stageId === "final-expedition") return "第10ステージ 最終遠征";
   if (stageId === "arena-default") return "標準アリーナ";
   return stageId ?? "未選択";
 }
 
 function formatActName(actId: string | null): string {
   const names: Record<string, string> = {
-    deployment: "Act 1 展開",
-    "first-assault": "Act 2 第一波",
+    "perimeter-watch": "Act 1 四方警戒",
+    "first-assault": "Act 2 重装襲来",
     counterattack: "Act 3 反撃",
-    breakthrough: "Act 4 突破",
-    "command-ship": "Act 5 指揮艦決戦",
+    breakthrough: "Act 4 包囲突破",
+    "command-ship": "Act 5 最終決戦",
   };
   return actId ? (names[actId] ?? actId) : "未到達";
 }

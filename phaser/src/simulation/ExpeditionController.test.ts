@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { FIRST_EXPEDITION_STAGE_DEFINITION } from "../content/gameContentCatalog";
+import { FINAL_EXPEDITION_STAGE_DEFINITION } from "../content/gameContentCatalog";
 import { SIMULATION_CONFIG } from "../config/gameConfig";
 import type { GameEvent, WorldState } from "../domain/types";
 import { createRandomStreams } from "../math/random";
 import { createWorld } from "./createWorld";
 import { ExpeditionController } from "./ExpeditionController";
-import { spawnFirstExpeditionBoss } from "./systems/bossSystem";
+import { spawnFinalExpeditionBoss } from "./systems/bossSystem";
 
 describe("ExpeditionController", () => {
   it("runs a telegraphed card into a safe structured deployment", () => {
@@ -49,6 +49,30 @@ describe("ExpeditionController", () => {
       [],
     );
     expect(commanderActive.some((event) => event.type === "elite.commander.spawned")).toBe(true);
+    const commanderEnemy = commander.world.enemies.find((enemy) => enemy.elite);
+    expect(commanderEnemy).toMatchObject({
+      hp: 500,
+      elite: { maximumHp: 500 },
+    });
+    const commanderDefeated = commander.controller.update(
+      commander.world,
+      commander.random,
+      SIMULATION_CONFIG,
+      [{
+        type: "elite.commander.killed",
+        enemyId: commanderEnemy!.id,
+        weaponType: "pulse",
+        lifetime: 10,
+        traitActivations: 1,
+        position: { ...commanderEnemy!.position },
+      }],
+    );
+    expect(commanderDefeated).toContainEqual(
+      expect.objectContaining({
+        type: "expedition.encounter.recovery.started",
+        cardId: "commander-counterattack",
+      }),
+    );
 
     const charger = selectActCard(300, 33);
     expect(charger.events).toContainEqual(
@@ -70,7 +94,7 @@ describe("ExpeditionController", () => {
   it("records explicit victory and defeat boundaries", () => {
     const victory = createFixture(44);
     const spawnEvents: GameEvent[] = [];
-    const boss = spawnFirstExpeditionBoss(victory.world, spawnEvents)!;
+    const boss = spawnFinalExpeditionBoss(victory.world, spawnEvents)!;
     victory.world.state.elapsed = 480;
     const killed: Extract<GameEvent, { type: "enemy.killed" }> = {
       type: "enemy.killed",
@@ -111,7 +135,7 @@ describe("ExpeditionController", () => {
       [gameOver],
     );
     expect(defeatEvents).toEqual([
-      expect.objectContaining({ type: "expedition.failed", actId: "deployment" }),
+      expect.objectContaining({ type: "expedition.failed", actId: "perimeter-watch" }),
     ]);
     expect(defeat.world.expedition).toMatchObject({
       status: "defeat",
@@ -128,14 +152,29 @@ describe("ExpeditionController", () => {
   it("crosses all five Acts without a meaningful gap over 120 seconds", () => {
     const fixture = createFixture(88);
     const events: GameEvent[] = [];
-    for (let elapsed = 0; elapsed <= 420; elapsed += 0.25) {
+    let commanderDefeated = false;
+    for (let elapsed = 0; elapsed <= 520; elapsed += 0.25) {
       fixture.world.state.elapsed = elapsed;
+      const baseEvents: GameEvent[] =
+        !commanderDefeated &&
+        fixture.world.expedition!.director.cardId === "commander-counterattack" &&
+        fixture.world.expedition!.director.phase === "active"
+          ? [{
+              type: "elite.commander.killed",
+              enemyId: "commander-test",
+              weaponType: "pulse",
+              lifetime: 10,
+              traitActivations: 1,
+              position: { x: 480, y: 270 },
+            }]
+          : [];
+      if (baseEvents.length > 0) commanderDefeated = true;
       events.push(
         ...fixture.controller.update(
           fixture.world,
           fixture.random,
           SIMULATION_CONFIG,
-          [],
+          baseEvents,
         ),
       );
       fixture.world.enemies = fixture.world.enemies.filter((enemy) => enemy.boss);
@@ -148,7 +187,7 @@ describe("ExpeditionController", () => {
         .filter((event) => event.type === "expedition.act.changed")
         .map((event) => event.actId),
     ).toEqual([
-      "deployment",
+      "perimeter-watch",
       "first-assault",
       "counterattack",
       "breakthrough",
@@ -213,7 +252,7 @@ function createFixture(seed: number): {
   random: ReturnType<typeof createRandomStreams>;
   world: WorldState;
 } {
-  const controller = new ExpeditionController(FIRST_EXPEDITION_STAGE_DEFINITION);
+  const controller = new ExpeditionController(FINAL_EXPEDITION_STAGE_DEFINITION);
   const random = createRandomStreams(seed);
   const world = createWorld(SIMULATION_CONFIG);
   controller.initialize(world, random);

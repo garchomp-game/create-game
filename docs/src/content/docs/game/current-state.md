@@ -211,17 +211,20 @@ v0.6の手動採否、外周反射の公開固定、長時間HUD、Phaser 4.2.1 
 
 ## v0.7 preview候補
 
-最初のエクスペディションは5 Act、6カード、構造化出現、Commander、Charger、2攻撃・2段階の指揮艦ボス、勝敗と攻撃源記録まで統合しました。手動Pulse 2ランで道中過密とボスの難度逆転が判明したため、候補版を`0.7.0` / `phaser-v0.7.0-first-expedition-rc2`へ分けました。RC2の3 seed x 2武器は全勝利し、最大敵18・総弾37・Pickup 67、終了レベル32から33を確認しています。
+有限ランの縦切りは、5 Act、構造化出現、HP 500のCommander、Charger、2攻撃・2段階の指揮艦ボス、勝敗と攻撃源記録まで統合しました。手動所感で道中とボスの難度逆転が判明し、さらに10ステージ構成の最終面として使う方針へ変更したため、候補版を`0.7.0` / `phaser-v0.7.0-final-expedition-rc3`へ分けています。
 
-判定はRC2の手動再評価待ちです。v0.6.8 productionを維持したままVersion Previewで採否し、詳細は[v0.7 統合QAレポート](../../playtest/v07-qa-report/)へ集約します。
+RC3は`赤 -> 大型黄 -> 小型黄緑 -> 紫`の順で敵を解禁し、大型黄だけHPを3から8へ上げます。最終ボスはプレイヤーを追跡し、通常ウェーブを止めず、広域射撃と挟撃増援を継続します。固定3シードの早送りではPulse 1勝2敗、Spread 3勝で、全6ランがCommanderを撃破しボス第2段階へ到達しました。最大敵76、最大総弾99、最大Pickup 196で上限内です。
+
+判定はRC3の全回帰と手動再評価待ちです。v0.6.8 productionを維持したままVersion Previewで採否し、詳細は[v0.7 統合QAレポート](../../playtest/v07-qa-report/)へ集約します。
 
 ## 次の優先順
 
-公開ベータ基準とproduction証跡、v0.7の実装と自動QAは固定済みです。次はVersion Previewの人間採否だけを行います。
+公開ベータ基準とproduction証跡は固定済みです。v0.7は最終遠征RC3の技術QAを完了させ、その後にVersion Previewで人間採否します。
 
 1. 公開ベータの複数ランでPulse / Spreadのスコア、生存、EX巡回、崩壊段階を継続観測する。
 2. 600秒以降の崩壊体感は非停止条件として監視し、現行ルール値は先回りして変更しない。
-3. v0.7 Version PreviewでPulse / Spread各3本を手動プレイし、予告、難度、武器役割、再挑戦理由を記録する。
-4. 手動ゲート通過後にproduction昇格とv0.8着手を判断し、先回りした数値変更は行わない。
+3. 最終遠征RC3で敵導入順、Commander HP、ボス追跡、通常増援、広域射撃を自動回帰する。
+4. v0.7 Version PreviewでPulse / Spread各3本を手動プレイし、予告、難度、武器役割、再挑戦理由を記録する。
+5. 手動ゲート通過後にproduction昇格と第1から第9ステージの実装順を判断する。
 
-直近の詳細は[直近フェーズ](../../project-management/next-phase-plan/)と[v0.7 実行計画](../../project-management/v07-execution-plan/)、体験要件は[v0.7 最初のエクスペディション](../../design/v07-first-expedition/)、中長期は[拡張設計の全体像](../../design/gameplay-expansion-blueprint/)を参照してください。
+直近の詳細は[直近フェーズ](../../project-management/next-phase-plan/)と[v0.7 実行計画](../../project-management/v07-execution-plan/)、体験要件は[v0.7 最終遠征プロトタイプ](../../design/v07-first-expedition/)、10ステージ系列は[エクスペディション10ステージ設計](../../design/expedition-campaign/)を参照してください。

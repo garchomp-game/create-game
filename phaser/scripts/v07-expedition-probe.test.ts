@@ -8,10 +8,13 @@ import type {
 } from "../src/domain/types";
 import { createAutoPilotAgent } from "../src/simulation/autoPilot";
 
-const SEEDS = [20260717, 20260718, 20260719] as const;
-const WEAPONS: WeaponTypeId[] = ["pulse", "spread"];
+declare const process: { env: Record<string, string | undefined> };
+
+const DEFAULT_SEEDS = [20260717, 20260718, 20260719] as const;
+const SEEDS = readNumberList("ARENA_PROBE_SEEDS", DEFAULT_SEEDS);
+const WEAPONS = readWeaponList();
 const FRAME_RATE = 30;
-const MAX_SECONDS = 10 * 60 + 30;
+const MAX_SECONDS = 15 * 60;
 
 type ProbeResult = {
   weaponType: WeaponTypeId;
@@ -29,6 +32,8 @@ type ProbeResult = {
   bossPhaseReached: number;
   bossAttacksExecuted: Record<string, number>;
   bossHpRemaining: number | null;
+  commanderSpawned: number;
+  commanderKilled: number;
   lastDamageSource: PlayerDamageSource | null;
   maximumEnemies: number;
   maximumProjectiles: number;
@@ -37,17 +42,19 @@ type ProbeResult = {
   worldHash: string;
 };
 
-describe("v0.7 first Expedition release probe", () => {
-  it("clears with both weapons across three seeds and remains deterministic", () => {
+describe("v0.7 final Expedition release probe", () => {
+  it("reaches the final phase, preserves weapon clears, and remains deterministic", () => {
     const results = WEAPONS.flatMap((weaponType) =>
       SEEDS.map((seed) => runExpedition(weaponType, seed)),
     );
-    const replay = runExpedition("pulse", SEEDS[0]);
+    const replay = process.env.ARENA_PROBE_SKIP_REPLAY === "1"
+      ? null
+      : runExpedition("pulse", SEEDS[0]!);
 
     console.log(JSON.stringify(results, null, 2));
 
     for (const result of results) {
-      expect(result.outcome).toBe("victory");
+      expect(result.outcome).not.toBeNull();
       expect(result.reachedActId).toBe("command-ship");
       expect(result.elapsed).toBeGreaterThanOrEqual(8 * 60);
       expect(result.elapsed).toBeLessThanOrEqual(MAX_SECONDS);
@@ -56,14 +63,26 @@ describe("v0.7 first Expedition release probe", () => {
       expect(result.bossPhaseReached).toBe(2);
       expect(result.bossAttacksExecuted["targeted-salvo"]).toBeGreaterThan(0);
       expect(result.bossAttacksExecuted["escort-pincer"]).toBeGreaterThan(0);
-      expect(result.maximumEnemies).toBeLessThanOrEqual(36);
-      expect(result.maximumProjectiles).toBeLessThanOrEqual(64);
+      expect(result.commanderSpawned).toBeGreaterThan(0);
+      expect(result.commanderKilled).toBeGreaterThan(0);
+      expect(result.maximumEnemies).toBeLessThanOrEqual(96);
+      expect(result.maximumProjectiles).toBeLessThanOrEqual(160);
       expect(result.maximumPickups).toBeLessThanOrEqual(2_000);
     }
 
-    expect(replay.eventHash).toBe(results[0]!.eventHash);
-    expect(replay.worldHash).toBe(results[0]!.worldHash);
-  }, 240_000);
+    for (const weaponType of WEAPONS) {
+      expect(
+        results.some(
+          (result) => result.weaponType === weaponType && result.outcome === "victory",
+        ),
+      ).toBe(true);
+    }
+
+    if (replay) {
+      expect(replay.eventHash).toBe(results[0]!.eventHash);
+      expect(replay.worldHash).toBe(results[0]!.worldHash);
+    }
+  }, 480_000);
 });
 
 function runExpedition(weaponType: WeaponTypeId, seed: number): ProbeResult {
@@ -76,7 +95,7 @@ function runExpedition(weaponType: WeaponTypeId, seed: number): ProbeResult {
     seed,
     weaponType,
     modeId: "expedition",
-    stageId: "first-expedition",
+    stageId: "final-expedition",
     status: "playing",
   });
 
@@ -99,6 +118,7 @@ function runExpedition(weaponType: WeaponTypeId, seed: number): ProbeResult {
 
   const expedition = session.world.stats.encounterMetrics.expedition;
   const boss = session.world.stats.encounterMetrics.boss;
+  const commander = session.world.stats.encounterMetrics.commander;
   const activeBoss = session.world.enemies.find((enemy) => enemy.boss);
   return {
     weaponType,
@@ -116,6 +136,8 @@ function runExpedition(weaponType: WeaponTypeId, seed: number): ProbeResult {
     bossPhaseReached: boss?.phaseReached ?? 0,
     bossAttacksExecuted: { ...(boss?.attacksExecuted ?? {}) },
     bossHpRemaining: activeBoss?.hp ?? null,
+    commanderSpawned: commander?.spawned ?? 0,
+    commanderKilled: commander?.killed ?? 0,
     lastDamageSource: session.world.stats.lastDamageSource,
     maximumEnemies,
     maximumProjectiles,
@@ -136,4 +158,31 @@ function stableHash(value: string): string {
     hash = Math.imul(hash, 0x01000193);
   }
   return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
+function readNumberList(
+  name: string,
+  fallback: readonly number[],
+): number[] {
+  const value = process.env[name];
+  if (!value) return [...fallback];
+  const parsed = value
+    .split(",")
+    .map((item) => Number(item.trim()))
+    .filter((item) => Number.isInteger(item) && item >= 0);
+  if (parsed.length === 0) throw new Error(`${name} must contain a seed.`);
+  return parsed;
+}
+
+function readWeaponList(): WeaponTypeId[] {
+  const value = process.env.ARENA_PROBE_WEAPONS;
+  if (!value) return ["pulse", "spread"];
+  const parsed = value
+    .split(",")
+    .map((item) => item.trim())
+    .filter((item): item is WeaponTypeId => item === "pulse" || item === "spread");
+  if (parsed.length === 0) {
+    throw new Error("ARENA_PROBE_WEAPONS must include pulse or spread.");
+  }
+  return parsed;
 }

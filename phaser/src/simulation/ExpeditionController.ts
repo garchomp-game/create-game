@@ -1,7 +1,7 @@
 import {
-  FIRST_EXPEDITION_ACTS,
-  FIRST_EXPEDITION_ENCOUNTER_CARDS,
-  FIRST_EXPEDITION_ENCOUNTER_DECK,
+  FINAL_EXPEDITION_ACTS,
+  FINAL_EXPEDITION_ENCOUNTER_CARDS,
+  FINAL_EXPEDITION_ENCOUNTER_DECK,
 } from "../content/expeditionEncounterCards";
 import type { StageDefinition } from "../domain/gameContent";
 import type {
@@ -22,8 +22,8 @@ import { planStructuredSpawn } from "./structuredSpawnPlanner";
 import { spawnTelegraphCharger } from "./systems/chargerEnemySystem";
 import { spawnCommanderElite } from "./systems/commanderEliteSystem";
 import {
-  spawnFirstExpeditionBoss,
-  updateFirstExpeditionBoss,
+  spawnFinalExpeditionBoss,
+  updateFinalExpeditionBoss,
 } from "./systems/bossSystem";
 import {
   getSpawnWave,
@@ -31,24 +31,24 @@ import {
 } from "./systems/spawnSystem";
 
 const ACT_OBJECTIVES: Record<string, string> = {
-  deployment: "展開地点を確保する",
-  "first-assault": "第一波を迎撃する",
-  counterattack: "指揮個体を崩し反撃する",
-  breakthrough: "包囲を突破し決戦へ進む",
-  "command-ship": "敵指揮艦を撃破する",
+  "perimeter-watch": "四方から侵入する先遣隊を迎撃する",
+  "first-assault": "重装体を分断し各個撃破する",
+  counterattack: "指揮個体を撃破する",
+  breakthrough: "高速体と射撃体の包囲を突破する",
+  "command-ship": "敵指揮艦と増援を同時に撃破する",
 };
 
 export class ExpeditionController {
   private readonly director = new EncounterDirector({
-    deck: FIRST_EXPEDITION_ENCOUNTER_DECK,
-    cards: FIRST_EXPEDITION_ENCOUNTER_CARDS,
-    acts: FIRST_EXPEDITION_ACTS,
+    deck: FINAL_EXPEDITION_ENCOUNTER_DECK,
+    cards: FINAL_EXPEDITION_ENCOUNTER_CARDS,
+    acts: FINAL_EXPEDITION_ACTS,
   });
 
   constructor(private readonly stage: StageDefinition) {}
 
   initialize(world: WorldState, random: RandomStreams): void {
-    const firstAct = FIRST_EXPEDITION_ACTS[0]!;
+    const firstAct = FINAL_EXPEDITION_ACTS[0]!;
     world.expedition = {
       status: "active",
       director: this.director.createState(random.encounter),
@@ -96,21 +96,26 @@ export class ExpeditionController {
       return [this.complete(world, "defeat")];
     }
 
-    const bossEvents = updateFirstExpeditionBoss(
+    const bossEvents = updateFinalExpeditionBoss(
       world,
       random,
       config,
       baseEvents,
     );
     const events: GameEvent[] = [...bossEvents];
+    const signals: string[] = [];
+    if (bossEvents.some((event) => event.type === "boss.defeated")) {
+      signals.push("boss-defeated");
+    }
+    if (baseEvents.some((event) => event.type === "elite.commander.killed")) {
+      signals.push("commander-defeated");
+    }
     const directorEvents = this.director.update(
       expedition.director,
       {
         elapsed: world.state.elapsed,
         threatTier: getThreatTier(config, world.state.elapsed),
-        signals: bossEvents.some((event) => event.type === "boss.defeated")
-          ? ["boss-defeated"]
-          : [],
+        signals,
       },
       random.encounter,
     );
@@ -146,7 +151,7 @@ export class ExpeditionController {
   ): GameEvent[] {
     const expedition = world.expedition!;
     if (event.type === "encounter.act.changed") {
-      const act = FIRST_EXPEDITION_ACTS.find((item) => item.id === event.actId)!;
+      const act = FINAL_EXPEDITION_ACTS.find((item) => item.id === event.actId)!;
       expedition.actId = act.id;
       expedition.actTitleKey = act.titleKey;
       expedition.actStartedAt = event.elapsed;
@@ -185,7 +190,7 @@ export class ExpeditionController {
           cardId: card.id,
           elapsed: event.elapsed,
         }];
-        spawnFirstExpeditionBoss(world, bossEvents);
+        spawnFinalExpeditionBoss(world, bossEvents);
         return bossEvents;
       }
       expedition.spawnOverride = {

@@ -23,6 +23,7 @@ export type ClearConditionDefinition =
 
 export type StageDifficultyDefinition = {
   waves: WaveBand[];
+  enemyHpMultipliers?: Partial<Record<EnemyTypeId, number>>;
   threat: {
     pressureStartAt: number;
     statStartAt: number;
@@ -34,9 +35,15 @@ export type StageDifficultyDefinition = {
   };
 };
 
+export type StageCampaignDefinition = {
+  order: number;
+  role: "standard" | "final";
+};
+
 export type StageDefinition = {
   id: string;
   titleKey: string;
+  campaign?: StageCampaignDefinition;
   arena: ArenaDefinition;
   obstacles: ObstacleDefinition[];
   encounterDeckId: string;

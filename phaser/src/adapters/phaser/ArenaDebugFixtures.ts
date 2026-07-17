@@ -9,9 +9,9 @@ import type {
   WorldState,
 } from "../../domain/types";
 import { COMMANDER_ELITE_DEFINITION } from "../../content/eliteCatalog";
-import { FIRST_COMMAND_SHIP_DEFINITION } from "../../content/bossCatalog";
+import { FINAL_COMMAND_SHIP_DEFINITION } from "../../content/bossCatalog";
 import { TELEGRAPH_CHARGER_DEFINITION } from "../../content/chargerCatalog";
-import { spawnFirstExpeditionBoss } from "../../simulation/systems/bossSystem";
+import { spawnFinalExpeditionBoss } from "../../simulation/systems/bossSystem";
 
 export type EnemyVisualFixtureBand = "wave2" | "wave3";
 export type HealPickupFixtureMode = "damaged" | "full" | "fatal" | "visual";
@@ -225,8 +225,8 @@ export function applyExpeditionCommanderFixture(
   expedition.actId = "counterattack";
   expedition.actTitleKey = "act.counterattack.title";
   expedition.actStartedAt = 180;
-  expedition.objective = "指揮個体を崩し反撃する";
-  expedition.reachedActIds = ["deployment", "first-assault", "counterattack"];
+  expedition.objective = "指揮個体を撃破する";
+  expedition.reachedActIds = ["perimeter-watch", "first-assault", "counterattack"];
   expedition.currentCardTitleKey = "encounter.commander-counterattack.title";
   expedition.currentDirection = "east";
   expedition.currentGeometryId = "escort";
@@ -252,10 +252,11 @@ export function applyExpeditionCommanderFixture(
 
   const commander = createDebugEnemy(config, "ranged", { x: 740, y: 270 }, 1);
   commander.radius *= COMMANDER_ELITE_DEFINITION.radiusMultiplier;
-  commander.hp = Math.ceil(commander.hp * COMMANDER_ELITE_DEFINITION.hpMultiplier);
+  commander.hp = COMMANDER_ELITE_DEFINITION.maximumHp;
   commander.elite = {
     kind: "commander",
     trait: "reinforcement",
+    maximumHp: COMMANDER_ELITE_DEFINITION.maximumHp,
     phase: "cooldown",
     spawnedAt: 180,
     nextTraitAt: 190,
@@ -312,9 +313,9 @@ export function applyExpeditionChargerFixture(
   expedition.actId = "breakthrough";
   expedition.actTitleKey = "act.breakthrough.title";
   expedition.actStartedAt = 300;
-  expedition.objective = "包囲を突破し決戦へ進む";
+  expedition.objective = "高速体と射撃体の包囲を突破する";
   expedition.reachedActIds = [
-    "deployment",
+    "perimeter-watch",
     "first-assault",
     "counterattack",
     "breakthrough",
@@ -405,9 +406,9 @@ export function applyExpeditionBossFixture(
   expedition.actId = "command-ship";
   expedition.actTitleKey = "act.command-ship.title";
   expedition.actStartedAt = 390;
-  expedition.objective = "指揮艦を撃破する";
+  expedition.objective = "指揮艦と増援を同時に撃破する";
   expedition.reachedActIds = [
-    "deployment",
+    "perimeter-watch",
     "first-assault",
     "counterattack",
     "breakthrough",
@@ -433,10 +434,10 @@ export function applyExpeditionBossFixture(
     completionReason: null,
   };
 
-  spawnFirstExpeditionBoss(world, []);
+  spawnFinalExpeditionBoss(world, []);
   const boss = expedition.boss!;
   const enemy = world.enemies.find((candidate) => candidate.id === boss.enemyId)!;
-  enemy.hp = phase === 2 ? 1_620 : 2_880;
+  enemy.hp = phase === 2 ? 1_530 : 2_720;
   boss.phase = phase;
   boss.phaseChangedAt = phase === 2 ? world.state.elapsed - 0.35 : null;
   boss.action = {
@@ -446,8 +447,8 @@ export function applyExpeditionBossFixture(
     endsAt:
       world.state.elapsed +
       (attackId === "targeted-salvo"
-        ? FIRST_COMMAND_SHIP_DEFINITION.targetedSalvo.telegraphSeconds[phase - 1]
-        : FIRST_COMMAND_SHIP_DEFINITION.escortPincer.telegraphSeconds[phase - 1]),
+        ? FINAL_COMMAND_SHIP_DEFINITION.targetedSalvo.telegraphSeconds[phase - 1]
+        : FINAL_COMMAND_SHIP_DEFINITION.escortPincer.telegraphSeconds[phase - 1]),
     aimDirection: { x: -0.2, y: 0.98 },
     ingressDirection: attackId === "escort-pincer" ? "east" : null,
   };

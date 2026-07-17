@@ -32,20 +32,21 @@ describe("GameContentRegistry", () => {
     );
   });
 
-  it("resolves the first Expedition as a separate data-driven run", () => {
+  it("resolves the final Expedition as campaign stage ten", () => {
     const registry = new GameContentRegistry(GAME_CONTENT_DEFINITIONS);
 
-    expect(registry.resolveRun("expedition", "first-expedition")).toMatchObject({
+    expect(registry.resolveRun("expedition", "final-expedition")).toMatchObject({
       mode: {
         id: "expedition",
         runtimeKind: "expedition",
-        defaultStageId: "first-expedition",
+        defaultStageId: "final-expedition",
       },
       stage: {
-        id: "first-expedition",
-        encounterDeckId: "first-expedition-v1",
+        id: "final-expedition",
+        campaign: { order: 10, role: "final" },
+        encounterDeckId: "final-expedition-v1",
         enemyPoolId: "expedition-core",
-        bossId: "first-command-ship",
+        bossId: "final-command-ship",
         difficulty: {
           waves: [
             expect.objectContaining({
@@ -54,19 +55,21 @@ describe("GameContentRegistry", () => {
             }),
             expect.anything(),
             expect.anything(),
+            expect.anything(),
             expect.objectContaining({
-              start: 300,
-              enemyWeights: expect.objectContaining({ ranged: 0.38 }),
+              start: 390,
+              enemyWeights: expect.objectContaining({ ranged: 0.9 }),
             }),
           ],
-          threat: { pressureStartAt: 540, statStartAt: 540 },
+          enemyHpMultipliers: { brute: 2.5 },
+          threat: { pressureStartAt: 390, statStartAt: 450 },
           rewardScaling: {
             enemyXpMultiplier: 1.75,
             enemyScoreMultiplier: 1.5,
             healDropChanceMultiplier: 1.35,
           },
         },
-        clearCondition: { type: "bossDefeat", bossId: "first-command-ship" },
+        clearCondition: { type: "bossDefeat", bossId: "final-command-ship" },
       },
     });
   });

@@ -908,6 +908,11 @@ function getEnemyTargetScore(
   const retainedTargetPriority =
     enemy.id === frame.previousAimTargetId && world.state.weaponType !== "pulse" ? -35 : 0;
   const lowHpPriority = Math.min(14, enemy.hp) * 7;
+  const strategicTargetPriority = enemy.elite
+    ? -2_200
+    : enemy.boss
+      ? -1_600
+      : 0;
 
   return (
     (insideArena ? 0 : 100_000) +
@@ -918,6 +923,7 @@ function getEnemyTargetScore(
     typePriority[enemy.typeId] +
     contactPriority +
     retainedTargetPriority +
+    strategicTargetPriority +
     lowHpPriority +
     getAutoPilotWeaponStrategy(frame).targetScoreAdjustment(frame, target)
   );

@@ -271,7 +271,7 @@ test("shows the phase-two command ship and targeted salvo", async ({ page }) => 
 
   const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
   expect(snapshot?.expedition?.boss).toMatchObject({
-    bossId: "first-command-ship",
+    bossId: "final-command-ship",
     phase: 2,
     action: { attackId: "targeted-salvo", phase: "telegraph" },
   });

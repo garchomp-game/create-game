@@ -20,7 +20,7 @@ describe("createArenaScreenViewModel", () => {
       detailText: null,
     });
     expect(viewModel.statusText).toBe(
-      `${TEXT.ui.titleScreen}\nENDLESS / EXPEDITION\n生存限界か、最初の作戦か\n技術プレビュー v0.7.0`,
+      `${TEXT.ui.titleScreen}\nENDLESS / EXPEDITION\n生存限界か、最終決戦か\n技術プレビュー v0.7.0`,
     );
   });
 

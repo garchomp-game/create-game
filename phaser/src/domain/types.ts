@@ -421,6 +421,7 @@ export type Enemy = CircleBody & {
 export type CommanderEliteState = {
   kind: "commander";
   trait: "reinforcement";
+  maximumHp: number;
   phase: "cooldown" | "telegraph";
   spawnedAt: number;
   nextTraitAt: number;

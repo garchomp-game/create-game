@@ -18,7 +18,6 @@ export function updateSpawner(
   config: SimulationConfig,
   events: GameEvent[],
 ): void {
-  if (world.expedition?.boss?.status === "active") return;
   const wave = getSpawnWave(world, config);
   if (world.enemies.length >= wave.maxEnemies) return;
 

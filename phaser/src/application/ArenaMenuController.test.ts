@@ -19,7 +19,7 @@ describe("ArenaMenuController", () => {
     expect(controller.handle("startExpedition", createContext()).command).toEqual({
       type: "showWeaponSelect",
       modeId: "expedition",
-      stageId: "first-expedition",
+      stageId: "final-expedition",
     });
     expect(
       controller.handle("selectSpread", createContext({ status: "weaponSelect" })).command,

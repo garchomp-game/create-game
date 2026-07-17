@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FIRST_EXPEDITION_STAGE_DEFINITION } from "../../content/gameContentCatalog";
+import { FINAL_EXPEDITION_STAGE_DEFINITION } from "../../content/gameContentCatalog";
 import { SIMULATION_CONFIG } from "../../config/gameConfig";
 import type { GameEvent, WeaponTypeId, WorldState } from "../../domain/types";
 import { createRandomStreams } from "../../math/random";
@@ -7,18 +7,19 @@ import { ExpeditionController } from "../ExpeditionController";
 import { createWorld } from "../createWorld";
 import { resolveCombat } from "./combatSystem";
 import { updateEnemyProjectiles } from "./enemyProjectileSystem";
-import { getSpawnWave, spawnEnemyAtPosition } from "./spawnSystem";
+import { updateEnemies } from "./enemySystem";
+import { getSpawnWave, spawnEnemyAtPosition, updateSpawner } from "./spawnSystem";
 import {
   getActiveBossEnemy,
-  spawnFirstExpeditionBoss,
-  updateFirstExpeditionBoss,
+  spawnFinalExpeditionBoss,
+  updateFinalExpeditionBoss,
 } from "./bossSystem";
 
-describe("first Expedition boss", () => {
-  it("clears carried road pressure before starting the command-ship duel", () => {
+describe("final Expedition boss", () => {
+  it("clears the transition frame before final-wave pressure resumes", () => {
     const world = createWorld(SIMULATION_CONFIG);
     const random = createRandomStreams(7);
-    new ExpeditionController(FIRST_EXPEDITION_STAGE_DEFINITION).initialize(
+    new ExpeditionController(FINAL_EXPEDITION_STAGE_DEFINITION).initialize(
       world,
       random,
     );
@@ -38,7 +39,7 @@ describe("first Expedition boss", () => {
       damage: 8,
     });
 
-    const boss = spawnFirstExpeditionBoss(world, []);
+    const boss = spawnFinalExpeditionBoss(world, []);
 
     expect(world.enemies).toEqual([boss]);
     expect(world.enemyProjectiles).toEqual([]);
@@ -55,9 +56,9 @@ describe("first Expedition boss", () => {
         aimDirection: { x: 0, y: 1 },
       });
 
-      fixture.world.player.position.x = 300;
+      fixture.world.player.position.x = 80;
       fixture.world.state.elapsed = boss.action.endsAt;
-      const attackEvents = updateFirstExpeditionBoss(
+      const attackEvents = updateFinalExpeditionBoss(
         fixture.world,
         fixture.random,
         SIMULATION_CONFIG,
@@ -69,7 +70,7 @@ describe("first Expedition boss", () => {
           attackId: "targeted-salvo",
         }),
       );
-      expect(fixture.world.enemyProjectiles).toHaveLength(5);
+      expect(fixture.world.enemyProjectiles).toHaveLength(13);
       expect(fixture.world.enemyProjectiles.length).toBeLessThanOrEqual(
         SIMULATION_CONFIG.threat.maximumEnemyProjectiles,
       );
@@ -98,7 +99,7 @@ describe("first Expedition boss", () => {
       };
       fixture.world.state.elapsed = boss.action.endsAt;
 
-      const events = updateFirstExpeditionBoss(
+      const events = updateFinalExpeditionBoss(
         fixture.world,
         fixture.random,
         SIMULATION_CONFIG,
@@ -108,12 +109,12 @@ describe("first Expedition boss", () => {
         (event): event is Extract<GameEvent, { type: "boss.escort.deployed" }> =>
           event.type === "boss.escort.deployed",
       );
-      expect(deployed?.enemyIds).toHaveLength(3);
+      expect(deployed?.enemyIds).toHaveLength(5);
       const escorts = fixture.world.enemies.filter((enemy) =>
         deployed?.enemyIds.includes(enemy.id),
       );
-      expect(escorts).toHaveLength(3);
-      expect(fixture.world.enemyProjectiles).toHaveLength(3);
+      expect(escorts).toHaveLength(5);
+      expect(fixture.world.enemyProjectiles).toHaveLength(9);
       expect(
         fixture.world.enemyProjectiles.every(
           (projectile) =>
@@ -148,7 +149,7 @@ describe("first Expedition boss", () => {
         expect.objectContaining({
           type: "player.damaged",
           source: expect.objectContaining({
-            bossId: "first-command-ship",
+            bossId: "final-command-ship",
             bossAttackId: "escort-pincer",
           }),
         }),
@@ -162,7 +163,7 @@ describe("first Expedition boss", () => {
     enemy.hp = fixture.world.expedition!.boss!.maxHp * 0.5;
     fixture.world.state.elapsed = 430;
 
-    const events = updateFirstExpeditionBoss(
+    const events = updateFinalExpeditionBoss(
       fixture.world,
       fixture.random,
       SIMULATION_CONFIG,
@@ -175,6 +176,78 @@ describe("first Expedition boss", () => {
       phase: 2,
       action: { phase: "recovery", endsAt: 431.1 },
     });
+    expect(enemy.speed).toBe(96);
+  });
+
+  it("pursues the player through the shared obstacle navigation", () => {
+    const fixture = createBossFixture(92, "pulse");
+    const enemy = getActiveBossEnemy(fixture.world)!;
+    const before = { ...enemy.position };
+
+    updateEnemies(fixture.world, 0.05, SIMULATION_CONFIG, []);
+
+    expect(enemy.speed).toBe(72);
+    expect(Math.hypot(enemy.position.x - before.x, enemy.position.y - before.y))
+      .toBeGreaterThan(0);
+  });
+
+  it("keeps the final wave spawning while the boss is active", () => {
+    const fixture = createBossFixture(93, "spread");
+    const finalConfig = {
+      ...SIMULATION_CONFIG,
+      waves: FINAL_EXPEDITION_STAGE_DEFINITION.difficulty!.waves,
+      threat: {
+        ...SIMULATION_CONFIG.threat,
+        ...FINAL_EXPEDITION_STAGE_DEFINITION.difficulty!.threat,
+      },
+    };
+    fixture.world.state.elapsed = 400;
+    fixture.world.state.spawnTimer = 0;
+    const events: GameEvent[] = [];
+
+    updateSpawner(
+      fixture.world,
+      0.05,
+      fixture.random.spawn,
+      finalConfig,
+      events,
+    );
+
+    expect(fixture.world.enemies.some((enemy) => !enemy.boss)).toBe(true);
+    expect(getSpawnWave(fixture.world, finalConfig)).toMatchObject({
+      spawnInterval: 0.32,
+      maxEnemies: 64,
+      spawnBudget: 6,
+    });
+  });
+
+  it("lets obstacles cut safe lanes through the wide boss salvo", () => {
+    const fixture = createBossFixture(94, "pulse");
+    const boss = fixture.world.expedition!.boss!;
+    const enemy = getActiveBossEnemy(fixture.world)!;
+    enemy.position = { x: 280, y: 40 };
+    fixture.world.player.position = { x: 280, y: 440 };
+    boss.action = {
+      attackId: "targeted-salvo",
+      phase: "telegraph",
+      startedAt: 400,
+      endsAt: 401.2,
+      aimDirection: { x: 0, y: 1 },
+      ingressDirection: null,
+    };
+    fixture.world.state.elapsed = boss.action.endsAt;
+
+    updateFinalExpeditionBoss(
+      fixture.world,
+      fixture.random,
+      SIMULATION_CONFIG,
+      [],
+    );
+    expect(fixture.world.enemyProjectiles).toHaveLength(13);
+    updateEnemyProjectiles(fixture.world, 0.3, SIMULATION_CONFIG);
+
+    expect(fixture.world.enemyProjectiles.length).toBeGreaterThan(0);
+    expect(fixture.world.enemyProjectiles.length).toBeLessThan(13);
   });
 
   it("raises both escort and suppressive-fire counts in phase two", () => {
@@ -191,14 +264,14 @@ describe("first Expedition boss", () => {
     };
     fixture.world.state.elapsed = boss.action.endsAt;
 
-    const events = updateFirstExpeditionBoss(
+    const events = updateFinalExpeditionBoss(
       fixture.world,
       fixture.random,
       SIMULATION_CONFIG,
       [],
     );
 
-    expect(fixture.world.enemyProjectiles).toHaveLength(6);
+    expect(fixture.world.enemyProjectiles).toHaveLength(15);
     const escortEvent = events.find(
       (event): event is Extract<GameEvent, { type: "boss.escort.deployed" }> =>
         event.type === "boss.escort.deployed",
@@ -207,17 +280,17 @@ describe("first Expedition boss", () => {
       (event): event is Extract<GameEvent, { type: "boss.attack.executed" }> =>
         event.type === "boss.attack.executed",
     );
-    expect(escortEvent?.enemyIds).toHaveLength(5);
-    expect(attackEvent?.projectileIds).toHaveLength(6);
+    expect(escortEvent?.enemyIds).toHaveLength(7);
+    expect(attackEvent?.projectileIds).toHaveLength(15);
   });
 
   it("completes the Expedition once when the registered boss is defeated", () => {
     const random = createRandomStreams(123);
     const world = createWorld(SIMULATION_CONFIG);
-    const controller = new ExpeditionController(FIRST_EXPEDITION_STAGE_DEFINITION);
+    const controller = new ExpeditionController(FINAL_EXPEDITION_STAGE_DEFINITION);
     controller.initialize(world, random);
     const spawnEvents: GameEvent[] = [];
-    const enemy = spawnFirstExpeditionBoss(world, spawnEvents)!;
+    const enemy = spawnFinalExpeditionBoss(world, spawnEvents)!;
     world.state.elapsed = 482;
     const killed: Extract<GameEvent, { type: "enemy.killed" }> = {
       type: "enemy.killed",
@@ -259,11 +332,11 @@ function createBossFixture(
   const world = createWorld(SIMULATION_CONFIG);
   const random = createRandomStreams(seed);
   world.state.weaponType = weaponType;
-  new ExpeditionController(FIRST_EXPEDITION_STAGE_DEFINITION).initialize(world, random);
+  new ExpeditionController(FINAL_EXPEDITION_STAGE_DEFINITION).initialize(world, random);
   const events: GameEvent[] = [];
-  spawnFirstExpeditionBoss(world, events);
+  spawnFinalExpeditionBoss(world, events);
   expect(events).toContainEqual(
-    expect.objectContaining({ type: "boss.spawned", maximumHp: 3_600 }),
+    expect.objectContaining({ type: "boss.spawned", maximumHp: 3_400 }),
   );
   return { world, random };
 }

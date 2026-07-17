@@ -1,7 +1,7 @@
 import type { GameContentDefinitions } from "../domain/gameContent";
-import { FIRST_COMMAND_SHIP_BOSS_ID } from "./bossCatalog";
+import { FINAL_COMMAND_SHIP_BOSS_ID } from "./bossCatalog";
 import { ENDLESS_ENCOUNTER_DECK_ID } from "./endlessEncounterCards";
-import { FIRST_EXPEDITION_ENCOUNTER_DECK_ID } from "./expeditionEncounterCards";
+import { FINAL_EXPEDITION_ENCOUNTER_DECK_ID } from "./expeditionEncounterCards";
 
 export const ARENA_DEFAULT_STAGE_DEFINITION = {
   id: "arena-default",
@@ -22,58 +22,73 @@ export const ARENA_DEFAULT_STAGE_DEFINITION = {
   clearCondition: { type: "endless" },
 } satisfies GameContentDefinitions["stages"][number];
 
-export const FIRST_EXPEDITION_STAGE_DEFINITION = {
-  id: "first-expedition",
-  titleKey: "stage.first-expedition.title",
+export const FINAL_EXPEDITION_STAGE_DEFINITION = {
+  id: "final-expedition",
+  titleKey: "stage.final-expedition.title",
+  campaign: { order: 10, role: "final" },
   arena: { ...ARENA_DEFAULT_STAGE_DEFINITION.arena },
   obstacles: ARENA_DEFAULT_STAGE_DEFINITION.obstacles.map((obstacle) => ({
     ...obstacle,
   })),
-  encounterDeckId: FIRST_EXPEDITION_ENCOUNTER_DECK_ID,
+  encounterDeckId: FINAL_EXPEDITION_ENCOUNTER_DECK_ID,
   enemyPoolId: "expedition-core",
   difficulty: {
     waves: [
       {
         start: 0,
-        spawnInterval: 1.05,
+        spawnInterval: 0.9,
         speedMultiplier: 1,
-        maxEnemies: 18,
-        spawnBudget: 1,
+        maxEnemies: 24,
+        spawnBudget: 2,
         enemyWeights: { chaser: 1 },
       },
       {
         start: 75,
-        spawnInterval: 0.86,
-        speedMultiplier: 1.04,
-        maxEnemies: 24,
-        spawnBudget: 2,
-        enemyWeights: { chaser: 1, fast: 0.55 },
+        spawnInterval: 0.72,
+        speedMultiplier: 1.05,
+        maxEnemies: 32,
+        spawnBudget: 3,
+        enemyWeights: { chaser: 1, brute: 0.55 },
       },
       {
         start: 180,
-        spawnInterval: 0.72,
-        speedMultiplier: 1.08,
-        maxEnemies: 30,
-        spawnBudget: 3,
-        enemyWeights: { chaser: 1, brute: 0.42, fast: 0.65 },
+        spawnInterval: 0.58,
+        speedMultiplier: 1.12,
+        maxEnemies: 40,
+        spawnBudget: 4,
+        enemyWeights: { chaser: 0.9, brute: 0.6, fast: 0.75 },
       },
       {
         start: 300,
-        spawnInterval: 0.62,
-        speedMultiplier: 1.14,
-        maxEnemies: 36,
-        spawnBudget: 3,
+        spawnInterval: 0.46,
+        speedMultiplier: 1.2,
+        maxEnemies: 50,
+        spawnBudget: 4,
         enemyWeights: {
-          chaser: 0.9,
-          brute: 0.42,
-          fast: 0.8,
-          ranged: 0.38,
+          chaser: 0.85,
+          brute: 0.65,
+          fast: 0.95,
+          ranged: 0.55,
+        },
+      },
+      {
+        start: 390,
+        spawnInterval: 0.32,
+        speedMultiplier: 1.3,
+        maxEnemies: 64,
+        spawnBudget: 6,
+        enemyWeights: {
+          chaser: 0.75,
+          brute: 0.8,
+          fast: 1.15,
+          ranged: 0.9,
         },
       },
     ],
+    enemyHpMultipliers: { brute: 2.5 },
     threat: {
-      pressureStartAt: 540,
-      statStartAt: 540,
+      pressureStartAt: 390,
+      statStartAt: 450,
     },
     rewardScaling: {
       enemyXpMultiplier: 1.75,
@@ -81,8 +96,8 @@ export const FIRST_EXPEDITION_STAGE_DEFINITION = {
       healDropChanceMultiplier: 1.35,
     },
   },
-  clearCondition: { type: "bossDefeat", bossId: FIRST_COMMAND_SHIP_BOSS_ID },
-  bossId: FIRST_COMMAND_SHIP_BOSS_ID,
+  clearCondition: { type: "bossDefeat", bossId: FINAL_COMMAND_SHIP_BOSS_ID },
+  bossId: FINAL_COMMAND_SHIP_BOSS_ID,
 } satisfies GameContentDefinitions["stages"][number];
 
 export const GAME_CONTENT_DEFINITIONS = {
@@ -98,11 +113,11 @@ export const GAME_CONTENT_DEFINITIONS = {
       id: "expedition",
       titleKey: "mode.expedition.title",
       runtimeKind: "expedition",
-      stageIds: ["first-expedition"],
-      defaultStageId: "first-expedition",
+      stageIds: ["final-expedition"],
+      defaultStageId: "final-expedition",
     },
   ],
-  stages: [ARENA_DEFAULT_STAGE_DEFINITION, FIRST_EXPEDITION_STAGE_DEFINITION],
+  stages: [ARENA_DEFAULT_STAGE_DEFINITION, FINAL_EXPEDITION_STAGE_DEFINITION],
   enemyPools: [
     {
       id: "endless-core",
@@ -115,7 +130,7 @@ export const GAME_CONTENT_DEFINITIONS = {
   ],
   encounterDeckIds: [
     ENDLESS_ENCOUNTER_DECK_ID,
-    FIRST_EXPEDITION_ENCOUNTER_DECK_ID,
+    FINAL_EXPEDITION_ENCOUNTER_DECK_ID,
   ],
-  bossIds: [FIRST_COMMAND_SHIP_BOSS_ID],
+  bossIds: [FINAL_COMMAND_SHIP_BOSS_ID],
 } satisfies GameContentDefinitions;

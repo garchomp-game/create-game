@@ -169,11 +169,14 @@ export class PhaserHud {
       const encounterLabel = this.getEncounterLabel(world);
       this.encounterText.setText(encounterLabel).setVisible(Boolean(encounterLabel));
       if (encounterLabel) {
+        const commanderActive = world.enemies.some(
+          (enemy) => enemy.elite?.kind === "commander",
+        );
         const banner = {
           x: this.simulationConfig.arena.width / 2 - 350,
           y: 104,
           width: 700,
-          height: world.expedition ? 44 : 34,
+          height: world.expedition ? (commanderActive ? 62 : 44) : 34,
         };
         this.graphics.fillStyle(0x020617, 0.88);
         this.graphics.fillRoundedRect(banner.x, banner.y, banner.width, banner.height, 6);
@@ -247,8 +250,14 @@ export class PhaserHud {
             : phase === "recovery"
               ? `制圧確認 ${card}`
               : null;
+      const commander = world.enemies.find(
+        (enemy) => enemy.elite?.kind === "commander",
+      );
+      const commanderLabel = commander?.elite
+        ? `\n指揮個体 HP ${Math.ceil(commander.hp)} / ${commander.elite.maximumHp}`
+        : "";
       labels.push(
-        `${formatExpeditionAct(expedition.actId)}: ${expedition.objective}${phaseLabel ? `\n${phaseLabel}` : ""}`,
+        `${formatExpeditionAct(expedition.actId)}: ${expedition.objective}${phaseLabel ? `\n${phaseLabel}` : ""}${commanderLabel}`,
       );
       return labels.join(" / ");
     }
@@ -309,11 +318,11 @@ export class PhaserHud {
 
 function formatExpeditionAct(actId: string): string {
   const labels: Record<string, string> = {
-    deployment: "ACT 1 展開",
-    "first-assault": "ACT 2 第一波",
+    "perimeter-watch": "ACT 1 四方警戒",
+    "first-assault": "ACT 2 重装襲来",
     counterattack: "ACT 3 反撃",
-    breakthrough: "ACT 4 突破",
-    "command-ship": "ACT 5 決戦",
+    breakthrough: "ACT 4 包囲突破",
+    "command-ship": "ACT 5 最終決戦",
   };
   return labels[actId] ?? actId;
 }

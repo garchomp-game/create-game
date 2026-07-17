@@ -13,7 +13,7 @@ import {
   DEFAULT_MODE_ID,
   DEFAULT_STAGE_ID,
   EXPEDITION_MODE_ID,
-  FIRST_EXPEDITION_STAGE_ID,
+  FINAL_EXPEDITION_STAGE_ID,
 } from "../config/version";
 
 export type ArenaMenuState = {
@@ -101,7 +101,7 @@ export class ArenaMenuController {
       return handled({
         type: "showWeaponSelect",
         modeId: EXPEDITION_MODE_ID,
-        stageId: FIRST_EXPEDITION_STAGE_ID,
+        stageId: FINAL_EXPEDITION_STAGE_ID,
       });
     }
 

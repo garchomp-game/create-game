@@ -17,6 +17,10 @@ describe("commanderEliteSystem", () => {
 
     expect(second.events).toEqual(first.events);
     expect(second.world.enemies).toEqual(first.world.enemies);
+    expect(first.commander).toMatchObject({
+      hp: 500,
+      elite: { maximumHp: 500 },
+    });
     expect(first.commander.elite?.activations).toBe(1);
     const reinforcements = first.world.enemies.filter(
       (enemy) => enemy.support?.sourceEnemyId === first.commander.id,

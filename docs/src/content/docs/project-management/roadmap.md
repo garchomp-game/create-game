@@ -114,14 +114,15 @@ description: v0.4からv1.0までの目的と主要チケット。
 - データ損失、通常操作での進行不能、再現性のある重大なフレーム劣化、公開物のライセンス不備がある。
 - 武器間の小さな勝率差や600秒以降の追加所感だけでは、公開準備とv0.7設計を停止しない。
 
-## v0.7 最初のエクスペディション
+## v0.7 最終遠征プロトタイプ
 
-状態: 2026-07-17にWave 0から5とRC1技術QAを完了。Pulse手動2ランを反映したRC2の全回帰とVersion Preview更新を進め、production昇格とv0.8着手はRC2のPulse / Spread各3本の手動採否待ち。
+状態: Wave 0から5とRC2技術QAを完了。手動所感を受け、現行縦切りを第10ステージへ再分類したRC3を実装し、全回帰とVersion Preview更新を進めています。
 
 目的:
 
-- 8分から10分の勝利型ランへ、配備、第一襲来、反撃準備、突破、指揮艦決戦の起伏を作る。
-- 構造化した出現、優先標的、予兆付き敵、最初のボスを1本のエクスペディションへ接続する。
+- 高難度の勝利型ランへ、四方警戒、重装襲来、反撃、包囲突破、最終決戦の起伏を作る。
+- 構造化した出現、HP 500の優先標的、予兆付き敵、追跡する最終ボスを1本のエクスペディションへ接続する。
+- 敵を`赤 -> 大型黄 -> 小型黄緑 -> 紫`の順で導入し、後続の学習ステージ設計へ基準を残す。
 - 既存EndlessとPulse / Spreadの役割を回帰させず、失敗理由を記録から説明できる状態にする。
 
 主要チケット:
@@ -134,9 +135,10 @@ description: v0.4からv1.0までの目的と主要チケット。
 - [`PH-V07-003` #57](https://github.com/garchomp-game/create-game/issues/57) 構造化出現と安全規則。
 - [`PH-V07-004` #53](https://github.com/garchomp-game/create-game/issues/53) 指揮艦エリートと特性1件。
 - [`PH-V07-005` #50](https://github.com/garchomp-game/create-game/issues/50) 予兆付き突進敵。
-- [`PH-V07-006` #48](https://github.com/garchomp-game/create-game/issues/48) 最初のエクスペディション。
-- [`PH-V07-007` #58](https://github.com/garchomp-game/create-game/issues/58) 最初のボス戦。
+- [`PH-V07-006` #48](https://github.com/garchomp-game/create-game/issues/48) エクスペディション縦切り。
+- [`PH-V07-007` #58](https://github.com/garchomp-game/create-game/issues/58) 指揮艦ボス戦。
 - [`PH-V07-008` #59](https://github.com/garchomp-game/create-game/issues/59) 統合QAと採否判定。
+- [`PH-V07-009` #63](https://github.com/garchomp-game/create-game/issues/63) 最終遠征RC3高難度化。
 
 ## v0.8 チャレンジ、熟練度、遠征進行
 
@@ -153,6 +155,10 @@ description: v0.4からv1.0までの目的と主要チケット。
 - `PH-V08-004` 武器熟練度と評価。
 - `PH-V08-005` プロフィール統計と収集画面。
 - `PH-V08-006` アカウント同期の要件判断。
+- [`PH-V08-007` #62](https://github.com/garchomp-game/create-game/issues/62) 10ステージ進行とステージ選択基盤。
+- [`PH-V08-008` #64](https://github.com/garchomp-game/create-game/issues/64) 第1から第4の敵学習系列。
+- [`PH-V08-009` #65](https://github.com/garchomp-game/create-game/issues/65) 第5から第9の複合技能系列。
+- [`PH-V08-010` #66](https://github.com/garchomp-game/create-game/issues/66) 世界観と視覚テーマの決定。
 - [`PH-V08-007` #62](https://github.com/garchomp-game/create-game/issues/62) エクスペディション進行とステージ選択基盤。
 
 ## v0.9 コンテンツ完成とリリース準備
@@ -175,7 +181,7 @@ description: v0.4からv1.0までの目的と主要チケット。
 - [v0.5作業計画](../endless-polish-plan/)
 - [v0.5チケット詳細](../v05-tickets/)
 - [v0.6チケット詳細](../v06-tickets/)
-- [v0.7 最初のエクスペディション](../../design/v07-first-expedition/)
+- [v0.7 最終遠征プロトタイプ](../../design/v07-first-expedition/)
 - [v0.7 実行計画](../v07-execution-plan/)
 - [中長期作業計画](../gameplay-expansion-plan/)
 - [ゲームプレイ拡張設計](../../design/gameplay-expansion-blueprint/)

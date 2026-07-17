@@ -32,7 +32,6 @@ export function updateEnemies(
 ): void {
   const hasChargers = (world.enemyActionState?.chargerIds.length ?? 0) > 0;
   for (const enemy of world.enemies) {
-    if (enemy.boss) continue;
     const chargerNavigation =
       hasChargers && enemy.action?.kind === "charger"
         ? updateChargerEnemy(world, enemy, dt, config, events)

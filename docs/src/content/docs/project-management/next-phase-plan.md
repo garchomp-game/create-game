@@ -1,6 +1,6 @@
 ---
 title: 直近フェーズ
-description: v0.7技術previewを手動採否し、production昇格とv0.8着手を判断する現在の計画。
+description: v0.7最終遠征RC3を検証し、10ステージ展開へ進む条件を判断する現在の計画。
 ---
 
 最終整理日: 2026-07-17
@@ -9,14 +9,16 @@ description: v0.7技術previewを手動採否し、production昇格とv0.8着手
 
 v0.6.8公開ベータはcommit `ff686f992a65`、Cloudflare Version ID `e86f90b8-ea15-4d1d-b01b-59e4f9fea78e`としてproductionへ固定しています。v0.7では責務分離、Stage / Encounter基盤、構造化出現、Commander、Charger、5 ActのExpedition、2攻撃・2段階の指揮艦ボスまで実装しました。
 
-RC1のPulse 2ランから、道中の物量に対してボスが易しい難度逆転が見つかりました。候補版を`0.7.0` / `phaser-v0.7.0-first-expedition-rc2`へ分け、段階ウェーブ、報酬補正、継続ボス射撃、勝利BGMを反映しました。次の作業はRC2のVersion PreviewでPulse / Spread各3本を人間がプレイし、production昇格とv0.8着手を判断することです。
+RC1とRC2の手動所感から、道中に対してボスが易しい難度逆転と、初心者向け学習ステージとしては道中が難しすぎることが分かりました。現行縦切りを第10ステージへ再分類し、候補版を`0.7.0` / `phaser-v0.7.0-final-expedition-rc3`へ更新しています。
 
-- 体験要件: [v0.7 最初のエクスペディション](../../design/v07-first-expedition/)
+RC3は敵を`赤 -> 大型黄 -> 小型黄緑 -> 紫`の順で解禁し、大型黄をHP 8、CommanderをHP 500にします。最終ボスはプレイヤーを追跡し、通常ウェーブを止めず、広域射撃と挟撃増援を続けます。次の作業は全回帰とVersion Preview更新、その後のPulse / Spread各3本の手動採否です。
+
+- 体験要件: [v0.7 最終遠征プロトタイプ](../../design/v07-first-expedition/)
 - 実装順と受け入れ条件: [v0.7 実行計画](../v07-execution-plan/)
 - 中長期の範囲: [中長期作業計画](../gameplay-expansion-plan/)
 - 現在の実装: [現在地](../../game/current-state/)
 - QA結果と手動項目: [v0.7 統合QAレポート](../../playtest/v07-qa-report/)
-- 複数ステージへの展開: [エクスペディション展開設計](../../design/expedition-campaign/)
+- 複数ステージへの展開: [エクスペディション10ステージ設計](../../design/expedition-campaign/)
 
 ## 現在の移行点
 
@@ -46,7 +48,7 @@ Session、Run Lifecycle、Debug、AI、Performanceを単一所有者へ分け、
 
 ## v0.7の最小成果
 
-- 8分から10分のExpedition 1本。
+- 第10ステージ相当の高難度Expedition 1本。
 - 既存アリーナをデータ化したStage 1件。
 - Encounter Card 3枚以上と構造化出現3形状。
 - 指揮艦エリート1種、予兆付き突進敵1種。
@@ -55,7 +57,7 @@ Session、Run Lifecycle、Debug、AI、Performanceを単一所有者へ分け、
 - 背景1、敵またはボス1、危険イベント1の視覚縦切り。
 - mode / stage / encounter / boss / 勝敗を追えるラン記録。
 
-第2ステージ、アカウント、オンラインランキング、恒久強化、3つ目の武器、長編ストーリーは対象外です。
+第1から第9ステージ、ステージ選択、アカウント、オンラインランキング、恒久強化、3つ目の武器、長編ストーリーはRC3対象外です。
 
 ## 実行順
 
@@ -64,8 +66,10 @@ Session、Run Lifecycle、Debug、AI、Performanceを単一所有者へ分け、
 3. 完了: `PH-V07-004`、`005`で優先標的と予兆回避を実装。
 4. 完了: `PH-V07-006`、`PH-ARCH-007`でExpeditionと視覚縦切りを統合。
 5. 完了: `PH-V07-007`でボスと勝利条件を接続。
-6. 完了: `PH-V07-008`の自動回帰、到達性、性能、preview準備。
-7. 残り: Pulse / Spread各3本の手動採否とproduction昇格判断。
+6. 完了: RC2までの`PH-V07-008`自動回帰、到達性、性能、preview準備。
+7. 進行中: 最終遠征RC3の敵順、Commander、ボス追跡、増援継続、広域射撃を再検証。
+8. 残り: RC3 Version PreviewでPulse / Spread各3本の手動採否。
+9. 次段: 端末内進行、ステージ選択、第1から第4の学習ステージを依存順に実装。
 
 ## production昇格判定
 

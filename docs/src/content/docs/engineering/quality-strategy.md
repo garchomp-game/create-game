@@ -179,6 +179,6 @@ cd phaser
 npm run probe:v07
 ```
 
-このprobeはPulse / Spreadへ同じ3 seedを与え、10分30秒以内の勝利、5 Act、ボス第2段階、2攻撃、最長展開空白、敵・弾・Pickup上限を検査します。同一seedを再実行し、イベント列と終了worldのhashも比較します。通常の`npm test`へ含めず、統合QAとルール変更時に明示実行します。
+このprobeはPulse / Spreadへ同じ3 seedを与え、15分以内の終了、5 Act、Commander出現と撃破、ボス第2段階、2攻撃、最長展開空白、敵・弾・Pickup上限を検査します。両武器の全勝は要求せず、各武器に少なくとも1勝があることを確認します。同一seedを再実行し、イベント列と終了worldのhashも比較します。通常の`npm test`へ含めず、統合QAとルール変更時に明示実行します。
 
-2026-07-17のRC2候補版は、単体353件、Playwright 70件、画像31件に成功しました。Commander、Chargerの予告、構造化侵入、Boss 2攻撃を専用ブラウザfixtureで固定しています。6ランは8分53秒から10分01秒で勝利し、最大敵18、総弾37、Pickup 67でした。自動入力は人間採否を代替しないため、production昇格には別途Pulse / Spread各3本の通常UIプレイを必要とします。詳細は[v0.7 統合QAレポート](../../playtest/v07-qa-report/)を参照してください。
+RC3候補版は大型黄HP 8、Commander HP 500、追跡ボス、通常ウェーブ継続によってRC2より高密度です。Commander、Chargerの予告、構造化侵入、ボス2攻撃を専用ブラウザfixtureで固定します。自動入力は人間採否を代替しないため、production昇格には別途Pulse / Spread各3本の通常UIプレイを必要とします。詳細は[v0.7 統合QAレポート](../../playtest/v07-qa-report/)を参照してください。

@@ -5,22 +5,22 @@ import type {
 } from "../domain/encounterDirector";
 import { ENCOUNTER_DIRECTIONS } from "../domain/encounterDirector";
 
-export const FIRST_EXPEDITION_ENCOUNTER_DECK_ID = "first-expedition-v1";
+export const FINAL_EXPEDITION_ENCOUNTER_DECK_ID = "final-expedition-v1";
 
-export const FIRST_EXPEDITION_ACTS: EncounterActDefinition[] = [
-  { id: "deployment", titleKey: "act.deployment.title", startsAt: 0 },
+export const FINAL_EXPEDITION_ACTS: EncounterActDefinition[] = [
+  { id: "perimeter-watch", titleKey: "act.perimeter-watch.title", startsAt: 0 },
   { id: "first-assault", titleKey: "act.first-assault.title", startsAt: 75 },
   { id: "counterattack", titleKey: "act.counterattack.title", startsAt: 180 },
   { id: "breakthrough", titleKey: "act.breakthrough.title", startsAt: 300 },
   { id: "command-ship", titleKey: "act.command-ship.title", startsAt: 390 },
 ];
 
-export const FIRST_EXPEDITION_ENCOUNTER_CARDS: EncounterCardDefinition[] = [
+export const FINAL_EXPEDITION_ENCOUNTER_CARDS: EncounterCardDefinition[] = [
   {
     id: "vanguard-arc",
     titleKey: "encounter.vanguard-arc.title",
     tags: ["vanguard"],
-    actIds: ["deployment"],
+    actIds: ["perimeter-watch"],
     timing: { telegraphSeconds: 1.4, activeSeconds: 14, recoverySeconds: 4 },
     spawn: {
       intervalMultiplier: 0.92,
@@ -44,7 +44,7 @@ export const FIRST_EXPEDITION_ENCOUNTER_CARDS: EncounterCardDefinition[] = [
     spawn: {
       intervalMultiplier: 0.88,
       budget: 3,
-      enemyWeights: { chaser: 1, fast: 0.8 },
+      enemyWeights: { chaser: 1, brute: 0.7 },
       geometryId: "pincer",
     },
     minimumThreatTier: 0,
@@ -58,12 +58,12 @@ export const FIRST_EXPEDITION_ENCOUNTER_CARDS: EncounterCardDefinition[] = [
     id: "heavy-escort",
     titleKey: "encounter.heavy-escort.title",
     tags: ["heavy"],
-    actIds: ["counterattack"],
+    actIds: ["first-assault"],
     timing: { telegraphSeconds: 1.8, activeSeconds: 18, recoverySeconds: 4.5 },
     spawn: {
       intervalMultiplier: 0.9,
       budget: 4,
-      enemyWeights: { chaser: 0.8, brute: 1.5, fast: 0.3 },
+      enemyWeights: { chaser: 0.6, brute: 1.5 },
       geometryId: "escort",
     },
     minimumThreatTier: 0,
@@ -78,7 +78,7 @@ export const FIRST_EXPEDITION_ENCOUNTER_CARDS: EncounterCardDefinition[] = [
     titleKey: "encounter.commander-counterattack.title",
     tags: ["commander"],
     actIds: ["counterattack"],
-    timing: { telegraphSeconds: 2.2, activeSeconds: 20, recoverySeconds: 4.5 },
+    timing: { telegraphSeconds: 2.2, activeSeconds: 120, recoverySeconds: 4.5 },
     spawn: {
       intervalMultiplier: 0.92,
       budget: 4,
@@ -88,7 +88,7 @@ export const FIRST_EXPEDITION_ENCOUNTER_CARDS: EncounterCardDefinition[] = [
     minimumThreatTier: 0,
     cooldownSeconds: 150,
     weight: 1,
-    completionCondition: { type: "duration" },
+    completionCondition: { type: "signal", signalId: "commander-defeated" },
     failureSignalIds: [],
     interruptSignalIds: [],
   },
@@ -132,9 +132,9 @@ export const FIRST_EXPEDITION_ENCOUNTER_CARDS: EncounterCardDefinition[] = [
   },
 ];
 
-export const FIRST_EXPEDITION_ENCOUNTER_DECK: EncounterDeckDefinition = {
-  id: FIRST_EXPEDITION_ENCOUNTER_DECK_ID,
-  cardIds: FIRST_EXPEDITION_ENCOUNTER_CARDS.map((card) => card.id),
+export const FINAL_EXPEDITION_ENCOUNTER_DECK: EncounterDeckDefinition = {
+  id: FINAL_EXPEDITION_ENCOUNTER_DECK_ID,
+  cardIds: FINAL_EXPEDITION_ENCOUNTER_CARDS.map((card) => card.id),
   directionIds: [...ENCOUNTER_DIRECTIONS],
   initialDelay: { minSeconds: 16, maxSeconds: 22 },
   interval: { minSeconds: 24, maxSeconds: 32 },

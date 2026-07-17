@@ -5,7 +5,7 @@ export type CommanderEliteDefinition = {
   baseEnemyTypeId: EnemyTypeId;
   trait: "reinforcement";
   radiusMultiplier: number;
-  hpMultiplier: number;
+  maximumHp: number;
   damageMultiplier: number;
   speedMultiplier: number;
   scoreMultiplier: number;
@@ -26,11 +26,11 @@ export const COMMANDER_ELITE_DEFINITION: CommanderEliteDefinition = {
   baseEnemyTypeId: "ranged",
   trait: "reinforcement",
   radiusMultiplier: 1.42,
-  hpMultiplier: 7,
+  maximumHp: 500,
   damageMultiplier: 1.15,
   speedMultiplier: 0.78,
-  scoreMultiplier: 5,
-  xpMultiplier: 4,
+  scoreMultiplier: 26,
+  xpMultiplier: 25,
   initialTraitDelaySeconds: 3.5,
   traitIntervalSeconds: 7,
   telegraphSeconds: 1.2,

@@ -1,4 +1,5 @@
 import * as Phaser from "phaser";
+import { FINAL_COMMAND_SHIP_DEFINITION } from "../../content/bossCatalog";
 import type { EncounterDirection } from "../../domain/encounterDirector";
 import type {
   EnemyViewConfig,
@@ -210,7 +211,11 @@ export class PhaserArenaWorldView {
 
     const color = action.phase === "telegraph" ? 0xfacc15 : 0xf97316;
     const alpha = action.phase === "telegraph" ? 0.68 : 0.42;
-    const spread = boss.phase === 2 ? 0.36 : 0.28;
+    const spread =
+      (action.attackId === "targeted-salvo"
+        ? FINAL_COMMAND_SHIP_DEFINITION.targetedSalvo.spreadRadians[boss.phase - 1]
+        : FINAL_COMMAND_SHIP_DEFINITION.escortPincer.suppressiveSalvo
+            .spreadRadians[boss.phase - 1]) / 2;
     const directions = [
       rotateDirection(action.aimDirection, -spread),
       action.aimDirection,

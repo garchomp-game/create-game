@@ -81,9 +81,9 @@ export class ArenaChoiceOverlay {
     this.visibleChoiceCount = 2;
     const expedition = Boolean(world.expedition);
     const shell = this.createShell(
-      expedition ? `初回遠征 / ${TEXT.ui.weaponSelectTitle}` : TEXT.ui.weaponSelectTitle,
+      expedition ? `最終遠征 / ${TEXT.ui.weaponSelectTitle}` : TEXT.ui.weaponSelectTitle,
       expedition
-        ? "4つのActを突破する開始ビルドを選択"
+        ? "5つのActを突破する開始ビルドを選択"
         : "開始ビルドの戦い方を決めます",
     );
     const choices = element("div", "arena-choice-grid arena-choice-grid--two");

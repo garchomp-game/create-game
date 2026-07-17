@@ -15,7 +15,7 @@ description: バージョン別のチケット番号、表示名、状態。
 - 観戦AI実験の進捗: [GitHubマイルストーン](https://github.com/garchomp-game/create-game/milestone/4)
 - Phaser 4の計画: [Phaser 4移行計画](../phaser4-migration-plan/)
 - 公開ベータ候補: [GitHubマイルストーン](https://github.com/garchomp-game/create-game/milestone/3)
-- v0.7の体験要件: [v0.7 最初のエクスペディション](../../design/v07-first-expedition/)
+- v0.7の体験要件: [v0.7 最終遠征プロトタイプ](../../design/v07-first-expedition/)
 - v0.7の実装計画: [v0.7 実行計画](../v07-execution-plan/)
 - v0.7の進捗: [GitHubマイルストーン](https://github.com/garchomp-game/create-game/milestone/5)
 - 横断管理: [Arena Core Roadmap](https://github.com/users/garchomp-game/projects/1)
@@ -145,9 +145,10 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-V07-003` | [#57](https://github.com/garchomp-game/create-game/issues/57) | 構造化出現と安全規則 | P0 | 完了 |
 | `PH-V07-004` | [#53](https://github.com/garchomp-game/create-game/issues/53) | 指揮艦エリートと特性1件 | P1 | 完了 |
 | `PH-V07-005` | [#50](https://github.com/garchomp-game/create-game/issues/50) | 予兆付き突進敵 | P1 | 完了 |
-| `PH-V07-006` | [#48](https://github.com/garchomp-game/create-game/issues/48) | 最初のエクスペディション | P0 | 完了。5 Actとボス撃破勝利を接続 |
-| `PH-V07-007` | [#58](https://github.com/garchomp-game/create-game/issues/58) | 最初のボス戦 | P0 | 完了 |
-| `PH-V07-008` | [#59](https://github.com/garchomp-game/create-game/issues/59) | 統合QAと採否判定 | P0 | RC2全回帰と手動再評価待ち |
+| `PH-V07-006` | [#48](https://github.com/garchomp-game/create-game/issues/48) | エクスペディション縦切り | P0 | 完了。5 Actとボス撃破勝利を接続 |
+| `PH-V07-007` | [#58](https://github.com/garchomp-game/create-game/issues/58) | 指揮艦ボス戦 | P0 | 完了後、RC3で最終ボスへ拡張 |
+| `PH-V07-008` | [#59](https://github.com/garchomp-game/create-game/issues/59) | 統合QAと採否判定 | P0 | RC3全回帰と手動再評価待ち |
+| `PH-V07-009` | [#63](https://github.com/garchomp-game/create-game/issues/63) | 最終遠征RC3高難度化 | P0 | 実装済み。QAとpreview更新中 |
 
 ## v0.8 チャレンジ、熟練度、遠征進行
 
@@ -159,7 +160,10 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-V08-004` | 未作成 | 武器熟練度と評価 |
 | `PH-V08-005` | 未作成 | プロフィール統計と収集画面 |
 | `PH-V08-006` | 未作成 | アカウント同期の要件判断 |
-| `PH-V08-007` | [#62](https://github.com/garchomp-game/create-game/issues/62) | エクスペディション進行とステージ選択基盤 |
+| `PH-V08-007` | [#62](https://github.com/garchomp-game/create-game/issues/62) | 10ステージ進行とステージ選択基盤 |
+| `PH-V08-008` | [#64](https://github.com/garchomp-game/create-game/issues/64) | 第1から第4の敵学習ステージ |
+| `PH-V08-009` | [#65](https://github.com/garchomp-game/create-game/issues/65) | 第5から第9の複合技能ステージ |
+| `PH-V08-010` | [#66](https://github.com/garchomp-game/create-game/issues/66) | 世界観と視覚テーマの決定 |
 
 ## v0.9 コンテンツ完成とリリース準備
 

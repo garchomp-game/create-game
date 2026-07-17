@@ -1,9 +1,9 @@
 import type { BossAttackId, EnemyTypeId } from "../domain/types";
 
-export const FIRST_COMMAND_SHIP_BOSS_ID = "first-command-ship";
+export const FINAL_COMMAND_SHIP_BOSS_ID = "final-command-ship";
 
-export type FirstCommandShipDefinition = {
-  id: typeof FIRST_COMMAND_SHIP_BOSS_ID;
+export type FinalCommandShipDefinition = {
+  id: typeof FINAL_COMMAND_SHIP_BOSS_ID;
   baseEnemyTypeId: EnemyTypeId;
   radius: number;
   maximumHp: number;
@@ -11,6 +11,7 @@ export type FirstCommandShipDefinition = {
   score: number;
   xpValue: number;
   spawnPosition: { x: number; y: number };
+  movementSpeed: [number, number];
   phaseTwoHpRatio: number;
   phaseTransitionRecoverySeconds: number;
   attackOrder: BossAttackId[];
@@ -43,41 +44,42 @@ export type FirstCommandShipDefinition = {
   };
 };
 
-export const FIRST_COMMAND_SHIP_DEFINITION: FirstCommandShipDefinition = {
-  id: FIRST_COMMAND_SHIP_BOSS_ID,
+export const FINAL_COMMAND_SHIP_DEFINITION: FinalCommandShipDefinition = {
+  id: FINAL_COMMAND_SHIP_BOSS_ID,
   baseEnemyTypeId: "brute",
   radius: 44,
-  maximumHp: 3_600,
+  maximumHp: 3_400,
   contactDamage: 28,
   score: 2_500,
   xpValue: 160,
   spawnPosition: { x: 480, y: 92 },
+  movementSpeed: [72, 96],
   phaseTwoHpRatio: 0.5,
   phaseTransitionRecoverySeconds: 1.1,
   attackOrder: ["targeted-salvo", "escort-pincer"],
   targetedSalvo: {
-    telegraphSeconds: [1.35, 1],
+    telegraphSeconds: [1.2, 0.85],
     executeSeconds: [0.25, 0.2],
-    recoverySeconds: [1.2, 0.85],
-    projectileCount: [5, 9],
-    spreadRadians: [0.56, 0.88],
+    recoverySeconds: [0.8, 0.55],
+    projectileCount: [13, 21],
+    spreadRadians: [1.28, 1.72],
     projectileRadius: 6,
-    projectileSpeed: [300, 350],
-    projectileLifetime: 3.6,
-    projectileDamage: [9, 11],
+    projectileSpeed: [320, 390],
+    projectileLifetime: 3.8,
+    projectileDamage: [8, 10],
   },
   escortPincer: {
-    telegraphSeconds: [1.55, 1.15],
+    telegraphSeconds: [1.35, 1],
     executeSeconds: [0.25, 0.2],
-    recoverySeconds: [1.35, 1],
-    escortCount: [3, 5],
+    recoverySeconds: [0.95, 0.65],
+    escortCount: [5, 7],
     escortTypeIds: ["chaser", "fast"],
     minimumPlayerDistance: 180,
     suppressiveSalvo: {
-      projectileCount: [3, 6],
-      spreadRadians: [0.34, 0.7],
+      projectileCount: [9, 15],
+      spreadRadians: [0.9, 1.4],
       projectileRadius: 5,
-      projectileSpeed: [250, 305],
+      projectileSpeed: [285, 340],
       projectileLifetime: 3.6,
       projectileDamage: [7, 9],
     },

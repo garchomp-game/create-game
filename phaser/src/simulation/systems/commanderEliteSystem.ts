@@ -33,7 +33,7 @@ export function spawnCommanderElite(
     config,
   );
   commander.radius *= definition.radiusMultiplier;
-  commander.hp = Math.ceil(commander.hp * definition.hpMultiplier);
+  commander.hp = definition.maximumHp;
   commander.damage = Math.ceil(commander.damage * definition.damageMultiplier);
   commander.speed *= definition.speedMultiplier;
   commander.score = Math.round(commander.score * definition.scoreMultiplier);
@@ -41,6 +41,7 @@ export function spawnCommanderElite(
   commander.elite = {
     kind: "commander",
     trait: definition.trait,
+    maximumHp: definition.maximumHp,
     phase: "cooldown",
     spawnedAt: world.state.elapsed,
     nextTraitAt: world.state.elapsed + definition.initialTraitDelaySeconds,

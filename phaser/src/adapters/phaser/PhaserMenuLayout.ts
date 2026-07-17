@@ -22,7 +22,7 @@ export type UpgradeChoiceButton = {
 
 const DEFAULT_MENU_LABELS: Record<MenuAction, string> = {
   start: "エンドレス開始",
-  startExpedition: "初回遠征を開始",
+  startExpedition: "最終遠征に挑む",
   selectPulse: "パルスを選ぶ",
   selectSpread: "拡散を選ぶ",
   contractStandard: "標準を維持",

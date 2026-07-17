@@ -1,6 +1,6 @@
 import {
-  FIRST_COMMAND_SHIP_DEFINITION,
-  type FirstCommandShipDefinition,
+  FINAL_COMMAND_SHIP_DEFINITION,
+  type FinalCommandShipDefinition,
 } from "../../content/bossCatalog";
 import type { EncounterDirection } from "../../domain/encounterDirector";
 import type {
@@ -20,15 +20,15 @@ import { getSpawnWave, spawnEnemyAtPosition } from "./spawnSystem";
 
 const INGRESS_DIRECTIONS: EncounterDirection[] = ["north", "east", "south", "west"];
 
-export function spawnFirstExpeditionBoss(
+export function spawnFinalExpeditionBoss(
   world: WorldState,
   events: GameEvent[],
-  definition: FirstCommandShipDefinition = FIRST_COMMAND_SHIP_DEFINITION,
+  definition: FinalCommandShipDefinition = FINAL_COMMAND_SHIP_DEFINITION,
 ): Enemy | null {
   const expedition = world.expedition;
   if (!expedition || expedition.boss?.status === "active") return null;
 
-  // The command ship starts a separate duel instead of inheriting road pressure.
+  // Clear the transition frame, then let the final wave repopulate around the boss.
   world.enemies.length = 0;
   world.enemyProjectiles.length = 0;
 
@@ -39,7 +39,7 @@ export function spawnFirstExpeditionBoss(
     radius: definition.radius,
     hp: definition.maximumHp,
     damage: definition.contactDamage,
-    speed: 0,
+    speed: definition.movementSpeed[0],
     score: definition.score,
     xpValue: definition.xpValue,
     behavior: "chase",
@@ -62,7 +62,7 @@ export function spawnFirstExpeditionBoss(
     nextAttackIndex: 1,
     action,
   };
-  expedition.objective = "指揮艦を撃破する";
+  expedition.objective = "指揮艦と増援を同時に撃破する";
   expedition.spawnOverride = null;
   events.push({
     type: "boss.spawned",
@@ -76,12 +76,12 @@ export function spawnFirstExpeditionBoss(
   return enemy;
 }
 
-export function updateFirstExpeditionBoss(
+export function updateFinalExpeditionBoss(
   world: WorldState,
   random: RandomStreams,
   config: SimulationConfig,
   baseEvents: readonly GameEvent[],
-  definition: FirstCommandShipDefinition = FIRST_COMMAND_SHIP_DEFINITION,
+  definition: FinalCommandShipDefinition = FINAL_COMMAND_SHIP_DEFINITION,
 ): GameEvent[] {
   const boss = world.expedition?.boss;
   if (!boss || boss.status !== "active") return [];
@@ -111,6 +111,7 @@ export function updateFirstExpeditionBoss(
     enemy.hp <= boss.maxHp * definition.phaseTwoHpRatio
   ) {
     boss.phase = 2;
+    enemy.speed = definition.movementSpeed[1];
     boss.phaseChangedAt = world.state.elapsed;
     boss.action = {
       ...boss.action,
@@ -233,7 +234,7 @@ function createAttackState(
   phase: 1 | 2,
   attackIndex: number,
   startedAt: number,
-  definition: FirstCommandShipDefinition,
+  definition: FinalCommandShipDefinition,
 ) {
   const attackId = definition.attackOrder[attackIndex % definition.attackOrder.length]!;
   const telegraphSeconds = phaseValue(
@@ -281,7 +282,7 @@ function executeTargetedSalvo(
   enemy: Enemy,
   phase: 1 | 2,
   config: SimulationConfig,
-  definition: FirstCommandShipDefinition,
+  definition: FinalCommandShipDefinition,
 ): string[] {
   const action = world.expedition!.boss!.action;
   const aim =
@@ -307,7 +308,7 @@ function executeEscortSuppressiveSalvo(
   enemy: Enemy,
   phase: 1 | 2,
   config: SimulationConfig,
-  definition: FirstCommandShipDefinition,
+  definition: FinalCommandShipDefinition,
 ): string[] {
   const salvo = definition.escortPincer.suppressiveSalvo;
   const aim =
@@ -378,7 +379,7 @@ function executeEscortPincer(
   world: WorldState,
   random: RandomStreams,
   config: SimulationConfig,
-  definition: FirstCommandShipDefinition,
+  definition: FinalCommandShipDefinition,
 ): GameEvent[] {
   const boss = world.expedition!.boss!;
   const direction = boss.action.ingressDirection ?? "north";

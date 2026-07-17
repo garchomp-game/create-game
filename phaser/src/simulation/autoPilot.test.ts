@@ -80,6 +80,31 @@ describe("createAutoPilotInput", () => {
     expect(decision.aimTargetId).toBe(ranged.id);
   });
 
+  it("returns fire to a visible commander instead of farming nearby fodder", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    const fodder = createEnemy("fodder", { x: 640, y: 270 }, "ranged");
+    const commander = createEnemy("commander", { x: 760, y: 270 }, "ranged", {
+      hp: 500,
+      elite: {
+        kind: "commander",
+        trait: "reinforcement",
+        maximumHp: 500,
+        phase: "cooldown",
+        spawnedAt: 0,
+        nextTraitAt: 10,
+        telegraphStartedAt: null,
+        reinforcementSpawnAt: null,
+        reinforcementDirection: null,
+        activations: 0,
+      },
+    });
+    world.enemies.push(fodder, commander);
+
+    const decision = createAutoPilotDecision(world, SIMULATION_CONFIG);
+
+    expect(decision.aimTargetId).toBe(commander.id);
+  });
+
   it("keeps Pulse focus on a stacked target when it remains hittable", () => {
     const world = createWorld(SIMULATION_CONFIG);
     const closer = createEnemy("closer", { x: 300, y: 270 });

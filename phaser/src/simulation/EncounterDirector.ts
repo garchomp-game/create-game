@@ -317,6 +317,7 @@ export class EncounterDirector {
     state.history.push(historyEntry);
     state.history = state.history.slice(-64);
     state.metrics[outcome] += 1;
+    state.metrics.lastMeaningfulAt = finishedAt;
     state.nextSelectionAt = roundToMillis(
       finishedAt + drawRange(random, this.deck.interval),
     );

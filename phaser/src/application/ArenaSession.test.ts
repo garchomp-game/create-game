@@ -54,65 +54,86 @@ describe("ArenaSession", () => {
     });
   });
 
-  it("starts the first expedition with isolated runtime features and progress state", () => {
+  it("starts the final expedition with isolated runtime features and progress state", () => {
     const session = new ArenaSession(SIMULATION_CONFIG);
     session.start({
       seed: 20260717,
       weaponType: "pulse",
       modeId: "expedition",
-      stageId: "first-expedition",
+      stageId: "final-expedition",
     });
 
     expect(session.modeId).toBe("expedition");
     expect(session.stage).toMatchObject({
-      id: "first-expedition",
-      bossId: "first-command-ship",
-      clearCondition: { type: "bossDefeat", bossId: "first-command-ship" },
+      id: "final-expedition",
+      campaign: { order: 10, role: "final" },
+      bossId: "final-command-ship",
+      clearCondition: { type: "bossDefeat", bossId: "final-command-ship" },
     });
     expect(session.config.features).toMatchObject({
       encounterDeck: false,
       endlessContract: false,
       arenaCollapse: false,
     });
-    expect(session.config.waves).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          start: 0,
-          maxEnemies: 18,
-          enemyWeights: { chaser: 1 },
-        }),
-        expect.objectContaining({
-          start: 300,
-          maxEnemies: 36,
-          enemyWeights: expect.objectContaining({ ranged: 0.38 }),
-        }),
-      ]),
-    );
+    expect(session.config.waves).toMatchObject([
+      {
+        start: 0,
+        maxEnemies: 24,
+        enemyWeights: { chaser: 1 },
+      },
+      {
+        start: 75,
+        enemyWeights: { chaser: 1, brute: 0.55 },
+      },
+      {
+        start: 180,
+        enemyWeights: { chaser: 0.9, brute: 0.6, fast: 0.75 },
+      },
+      {
+        start: 300,
+        enemyWeights: {
+          chaser: 0.85,
+          brute: 0.65,
+          fast: 0.95,
+          ranged: 0.55,
+        },
+      },
+      {
+        start: 390,
+        maxEnemies: 64,
+        enemyWeights: {
+          chaser: 0.75,
+          brute: 0.8,
+          fast: 1.15,
+          ranged: 0.9,
+        },
+      },
+    ]);
     expect(session.config.threat).toMatchObject({
-      pressureStartAt: 540,
-      statStartAt: 540,
+      pressureStartAt: 390,
+      statStartAt: 450,
     });
     expect(session.config.enemies).toMatchObject({
       chaser: { xpValue: 2, score: 15 },
-      brute: { xpValue: 6, score: 45 },
+      brute: { hp: 8, xpValue: 6, score: 45 },
     });
     expect(session.config.pickup.healDropChance).toBeCloseTo(0.108);
     expect(session.world.expedition).toMatchObject({
       status: "active",
-      actId: "deployment",
-      objective: "展開地点を確保する",
+      actId: "perimeter-watch",
+      objective: "四方から侵入する先遣隊を迎撃する",
       boss: null,
     });
 
     const result = session.step({ ...input, shootHeld: false }, 0);
     expect(result.events).toContainEqual({
       type: "expedition.act.changed",
-      actId: "deployment",
-      titleKey: "act.deployment.title",
+      actId: "perimeter-watch",
+      titleKey: "act.perimeter-watch.title",
       elapsed: 0,
     });
     expect(session.world.stats.encounterMetrics.expedition).toMatchObject({
-      reachedActId: "deployment",
+      reachedActId: "perimeter-watch",
       actChanges: 1,
     });
   });

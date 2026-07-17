@@ -116,17 +116,17 @@ test("renders canvas and accepts movement and shooting input", async ({ page }) 
   expect(consoleErrors).toEqual([]);
 });
 
-test("runs the first expedition from mode selection through result and retry", async ({ page }) => {
+test("runs the final expedition from mode selection through result and retry", async ({ page }) => {
   await gotoArena(page, "/?seed=20260717");
 
   await clickCanvasAt(page, 480, 339);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "weaponSelect",
   );
-  await expect(page.locator(".arena-choice-title")).toContainText("初回遠征");
+  await expect(page.locator(".arena-choice-title")).toContainText("最終遠征");
   expect(
     await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().runContext),
-  ).toMatchObject({ modeId: "expedition", stageId: "first-expedition" });
+  ).toMatchObject({ modeId: "expedition", stageId: "final-expedition" });
 
   await page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']").click();
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
@@ -134,7 +134,7 @@ test("runs the first expedition from mode selection through result and retry", a
   );
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().expedition?.actId))
-    .toBe("deployment");
+    .toBe("perimeter-watch");
 
   await page.evaluate(() => {
     const debug = window.__ARENA_DEBUG__;
@@ -150,11 +150,11 @@ test("runs the first expedition from mode selection through result and retry", a
   const completed = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
   expect(completed?.latestRunRecord).toMatchObject({
     modeId: "expedition",
-    stageId: "first-expedition",
+    stageId: "final-expedition",
     encounterMetrics: {
       expedition: { outcome: "victory", reachedActId: "command-ship" },
       boss: {
-        bossId: "first-command-ship",
+        bossId: "final-command-ship",
         phaseReached: 2,
         remainingHp: 0,
         defeatedByWeapon: "pulse",
@@ -183,7 +183,7 @@ test("runs the first expedition from mode selection through result and retry", a
   );
   expect(
     await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().runContext),
-  ).toMatchObject({ modeId: "expedition", stageId: "first-expedition" });
+  ).toMatchObject({ modeId: "expedition", stageId: "final-expedition" });
   expect(
     await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().music.track),
   ).toBe("arena");
@@ -506,8 +506,8 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   expect(runExport).toBeTruthy();
   expect(runExport?.game).toBe("arena-core-phaser");
   expect(runExport?.appVersion).toBe("0.7.0");
-  expect(runExport?.rulesetVersion).toBe("phaser-v0.7.0-first-expedition-rc2");
-  expect(runExport?.configVersion).toBe("phaser-v0.7.0-first-expedition-rc2");
+  expect(runExport?.rulesetVersion).toBe("phaser-v0.7.0-final-expedition-rc3");
+  expect(runExport?.configVersion).toBe("phaser-v0.7.0-final-expedition-rc3");
   expect(runExport?.buildCommit).toMatch(/^[0-9a-f]{12}$/);
   expect(runExport?.runOrigin).toBe("test");
   expect(runExport?.rankEligibility).toEqual({

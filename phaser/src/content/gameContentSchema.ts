@@ -78,6 +78,9 @@ const stageWaveSchema = z
 const stageDifficultySchema = z
   .object({
     waves: z.array(stageWaveSchema).min(1),
+    enemyHpMultipliers: z
+      .partialRecord(z.enum(ENEMY_TYPE_IDS), positiveNumber)
+      .optional(),
     threat: z
       .object({
         pressureStartAt: coordinate,
@@ -116,6 +119,13 @@ const stageDefinitionSchema = z
   .object({
     id: contentId,
     titleKey: z.string().min(1),
+    campaign: z
+      .object({
+        order: z.number().int().positive(),
+        role: z.enum(["standard", "final"]),
+      })
+      .strict()
+      .optional(),
     arena: arenaDefinitionSchema,
     obstacles: z.array(obstacleDefinitionSchema),
     encounterDeckId: contentId,
