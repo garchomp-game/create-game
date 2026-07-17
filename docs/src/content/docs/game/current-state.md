@@ -211,7 +211,7 @@ v0.6の手動採否、外周反射の公開固定、長時間HUD、Phaser 4.2.1 
 
 ## v0.7 preview候補
 
-最初のエクスペディションは5 Act、6カード、構造化出現、Commander、Charger、2攻撃・2段階の指揮艦ボス、勝敗と攻撃源記録まで統合しました。候補版は`0.7.0` / `phaser-v0.7.0-first-expedition`です。自動QAは単体348件、Playwright 69件、3 seed x 2武器の全勝利、同一hash、最大敵35・総弾38・Pickup 124を確認しました。
+最初のエクスペディションは5 Act、6カード、構造化出現、Commander、Charger、2攻撃・2段階の指揮艦ボス、勝敗と攻撃源記録まで統合しました。候補版は`0.7.0` / `phaser-v0.7.0-first-expedition`です。自動QAは単体348件、Playwright 70件、3 seed x 2武器の全勝利、同一hash、最大敵35・総弾38・Pickup 124を確認しました。
 
 判定は技術preview採用です。v0.6.8 productionを維持したままVersion Previewで手動採否し、詳細は[v0.7 統合QAレポート](../../playtest/v07-qa-report/)へ集約します。
 

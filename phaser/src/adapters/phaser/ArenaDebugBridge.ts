@@ -188,6 +188,7 @@ export type ArenaDebugApi = {
   setHealPickupFixture(mode?: "damaged" | "full" | "fatal" | "visual"): void;
   setOffscreenEnemyIndicatorFixture(): void;
   setExpeditionCommanderFixture(): void;
+  setExpeditionChargerFixture(): void;
   setExpeditionBossFixture(attackId?: BossAttackId, phase?: 1 | 2): void;
   armExpeditionBossDefeat(): void;
   step(input?: Partial<InputSnapshot>, deltaSeconds?: number): void;

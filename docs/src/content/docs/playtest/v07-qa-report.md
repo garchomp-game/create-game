@@ -27,8 +27,8 @@ production昇格とv0.8着手は、Pulse / Spread各3本の手動ランと所感
 | --- | --- |
 | TypeScript | 成功。`src`とv0.7専用probeを検査 |
 | 単体・simulation | 348 passed / 2 skipped |
-| Playwright | 69 passed / 1 skipped。Chrome、Firefox、390 x 844を含む |
-| 画像比較 | 30 passed。ボスdesktop / portraitを含む |
+| Playwright | 70 passed / 1 skipped。Chrome、Firefox、390 x 844を含む |
+| 画像比較 | 31 passed。Commander / Chargerとボスdesktop / portraitを含む |
 | WebGL | context生成、非背景pixel、主要入力経路を確認 |
 | 保存 | 旧記録移行、破損復旧、容量超過、再読込、一回保存、個別削除を確認 |
 | Endless | 開始、入力、EX、契約、崩壊、履歴、ランキングの既存回帰が成功 |

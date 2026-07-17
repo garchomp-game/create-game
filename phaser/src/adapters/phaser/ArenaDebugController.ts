@@ -46,6 +46,7 @@ import {
   armExpeditionBossDefeatFixture,
   applyEnemyVisualFixture,
   applyExpeditionBossFixture,
+  applyExpeditionChargerFixture,
   applyExpeditionCommanderFixture,
   applyHealPickupFixture,
   applyHudStressFixture,
@@ -195,6 +196,8 @@ export class ArenaDebugController {
         this.setOffscreenEnemyIndicatorFixture(),
       setExpeditionCommanderFixture: () =>
         this.setExpeditionCommanderFixture(),
+      setExpeditionChargerFixture: () =>
+        this.setExpeditionChargerFixture(),
       setExpeditionBossFixture: (attackId = "targeted-salvo", phase = 1) =>
         this.setExpeditionBossFixture(attackId, phase),
       armExpeditionBossDefeat: () => this.armExpeditionBossDefeat(),
@@ -509,6 +512,13 @@ export class ArenaDebugController {
   private setExpeditionCommanderFixture(): void {
     this.markMutation();
     if (applyExpeditionCommanderFixture(this.world, this.config)) {
+      this.dependencies.render();
+    }
+  }
+
+  private setExpeditionChargerFixture(): void {
+    this.markMutation();
+    if (applyExpeditionChargerFixture(this.world, this.config)) {
       this.dependencies.render();
     }
   }

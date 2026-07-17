@@ -10,6 +10,7 @@ import type {
 } from "../../domain/types";
 import { COMMANDER_ELITE_DEFINITION } from "../../content/eliteCatalog";
 import { FIRST_COMMAND_SHIP_DEFINITION } from "../../content/bossCatalog";
+import { TELEGRAPH_CHARGER_DEFINITION } from "../../content/chargerCatalog";
 import { spawnFirstExpeditionBoss } from "../../simulation/systems/bossSystem";
 
 export type EnemyVisualFixtureBand = "wave2" | "wave3";
@@ -292,6 +293,92 @@ export function applyExpeditionCommanderFixture(
   ];
   world.nextEnemyId = 5;
   world.stats.encounterMetrics.commander!.spawned = 1;
+  return true;
+}
+
+export function applyExpeditionChargerFixture(
+  world: WorldState,
+  config: SimulationConfig,
+): boolean {
+  const expedition = world.expedition;
+  if (!expedition) return false;
+
+  world.state.status = "playing";
+  world.state.elapsed = 302.2;
+  world.state.score = 12_640;
+  world.player.position = { x: 330, y: 270 };
+  world.state.lastAim = { x: 1, y: 0 };
+  expedition.status = "active";
+  expedition.actId = "breakthrough";
+  expedition.actTitleKey = "act.breakthrough.title";
+  expedition.actStartedAt = 300;
+  expedition.objective = "包囲を突破し決戦へ進む";
+  expedition.reachedActIds = [
+    "deployment",
+    "first-assault",
+    "counterattack",
+    "breakthrough",
+  ];
+  expedition.currentCardTitleKey = "encounter.charger-breakthrough.title";
+  expedition.currentDirection = "east";
+  expedition.currentGeometryId = "arc";
+  expedition.deployedCardKey = "charger-breakthrough:300";
+  expedition.spawnOverride = {
+    intervalMultiplier: 0.72,
+    budget: 6,
+    enemyWeights: { chaser: 0.7, fast: 1.6, ranged: 0.6 },
+  };
+  expedition.director = {
+    ...expedition.director,
+    phase: "active",
+    actId: "breakthrough",
+    selectedActId: "breakthrough",
+    cardId: "charger-breakthrough",
+    direction: "east",
+    selectedAt: 300,
+    activeStartedAt: 302,
+    recoveryStartedAt: null,
+    finishedAt: null,
+    completionReason: null,
+  };
+
+  const charger = createDebugEnemy(config, "fast", { x: 720, y: 270 }, 1);
+  charger.radius *= TELEGRAPH_CHARGER_DEFINITION.radiusMultiplier;
+  charger.hp = Math.ceil(charger.hp * TELEGRAPH_CHARGER_DEFINITION.hpMultiplier);
+  charger.damage = Math.ceil(
+    charger.damage * TELEGRAPH_CHARGER_DEFINITION.damageMultiplier,
+  );
+  charger.speed *= TELEGRAPH_CHARGER_DEFINITION.approachSpeedMultiplier;
+  charger.score = Math.round(
+    charger.score * TELEGRAPH_CHARGER_DEFINITION.scoreMultiplier,
+  );
+  charger.xpValue = Math.round(
+    charger.xpValue * TELEGRAPH_CHARGER_DEFINITION.xpMultiplier,
+  );
+  charger.action = {
+    kind: "charger",
+    phase: "telegraph",
+    spawnedAt: 300,
+    phaseStartedAt: 302,
+    phaseEndsAt: 302 + TELEGRAPH_CHARGER_DEFINITION.telegraphSeconds,
+    chargeDirection: { x: -1, y: 0 },
+    chargeStartPosition: { ...charger.position },
+    charges: 0,
+    hitPlayerDuringCharge: false,
+  };
+  world.enemies = [
+    charger,
+    createDebugEnemy(config, "fast", { x: 760, y: 205 }, 2),
+    createDebugEnemy(config, "chaser", { x: 760, y: 335 }, 3),
+  ];
+  world.eliteState = { commanderIds: [] };
+  world.enemyActionState = { chargerIds: [charger.id] };
+  world.bullets = [];
+  world.enemyProjectiles = [];
+  world.pickups = [];
+  world.nextEnemyId = 4;
+  world.stats.encounterMetrics.charger!.spawned = 1;
+  world.stats.encounterMetrics.charger!.telegraphs = 1;
   return true;
 }
 
