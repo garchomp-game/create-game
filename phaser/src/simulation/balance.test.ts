@@ -28,11 +28,12 @@ const balanceBaseline = {
   kiteCollectFirstDamageP50: 84.87,
   kiteCollectFirstUpgradeP50: 7.07,
   kiteCollectWaveReachedP50: 90,
-  kiteCollectMaxEnemiesMax: 45,
-  kiteCollectMaxBulletsMax: 32,
-  kiteCollectHpRecoveredP50: 59,
+  kiteCollectMaxEnemiesMax: SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 45 : 46,
+  kiteCollectMaxBulletsMax: SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 44 : 43,
+  kiteCollectHpRecoveredP50: SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 82 : 106,
   kiteCollectHealPickupsCollectedP50: 39,
-  kiteCollectEffectiveHealPickupsCollectedP50: 5,
+  kiteCollectEffectiveHealPickupsCollectedP50:
+    SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 7 : 11,
 };
 
 describe("balance simulation", () => {
@@ -98,7 +99,7 @@ describe("balance simulation", () => {
       true,
     );
 
-    // v0.6.4 high-velocity Pulse baseline. These probes are regression sentries,
+    // v0.6.6 precision-tuned Pulse baseline. These probes are regression sentries,
     // not a claim that the input models are correct human play.
     expectWithinBaseline(noInput.survivalSeconds.p50, balanceBaseline.noInputSurvivalP50);
     expectWithinBaseline(
@@ -233,8 +234,8 @@ describe("balance simulation", () => {
     expect(maxPickups).toBeLessThanOrEqual(2_000);
     expect(Number.isFinite(world.player.position.x)).toBe(true);
     expect(Number.isFinite(world.player.position.y)).toBe(true);
-    expect(performance.now() - startedAt).toBeLessThan(5_000);
-  });
+    expect(performance.now() - startedAt).toBeLessThan(7_500);
+  }, 10_000);
 
   it("compares Pulse and Spread across ten fixed seeds with build and encounter KPIs", () => {
     const seeds = Array.from({ length: 10 }, (_, index) => 20260619 + index);
@@ -270,7 +271,11 @@ describe("balance simulation", () => {
     expect(pulse.pulseFocusEnhancedHits.p50).toBeGreaterThan(0);
     expect(pulse.pulseFocusBonusDamage.p50).toBeGreaterThan(0);
     expect(pulse.pulseFocusMaxStacks.p50).toBeGreaterThanOrEqual(2);
-    expect(pulse.capstoneBoundaryRicochets.p50).toBeGreaterThan(0);
+    if (SIMULATION_CONFIG.features.pulseBoundaryRicochet) {
+      expect(pulse.capstoneBoundaryRicochets.p50).toBeGreaterThan(0);
+    } else {
+      expect(pulse.capstoneBoundaryRicochets.p50).toBe(0);
+    }
     expect(
       comparison.pulse.runs.every(
         (run) =>

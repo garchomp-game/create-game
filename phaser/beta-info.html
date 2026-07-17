@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#081117" />
+    <meta
+      name="description"
+      content="Arena Core公開ベータの版情報、保存データ、既知制約、フィードバック方法。"
+    />
+    <link rel="icon" href="data:," />
+    <title>ベータ情報 | Arena Core</title>
+  </head>
+  <body>
+    <header class="beta-header">
+      <div class="beta-header__inner">
+        <p class="beta-kicker">PUBLIC BETA</p>
+        <h1>ARENA CORE</h1>
+        <p class="beta-summary">公開版の識別情報と、端末内データの扱い</p>
+        <a class="beta-return" href="/">ゲームに戻る</a>
+      </div>
+    </header>
+
+    <main>
+      <section aria-labelledby="release-heading">
+        <h2 id="release-heading">公開版</h2>
+        <dl class="release-grid">
+          <div><dt>アプリ</dt><dd id="app-version">確認中</dd></div>
+          <div><dt>ルール</dt><dd id="ruleset-version">確認中</dd></div>
+          <div><dt>ビルド</dt><dd id="build-commit">確認中</dd></div>
+        </dl>
+        <p>
+          ローカルランキングは、モード、ステージ、難易度、ルール版がすべて同じランだけを比較します。
+          旧ルールの記録は履歴へ残りますが、新しいランキングには混ざりません。
+        </p>
+      </section>
+
+      <section aria-labelledby="privacy-heading">
+        <h2 id="privacy-heading">保存とプライバシー</h2>
+        <p>
+          ゲストID、設定、ラン履歴、ローカルランキングは、このブラウザの
+          <code>localStorage</code>だけへ保存します。公開版は解析サービス、広告、アカウント、
+          クラウド同期を使わず、ランJSONや操作情報を外部へ自動送信しません。
+        </p>
+        <p>
+          開発サーバーだけが、明示的な開発操作で詳細ランJSONをリポジトリ内の
+          <code>phaser/logs</code>へ保存できます。このAPIとデバッグ操作は公開ビルドへ含めません。
+        </p>
+        <div class="data-actions">
+          <button id="clear-local-data" type="button">この端末のデータを削除</button>
+          <p id="clear-local-data-status" role="status" aria-live="polite">
+            履歴とランキングはゲーム内から個別にも消去できます。
+          </p>
+        </div>
+      </section>
+
+      <section aria-labelledby="limits-heading">
+        <h2 id="limits-heading">既知の制約</h2>
+        <ul>
+          <li>公開ベータはデスクトップのキーボードとマウス操作を主対象とします。</li>
+          <li>縦長画面でも表示は確認しますが、タッチ専用操作はまだありません。</li>
+          <li>ランキングと履歴は端末内だけです。ブラウザや端末をまたいで同期しません。</li>
+          <li>途中保存はありません。ページ再読み込みやタブ終了で進行中のランは終了します。</li>
+          <li>FirefoxとChromium系を確認対象とし、その他のブラウザは参考対応です。</li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="feedback-heading">
+        <h2 id="feedback-heading">フィードバック</h2>
+        <p>
+          不具合報告には、上のアプリ版、ルール版、ビルド、ランのシード、再現手順を添えてください。
+          リザルトまたは開発用ランJSONがある場合は、その内容も添えると調査しやすくなります。
+        </p>
+        <a id="feedback-link" class="feedback-link" href="https://github.com/garchomp-game/create-game/issues/new">
+          GitHubで報告する
+        </a>
+      </section>
+
+      <section aria-labelledby="license-heading">
+        <h2 id="license-heading">素材とライセンス</h2>
+        <p>
+          BGMと効果音は本リポジトリで波形合成した独自素材で、第三者の楽曲、録音、
+          サンプルは含みません。表示フォントは端末のシステムフォントを使います。
+        </p>
+        <p>
+          Phaser、rot.js、Zodなどの配布条件と著作権表示は
+          <a href="/third-party-notices.txt">第三者ライセンス表記</a>を参照してください。
+        </p>
+      </section>
+    </main>
+
+    <footer>
+      <a href="https://github.com/garchomp-game/create-game">ソースリポジトリ</a>
+      <span>公開ベータ</span>
+    </footer>
+    <script type="module" src="/src/betaInfo.ts"></script>
+  </body>
+</html>

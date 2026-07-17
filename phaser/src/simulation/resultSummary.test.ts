@@ -73,6 +73,10 @@ describe("createRunResultSummary", () => {
         pulseFocus: {
           enhancedHits: 0,
           bonusDamage: 0,
+          targetEnhancedHits: 0,
+          lineEnhancedHits: 0,
+          targetBonusDamage: 0,
+          lineBonusDamage: 0,
           maxStacks: 0,
           killsByEnemyType: { chaser: 0, brute: 0, fast: 0, ranged: 0 },
         },

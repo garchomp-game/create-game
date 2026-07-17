@@ -82,6 +82,10 @@ export const RUN_SUMMARY_COLUMNS = [
   "capstone_boundary_follow_up_bottom",
   "pulse_focus_enhanced_hits",
   "pulse_focus_bonus_damage",
+  "pulse_focus_target_enhanced_hits",
+  "pulse_focus_line_enhanced_hits",
+  "pulse_focus_target_bonus_damage",
+  "pulse_focus_line_bonus_damage",
   "pulse_focus_max_stacks",
   "spread_sweep_triggers",
   "spread_sweep_consumes",
@@ -231,6 +235,18 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
     capstone_boundary_follow_up_bottom: numberAt(boundaryFollowUpHitsBySide, "bottom") ?? 0,
     pulse_focus_enhanced_hits: numberAt(pulseFocusMetrics, "enhancedHits") ?? 0,
     pulse_focus_bonus_damage: round(numberAt(pulseFocusMetrics, "bonusDamage") ?? 0, 3),
+    pulse_focus_target_enhanced_hits:
+      numberAt(pulseFocusMetrics, "targetEnhancedHits") ?? 0,
+    pulse_focus_line_enhanced_hits:
+      numberAt(pulseFocusMetrics, "lineEnhancedHits") ?? 0,
+    pulse_focus_target_bonus_damage: round(
+      numberAt(pulseFocusMetrics, "targetBonusDamage") ?? 0,
+      3,
+    ),
+    pulse_focus_line_bonus_damage: round(
+      numberAt(pulseFocusMetrics, "lineBonusDamage") ?? 0,
+      3,
+    ),
     pulse_focus_max_stacks: numberAt(pulseFocusMetrics, "maxStacks") ?? 0,
     spread_sweep_triggers: numberAt(spreadSweepMetrics, "triggers") ?? 0,
     spread_sweep_consumes: numberAt(spreadSweepMetrics, "consumes") ?? 0,

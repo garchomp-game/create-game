@@ -99,7 +99,15 @@ describe("run summary", () => {
           boundaryFollowUpHitsBySide: { left: 1, right: 3, top: 2, bottom: 2 },
         },
         weaponIdentityMetrics: {
-          pulseFocus: { enhancedHits: 80, bonusDamage: 34.5678, maxStacks: 4 },
+          pulseFocus: {
+            enhancedHits: 80,
+            bonusDamage: 34.5678,
+            targetEnhancedHits: 72,
+            lineEnhancedHits: 18,
+            targetBonusDamage: 28.1234,
+            lineBonusDamage: 6.4444,
+            maxStacks: 4,
+          },
           spreadSweep: { triggers: 0, consumes: 0, maxDistinctTargets: 0 },
         },
         weaponMetrics: {
@@ -162,6 +170,10 @@ describe("run summary", () => {
       pulse_focus_rank: 2,
       pulse_focus_enhanced_hits: 80,
       pulse_focus_bonus_damage: 34.568,
+      pulse_focus_target_enhanced_hits: 72,
+      pulse_focus_line_enhanced_hits: 18,
+      pulse_focus_target_bonus_damage: 28.123,
+      pulse_focus_line_bonus_damage: 6.444,
       pulse_focus_max_stacks: 4,
       last_damage_enemy_type: "brute",
     });

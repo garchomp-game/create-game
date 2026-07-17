@@ -92,7 +92,7 @@ description: v0.4からv1.0までの目的と主要チケット。
 
 ## 公開ベータ候補 エンドレス
 
-状態: v0.6.5を基準候補として準備中。
+状態: v0.6.8をCloudflareへ公開済み。外周反射、ルール版、公開情報、ブラウザ互換、production smokeを基準commit `ff686f992a65`で固定。
 
 目的:
 
@@ -103,29 +103,40 @@ description: v0.4からv1.0までの目的と主要チケット。
 主要チケット:
 
 - [`PH-BETA-001` #32](https://github.com/garchomp-game/create-game/issues/32) エンドレス公開ベータ準備。
+- [`PH-BETA-002` #37](https://github.com/garchomp-game/create-game/issues/37) 長時間HUDの可変桁・重なり改善。
+- [`PH-BETA-003` #52](https://github.com/garchomp-game/create-game/issues/52) 公開ルールと外周反射の採否固定。
+- [`PH-P4-001` #38](https://github.com/garchomp-game/create-game/issues/38) Phaser 4互換監査と移行設計。
+- [`PH-P4-002` #39](https://github.com/garchomp-game/create-game/issues/39) Phaser 4.2.1依存置換とWebGL移行。
+- [`PH-P4-003` #40](https://github.com/garchomp-game/create-game/issues/40) Phaser 4 WebGL長時間耐久と公開ベータ再認証。
 
 停止条件:
 
 - データ損失、通常操作での進行不能、再現性のある重大なフレーム劣化、公開物のライセンス不備がある。
 - 武器間の小さな勝率差や600秒以降の追加所感だけでは、公開準備とv0.7設計を停止しない。
 
-## v0.7 戦闘展開とステージ試作
+## v0.7 最初のエクスペディション
+
+状態: 2026-07-17に体験要件、対象外、実行Wave、受け入れ条件を固定。実装未着手。
 
 目的:
 
-- 構造化した敵出現で展開差を作る。
-- ステージ、エリート、最初のボスを含む縦切り試作を完成させる。
+- 8分から10分の勝利型ランへ、配備、第一襲来、反撃準備、突破、指揮艦決戦の起伏を作る。
+- 構造化した出現、優先標的、予兆付き敵、最初のボスを1本のエクスペディションへ接続する。
+- 既存EndlessとPulse / Spreadの役割を回帰させず、失敗理由を記録から説明できる状態にする。
 
 主要チケット:
 
-- `PH-V07-001` ステージ定義とコンテンツ登録。
-- `PH-V07-002` 戦闘展開カードと制御基盤。
-- `PH-V07-003` 構造化出現と安全規則。
-- `PH-V07-004` エリート特性試作。
-- `PH-V07-005` 予兆付き突進敵試作。
-- `PH-V07-006` 最初のエクスペディション。
-- `PH-V07-007` 最初のボス戦試作。
-- `PH-V07-008` 戦闘展開とステージの品質確認。
+- [`PH-ARCH-005` #54](https://github.com/garchomp-game/create-game/issues/54) SessionとRun Lifecycleの抽出。
+- [`PH-ARCH-006` #55](https://github.com/garchomp-game/create-game/issues/55) Debug / AI / Performanceの分離。
+- [`PH-ARCH-007` #42](https://github.com/garchomp-game/create-game/issues/42) グラフィック拡張の縦切り。
+- [`PH-V07-001` #43](https://github.com/garchomp-game/create-game/issues/43) ステージ定義とコンテンツ登録。
+- [`PH-V07-002` #56](https://github.com/garchomp-game/create-game/issues/56) 戦闘展開カードと制御基盤。
+- [`PH-V07-003` #57](https://github.com/garchomp-game/create-game/issues/57) 構造化出現と安全規則。
+- [`PH-V07-004` #53](https://github.com/garchomp-game/create-game/issues/53) 指揮艦エリートと特性1件。
+- [`PH-V07-005` #50](https://github.com/garchomp-game/create-game/issues/50) 予兆付き突進敵。
+- [`PH-V07-006` #48](https://github.com/garchomp-game/create-game/issues/48) 最初のエクスペディション。
+- [`PH-V07-007` #58](https://github.com/garchomp-game/create-game/issues/58) 最初のボス戦。
+- [`PH-V07-008` #59](https://github.com/garchomp-game/create-game/issues/59) 統合QAと採否判定。
 
 ## v0.8 チャレンジと熟練度
 
@@ -163,5 +174,7 @@ description: v0.4からv1.0までの目的と主要チケット。
 - [v0.5作業計画](../endless-polish-plan/)
 - [v0.5チケット詳細](../v05-tickets/)
 - [v0.6チケット詳細](../v06-tickets/)
+- [v0.7 最初のエクスペディション](../../design/v07-first-expedition/)
+- [v0.7 実行計画](../v07-execution-plan/)
 - [中長期作業計画](../gameplay-expansion-plan/)
 - [ゲームプレイ拡張設計](../../design/gameplay-expansion-blueprint/)

@@ -24,7 +24,7 @@ export const upgradeText: UpgradeText = {
     },
     pulseFocus: {
       title: "集束共鳴",
-      description: "同じ敵への連続命中で威力が上昇",
+      description: "連続・貫通命中ごとに威力+20%",
     },
     piercingRounds: {
       title: "貫通弾",

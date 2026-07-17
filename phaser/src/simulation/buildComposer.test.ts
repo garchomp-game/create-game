@@ -36,7 +36,8 @@ describe("build composition", () => {
       projectileCountBonus: 0,
       hitCapacityBonus: 1,
       ricochetBonus: 1,
-      pulseFocusBonusPerStack: 0.15,
+      pulseFocusBonusPerStack: 0.2,
+      pulseLineBonusPerStack: 0.2,
       pulseFocusMaxStacks: 2,
       pulseFocusDuration: 0.9,
       spreadSweepDistinctTargets: 0,
@@ -99,6 +100,27 @@ describe("build composition", () => {
       SIMULATION_CONFIG.weapons.spread.speed *
         spread.modifiers.projectileSpeedMultiplier,
     ).toBeCloseTo(965.45, 2);
+  });
+
+  it("gives sustained Pulse aim a distinct single-target damage ceiling", () => {
+    const focus = SIMULATION_CONFIG.upgrades.pulseFocus.effect;
+    expect(focus.type).toBe("pulseFocus");
+    if (focus.type !== "pulseFocus") return;
+
+    const maximumStacks =
+      focus.stacksPerRank * SIMULATION_CONFIG.upgrades.pulseFocus.maxRank;
+    expect(SIMULATION_CONFIG.weapons.pulse.damage).toBeCloseTo(1.16);
+    expect(focus.bonusPerStack).toBeCloseTo(0.2);
+    expect(maximumStacks).toBe(4);
+    expect(1 + focus.bonusPerStack * maximumStacks).toBeCloseTo(1.8);
+    expect(
+      SIMULATION_CONFIG.weapons.pulse.damage *
+        (1 + focus.bonusPerStack * maximumStacks),
+    ).toBeCloseTo(2.088);
+
+    const thirdCycleDamage = SIMULATION_CONFIG.weapons.pulse.damage * (1 + 0.08 * 3);
+    expect(thirdCycleDamage * 2).toBeLessThan(3);
+    expect(thirdCycleDamage * (2 + focus.bonusPerStack)).toBeGreaterThanOrEqual(3);
   });
 
   it("keeps power and core scaling while capping fire-rate and movement extras", () => {

@@ -228,6 +228,7 @@ export type UpgradeEffect =
   | {
       type: "pulseFocus";
       bonusPerStack: number;
+      lineBonusPerStack: number;
       stacksPerRank: number;
       duration: number;
     }
@@ -491,6 +492,7 @@ export type RuntimeModifiers = {
   hitCapacityBonus: number;
   ricochetBonus: number;
   pulseFocusBonusPerStack: number;
+  pulseLineBonusPerStack: number;
   pulseFocusMaxStacks: number;
   pulseFocusDuration: number;
   spreadSweepDistinctTargets: number;
@@ -576,6 +578,10 @@ export type WeaponIdentityRunStats = {
   pulseFocus: {
     enhancedHits: number;
     bonusDamage: number;
+    targetEnhancedHits: number;
+    lineEnhancedHits: number;
+    targetBonusDamage: number;
+    lineBonusDamage: number;
     maxStacks: number;
     killsByEnemyType: Record<EnemyTypeId, number>;
   };
@@ -776,6 +782,9 @@ export type GameEvent =
       enemyType: EnemyTypeId;
       stackBefore: number;
       stackAfter: number;
+      lineStacks: number;
+      targetBonusDamage: number;
+      lineBonusDamage: number;
       bonusDamage: number;
       killed: boolean;
     }

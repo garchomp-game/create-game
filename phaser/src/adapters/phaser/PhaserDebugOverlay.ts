@@ -1,4 +1,4 @@
-import Phaser from "phaser";
+import * as Phaser from "phaser";
 import { TEXT } from "../../lang";
 import type { MetricsReader } from "../../ports/MetricsPort";
 

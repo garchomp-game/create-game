@@ -1,4 +1,4 @@
-import type Phaser from "phaser";
+import type * as Phaser from "phaser";
 import type { ProfileSettings } from "../../domain/profile";
 import type { GameStatus } from "../../domain/types";
 

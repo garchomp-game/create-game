@@ -56,13 +56,14 @@ export const UPGRADE_DEFINITIONS: Record<UpgradeId, UpgradeDefinition> = {
   pulseFocus: {
     id: "pulseFocus",
     title: "Pulse Focus",
-    description: "Direct hits build damage against the same target",
+    description: "Direct hits build 20% damage per stack on one target or through a line",
     category: "weapon",
     maxRank: 2,
     weight: 0.7,
     effect: {
       type: "pulseFocus",
-      bonusPerStack: 0.15,
+      bonusPerStack: 0.2,
+      lineBonusPerStack: 0.2,
       stacksPerRank: 2,
       duration: 0.9,
     },

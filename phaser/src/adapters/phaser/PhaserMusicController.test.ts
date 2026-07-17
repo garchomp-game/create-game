@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type Phaser from "phaser";
+import type * as Phaser from "phaser";
 import { PhaserMusicController } from "./PhaserMusicController";
 
 describe("PhaserMusicController", () => {

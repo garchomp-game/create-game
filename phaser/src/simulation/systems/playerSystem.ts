@@ -1,6 +1,5 @@
 import type { SimulationConfig, Vec2, WorldState } from "../../domain/types";
 import { clamp } from "../../math/geometry";
-import { normalize } from "../../math/vector";
 import { moveCircleWithObstacles } from "./movement";
 
 export function updatePlayer(
@@ -9,10 +8,15 @@ export function updatePlayer(
   dt: number,
   config: SimulationConfig,
 ): void {
-  const normalizedMove = normalize(move.x, move.y);
+  const magnitude = Math.hypot(move.x, move.y);
+  const inputScale = magnitude > 1 ? 1 / magnitude : 1;
+  const scaledMove = {
+    x: move.x * inputScale,
+    y: move.y * inputScale,
+  };
   const speed = config.player.speed * world.runtime.playerSpeedMultiplier;
-  moveCircleWithObstacles(world, world.player, normalizedMove.x * speed * dt, 0);
-  moveCircleWithObstacles(world, world.player, 0, normalizedMove.y * speed * dt);
+  moveCircleWithObstacles(world, world.player, scaledMove.x * speed * dt, 0);
+  moveCircleWithObstacles(world, world.player, 0, scaledMove.y * speed * dt);
 
   world.player.position.x = clamp(
     world.player.position.x,

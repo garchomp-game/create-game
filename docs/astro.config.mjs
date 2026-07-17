@@ -20,7 +20,8 @@ export default defineConfig({
             { label: "現在地", slug: "game/current-state" },
             { label: "ゲーム方針", slug: "product/game-direction" },
             { label: "基本ゲームループ", slug: "product/core-loop" },
-            { label: "開発環境", slug: "development/setup" }
+            { label: "開発環境", slug: "development/setup" },
+            { label: "Cloudflareデプロイ", slug: "development/cloudflare-deployment" }
           ]
         },
         {
@@ -32,6 +33,8 @@ export default defineConfig({
             { label: "武器アイデンティティ", slug: "design/weapon-identities" },
             { label: "エンドレス後半", slug: "design/endless-escalation" },
             { label: "モードと戦闘展開", slug: "design/encounters-and-modes" },
+            { label: "v0.7 最初のエクスペディション", slug: "design/v07-first-expedition" },
+            { label: "世界観と試合内ドラマ", slug: "design/narrative-and-match-drama" },
             { label: "UI/UXとフィードバック", slug: "design/ui-ux" },
             { label: "障害物・敵経路・弾", slug: "design/obstacles-and-projectiles" },
             { label: "回復ピックアップ", slug: "design/healing-pickups" },
@@ -44,6 +47,8 @@ export default defineConfig({
           label: "技術設計",
           items: [
             { label: "アーキテクチャ", slug: "engineering/architecture" },
+            { label: "Phaserプレゼンテーション再設計", slug: "engineering/phaser-presentation-architecture" },
+            { label: "観戦AIの設計判断", slug: "engineering/auto-pilot-architecture" },
             { label: "品質戦略", slug: "engineering/quality-strategy" }
           ]
         },
@@ -54,6 +59,9 @@ export default defineConfig({
             { label: "v0.5作業計画", slug: "project-management/endless-polish-plan" },
             { label: "v0.5チケット詳細", slug: "project-management/v05-tickets" },
             { label: "v0.6チケット詳細", slug: "project-management/v06-tickets" },
+            { label: "観戦AIチケット詳細", slug: "project-management/auto-pilot-tickets" },
+            { label: "Phaser 4移行計画", slug: "project-management/phaser4-migration-plan" },
+            { label: "v0.7 実行計画", slug: "project-management/v07-execution-plan" },
             { label: "中長期作業計画", slug: "project-management/gameplay-expansion-plan" },
             { label: "ロードマップ", slug: "project-management/roadmap" },
             { label: "チケット一覧", slug: "project-management/tickets" },

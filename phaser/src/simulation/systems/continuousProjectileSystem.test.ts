@@ -5,6 +5,11 @@ import { createWorld } from "../createWorld";
 import { updateBullets } from "./bulletSystem";
 import { resolveCombat } from "./combatSystem";
 
+const BOUNDARY_RICOCHET_CONFIG: SimulationConfig = {
+  ...SIMULATION_CONFIG,
+  features: { ...SIMULATION_CONFIG.features, pulseBoundaryRicochet: true },
+};
+
 describe("continuous projectile motion", () => {
   it("hits a Fast enemy crossed by a maximum-speed Pulse during a 50ms frame", () => {
     const world = createWorld(SIMULATION_CONFIG);
@@ -43,7 +48,7 @@ describe("continuous projectile motion", () => {
   });
 
   it("reflects a capstone Pulse from the arena boundary and hits on the return segment", () => {
-    const world = createWorld(SIMULATION_CONFIG);
+    const world = createWorld(BOUNDARY_RICOCHET_CONFIG);
     world.obstacles = [];
     world.enemies = [createEnemy("enemy-return", "chaser", 910, 270)];
     world.bullets = [
@@ -51,8 +56,8 @@ describe("continuous projectile motion", () => {
     ];
     const events: GameEvent[] = [];
 
-    const motions = updateBullets(world, 0.05, SIMULATION_CONFIG);
-    resolveCombat(world, SIMULATION_CONFIG, events, motions);
+    const motions = updateBullets(world, 0.05, BOUNDARY_RICOCHET_CONFIG);
+    resolveCombat(world, BOUNDARY_RICOCHET_CONFIG, events, motions);
 
     expect(world.enemies).toHaveLength(0);
     expect(events).toContainEqual(
@@ -74,7 +79,7 @@ describe("continuous projectile motion", () => {
   });
 
   it("uses piercing capacity across outgoing and reflected paths in one frame", () => {
-    const world = createWorld(SIMULATION_CONFIG);
+    const world = createWorld(BOUNDARY_RICOCHET_CONFIG);
     world.obstacles = [];
     world.enemies = [
       createEnemy("enemy-outgoing", "fast", 940, 245),
@@ -90,8 +95,8 @@ describe("continuous projectile motion", () => {
     ];
     const events: GameEvent[] = [];
 
-    const motions = updateBullets(world, 0.05, SIMULATION_CONFIG);
-    resolveCombat(world, SIMULATION_CONFIG, events, motions);
+    const motions = updateBullets(world, 0.05, BOUNDARY_RICOCHET_CONFIG);
+    resolveCombat(world, BOUNDARY_RICOCHET_CONFIG, events, motions);
 
     expect(world.enemies).toHaveLength(0);
     expect(
@@ -241,8 +246,8 @@ describe("continuous projectile motion", () => {
 
   it("keeps the boundary feature independently reversible", () => {
     const config: SimulationConfig = {
-      ...SIMULATION_CONFIG,
-      features: { ...SIMULATION_CONFIG.features, pulseBoundaryRicochet: false },
+      ...BOUNDARY_RICOCHET_CONFIG,
+      features: { ...BOUNDARY_RICOCHET_CONFIG.features, pulseBoundaryRicochet: false },
     };
     const world = createWorld(config);
     world.obstacles = [];
@@ -259,7 +264,7 @@ describe("continuous projectile motion", () => {
   });
 
   it("does not turn the Pulse boundary field into a Spread ricochet", () => {
-    const world = createWorld(SIMULATION_CONFIG);
+    const world = createWorld(BOUNDARY_RICOCHET_CONFIG);
     world.obstacles = [];
     world.bullets = [
       createBullet(
@@ -275,8 +280,8 @@ describe("continuous projectile motion", () => {
     ];
     const events: GameEvent[] = [];
 
-    const motions = updateBullets(world, 0.05, SIMULATION_CONFIG);
-    resolveCombat(world, SIMULATION_CONFIG, events, motions);
+    const motions = updateBullets(world, 0.05, BOUNDARY_RICOCHET_CONFIG);
+    resolveCombat(world, BOUNDARY_RICOCHET_CONFIG, events, motions);
 
     expect(world.bullets).toHaveLength(0);
     expect(events.some((event) => event.type === "bullet.ricocheted")).toBe(false);

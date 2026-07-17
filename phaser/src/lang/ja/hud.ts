@@ -1,6 +1,11 @@
 import type { HudText } from "../types";
 
 export const hudText: HudText = {
+  hpLabel: "HP",
+  hpValue: (current, max) => `${current} / ${max}`,
+  levelLabel: (level) => `Lv ${level}`,
+  extraLevelLabel: (extraLevel, cycle) => `EX Lv ${extraLevel} / C${cycle}`,
+  experienceValue: (xp, next) => `経験値 ${xp} / ${next}`,
   hp: (current, max) => `HP ${current}/${max}`,
   xp: (level, xp, next) => `Lv ${level}  経験値 ${xp}/${next}`,
   buildComplete: (level) => `Lv ${level}  ビルド完成`,
