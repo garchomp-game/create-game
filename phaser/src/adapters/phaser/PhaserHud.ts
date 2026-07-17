@@ -1,4 +1,4 @@
-import Phaser from "phaser";
+import * as Phaser from "phaser";
 import type { SimulationConfig, WorldState } from "../../domain/types";
 import { formatTime } from "../../format/time";
 import { TEXT } from "../../lang";
@@ -7,10 +7,19 @@ import { getThreatTier } from "../../simulation/threatDirector";
 import { getNextCollapseAt } from "../../simulation/systems/collapseSystem";
 import type { AutoPilotMode } from "../../simulation/autoPilot";
 
+export const HUD_LEFT_PANEL_BOUNDS = {
+  x: 16,
+  y: 14,
+  width: 348,
+  height: 82,
+} as const;
+
 export class PhaserHud {
   private readonly graphics: Phaser.GameObjects.Graphics;
   private readonly hpText: Phaser.GameObjects.Text;
+  private readonly hpValueText: Phaser.GameObjects.Text;
   private readonly xpText: Phaser.GameObjects.Text;
+  private readonly xpValueText: Phaser.GameObjects.Text;
   private readonly metaText: Phaser.GameObjects.Text;
   private readonly weaponText: Phaser.GameObjects.Text;
   private readonly encounterText: Phaser.GameObjects.Text;
@@ -18,11 +27,13 @@ export class PhaserHud {
 
   constructor(scene: Phaser.Scene, private readonly simulationConfig: SimulationConfig) {
     this.graphics = scene.add.graphics().setDepth(10);
-    this.hpText = this.createText(scene, 28, 24);
-    this.xpText = this.createText(scene, 28, 52);
+    this.hpText = this.createText(scene, 28, 20);
+    this.hpValueText = this.createText(scene, 352, 20).setOrigin(1, 0);
+    this.xpText = this.createText(scene, 28, 53);
+    this.xpValueText = this.createText(scene, 352, 53).setOrigin(1, 0);
     this.metaText = this.createText(scene, simulationConfig.arena.width - 28, 24).setOrigin(1, 0);
     this.weaponText = this.createText(scene, simulationConfig.arena.width - 28, 52).setOrigin(1, 0);
-    this.encounterText = this.createText(scene, simulationConfig.arena.width / 2, 102)
+    this.encounterText = this.createText(scene, simulationConfig.arena.width / 2, 112)
       .setOrigin(0.5, 0)
       .setFontSize(15);
     this.autoPilotText = this.createText(scene, simulationConfig.arena.width / 2, 29)
@@ -43,7 +54,7 @@ export class PhaserHud {
     this.graphics.clear();
     if (!visible) return;
 
-    const leftPanel = { x: 16, y: 14, width: 326, height: 72 };
+    const leftPanel = HUD_LEFT_PANEL_BOUNDS;
     const rightPanel = {
       x: this.simulationConfig.arena.width - 286,
       y: 14,
@@ -94,19 +105,21 @@ export class PhaserHud {
       .setText(formatAutoPilotMode(autoPilotMode))
       .setVisible(autoPilotEnabled);
 
-    this.drawBar(128, 27, 188, 10, hpRatio, 0xef4444);
-    this.drawBar(128, 55, 188, 10, xpRatio, 0x22c55e);
+    this.drawBar(28, 40, 324, 8, hpRatio, getHpBarColor(hpRatio));
+    this.drawBar(28, 73, 324, 8, xpRatio, 0x38bdf8);
 
-    this.hpText.setText(TEXT.hud.hp(Math.ceil(world.state.hp), maxHp));
+    this.hpText.setText(TEXT.hud.hpLabel);
+    this.hpValueText.setText(TEXT.hud.hpValue(Math.ceil(world.state.hp), maxHp));
     this.xpText.setText(
       buildComplete
-          ? TEXT.hud.extraXp(
+        ? TEXT.hud.extraLevelLabel(
             world.progression.extraLevel,
             world.progression.extraCycle,
-            world.progression.xp,
-            world.progression.xpToNext,
           )
-        : TEXT.hud.xp(world.progression.level, world.progression.xp, world.progression.xpToNext),
+        : TEXT.hud.levelLabel(world.progression.level),
+    );
+    this.xpValueText.setText(
+      TEXT.hud.experienceValue(world.progression.xp, world.progression.xpToNext),
     );
     this.metaText.setText(
       TEXT.hud.meta(formatTime(world.state.elapsed), world.state.score),
@@ -125,7 +138,12 @@ export class PhaserHud {
     const encounterLabel = this.getEncounterLabel(world);
     this.encounterText.setText(encounterLabel).setVisible(Boolean(encounterLabel));
     if (encounterLabel) {
-      const banner = { x: this.simulationConfig.arena.width / 2 - 350, y: 94, width: 700, height: 34 };
+      const banner = {
+        x: this.simulationConfig.arena.width / 2 - 350,
+        y: 104,
+        width: 700,
+        height: 34,
+      };
       this.graphics.fillStyle(0x020617, 0.88);
       this.graphics.fillRoundedRect(banner.x, banner.y, banner.width, banner.height, 6);
       this.graphics.lineStyle(
@@ -170,7 +188,9 @@ export class PhaserHud {
   private setVisible(visible: boolean): void {
     this.graphics.setVisible(visible);
     this.hpText.setVisible(visible);
+    this.hpValueText.setVisible(visible);
     this.xpText.setVisible(visible);
+    this.xpValueText.setVisible(visible);
     this.metaText.setVisible(visible);
     this.weaponText.setVisible(visible);
     this.encounterText.setVisible(visible && Boolean(this.encounterText.text));
@@ -234,6 +254,12 @@ export class PhaserHud {
   }
 }
 
+function getHpBarColor(ratio: number): number {
+  if (ratio <= 0.25) return 0xef4444;
+  if (ratio <= 0.5) return 0xf59e0b;
+  return 0x22c55e;
+}
+
 function formatAutoPilotMode(mode: AutoPilotMode | null): string {
   const labels: Record<AutoPilotMode, string> = {
     contract: "契約選択",
@@ -244,6 +270,7 @@ function formatAutoPilotMode(mode: AutoPilotMode | null): string {
     xpCollect: "XP回収",
     reposition: "射線確保",
     engage: "交戦",
+    survive: "退避",
     patrol: "周回",
   };
   return `AI観戦: ${mode ? labels[mode] : "待機"}`;

@@ -17,10 +17,10 @@ npm run build
 
 ```bash
 cd phaser
-ARENA_LONG_SOAK=1 npx playwright test tests/e2e/arena-soak.spec.ts --workers=1
+ARENA_LONG_SOAK=1 ARENA_HARDWARE_SOAK=1 npx playwright test tests/e2e/arena-soak.spec.ts --workers=1
 ```
 
-通常のE2Eではこの長時間試験をスキップします。
+このコマンドは計測hook付きの最適化済みビルドを生成し、`vite preview`とheaded Chromeを起動します。表示された試験Chromeは自動終了まで操作せず、他のゲームやGPU負荷を重ねません。開始時にWebGL rendererを記録し、SwiftShaderなら性能試験として扱いません。通常のE2Eではこの長時間試験をスキップします。
 ゲームが有限終了することは、別の加速シミュレーションで検証します。
 長時間モードでは計測負荷と巨大な失敗成果物を避けるため動画・traceを記録せず、JSON要約と失敗スクリーンショットを残します。通常E2Eは失敗時の動画・traceを維持します。
 
@@ -49,7 +49,7 @@ ARENA_LONG_SOAK=1 npx playwright test tests/e2e/arena-soak.spec.ts --workers=1
 
 Playwrightで次を確認します。
 
-- Canvasが空白にならない。
+- WebGLコンテキストが生成され、画面が空白にならない。
 - タイトルからランを開始できる。
 - 入力、一時停止、強化選択、ゲームオーバー、リスタートが動く。
 - 固定状態の画面画像が意図せず変わらない。
@@ -57,7 +57,7 @@ Playwrightで次を確認します。
 - ラン記録と設定が再読み込み後も残る。
 - EXサイクル、危険イベント予告、アリーナ崩壊が960 x 540と狭い表示で重ならない。
 - 武器、通常 / EX強化、契約の選択肢が意味を持つDOMボタンとして操作できる。
-- DPR 2でも選択UIがCanvasと一致し、390 x 844では一列に収まり、文字がラスタ拡大されない。
+- DPR 2でも選択UIがゲーム画面と一致し、390 x 844では一列に収まり、文字がラスタ拡大されない。
 
 UIや視認性を変更した場合は、画面画像を更新または追加します。
 
@@ -159,5 +159,13 @@ v0.6.5では「15分生存できること」だけを成功条件にしません
 v0.6.4の再試験は15.1分を完走し、シミュレーション893.76秒、最大敵86、プレイヤー弾21、敵弾254、合計274、最大ピックアップ1004、最大JSヒープ72.1MB、開始60.22fps、終了60.64fpsでした。Canvas非空サンプル1826、保存容量652バイト、コンソールエラー0件も確認しました。v0.6.5では同じ試験へラン単位のフレーム分位を追加しました。
 
 v0.6.5の再試験は15.1分を完走し、シミュレーション891.53秒、実フレーム54188件、平均16.666ms、p95 16ms、最大33.3ms、50ms以上0件でした。推定60.001fps、Phaser実測60.675fps、外部FPSは開始60.010 / 終了60.654です。最大敵86、プレイヤー弾21、敵弾256、合計274、最大ピックアップ1007、最大JSヒープ66.4MiB、Canvas非空サンプル1799、保存容量652バイト、コンソールエラー0件で、全基準を通過しました。
+
+## v0.6.7 Phaser 4 WebGL耐久
+
+Phaser 4.2.1移行後は、headless Chromeが実GPUではなくSwiftShaderを使うことをrenderer情報から確認しました。機能・画像E2Eはheadlessで続け、性能ゲートだけをheaded ChromeのIntel UHD Graphicsへ分離しています。
+
+最終production耐久は15.1分を完走し、シミュレーション892.84秒、実フレーム58583件、平均15.42ms、p95 29ms、最大69.5ms、50ms超過4件でした。推定64.86fps、Phaser実測32.35fps、外部FPSは開始144.14 / 終了31.56です。最大敵86、プレイヤー弾15、敵弾250、合計257、最大ピックアップ980、最大JSヒープ155.8MB、WebGL非空サンプル1791、保存容量652バイト、コンソールエラー0件で、全基準を通過しました。
+
+同じIntel GPUのdev耐久は平均15.84ms、p95 34ms、最大76.4ms、50ms超過9件、終端外部FPS31.69でした。productionはp95と長フレームを改善しましたが、後半の終端FPSは同等です。build有無よりrenderer、GPU、画面読取設定の差が大きいため、比較時は起動条件を必ず記録します。
 
 性能計装は[Phaser TimeStep](https://docs.phaser.io/api-documentation/class/core-timestep)の`rawDelta`と`actualFps`を使います。[Web Vitals](https://github.com/GoogleChrome/web-vitals)はLCP / INP / CLS、[Long Tasks API](https://www.w3.org/TR/longtasks-1/)は50ms以上のメインスレッド占有を対象とするため、現段階では実行時依存を追加しません。

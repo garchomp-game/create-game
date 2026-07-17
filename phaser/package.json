@@ -1,21 +1,30 @@
 {
   "name": "arena-core-phaser",
   "private": true,
-  "version": "0.6.5",
+  "version": "0.6.8",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build",
+    "build:deploy": "npm run build && npm run verify:deploy",
+    "build:e2e": "tsc --noEmit && VITE_ARENA_FIXED_SEED=1 VITE_ARENA_RUN_ORIGIN=test VITE_ARENA_ENABLE_TEST_HOOKS=1 VITE_PHASER_PRESERVE_DRAWING_BUFFER=1 vite build",
     "audio:generate": "node scripts/generate-audio.mjs",
+    "deploy:cloudflare": "npm run build:deploy && wrangler deploy",
+    "deploy:cloudflare:dry-run": "npm run build:deploy && wrangler deploy --dry-run",
+    "preview:cloudflare": "npm run build:deploy && wrangler dev",
     "typecheck": "tsc --noEmit",
     "test": "vitest run src",
     "test:watch": "vitest src",
     "test:e2e": "playwright test",
-    "preview": "vite preview --host 0.0.0.0"
+    "verify:deploy": "node scripts/verify-deployment.mjs",
+    "preview": "vite preview --host 0.0.0.0",
+    "test:e2e:release": "playwright test tests/e2e/release-smoke.spec.ts",
+    "prepreview:e2e": "npm run build:e2e",
+    "preview:e2e": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
     "@vitejs/plugin-basic-ssl": "^2.1.0",
-    "phaser": "^3.90.0",
+    "phaser": "4.2.1",
     "rot-js": "^2.2.1",
     "vite": "^7.2.7",
     "zod": "^4.4.3"
@@ -23,6 +32,7 @@
   "devDependencies": {
     "@playwright/test": "^1.61.0",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.9",
+    "wrangler": "4.111.0"
   }
 }

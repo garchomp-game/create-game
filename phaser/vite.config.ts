@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { mkdir, readFile, readdir, rename, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig, type Plugin } from "vite";
 import { APP_VERSION, RULESET_VERSION } from "./src/config/version";
 import {
@@ -13,6 +14,32 @@ const RUN_EXPORT_ENDPOINT = "/__arena/run-export";
 const MAX_RUN_EXPORT_BYTES = 2 * 1024 * 1024;
 const MAX_RUN_EXPORT_FILES = { manual: 200, debug: 100, test: 20 } as const;
 const BUILD_COMMIT = readBuildCommit();
+const PROJECT_ROOT = path.dirname(fileURLToPath(import.meta.url));
+
+function arenaReleaseIdentityPlugin(): Plugin {
+  return {
+    name: "arena-release-identity",
+    transformIndexHtml() {
+      return [
+        {
+          tag: "meta",
+          attrs: { name: "arena-app-version", content: APP_VERSION },
+          injectTo: "head",
+        },
+        {
+          tag: "meta",
+          attrs: { name: "arena-ruleset-version", content: RULESET_VERSION },
+          injectTo: "head",
+        },
+        {
+          tag: "meta",
+          attrs: { name: "arena-build-commit", content: BUILD_COMMIT },
+          injectTo: "head",
+        },
+      ];
+    },
+  };
+}
 
 function arenaRunExportLogPlugin(): Plugin {
   return {
@@ -215,10 +242,18 @@ function getErrorMessage(error: unknown): string {
 }
 
 export default defineConfig({
-  plugins: [arenaRunExportLogPlugin()],
+  plugins: [arenaReleaseIdentityPlugin(), arenaRunExportLogPlugin()],
   define: {
     "import.meta.env.VITE_APP_VERSION": JSON.stringify(APP_VERSION),
     "import.meta.env.VITE_RULESET_VERSION": JSON.stringify(RULESET_VERSION),
     "import.meta.env.VITE_GIT_COMMIT": JSON.stringify(BUILD_COMMIT),
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        game: path.join(PROJECT_ROOT, "index.html"),
+        betaInfo: path.join(PROJECT_ROOT, "beta-info.html"),
+      },
+    },
   },
 });

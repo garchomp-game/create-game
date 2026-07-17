@@ -1,4 +1,4 @@
-import type { SimulationConfig, Vec2 } from "../domain/types";
+import type { Obstacle, SimulationConfig, Vec2, WorldState } from "../domain/types";
 
 export function isPointInsideArena(
   point: Vec2,
@@ -31,6 +31,33 @@ export function getArenaEdgeClearance(point: Vec2, config: SimulationConfig): nu
     point.y,
     config.arena.height - point.y,
   );
+}
+
+export function getSafeArenaEdgeClearance(
+  point: Vec2,
+  world: WorldState,
+  config: SimulationConfig,
+): number {
+  const inset = world.encounter.collapse.inset;
+  return Math.min(
+    point.x - inset,
+    config.arena.width - inset - point.x,
+    point.y - inset,
+    config.arena.height - inset - point.y,
+  );
+}
+
+export function getObstacleClearance(
+  point: Vec2,
+  obstacles: readonly Obstacle[],
+): number {
+  let clearance = Number.POSITIVE_INFINITY;
+  for (const obstacle of obstacles) {
+    const dx = Math.max(obstacle.x - point.x, 0, point.x - obstacle.x - obstacle.width);
+    const dy = Math.max(obstacle.y - point.y, 0, point.y - obstacle.y - obstacle.height);
+    clearance = Math.min(clearance, Math.hypot(dx, dy));
+  }
+  return clearance;
 }
 
 export function distanceBetween(first: Vec2, second: Vec2): number {

@@ -67,9 +67,13 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
     } else if (event.type === "pulse.focus.hit") {
       const metrics = world.stats.weaponIdentityMetrics.pulseFocus;
       if (event.bonusDamage > 0) metrics.enhancedHits += 1;
+      if (event.targetBonusDamage > 0) metrics.targetEnhancedHits += 1;
+      if (event.lineBonusDamage > 0) metrics.lineEnhancedHits += 1;
       metrics.bonusDamage += event.bonusDamage;
+      metrics.targetBonusDamage += event.targetBonusDamage;
+      metrics.lineBonusDamage += event.lineBonusDamage;
       metrics.maxStacks = Math.max(metrics.maxStacks, event.stackAfter);
-      if (event.killed && event.stackBefore > 0) {
+      if (event.killed && (event.stackBefore > 0 || event.lineStacks > 0)) {
         metrics.killsByEnemyType[event.enemyType] += 1;
       }
     } else if (event.type === "spread.sweep.triggered") {

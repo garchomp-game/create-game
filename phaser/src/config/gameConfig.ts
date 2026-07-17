@@ -10,7 +10,7 @@ const rawSimulationConfig = {
   seed: 20260619,
   features: {
     pulseRicochet: true,
-    pulseBoundaryRicochet: false,
+    pulseBoundaryRicochet: true,
     pulseFocus: true,
     spreadSweep: true,
     roleBasedEnemyHp: true,
@@ -38,7 +38,7 @@ const rawSimulationConfig = {
       speed: 520,
       lifetime: 1.1,
       interval: 0.12,
-      damage: 1,
+      damage: 1.16,
       projectileCount: 1,
       spreadAngle: 0.12,
       hitCapacity: 1,

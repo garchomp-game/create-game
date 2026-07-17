@@ -1,8 +1,9 @@
 import { expect, type Page, test } from "@playwright/test";
 import { SIMULATION_CONFIG } from "../../src/config/gameConfig";
+import { probeWebglCanvas } from "./webglCanvasProbe";
 
 async function gotoArena(page: Page): Promise<void> {
-  await page.goto(`/`);
+  await page.goto(`/?webglReadback=1`);
   await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
 }
 
@@ -89,6 +90,11 @@ test("matches the fixed title frame", async ({ page }) => {
   await page.evaluate(() => {
     window.__ARENA_DEBUG__?.setPaused(true);
   });
+
+  const rendererProbe = await probeWebglCanvas(canvas);
+  expect(rendererProbe.kind).toBe("webgl");
+  expect(rendererProbe.preserveDrawingBuffer).toBe(true);
+  expect(rendererProbe.nonBackgroundSamples).toBeGreaterThan(0);
 
   await expect(canvas).toHaveScreenshot("arena-title.png", {
     maxDiffPixelRatio: 0.01,
@@ -572,13 +578,14 @@ test("matches the portrait title frame without overflow", async ({ page }) => {
   });
 });
 
-test("matches the landscape fifteen minute HUD frame", async ({ page }) => {
+test("matches the landscape long-run HUD frame without label overlap", async ({ page }) => {
   await page.setViewportSize({ width: 844, height: 390 });
   await gotoArena(page);
   const canvas = page.locator("canvas");
   await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
   await page.evaluate(() => {
     window.__ARENA_DEBUG__?.restart();
+    window.__ARENA_DEBUG__?.setHudStressFixture();
     window.__ARENA_DEBUG__?.setElapsed(900);
     window.__ARENA_DEBUG__?.setEnemyVisualFixture("wave3");
     window.__ARENA_DEBUG__?.setPaused(true);

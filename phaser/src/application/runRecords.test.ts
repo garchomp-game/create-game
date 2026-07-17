@@ -178,8 +178,37 @@ describe("run records", () => {
         boundaryFollowUpHitsBySide: { left: 0, right: 0, top: 0, bottom: 0 },
       },
       weaponIdentityMetrics: {
-        pulseFocus: { enhancedHits: 0, bonusDamage: 0, maxStacks: 0 },
+        pulseFocus: {
+          enhancedHits: 0,
+          bonusDamage: 0,
+          targetEnhancedHits: 0,
+          lineEnhancedHits: 0,
+          targetBonusDamage: 0,
+          lineBonusDamage: 0,
+          maxStacks: 0,
+        },
         spreadSweep: { triggers: 0, consumes: 0, maxDistinctTargets: 0 },
+      },
+    });
+  });
+
+  it("defaults split Pulse focus metrics on pre-v0.6.6 records", () => {
+    const legacy = structuredClone(makeRecord()) as unknown as Record<string, unknown>;
+    const weaponIdentity = legacy.weaponIdentityMetrics as Record<string, unknown>;
+    const pulseFocus = weaponIdentity.pulseFocus as Record<string, unknown>;
+    delete pulseFocus.targetEnhancedHits;
+    delete pulseFocus.lineEnhancedHits;
+    delete pulseFocus.targetBonusDamage;
+    delete pulseFocus.lineBonusDamage;
+
+    expect(runRecordSchema.parse(legacy)).toMatchObject({
+      weaponIdentityMetrics: {
+        pulseFocus: {
+          targetEnhancedHits: 0,
+          lineEnhancedHits: 0,
+          targetBonusDamage: 0,
+          lineBonusDamage: 0,
+        },
       },
     });
   });
@@ -247,6 +276,10 @@ function makeSummary(overrides: Partial<RunResultSummary> = {}): RunResultSummar
       pulseFocus: {
         enhancedHits: 0,
         bonusDamage: 0,
+        targetEnhancedHits: 0,
+        lineEnhancedHits: 0,
+        targetBonusDamage: 0,
+        lineBonusDamage: 0,
         maxStacks: 0,
         killsByEnemyType: { chaser: 0, brute: 0, fast: 0, ranged: 0 },
       },

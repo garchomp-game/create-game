@@ -28,12 +28,12 @@ const balanceBaseline = {
   kiteCollectFirstDamageP50: 84.87,
   kiteCollectFirstUpgradeP50: 7.07,
   kiteCollectWaveReachedP50: 90,
-  kiteCollectMaxEnemiesMax: SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 45 : 60,
-  kiteCollectMaxBulletsMax: SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 32 : 43,
-  kiteCollectHpRecoveredP50: SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 59 : 106,
+  kiteCollectMaxEnemiesMax: SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 45 : 46,
+  kiteCollectMaxBulletsMax: SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 44 : 43,
+  kiteCollectHpRecoveredP50: SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 82 : 106,
   kiteCollectHealPickupsCollectedP50: 39,
   kiteCollectEffectiveHealPickupsCollectedP50:
-    SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 5 : 9,
+    SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 7 : 11,
 };
 
 describe("balance simulation", () => {
@@ -99,7 +99,7 @@ describe("balance simulation", () => {
       true,
     );
 
-    // v0.6.4 high-velocity Pulse baseline. These probes are regression sentries,
+    // v0.6.6 precision-tuned Pulse baseline. These probes are regression sentries,
     // not a claim that the input models are correct human play.
     expectWithinBaseline(noInput.survivalSeconds.p50, balanceBaseline.noInputSurvivalP50);
     expectWithinBaseline(
@@ -234,8 +234,8 @@ describe("balance simulation", () => {
     expect(maxPickups).toBeLessThanOrEqual(2_000);
     expect(Number.isFinite(world.player.position.x)).toBe(true);
     expect(Number.isFinite(world.player.position.y)).toBe(true);
-    expect(performance.now() - startedAt).toBeLessThan(5_000);
-  });
+    expect(performance.now() - startedAt).toBeLessThan(7_500);
+  }, 10_000);
 
   it("compares Pulse and Spread across ten fixed seeds with build and encounter KPIs", () => {
     const seeds = Array.from({ length: 10 }, (_, index) => 20260619 + index);

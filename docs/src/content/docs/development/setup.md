@@ -47,6 +47,8 @@ systemd-inhibit --what=sleep --mode=block \
 
 `npm run build` ではPhaser / Viteのバンドルサイズ警告が出ることがあります。ビルド自体が成功していれば、現時点では既知警告として扱います。
 
+公開ビルドとCloudflare Workersへのデプロイは[Cloudflareデプロイ](../cloudflare-deployment/)を参照してください。
+
 ## ドキュメント
 
 ```bash

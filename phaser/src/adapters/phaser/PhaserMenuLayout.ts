@@ -1,34 +1,7 @@
 import type { GameStatus } from "../../domain/types";
+import type { MenuAction, SecondaryMenu } from "../../application/ArenaMenuTypes";
 
-export type SecondaryMenu = "history" | "ranking" | "settings";
-
-export type MenuAction =
-  | "start"
-  | "selectPulse"
-  | "selectSpread"
-  | "contractStandard"
-  | "contractOverdrive"
-  | "resume"
-  | "restart"
-  | "title"
-  | "history"
-  | "ranking"
-  | "settings"
-  | "back"
-  | "historyPrevious"
-  | "historyNext"
-  | "historyFilterAll"
-  | "historyFilterPulse"
-  | "historyFilterSpread"
-  | "clearHistory"
-  | "clearRankings"
-  | "resetSettings"
-  | "resetProfile"
-  | "settingsBgm"
-  | "settingsSfx"
-  | "settingsShake"
-  | "settingsFlash"
-  | "settingsAutoFire";
+export type { MenuAction, SecondaryMenu } from "../../application/ArenaMenuTypes";
 
 export type MenuButton = {
   action: MenuAction;
@@ -59,6 +32,7 @@ const DEFAULT_MENU_LABELS: Record<MenuAction, string> = {
   history: "ラン履歴",
   ranking: "ランキング",
   settings: "設定",
+  betaInfo: "ベータ情報",
   back: "戻る",
   historyPrevious: "前のページ",
   historyNext: "次のページ",
@@ -242,12 +216,12 @@ export function getMenuButtons(
   }
 
   if (status === "title") {
-    const actions: MenuAction[] = ["start", "ranking", "history", "settings"];
+    const actions: MenuAction[] = ["start", "ranking", "history", "settings", "betaInfo"];
     return actions.map((action, index) => ({
       action,
       label: label(action),
       x,
-      y: 286 + index * 52,
+      y: 286 + index * 48,
       width: buttonWidth,
       height: buttonHeight,
     }));

@@ -8,6 +8,18 @@ describe("config schemas", () => {
     expect(parseViewConfig(VIEW_CONFIG)).toEqual(VIEW_CONFIG);
   });
 
+  it("allows Pulse line resonance to be disabled for comparison profiles", () => {
+    const config = structuredClone(SIMULATION_CONFIG);
+    const focus = config.upgrades.pulseFocus.effect;
+    expect(focus.type).toBe("pulseFocus");
+    if (focus.type !== "pulseFocus") return;
+    focus.lineBonusPerStack = 0;
+
+    expect(
+      parseSimulationConfig(config).upgrades.pulseFocus.effect,
+    ).toMatchObject({ type: "pulseFocus", lineBonusPerStack: 0 });
+  });
+
   it("rejects invalid simulation dimensions", () => {
     expect(() =>
       parseSimulationConfig({

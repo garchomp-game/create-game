@@ -1,5 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import type { RunRecord } from "../../src/domain/runRecords";
+import { probeVisibleCanvasSamples, probeWebglCanvas } from "./webglCanvasProbe";
 
 async function gotoArena(page: Page, path = "/"): Promise<void> {
   await page.goto(path);
@@ -64,23 +65,10 @@ test("renders canvas and accepts movement and shooting input", async ({ page }) 
     .poll(async () => canvas.evaluate((node) => (node as HTMLCanvasElement).width))
     .toBe(960);
 
-  const nonBackgroundSamples = await canvas.evaluate((node) => {
-    const canvasElement = node as HTMLCanvasElement;
-    const context = canvasElement.getContext("2d");
-    if (!context) return 0;
-    const image = context.getImageData(0, 0, canvasElement.width, canvasElement.height);
-    let samples = 0;
-    for (let i = 0; i < image.data.length; i += 4 * 257) {
-      const r = image.data[i];
-      const g = image.data[i + 1];
-      const b = image.data[i + 2];
-      if (r !== 17 || g !== 19 || b !== 24) {
-        samples += 1;
-      }
-    }
-    return samples;
-  });
-  expect(nonBackgroundSamples).toBeGreaterThan(0);
+  const rendererProbe = await probeWebglCanvas(canvas);
+  expect(rendererProbe.kind).toBe("webgl");
+  expect(rendererProbe.preserveDrawingBuffer).toBe(false);
+  expect(await probeVisibleCanvasSamples(page, canvas)).toBeGreaterThan(0);
 
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "title",
@@ -143,9 +131,11 @@ test("runs the observer auto pilot outside ranking and allows manual takeover", 
 
   const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
   expect(snapshot?.weaponType).toBe("pulse");
-  expect(snapshot?.runContext?.modifierIds).toContain("auto-pilot:tactical-observer-v1");
+  expect(snapshot?.runContext?.modifierIds).toContain("auto-pilot:tactical-observer-v3");
   expect(snapshot?.runContext?.rankEligibility.eligible).toBe(false);
   expect(snapshot?.autoPilotMode).not.toBeNull();
+  expect(snapshot?.autoPilotIntentMode).not.toBeNull();
+  expect(snapshot?.autoPilotRiskScore).toBeGreaterThanOrEqual(0);
 
   await page.locator("canvas").click();
   await page.keyboard.down("KeyO");
@@ -442,9 +432,9 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   const runExport = await page.evaluate(() => window.__ARENA_DEBUG__?.getRunExport());
   expect(runExport).toBeTruthy();
   expect(runExport?.game).toBe("arena-core-phaser");
-  expect(runExport?.appVersion).toBe("0.6.5");
-  expect(runExport?.rulesetVersion).toBe("phaser-v0.6.5-obstacle-only-test");
-  expect(runExport?.configVersion).toBe("phaser-v0.6.5-obstacle-only-test");
+  expect(runExport?.appVersion).toBe("0.6.8");
+  expect(runExport?.rulesetVersion).toBe("phaser-v0.6.8-pulse-boundary-ricochet");
+  expect(runExport?.configVersion).toBe("phaser-v0.6.8-pulse-boundary-ricochet");
   expect(runExport?.buildCommit).toMatch(/^[0-9a-f]{12}$/);
   expect(runExport?.runOrigin).toBe("test");
   expect(runExport?.rankEligibility).toEqual({

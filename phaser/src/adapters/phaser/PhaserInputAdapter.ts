@@ -1,4 +1,4 @@
-import Phaser from "phaser";
+import * as Phaser from "phaser";
 import type { GameStatus, InputSnapshot, Vec2 } from "../../domain/types";
 import { normalize } from "../../math/vector";
 import {

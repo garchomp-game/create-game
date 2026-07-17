@@ -2,6 +2,17 @@ import { describe, expect, it } from "vitest";
 import { findMenuActionAt, getMenuButtons } from "./PhaserMenuLayout";
 
 describe("PhaserMenuLayout", () => {
+  it("exposes public beta information from the title menu", () => {
+    expect(getMenuButtons("title", 960, 540).map((button) => button.action)).toEqual([
+      "start",
+      "ranking",
+      "history",
+      "settings",
+      "betaInfo",
+    ]);
+    expect(findMenuActionAt("title", 960, 540, 480, 499)).toBe("betaInfo");
+  });
+
   it("offers only Pulse and Spread on the starting weapon screen", () => {
     const buttons = getMenuButtons("weaponSelect", 960, 540);
 

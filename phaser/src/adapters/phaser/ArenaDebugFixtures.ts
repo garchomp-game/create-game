@@ -11,6 +11,21 @@ import type {
 export type EnemyVisualFixtureBand = "wave2" | "wave3";
 export type HealPickupFixtureMode = "damaged" | "full" | "fatal" | "visual";
 
+export function applyHudStressFixture(world: WorldState, config: SimulationConfig): void {
+  world.state.status = "playing";
+  world.state.elapsed = 672.2;
+  world.state.score = 92_728;
+  world.runtime.maxHpBonus = 104;
+  world.state.hp = config.player.maxHp + world.runtime.maxHpBonus;
+  world.progression.level = 38;
+  world.progression.extraLevel = 12;
+  world.progression.extraCycle = 3;
+  world.progression.xp = 49;
+  world.progression.xpToNext = 72;
+  world.progression.buildCompletedAt = 276.25;
+  world.progression.pendingUpgradeChoices = [];
+}
+
 export function createDebugInput(input: Partial<InputSnapshot>): InputSnapshot {
   return {
     move: input.move ?? { x: 0, y: 0 },

@@ -20,6 +20,7 @@ export type MenuActionLabel =
   | "history"
   | "ranking"
   | "settings"
+  | "betaInfo"
   | "back"
   | "historyPrevious"
   | "historyNext"
@@ -75,6 +76,11 @@ export type UiText = {
 };
 
 export type HudText = {
+  hpLabel: string;
+  hpValue: (current: number, max: number) => string;
+  levelLabel: (level: number) => string;
+  extraLevelLabel: (extraLevel: number, cycle: number) => string;
+  experienceValue: (xp: number, next: number) => string;
   hp: (current: number, max: number) => string;
   xp: (level: number, xp: number, next: number) => string;
   buildComplete: (level: number) => string;

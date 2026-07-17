@@ -124,6 +124,7 @@ const upgradeEffectSchema = z.discriminatedUnion("type", [
     .object({
       type: z.literal("pulseFocus"),
       bonusPerStack: positiveNumber,
+      lineBonusPerStack: nonNegativeNumber,
       stacksPerRank: z.number().int().positive(),
       duration: positiveNumber,
     })

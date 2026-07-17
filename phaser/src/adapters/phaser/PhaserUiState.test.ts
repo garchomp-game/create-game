@@ -26,6 +26,7 @@ describe("createPhaserUiState", () => {
       historyWeaponFilter: "all",
       focusedMenuAction: "back",
       notice: null,
+      releaseIdentity: createReleaseIdentity(),
     });
 
     expect(state.records.map((record) => record.id)).toEqual(["own"]);
@@ -53,12 +54,21 @@ describe("createPhaserUiState", () => {
       historyWeaponFilter: "spread",
       focusedMenuAction: "back",
       notice: null,
+      releaseIdentity: createReleaseIdentity(),
     });
 
     expect(state.records.map((record) => record.id)).toEqual(["spread"]);
     expect(state.ranking.map((record) => record.id)).toEqual(["spread", "pulse"]);
   });
 });
+
+function createReleaseIdentity() {
+  return {
+    appVersion: "0.6.8",
+    rulesetVersion: "phaser-v0.6.8-pulse-boundary-ricochet",
+    buildCommit: "123456789abc",
+  };
+}
 
 function makeRecord(id: string, profileId: string, score: number): RunRecord {
   return {
@@ -129,6 +139,10 @@ function makeRecord(id: string, profileId: string, score: number): RunRecord {
       pulseFocus: {
         enhancedHits: 0,
         bonusDamage: 0,
+        targetEnhancedHits: 0,
+        lineEnhancedHits: 0,
+        targetBonusDamage: 0,
+        lineBonusDamage: 0,
         maxStacks: 0,
         killsByEnemyType: { chaser: 0, brute: 0, fast: 0, ranged: 0 },
       },

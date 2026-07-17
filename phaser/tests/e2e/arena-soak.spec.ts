@@ -1,11 +1,15 @@
 import { expect, test } from "@playwright/test";
 import { SIMULATION_CONFIG } from "../../src/config/gameConfig";
+import { probeVisibleCanvasSamples, probeWebglCanvas } from "./webglCanvasProbe";
 
 const SOAK_DURATION_MS = 15 * 60 * 1000;
 const SAMPLE_INTERVAL_MS = 500;
 
 test("runs the rendered arena for fifteen real-time minutes with debug sustain", async ({ page }, testInfo) => {
-  test.skip(process.env.ARENA_LONG_SOAK !== "1", "Set ARENA_LONG_SOAK=1 to run the long soak.");
+  test.skip(
+    process.env.ARENA_LONG_SOAK !== "1" || process.env.ARENA_HARDWARE_SOAK !== "1",
+    "Set ARENA_LONG_SOAK=1 and ARENA_HARDWARE_SOAK=1 to run the hardware soak.",
+  );
   test.setTimeout(SOAK_DURATION_MS + 60_000);
 
   const consoleErrors: string[] = [];
@@ -21,6 +25,11 @@ test("runs the rendered arena for fifteen real-time minutes with debug sustain",
   const canvas = page.locator("canvas");
   const box = await canvas.boundingBox();
   if (!box) throw new Error("Canvas is not visible.");
+  const rendererAtStart = await probeWebglCanvas(canvas);
+  expect(rendererAtStart.kind).toBe("webgl");
+  expect(rendererAtStart.preserveDrawingBuffer).toBe(false);
+  expect(rendererAtStart.renderer ?? "").not.toContain("SwiftShader");
+  process.stdout.write(`[arena-soak-renderer] ${JSON.stringify(rendererAtStart)}\n`);
 
   const heapAtStart = await readHeap(page);
   const fpsAtStart = await measureFps(page);
@@ -107,17 +116,8 @@ test("runs the rendered arena for fifteen real-time minutes with debug sustain",
       0,
     ),
   );
-  const nonBlankSamples = await canvas.evaluate((node) => {
-    const element = node as HTMLCanvasElement;
-    const context = element.getContext("2d");
-    if (!context) return 0;
-    const data = context.getImageData(0, 0, element.width, element.height).data;
-    let count = 0;
-    for (let index = 0; index < data.length; index += 4 * 257) {
-      if (data[index] !== 17 || data[index + 1] !== 19 || data[index + 2] !== 24) count += 1;
-    }
-    return count;
-  });
+  const rendererProbe = await probeWebglCanvas(canvas);
+  const nonBlankSamples = await probeVisibleCanvasSamples(page, canvas);
   const summary = {
     wallSeconds: SOAK_DURATION_MS / 1000,
     simulationSeconds: finalSnapshot.elapsed,
@@ -134,6 +134,10 @@ test("runs the rendered arena for fifteen real-time minutes with debug sustain",
     performance: runExport.performance,
     longFrameRatio,
     storageBytes,
+    renderer: rendererProbe.kind,
+    webglRenderer: rendererProbe.renderer,
+    webglVendor: rendererProbe.vendor,
+    preserveDrawingBuffer: rendererProbe.preserveDrawingBuffer,
     nonBlankSamples,
   };
   await testInfo.attach("soak-summary", {
@@ -159,6 +163,9 @@ test("runs the rendered arena for fifteen real-time minutes with debug sustain",
   expect(runExport.performance.p95RawDtMs).toBeLessThanOrEqual(34);
   expect(runExport.performance.actualFps).toBeGreaterThan(15);
   expect(longFrameRatio).toBeLessThan(0.01);
+  expect(rendererProbe.kind).toBe("webgl");
+  expect(rendererProbe.preserveDrawingBuffer).toBe(false);
+  expect(rendererProbe.renderer ?? "").not.toContain("SwiftShader");
   expect(nonBlankSamples).toBeGreaterThan(0);
   expect(consoleErrors).toEqual([]);
 });

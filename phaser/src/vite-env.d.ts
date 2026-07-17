@@ -6,6 +6,12 @@ interface ImportMetaEnv {
   readonly VITE_GIT_COMMIT: string;
   readonly VITE_ARENA_FIXED_SEED?: string;
   readonly VITE_ARENA_RUN_ORIGIN?: string;
+  readonly VITE_ARENA_ENABLE_TEST_HOOKS?: string;
+  readonly VITE_ARENA_AUTO_PILOT_PATROL_STRATEGY?: string;
+  readonly VITE_ARENA_AUTO_PILOT_MEASURE_PERFORMANCE?: string;
+  readonly VITE_ARENA_AUTO_PILOT_WEAPONS?: string;
+  readonly VITE_PHASER_RENDERER?: "canvas" | "webgl";
+  readonly VITE_PHASER_PRESERVE_DRAWING_BUFFER?: string;
 }
 
 interface ImportMeta {

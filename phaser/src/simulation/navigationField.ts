@@ -10,6 +10,13 @@ export type EnemyNavigationResult = {
   fieldBuilt: boolean;
 };
 
+export type PointNavigationPath = {
+  reachable: boolean;
+  direct: boolean;
+  distance: number;
+  waypoints: Vec2[];
+};
+
 type GridCell = { x: number; y: number };
 
 type NavigationField = {
@@ -91,6 +98,67 @@ export function getPointNavigation(
     radius,
     config,
   );
+}
+
+export function estimatePointNavigationPath(
+  world: WorldState,
+  startPosition: Vec2,
+  targetPosition: Vec2,
+  radius: number,
+  config: SimulationConfig,
+): PointNavigationPath {
+  const clearance = radius + config.navigation.obstacleClearance;
+  if (
+    hasClearNavigationPath(
+      startPosition,
+      targetPosition,
+      clearance,
+      world.obstacles,
+    )
+  ) {
+    return {
+      reachable: true,
+      direct: true,
+      distance: Math.hypot(
+        targetPosition.x - startPosition.x,
+        targetPosition.y - startPosition.y,
+      ),
+      waypoints: [{ ...startPosition }, { ...targetPosition }],
+    };
+  }
+
+  const { field } = getNavigationField(world, radius, targetPosition, config);
+  const start = findNearestWalkableCell(toGridCell(startPosition, config), field);
+  if (!start) return createUnreachablePath(startPosition);
+  const cells = getPath(field, start);
+  if (cells.length === 0) return createUnreachablePath(startPosition);
+
+  const rawWaypoints = [
+    { ...startPosition },
+    ...cells.slice(1).map((cell) => gridCellCenter(cell, config)),
+  ];
+  const finalWaypoint = rawWaypoints.at(-1) ?? startPosition;
+  if (
+    hasClearNavigationPath(
+      finalWaypoint,
+      targetPosition,
+      clearance,
+      world.obstacles,
+    )
+  ) {
+    rawWaypoints.push({ ...targetPosition });
+  }
+  const waypoints = simplifyPath(
+    rawWaypoints,
+    clearance,
+    world.obstacles,
+  );
+  return {
+    reachable: waypoints.length >= 2,
+    direct: false,
+    distance: getPathDistance(waypoints),
+    waypoints,
+  };
 }
 
 function getBlockedPointNavigation(
@@ -297,6 +365,53 @@ function findVisibleWaypoint(
     }
   }
   return null;
+}
+
+function simplifyPath(
+  path: readonly Vec2[],
+  clearance: number,
+  obstacles: readonly Obstacle[],
+): Vec2[] {
+  if (path.length <= 2) return path.map((point) => ({ ...point }));
+  const simplified: Vec2[] = [{ ...path[0]! }];
+  let currentIndex = 0;
+  while (currentIndex < path.length - 1) {
+    let nextIndex = path.length - 1;
+    while (
+      nextIndex > currentIndex + 1 &&
+      !hasClearNavigationPath(
+        path[currentIndex]!,
+        path[nextIndex]!,
+        clearance,
+        obstacles,
+      )
+    ) {
+      nextIndex -= 1;
+    }
+    simplified.push({ ...path[nextIndex]! });
+    currentIndex = nextIndex;
+  }
+  return simplified;
+}
+
+function getPathDistance(path: readonly Vec2[]): number {
+  let distance = 0;
+  for (let index = 1; index < path.length; index += 1) {
+    distance += Math.hypot(
+      path[index]!.x - path[index - 1]!.x,
+      path[index]!.y - path[index - 1]!.y,
+    );
+  }
+  return distance;
+}
+
+function createUnreachablePath(startPosition: Vec2): PointNavigationPath {
+  return {
+    reachable: false,
+    direct: false,
+    distance: Number.POSITIVE_INFINITY,
+    waypoints: [{ ...startPosition }],
+  };
 }
 
 function findNearestWalkableCell(

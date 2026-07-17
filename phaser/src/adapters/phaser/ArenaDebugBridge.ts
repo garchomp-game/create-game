@@ -35,8 +35,11 @@ import type {
   WaveBand,
   WeaponTypeId,
 } from "../../domain/types";
+import type {
+  AutoPilotMode,
+  AutoPilotOverrideReason,
+} from "../../simulation/autoPilot";
 import type { BuildComposition } from "../../simulation/buildComposer";
-import type { AutoPilotMode } from "../../simulation/autoPilot";
 
 export type ArenaObstacleContactCounts = {
   player: number;
@@ -71,6 +74,9 @@ export type ArenaDebugSnapshot = {
   status: GameStatus;
   autoPilotEnabled: boolean;
   autoPilotMode: AutoPilotMode | null;
+  autoPilotIntentMode: AutoPilotMode | null;
+  autoPilotOverrideReason: AutoPilotOverrideReason | null;
+  autoPilotRiskScore: number;
   autoPilotTargetId: string | null;
   performance: ArenaPerformanceSnapshot;
   elapsed: number;
@@ -177,6 +183,7 @@ export type ArenaDebugApi = {
   setAutoPilotEnabled(enabled: boolean): void;
   setPaused(paused: boolean): void;
   setElapsed(elapsed: number): void;
+  setHudStressFixture(): void;
   setEnemyVisualFixture(band?: "wave2" | "wave3"): void;
   setObstacleFrictionFixture(): void;
   setHealPickupFixture(mode?: "damaged" | "full" | "fatal" | "visual"): void;

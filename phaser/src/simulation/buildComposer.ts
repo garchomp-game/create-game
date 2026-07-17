@@ -21,6 +21,7 @@ export type CombatModifiers = Pick<
   | "hitCapacityBonus"
   | "ricochetBonus"
   | "pulseFocusBonusPerStack"
+  | "pulseLineBonusPerStack"
   | "pulseFocusMaxStacks"
   | "pulseFocusDuration"
   | "spreadSweepDistinctTargets"
@@ -170,6 +171,7 @@ function createBaseCombatModifiers(): CombatModifiers {
     hitCapacityBonus: 0,
     ricochetBonus: 0,
     pulseFocusBonusPerStack: 0,
+    pulseLineBonusPerStack: 0,
     pulseFocusMaxStacks: 0,
     pulseFocusDuration: 0,
     spreadSweepDistinctTargets: 0,
@@ -232,6 +234,10 @@ function applyEffect(
     modifiers.pulseFocusBonusPerStack = Math.max(
       modifiers.pulseFocusBonusPerStack,
       effect.bonusPerStack,
+    );
+    modifiers.pulseLineBonusPerStack = Math.max(
+      modifiers.pulseLineBonusPerStack,
+      effect.lineBonusPerStack,
     );
     modifiers.pulseFocusMaxStacks += effect.stacksPerRank;
     modifiers.pulseFocusDuration = Math.max(modifiers.pulseFocusDuration, effect.duration);

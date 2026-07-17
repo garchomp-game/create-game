@@ -1,4 +1,4 @@
-import Phaser from "phaser";
+import * as Phaser from "phaser";
 import type { ProfileSettings } from "../../domain/profile";
 import type { GameEvent, Vec2, WorldState } from "../../domain/types";
 

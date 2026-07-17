@@ -9,7 +9,8 @@ import { updateRunStats } from "./statsSystem";
 describe("weapon identity mechanics", () => {
   it("builds Pulse focus on direct repeat hits and resets after the focus window", () => {
     const world = createWorld(SIMULATION_CONFIG);
-    world.runtime.pulseFocusBonusPerStack = 0.15;
+    world.runtime.pulseFocusBonusPerStack = 0.2;
+    world.runtime.pulseLineBonusPerStack = 0.2;
     world.runtime.pulseFocusMaxStacks = 2;
     world.runtime.pulseFocusDuration = 0.9;
     world.enemies = [createEnemy("target", "brute", 100, 100, 100)];
@@ -26,13 +27,64 @@ describe("weapon identity mechanics", () => {
     bounced.ricochetsUsed = 1;
     damages.push(hitTarget(world, bounced));
 
-    expect(damages).toEqual([1, 1.15, 1.3, 1, 1]);
+    expect(damages).toHaveLength(5);
+    [1, 1.2, 1.4, 1, 1].forEach((expected, index) => {
+      expect(damages[index]).toBeCloseTo(expected);
+    });
     expect(world.enemies[0]).toMatchObject({ pulseFocusStacks: 1, pulseFocusExpiresAt: 1.9 });
     expect(world.stats.weaponIdentityMetrics.pulseFocus).toMatchObject({
       enhancedHits: 2,
+      targetEnhancedHits: 2,
+      lineEnhancedHits: 0,
+      lineBonusDamage: 0,
       maxStacks: 2,
     });
-    expect(world.stats.weaponIdentityMetrics.pulseFocus.bonusDamage).toBeCloseTo(0.45);
+    expect(world.stats.weaponIdentityMetrics.pulseFocus.bonusDamage).toBeCloseTo(0.6);
+    expect(world.stats.weaponIdentityMetrics.pulseFocus.targetBonusDamage).toBeCloseTo(0.6);
+  });
+
+  it("amplifies direct Pulse damage as one shot pierces a line of enemies", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.runtime.pulseFocusBonusPerStack = 0.2;
+    world.runtime.pulseLineBonusPerStack = 0.2;
+    world.runtime.pulseFocusMaxStacks = 4;
+    world.runtime.pulseFocusDuration = 0.9;
+    world.enemies = [
+      createEnemy("line-a", "chaser", 100, 100, 100),
+      createEnemy("line-b", "chaser", 100, 100, 100),
+      createEnemy("line-c", "chaser", 100, 100, 100),
+    ];
+    const bullet = createBullet("pulse-line", 1, "pulse", 100, 100);
+    bullet.hitsRemaining = 3;
+    world.bullets = [bullet];
+    const events: GameEvent[] = [];
+
+    resolveCombat(world, SIMULATION_CONFIG, events);
+    updateRunStats(world, events);
+
+    const hits = events.filter(
+      (event): event is Extract<GameEvent, { type: "enemy.hit" }> =>
+        event.type === "enemy.hit",
+    );
+    expect(hits).toHaveLength(3);
+    [1, 1.2, 1.4].forEach((expected, index) => {
+      expect(hits[index]?.damage).toBeCloseTo(expected);
+    });
+    const focusHits = events.filter(
+      (event): event is Extract<GameEvent, { type: "pulse.focus.hit" }> =>
+        event.type === "pulse.focus.hit",
+    );
+    expect(focusHits.map((event) => event.lineStacks)).toEqual([0, 1, 2]);
+    expect(focusHits.map((event) => event.stackBefore)).toEqual([0, 0, 0]);
+    expect(world.stats.weaponIdentityMetrics.pulseFocus).toMatchObject({
+      enhancedHits: 2,
+      targetEnhancedHits: 0,
+      lineEnhancedHits: 2,
+      targetBonusDamage: 0,
+      maxStacks: 1,
+    });
+    expect(world.stats.weaponIdentityMetrics.pulseFocus.bonusDamage).toBeCloseTo(0.6);
+    expect(world.stats.weaponIdentityMetrics.pulseFocus.lineBonusDamage).toBeCloseTo(0.6);
   });
 
   it("charges Spread sweep on three distinct targets and accelerates only the next volley", () => {
