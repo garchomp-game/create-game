@@ -28,6 +28,7 @@ import type {
   ArenaPerformanceSnapshot,
   ArenaRunExport,
 } from "../phaser/ArenaDebugBridge";
+import type { ArenaRenderPerformanceSnapshot } from "../phaser/PhaserArenaRenderer";
 
 export type CreateArenaRunExportInput = {
   capturedAt: string;
@@ -41,6 +42,7 @@ export type CreateArenaRunExportInput = {
   runConfig: SimulationConfig;
   world: WorldState;
   performance: ArenaPerformanceSnapshot;
+  renderPerformance: ArenaRenderPerformanceSnapshot;
   lastEvents: readonly GameEvent[];
 };
 
@@ -69,6 +71,7 @@ export function createArenaRunExport(input: CreateArenaRunExportInput): ArenaRun
     },
     status: world.state.status,
     performance: { ...input.performance },
+    renderPerformance: structuredClone(input.renderPerformance),
     elapsed: world.state.elapsed,
     wave: { ...getWaveBand(input.runConfig, world.state.elapsed) },
     resultSummary: createRunResultSummary(world, input.runConfig),

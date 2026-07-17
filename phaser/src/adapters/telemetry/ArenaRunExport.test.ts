@@ -30,6 +30,13 @@ describe("createArenaRunExport", () => {
         estimatedFps: 59.99,
         actualFps: 60.1,
       },
+      renderPerformance: {
+        staticBackground: { drawCount: 1, drawDurationMs: 0.4 },
+        renderedFrames: 720,
+        dynamicWorld: { averageMs: 0.35, maxMs: 1.2 },
+        screenHud: { averageMs: 0.12, maxMs: 0.6 },
+        feedback: { averageMs: 0.04, maxMs: 0.2 },
+      },
       lastEvents: [{ type: "game.started" }],
     });
 
@@ -45,6 +52,10 @@ describe("createArenaRunExport", () => {
         frameSamples: 720,
         p95RawDtMs: 17,
         actualFps: 60.1,
+      },
+      renderPerformance: {
+        staticBackground: { drawCount: 1 },
+        renderedFrames: 720,
       },
       elapsed: 12,
       lastEvents: [{ type: "game.started" }],

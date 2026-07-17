@@ -43,6 +43,7 @@ import type {
 } from "./ArenaDebugBridge";
 import {
   applyEnemyVisualFixture,
+  applyExpeditionCommanderFixture,
   applyHealPickupFixture,
   applyHudStressFixture,
   applyObstacleFrictionFixture,
@@ -52,6 +53,7 @@ import {
 import type { FeedbackSnapshot } from "./PhaserFeedbackLayer";
 import type { MusicSnapshot } from "./PhaserMusicController";
 import type { SecondaryMenu } from "../../application/ArenaMenuTypes";
+import type { ArenaRenderPerformanceSnapshot } from "./PhaserArenaRenderer";
 
 export type ArenaDebugControllerDependencies = {
   session: ArenaSession;
@@ -60,6 +62,7 @@ export type ArenaDebugControllerDependencies = {
   autoPilot: AutoPilotController;
   performance: PerformanceMonitor;
   getActualFps(): number;
+  getRenderPerformance(): ArenaRenderPerformanceSnapshot;
   getBuildCommit(): string;
   getProfile(): LocalProfile;
   getSettings(): ProfileSettings;
@@ -187,6 +190,8 @@ export class ArenaDebugController {
         this.setHealPickupFixture(mode),
       setOffscreenEnemyIndicatorFixture: () =>
         this.setOffscreenEnemyIndicatorFixture(),
+      setExpeditionCommanderFixture: () =>
+        this.setExpeditionCommanderFixture(),
       step: (input = {}, deltaSeconds = 1 / 60) =>
         this.stepWorld(input, deltaSeconds),
     };
@@ -207,6 +212,7 @@ export class ArenaDebugController {
       performance: this.dependencies.performance.getSnapshot(
         this.dependencies.getActualFps(),
       ),
+      renderPerformance: this.dependencies.getRenderPerformance(),
       lastEvents: this.dependencies.runLifecycle.getLastEvents(),
     });
   }
@@ -238,6 +244,7 @@ export class ArenaDebugController {
       performance: this.dependencies.performance.getSnapshot(
         this.dependencies.getActualFps(),
       ),
+      renderPerformance: this.dependencies.getRenderPerformance(),
       elapsed: world.state.elapsed,
       hp: world.state.hp,
       score: world.state.score,
@@ -491,6 +498,13 @@ export class ArenaDebugController {
     this.markMutation();
     applyOffscreenEnemyIndicatorFixture(this.world, this.config);
     this.dependencies.render();
+  }
+
+  private setExpeditionCommanderFixture(): void {
+    this.markMutation();
+    if (applyExpeditionCommanderFixture(this.world, this.config)) {
+      this.dependencies.render();
+    }
   }
 
   private recordForcedEvents(events: GameEvent[]): void {

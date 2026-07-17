@@ -7,6 +7,7 @@ import type {
   SimulationConfig,
   WorldState,
 } from "../../domain/types";
+import { COMMANDER_ELITE_DEFINITION } from "../../content/eliteCatalog";
 
 export type EnemyVisualFixtureBand = "wave2" | "wave3";
 export type HealPickupFixtureMode = "damaged" | "full" | "fatal" | "visual";
@@ -202,6 +203,93 @@ export function applyOffscreenEnemyIndicatorFixture(
   world.bullets = [];
   world.pickups = [];
   world.nextEnemyId = world.enemies.length + 1;
+}
+
+export function applyExpeditionCommanderFixture(
+  world: WorldState,
+  config: SimulationConfig,
+): boolean {
+  const expedition = world.expedition;
+  if (!expedition) return false;
+
+  world.state.status = "playing";
+  world.state.elapsed = 182.2;
+  world.state.score = 8_420;
+  world.player.position = { x: 330, y: 270 };
+  world.state.lastAim = { x: 1, y: 0 };
+  expedition.status = "active";
+  expedition.actId = "counterattack";
+  expedition.actTitleKey = "act.counterattack.title";
+  expedition.actStartedAt = 180;
+  expedition.objective = "指揮個体を崩し反撃する";
+  expedition.reachedActIds = ["deployment", "first-assault", "counterattack"];
+  expedition.currentCardTitleKey = "encounter.commander-counterattack.title";
+  expedition.currentDirection = "east";
+  expedition.currentGeometryId = "escort";
+  expedition.deployedCardKey = "commander-counterattack:180";
+  expedition.spawnOverride = {
+    intervalMultiplier: 0.84,
+    budget: 5,
+    enemyWeights: { chaser: 1.2, ranged: 1.1 },
+  };
+  expedition.director = {
+    ...expedition.director,
+    phase: "active",
+    actId: "counterattack",
+    selectedActId: "counterattack",
+    cardId: "commander-counterattack",
+    direction: "east",
+    selectedAt: 180,
+    activeStartedAt: 182.2,
+    recoveryStartedAt: null,
+    finishedAt: null,
+    completionReason: null,
+  };
+
+  const commander = createDebugEnemy(config, "ranged", { x: 740, y: 270 }, 1);
+  commander.radius *= COMMANDER_ELITE_DEFINITION.radiusMultiplier;
+  commander.hp = Math.ceil(commander.hp * COMMANDER_ELITE_DEFINITION.hpMultiplier);
+  commander.elite = {
+    kind: "commander",
+    trait: "reinforcement",
+    phase: "cooldown",
+    spawnedAt: 180,
+    nextTraitAt: 190,
+    telegraphStartedAt: null,
+    reinforcementSpawnAt: null,
+    reinforcementDirection: null,
+    activations: 0,
+  };
+  world.enemies = [
+    commander,
+    createDebugEnemy(config, "chaser", { x: 695, y: 225 }, 2),
+    createDebugEnemy(config, "chaser", { x: 695, y: 315 }, 3),
+    createDebugEnemy(config, "ranged", { x: 805, y: 270 }, 4),
+  ];
+  world.eliteState = { commanderIds: [commander.id] };
+  world.enemyActionState = { chargerIds: [] };
+  world.bullets = [];
+  world.enemyProjectiles = [];
+  world.pickups = [
+    {
+      id: "debug-expedition-xp",
+      kind: "xp",
+      position: { x: 560, y: 330 },
+      radius: config.pickup.xpRadius,
+      xpValue: 2,
+      healValue: 0,
+      lifetime: null,
+    },
+    createDebugHealPickup(
+      config,
+      "debug-expedition-heal",
+      { x: 605, y: 330 },
+      getDebugHealValue(world, config),
+    ),
+  ];
+  world.nextEnemyId = 5;
+  world.stats.encounterMetrics.commander!.spawned = 1;
+  return true;
 }
 
 function createDebugHealPickup(

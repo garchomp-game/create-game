@@ -2,6 +2,7 @@ import type {
   EncounterDirection,
   EncounterDirectorState,
 } from "./encounterDirector";
+import type { SpawnGeometryId } from "./structuredSpawning";
 
 export type Vec2 = {
   x: number;
@@ -526,10 +527,12 @@ export type ExpeditionState = {
   director: EncounterDirectorState;
   actId: string;
   actTitleKey: string;
+  actStartedAt: number;
   objective: string;
   reachedActIds: string[];
   currentCardTitleKey: string | null;
   currentDirection: EncounterDirection | null;
+  currentGeometryId: SpawnGeometryId | null;
   spawnOverride: {
     intervalMultiplier: number;
     budget: number;

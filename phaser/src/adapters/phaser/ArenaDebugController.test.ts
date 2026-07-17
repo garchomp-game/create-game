@@ -90,6 +90,13 @@ function createFixture() {
     autoPilot,
     performance,
     getActualFps: () => 60,
+    getRenderPerformance: () => ({
+      staticBackground: { drawCount: 1, drawDurationMs: 0.2 },
+      renderedFrames: 1,
+      dynamicWorld: { averageMs: 0.2, maxMs: 0.2 },
+      screenHud: { averageMs: 0.1, maxMs: 0.1 },
+      feedback: { averageMs: 0.05, maxMs: 0.05 },
+    }),
     getBuildCommit: () => "test-commit",
     getProfile: () => PROFILE,
     getSettings: () => settings,

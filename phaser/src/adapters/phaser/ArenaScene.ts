@@ -232,6 +232,7 @@ export class ArenaScene extends Phaser.Scene {
     this.inputAdapter.clearTransientInput();
     this.choiceOverlay.clearInput();
     this.performanceMonitor.reset();
+    this.arenaRenderer.resetPerformance();
     const fixedSeed = this.getFixedRunSeed();
     const runSeed = this.createRunSeed(fixedSeed);
     this.session.start({
@@ -360,7 +361,9 @@ export class ArenaScene extends Phaser.Scene {
     );
     this.choiceOverlay.render(this.world, secondaryMenu === null);
     this.musicController.sync(this.world.state.status);
+    const feedbackStartedAt = now();
     this.feedbackLayer.render();
+    this.arenaRenderer.recordFeedbackRender(now() - feedbackStartedAt);
     this.debugOverlay.render();
   }
 
@@ -375,6 +378,7 @@ export class ArenaScene extends Phaser.Scene {
       autoPilot: this.autoPilotController,
       performance: this.performanceMonitor,
       getActualFps: () => this.game?.loop?.actualFps ?? 0,
+      getRenderPerformance: () => this.arenaRenderer.getPerformanceSnapshot(),
       getBuildCommit: () => this.getBuildCommit(),
       getProfile: () => this.profile,
       getSettings: () => this.settings,
@@ -638,4 +642,8 @@ function getConfiguredAutoPilotPatrolStrategy(): AutoPilotPatrolStrategy {
       "visit-history-v1"
     ? "visit-history-v1"
     : "periodic-v3";
+}
+
+function now(): number {
+  return globalThis.performance?.now() ?? Date.now();
 }

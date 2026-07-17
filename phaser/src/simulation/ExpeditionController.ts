@@ -49,10 +49,12 @@ export class ExpeditionController {
       director: this.director.createState(random.encounter),
       actId: firstAct.id,
       actTitleKey: firstAct.titleKey,
+      actStartedAt: 0,
       objective: ACT_OBJECTIVES[firstAct.id]!,
       reachedActIds: [],
       currentCardTitleKey: null,
       currentDirection: null,
+      currentGeometryId: null,
       spawnOverride: null,
       deployedCardKey: null,
       outcome: null,
@@ -128,6 +130,7 @@ export class ExpeditionController {
       const act = FIRST_EXPEDITION_ACTS.find((item) => item.id === event.actId)!;
       expedition.actId = act.id;
       expedition.actTitleKey = act.titleKey;
+      expedition.actStartedAt = event.elapsed;
       expedition.objective = ACT_OBJECTIVES[act.id]!;
       if (!expedition.reachedActIds.includes(act.id)) {
         expedition.reachedActIds.push(act.id);
@@ -143,6 +146,7 @@ export class ExpeditionController {
       const card = this.director.getCard(event.cardId);
       expedition.currentCardTitleKey = card.titleKey;
       expedition.currentDirection = event.direction;
+      expedition.currentGeometryId = card.spawn.geometryId;
       expedition.deployedCardKey = null;
       return [{
         type: "expedition.encounter.selected",

@@ -23,6 +23,27 @@ async function moveMouseToCanvasLogical(page: Page, logicalX: number, logicalY: 
   );
 }
 
+async function showExpeditionCommanderPresentation(page: Page): Promise<void> {
+  await moveMouseToCanvasLogical(page, 480, 339);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']").click();
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "playing",
+  );
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
+    if (!debug) throw new Error("Debug API is not available.");
+    debug.setPaused(true);
+    debug.setExpeditionCommanderFixture();
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().stats.encounterMetrics.commander?.spawned),
+    )
+    .toBeGreaterThan(0);
+}
+
 async function seedVisualRunRecords(page: Page): Promise<void> {
   await gotoArena(page);
   await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
@@ -130,6 +151,39 @@ test("matches the starting weapon selection frame", async ({ page }) => {
   );
 
   await expect(game).toHaveScreenshot("arena-weapon-select.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("shows the Expedition Act, ingress, and Commander visual slice", async ({ page }) => {
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+  await showExpeditionCommanderPresentation(page);
+
+  const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+  expect(snapshot?.expedition).toMatchObject({
+    actId: "counterattack",
+    currentGeometryId: "escort",
+    director: { phase: "active" },
+  });
+  expect(snapshot?.renderPerformance.staticBackground.drawCount).toBe(1);
+  expect(snapshot?.renderPerformance.renderedFrames).toBeGreaterThan(0);
+  expect(snapshot?.renderPerformance.dynamicWorld.averageMs).toBeLessThan(8);
+  expect(snapshot?.renderPerformance.screenHud.averageMs).toBeLessThan(5);
+  expect(snapshot?.renderPerformance.feedback.averageMs).toBeLessThan(3);
+
+  await expect(canvas).toHaveScreenshot("arena-expedition-commander.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("keeps the Expedition visual slice readable in a portrait viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await gotoArena(page);
+  const game = page.locator("#game");
+  await showExpeditionCommanderPresentation(page);
+
+  await expect(game).toHaveScreenshot("arena-expedition-commander-portrait.png", {
     maxDiffPixelRatio: 0.01,
   });
 });

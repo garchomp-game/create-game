@@ -1,4 +1,5 @@
 import * as Phaser from "phaser";
+import type { EncounterDirection } from "../../domain/encounterDirector";
 import type {
   EnemyViewConfig,
   SimulationConfig,
@@ -20,16 +21,12 @@ export class PhaserArenaWorldView {
     world: WorldState,
     pointerWorld: Vec2 | null,
   ): void {
-    const { arena } = this.simulationConfig;
     const { bullet, pickup, player } = this.viewConfig;
 
     graphics.clear();
-    graphics.fillStyle(this.viewConfig.arena.background, 1);
-    graphics.fillRect(0, 0, arena.width, arena.height);
     this.drawCollapse(graphics, world);
     this.drawPulseBoundaryField(graphics, world);
-    graphics.lineStyle(3, this.viewConfig.arena.border, 1);
-    graphics.strokeRect(1.5, 1.5, arena.width - 3, arena.height - 3);
+    this.drawExpeditionSituation(graphics, world);
 
     for (const obstacle of world.obstacles) {
       graphics.fillStyle(this.viewConfig.obstacle.fill, 1);
@@ -121,6 +118,83 @@ export class PhaserArenaWorldView {
     graphics.strokeRect(4, 4, width - 8, height - 8);
     graphics.lineStyle(1, 0xa5f3fc, 0.8);
     graphics.strokeRect(8, 8, width - 16, height - 16);
+  }
+
+  private drawExpeditionSituation(
+    graphics: Phaser.GameObjects.Graphics,
+    world: WorldState,
+  ): void {
+    const expedition = world.expedition;
+    if (!expedition) return;
+
+    const actAge = Math.max(0, world.state.elapsed - expedition.actStartedAt);
+    if (actAge <= 2.6) {
+      const alpha = Math.max(0, 1 - actAge / 2.6);
+      const { width, height } = this.simulationConfig.arena;
+      const inset = 28 + actAge * 7;
+      graphics.lineStyle(2, 0x5eead4, alpha * 0.55);
+      graphics.strokeRect(
+        inset,
+        inset,
+        Math.max(0, width - inset * 2),
+        Math.max(0, height - inset * 2),
+      );
+      graphics.lineStyle(1, 0xfacc15, alpha * 0.42);
+      graphics.strokeCircle(width / 2, height / 2, 66 + actAge * 22);
+    }
+
+    const direction = expedition.currentDirection;
+    const phase = expedition.director.phase;
+    if (!direction || (phase !== "telegraph" && phase !== "active")) return;
+    const directions =
+      expedition.currentGeometryId === "pincer"
+        ? [direction, oppositeDirection(direction)]
+        : [direction];
+    for (const ingressDirection of directions) {
+      this.drawIngressDirection(
+        graphics,
+        ingressDirection,
+        phase === "active",
+      );
+    }
+  }
+
+  private drawIngressDirection(
+    graphics: Phaser.GameObjects.Graphics,
+    direction: EncounterDirection,
+    active: boolean,
+  ): void {
+    const { width, height } = this.simulationConfig.arena;
+    const color = active ? 0xf97316 : 0xfacc15;
+    const band = 22;
+    graphics.fillStyle(color, active ? 0.055 : 0.085);
+    if (direction === "north") graphics.fillRect(0, 0, width, band);
+    else if (direction === "south") graphics.fillRect(0, height - band, width, band);
+    else if (direction === "west") graphics.fillRect(0, 0, band, height);
+    else graphics.fillRect(width - band, 0, band, height);
+
+    graphics.lineStyle(active ? 2 : 3, color, active ? 0.42 : 0.78);
+    const count = direction === "north" || direction === "south" ? 9 : 5;
+    for (let index = 1; index <= count; index += 1) {
+      const along =
+        (index / (count + 1)) *
+        (direction === "north" || direction === "south" ? width : height);
+      const depth = active ? 13 : 18;
+      const half = active ? 6 : 8;
+      if (direction === "north") {
+        graphics.lineBetween(along - half, 6, along, depth);
+        graphics.lineBetween(along + half, 6, along, depth);
+      } else if (direction === "south") {
+        graphics.lineBetween(along - half, height - 6, along, height - depth);
+        graphics.lineBetween(along + half, height - 6, along, height - depth);
+      } else if (direction === "west") {
+        graphics.lineBetween(6, along - half, depth, along);
+        graphics.lineBetween(6, along + half, depth, along);
+      } else {
+        graphics.lineBetween(width - 6, along - half, width - depth, along);
+        graphics.lineBetween(width - 6, along + half, width - depth, along);
+      }
+    }
   }
 
   private drawCollapse(
@@ -439,6 +513,19 @@ export class PhaserArenaWorldView {
     const pulse = 0.72 + Math.sin(elapsed * 8) * 0.18;
     graphics.lineStyle(telegraphing ? 4 : 3, 0xfacc15, telegraphing ? pulse : 0.95);
     graphics.strokeCircle(x, y, radius);
+    this.drawPolygon(
+      graphics,
+      this.getRegularPolygonPoints(x, y, radius + 4, 6, Math.PI / 6),
+      0x4c1d57,
+      0xfacc15,
+    );
+    graphics.fillStyle(0xfef3c7, 1);
+    graphics.fillCircle(x, y, Math.max(4, enemy.radius * 0.3));
+    graphics.lineStyle(2, 0xfb7185, 0.95);
+    graphics.strokeCircle(x, y, Math.max(7, enemy.radius * 0.48));
+    graphics.lineStyle(3, 0xfacc15, 0.9);
+    graphics.lineBetween(x - radius - 10, y, x - radius + 1, y);
+    graphics.lineBetween(x + radius - 1, y, x + radius + 10, y);
     graphics.lineStyle(2, 0xfffbeb, 0.95);
     graphics.lineBetween(x - 8, y - radius - 5, x, y - radius - 12);
     graphics.lineBetween(x, y - radius - 12, x + 8, y - radius - 5);
@@ -466,6 +553,25 @@ export class PhaserArenaWorldView {
     const radius = enemy.radius + 5;
     graphics.lineStyle(2, 0xfef08a, 0.95);
     graphics.strokeCircle(x, y, radius);
+    const facing = action.chargeDirection ?? { x: 1, y: 0 };
+    const perpendicular = { x: -facing.y, y: facing.x };
+    const rear = {
+      x: x - facing.x * (radius - 1),
+      y: y - facing.y * (radius - 1),
+    };
+    graphics.lineStyle(2, 0xfb7185, 0.9);
+    graphics.lineBetween(
+      rear.x - facing.x * 8 + perpendicular.x * 6,
+      rear.y - facing.y * 8 + perpendicular.y * 6,
+      rear.x,
+      rear.y,
+    );
+    graphics.lineBetween(
+      rear.x - facing.x * 8 - perpendicular.x * 6,
+      rear.y - facing.y * 8 - perpendicular.y * 6,
+      rear.x,
+      rear.y,
+    );
 
     const direction = action.chargeDirection;
     if (!direction) return;
@@ -586,4 +692,9 @@ export class PhaserArenaWorldView {
       };
     });
   }
+}
+
+function oppositeDirection(direction: EncounterDirection): EncounterDirection {
+  const directions: EncounterDirection[] = ["north", "east", "south", "west"];
+  return directions[(directions.indexOf(direction) + 2) % directions.length]!;
 }

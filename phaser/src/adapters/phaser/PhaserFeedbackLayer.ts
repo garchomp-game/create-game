@@ -72,6 +72,14 @@ export class PhaserFeedbackLayer {
       } else if (event.type === "encounter.started") {
         this.addImpact(world.player.position, world.player.radius + 22, 0xf97316);
         this.addBurst(world.player.position, 0xf97316);
+      } else if (event.type === "expedition.act.changed") {
+        this.addImpact(world.player.position, world.player.radius + 26, 0x5eead4);
+        this.addBurst(world.player.position, 0x5eead4);
+      } else if (event.type === "expedition.encounter.selected") {
+        this.addImpact(world.player.position, world.player.radius + 20, 0xfacc15);
+      } else if (event.type === "expedition.encounter.active.started") {
+        this.addImpact(world.player.position, world.player.radius + 24, 0xf97316);
+        this.addBurst(world.player.position, 0xf97316);
       } else if (event.type === "elite.commander.reinforcement.telegraphed") {
         this.addImpact(event.position, 28, 0xfacc15);
       } else if (event.type === "elite.commander.reinforcement.deployed") {

@@ -268,11 +268,13 @@ ArenaScene: lifecycle and composition only
 - debug Controller / Bridgeはtest hook有効時だけ動的に読み込み、production成果物からhook、fixture、専用chunkを除外する。
 - 実装直前の`ArenaScene` 1093行から629行へ464行削減した。ゲーム数値、AI係数、保存schema、画面結果は変更していない。
 
-### [PH-ARCH-007: グラフィック拡張の開始](https://github.com/garchomp-game/create-game/issues/42)（要件確定・未着手）
+### [PH-ARCH-007: グラフィック拡張の開始](https://github.com/garchomp-game/create-game/issues/42)（完了）
 
 - [世界観と試合内ドラマ草案](../../design/narrative-and-match-drama/)から背景1種、敵1種、イベント1種を縦切りする。
 - 静的背景、動的ワールド、演出の負荷を別々に計測する。
 - 見た目変更として画像を更新し、ルール変更は別チケットにする。
+
+`PhaserTacticalBackground`を一度だけ描く静的レイヤーとして分離し、既存の合成Rendererは動的world、screen / HUD、feedbackの時間を別々に集計します。固定Commander fixtureの67フレーム計測では、静的背景0.20ms、動的world平均0.093ms、screen / HUD平均0.170ms、feedback平均0.002msでした。画像比較は960 x 540と390 x 844を持ち、既存28画面も同時に回帰します。
 
 各段階は独立してマージ可能にし、全ファイルを一度に移動するブランチを作りません。
 

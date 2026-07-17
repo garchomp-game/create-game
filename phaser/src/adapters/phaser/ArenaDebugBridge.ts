@@ -42,6 +42,7 @@ import type {
 } from "../../simulation/autoPilot";
 import type { BuildComposition } from "../../simulation/buildComposer";
 import type { ArenaPerformanceSnapshot } from "../../application/PerformanceMonitor";
+import type { ArenaRenderPerformanceSnapshot } from "./PhaserArenaRenderer";
 export type { ArenaPerformanceSnapshot } from "../../application/PerformanceMonitor";
 
 export type ArenaObstacleContactCounts = {
@@ -72,6 +73,7 @@ export type ArenaDebugSnapshot = {
   autoPilotRiskScore: number;
   autoPilotTargetId: string | null;
   performance: ArenaPerformanceSnapshot;
+  renderPerformance: ArenaRenderPerformanceSnapshot;
   elapsed: number;
   hp: number;
   score: number;
@@ -126,6 +128,7 @@ export type ArenaRunExport = {
   randomStreams: ArenaRandomStreamSnapshot;
   status: GameStatus;
   performance: ArenaPerformanceSnapshot;
+  renderPerformance: ArenaRenderPerformanceSnapshot;
   elapsed: number;
   wave: WaveBand;
   resultSummary: RunResultSummary;
@@ -183,6 +186,7 @@ export type ArenaDebugApi = {
   setObstacleFrictionFixture(): void;
   setHealPickupFixture(mode?: "damaged" | "full" | "fatal" | "visual"): void;
   setOffscreenEnemyIndicatorFixture(): void;
+  setExpeditionCommanderFixture(): void;
   step(input?: Partial<InputSnapshot>, deltaSeconds?: number): void;
 };
 
