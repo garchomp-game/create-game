@@ -1,4 +1,5 @@
 import type { GameContentDefinitions } from "../domain/gameContent";
+import { ENDLESS_ENCOUNTER_DECK_ID } from "./endlessEncounterCards";
 
 export const ARENA_DEFAULT_STAGE_DEFINITION = {
   id: "arena-default",
@@ -14,7 +15,7 @@ export const ARENA_DEFAULT_STAGE_DEFINITION = {
     { id: "block-c", x: 220, y: 360, width: 120, height: 32 },
     { id: "block-d", x: 620, y: 360, width: 120, height: 32 },
   ],
-  encounterDeckId: "endless-v1",
+  encounterDeckId: ENDLESS_ENCOUNTER_DECK_ID,
   enemyPoolId: "endless-core",
   clearCondition: { type: "endless" },
 } satisfies GameContentDefinitions["stages"][number];
@@ -35,6 +36,6 @@ export const GAME_CONTENT_DEFINITIONS = {
       enemyTypeIds: ["chaser", "brute", "fast", "ranged"],
     },
   ],
-  encounterDeckIds: ["endless-v1"],
+  encounterDeckIds: [ENDLESS_ENCOUNTER_DECK_ID],
   bossIds: [],
 } satisfies GameContentDefinitions;

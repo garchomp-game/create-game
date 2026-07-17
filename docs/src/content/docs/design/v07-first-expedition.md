@@ -95,6 +95,8 @@ interface StageDefinition {
 
 カードは「いつ」「何を」「どこから」「何のために出すか」をデータとして持ちます。
 
+基盤状態: 2026-07-17に`EncounterCardDefinition`、Act、Deck、`EncounterDirector`を実装しました。状態機械は`telegraph`、`active`、`recovery`、`completed`、`failed`、`interrupted`を明示し、選択、開始、終了、延期をイベントと指標へ残します。既存Endlessの3イベントは互換カードへ移した一方、公開済みEndlessの実行経路は維持しています。
+
 最低限の項目:
 
 - 安定ID、表示キー、タグ、利用可能Act。

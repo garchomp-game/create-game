@@ -215,7 +215,7 @@ v0.6の手動採否、外周反射の公開固定、長時間HUD、Phaser 4.2.1 
 
 1. 公開ベータの複数ランでPulse / Spreadのスコア、生存、EX巡回、崩壊段階を継続観測する。
 2. 600秒以降の崩壊体感は非停止条件として監視し、現行ルール値は先回りして変更しない。
-3. 完了したStage Registry上に、`PH-V07-002`のEncounter Directorとカード定義を追加する。
-4. v0.7の構造化出現、エリート、予兆付き敵、エクスペディション、ボス試作を、公開ベータと別のルール版で進める。
+3. 完了したStage RegistryとEncounter Director上に、`PH-V07-003`の構造化出現と安全規則を追加する。
+4. 続いてエリート、予兆付き敵、エクスペディション、ボス試作を、公開ベータと別のルール版で進める。
 
 直近の詳細は[直近フェーズ](../../project-management/next-phase-plan/)と[v0.7 実行計画](../../project-management/v07-execution-plan/)、体験要件は[v0.7 最初のエクスペディション](../../design/v07-first-expedition/)、中長期は[拡張設計の全体像](../../design/gameplay-expansion-blueprint/)を参照してください。
