@@ -31,7 +31,7 @@ description: バージョン別のチケット番号、表示名、状態。
 | `PH-ARCH-003` | RendererのComposite View化 | 完了 |
 | `PH-ARCH-004` | Menu Controllerの抽出 | 完了 |
 | `PH-ARCH-005` | [#54](https://github.com/garchomp-game/create-game/issues/54) SessionとRun Lifecycleの抽出 | 完了 |
-| `PH-ARCH-006` | [#55](https://github.com/garchomp-game/create-game/issues/55) Debug / AI / Performanceの分離 | 要件確定・未着手 |
+| `PH-ARCH-006` | [#55](https://github.com/garchomp-game/create-game/issues/55) Debug / AI / Performanceの分離 | 完了 |
 | `PH-ARCH-007` | [#42](https://github.com/garchomp-game/create-game/issues/42) グラフィック拡張の縦切り | 要件確定・未着手 |
 
 ## v0.3

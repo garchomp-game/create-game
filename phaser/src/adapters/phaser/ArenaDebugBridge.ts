@@ -40,6 +40,8 @@ import type {
   AutoPilotOverrideReason,
 } from "../../simulation/autoPilot";
 import type { BuildComposition } from "../../simulation/buildComposer";
+import type { ArenaPerformanceSnapshot } from "../../application/PerformanceMonitor";
+export type { ArenaPerformanceSnapshot } from "../../application/PerformanceMonitor";
 
 export type ArenaObstacleContactCounts = {
   player: number;
@@ -51,16 +53,6 @@ export type ArenaObstacleContactCounts = {
 
 export type ArenaRandomStreamSnapshot = Pick<RandomStreams, "version" | "rootSeed"> & {
   seeds: Record<RandomStreamId, number>;
-};
-
-export type ArenaPerformanceSnapshot = {
-  frameSamples: number;
-  averageRawDtMs: number;
-  p95RawDtMs: number;
-  maxRawDtMs: number;
-  framesOver50Ms: number;
-  estimatedFps: number;
-  actualFps: number;
 };
 
 export type ArenaDebugSnapshot = {
