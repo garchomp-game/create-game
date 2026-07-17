@@ -400,8 +400,27 @@ export type Enemy = CircleBody & {
   behavior: EnemyBehavior;
   attackTimer: number;
   enteredArena: boolean;
+  elite?: CommanderEliteState;
+  support?: CommanderSupportState;
   pulseFocusStacks?: number;
   pulseFocusExpiresAt?: number;
+};
+
+export type CommanderEliteState = {
+  kind: "commander";
+  trait: "reinforcement";
+  phase: "cooldown" | "telegraph";
+  spawnedAt: number;
+  nextTraitAt: number;
+  telegraphStartedAt: number | null;
+  reinforcementSpawnAt: number | null;
+  reinforcementDirection: "north" | "east" | "south" | "west" | null;
+  activations: number;
+};
+
+export type CommanderSupportState = {
+  sourceEnemyId: string;
+  speedMultiplier: number;
 };
 
 export type EnemyProjectile = CircleBody & {
@@ -620,6 +639,19 @@ export type EncounterRunStats = {
   collapseStartedAt: number | null;
   peakCollapseStage: number;
   collapseDamageTaken: number;
+  commander?: CommanderEncounterRunStats;
+};
+
+export type CommanderEncounterRunStats = {
+  spawned: number;
+  killed: number;
+  telegraphs: number;
+  traitActivations: number;
+  reinforcementsSpawned: number;
+  pressureReleases: number;
+  supportUnitsReleased: number;
+  lifetimeTotal: number;
+  killsByWeapon: Record<WeaponTypeId, number>;
 };
 
 export type PlayerDamageSource =
@@ -710,6 +742,9 @@ export type WorldState = {
   stats: RunStats;
   analytics: RunAnalyticsState;
   weaponIdentity: WeaponIdentityState;
+  eliteState?: {
+    commanderIds: string[];
+  };
   encounter: EncounterState;
   player: Player;
   bullets: Bullet[];
@@ -795,6 +830,45 @@ export type GameEvent =
     }
   | { type: "spread.sweep.consumed"; volleyId: number }
   | { type: "enemy.spawned"; enemyId: string; enemyType: EnemyTypeId; position: Vec2 }
+  | {
+      type: "elite.commander.spawned";
+      enemyId: string;
+      position: Vec2;
+      trait: "reinforcement";
+    }
+  | {
+      type: "elite.commander.reinforcement.telegraphed";
+      enemyId: string;
+      direction: "north" | "east" | "south" | "west";
+      position: Vec2;
+      spawnAt: number;
+    }
+  | {
+      type: "elite.commander.reinforcement.deployed";
+      enemyId: string;
+      direction: "north" | "east" | "south" | "west";
+      reinforcementIds: string[];
+      position: Vec2;
+    }
+  | {
+      type: "elite.commander.reinforcement.deferred";
+      enemyId: string;
+      reason: string;
+    }
+  | {
+      type: "elite.commander.killed";
+      enemyId: string;
+      weaponType: WeaponTypeId;
+      lifetime: number;
+      traitActivations: number;
+      position: Vec2;
+    }
+  | {
+      type: "elite.commander.pressure.lowered";
+      enemyId: string;
+      releasedEnemyIds: string[];
+      position: Vec2;
+    }
   | {
       type: "enemy.killed";
       bulletId: string;

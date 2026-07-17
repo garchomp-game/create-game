@@ -4,6 +4,7 @@ import type {
   GameEvent,
   RandomSource,
   SimulationConfig,
+  Vec2,
   WorldState,
 } from "../../domain/types";
 import { getWaveBand, selectEnemyTypeForWave } from "../waveDirector";
@@ -53,8 +54,6 @@ function spawnEnemy(
   random: RandomSource,
   config: SimulationConfig,
 ): Enemy {
-  const definition = config.enemies[typeId];
-  const threat = getThreatMultipliers(config, world.state.elapsed);
   const margin = 32;
   const side = Math.floor(random() * 4);
   let x = 0;
@@ -74,10 +73,22 @@ function spawnEnemy(
     y = random() * config.arena.height;
   }
 
+  return spawnEnemyAtPosition(world, typeId, difficulty, { x, y }, config);
+}
+
+export function spawnEnemyAtPosition(
+  world: WorldState,
+  typeId: Enemy["typeId"],
+  difficulty: Difficulty,
+  position: Vec2,
+  config: SimulationConfig,
+): Enemy {
+  const definition = config.enemies[typeId];
+  const threat = getThreatMultipliers(config, world.state.elapsed);
   const enemy: Enemy = {
     id: `enemy-${world.nextEnemyId++}`,
     typeId,
-    position: { x, y },
+    position: { ...position },
     radius: definition.radius,
     hp: Math.ceil(definition.hp * getEnemyHpMultiplier(config, world.state.elapsed, typeId)),
     damage: Math.ceil(definition.damage * threat.damage),

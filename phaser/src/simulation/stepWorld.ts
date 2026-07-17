@@ -19,6 +19,7 @@ import { updateShooting } from "./systems/shootingSystem";
 import { updateSpawner } from "./systems/spawnSystem";
 import { updateRunStats } from "./systems/statsSystem";
 import { updateArenaCollapse } from "./systems/collapseSystem";
+import { updateCommanderElites } from "./systems/commanderEliteSystem";
 import { chooseUpgrade } from "./systems/upgradeSystem";
 import {
   chooseEndlessContract,
@@ -124,6 +125,9 @@ export function stepWorld(
   updateShooting(world, input.shootHeld, config, events);
   const bulletMotions = updateBullets(world, dt, config);
   updateSpawner(world, dt, random.spawn, config, events);
+  if ((world.eliteState?.commanderIds.length ?? 0) > 0) {
+    updateCommanderElites(world, random.spawn, config, events);
+  }
   updateEnemies(world, dt, config, events);
   updateEnemyProjectiles(world, dt, config);
   resolveCombat(world, config, events, bulletMotions);

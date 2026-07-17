@@ -256,6 +256,23 @@ const encounterMetricsSchema = z.object({
   collapseStartedAt: z.number().nonnegative().nullable().default(null),
   peakCollapseStage: z.number().int().nonnegative().default(0),
   collapseDamageTaken: z.number().nonnegative().default(0),
+  commander: z
+    .object({
+      spawned: z.number().int().nonnegative(),
+      killed: z.number().int().nonnegative(),
+      telegraphs: z.number().int().nonnegative(),
+      traitActivations: z.number().int().nonnegative(),
+      reinforcementsSpawned: z.number().int().nonnegative(),
+      pressureReleases: z.number().int().nonnegative(),
+      supportUnitsReleased: z.number().int().nonnegative(),
+      lifetimeTotal: z.number().nonnegative(),
+      killsByWeapon: z.object({
+        pulse: z.number().int().nonnegative(),
+        spread: z.number().int().nonnegative(),
+        pierce: z.number().int().nonnegative(),
+      }),
+    })
+    .optional(),
 });
 
 const runRecordV2Schema = z.object({

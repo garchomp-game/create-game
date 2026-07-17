@@ -236,6 +236,9 @@ export class PhaserArenaWorldView {
     }
 
     this.drawEnemyMark(graphics, enemy, view);
+    if (enemy.elite?.kind === "commander") {
+      this.drawCommanderEliteMark(graphics, enemy, elapsed);
+    }
     if (
       (enemy.pulseFocusStacks ?? 0) > 0 &&
       (enemy.pulseFocusExpiresAt ?? 0) >= elapsed
@@ -335,6 +338,10 @@ export class PhaserArenaWorldView {
     this.drawPolygon(graphics, points, view.color, 0xf8fafc);
     graphics.lineStyle(1, view.stroke, 0.95);
     graphics.strokeCircle(center.x, center.y, 15);
+    if (enemy.elite?.kind === "commander") {
+      graphics.lineStyle(2, 0xfacc15, 1);
+      graphics.strokeCircle(center.x, center.y, 18);
+    }
   }
 
   private getOffscreenIndicatorCenter(enemy: WorldState["enemies"][number]): Vec2 {
@@ -415,6 +422,34 @@ export class PhaserArenaWorldView {
       graphics.fillCircle(x, y, r * 0.28);
       graphics.lineStyle(1, view.stroke, 0.85);
       graphics.strokeCircle(x, y, r * 0.28);
+    }
+  }
+
+  private drawCommanderEliteMark(
+    graphics: Phaser.GameObjects.Graphics,
+    enemy: WorldState["enemies"][number],
+    elapsed: number,
+  ): void {
+    const { x, y } = enemy.position;
+    const radius = enemy.radius + 6;
+    const telegraphing = enemy.elite?.phase === "telegraph";
+    const pulse = 0.72 + Math.sin(elapsed * 8) * 0.18;
+    graphics.lineStyle(telegraphing ? 4 : 3, 0xfacc15, telegraphing ? pulse : 0.95);
+    graphics.strokeCircle(x, y, radius);
+    graphics.lineStyle(2, 0xfffbeb, 0.95);
+    graphics.lineBetween(x - 8, y - radius - 5, x, y - radius - 12);
+    graphics.lineBetween(x, y - radius - 12, x + 8, y - radius - 5);
+    graphics.lineBetween(x - 8, y - radius - 5, x + 8, y - radius - 5);
+    if (telegraphing) {
+      for (let index = 0; index < 4; index += 1) {
+        const angle = (Math.PI * 2 * index) / 4 + elapsed * 0.8;
+        graphics.lineBetween(
+          x + Math.cos(angle) * (radius + 2),
+          y + Math.sin(angle) * (radius + 2),
+          x + Math.cos(angle) * (radius + 10),
+          y + Math.sin(angle) * (radius + 10),
+        );
+      }
     }
   }
 

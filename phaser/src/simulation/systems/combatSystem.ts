@@ -8,6 +8,7 @@ import type {
 } from "../../domain/types";
 import { circleCircle, segmentCircleFirstIntersection } from "../../math/geometry";
 import type { BulletFrameMotions, BulletMotionSegment } from "./bulletSystem";
+import { releaseCommanderPressure } from "./commanderEliteSystem";
 
 export function resolveCombat(
   world: WorldState,
@@ -167,6 +168,7 @@ function resolveBulletEnemyHit(
   if (enemy.hp > 0) return;
 
   deadEnemies.add(enemy);
+  releaseCommanderPressure(world, enemy, bullet.weaponType, events);
   const scoreAwarded = Math.round(enemy.score * world.encounter.contract.scoreMultiplier);
   world.state.score += scoreAwarded;
   events.push({

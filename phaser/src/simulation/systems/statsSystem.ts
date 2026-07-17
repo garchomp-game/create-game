@@ -97,6 +97,23 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
       if (world.encounter.director.phase === "active" && event.enemyType === "ranged") {
         world.stats.encounterMetrics.rangedEnemiesSpawned += 1;
       }
+    } else if (event.type === "elite.commander.spawned") {
+      getCommanderMetrics(world).spawned += 1;
+    } else if (event.type === "elite.commander.reinforcement.telegraphed") {
+      getCommanderMetrics(world).telegraphs += 1;
+    } else if (event.type === "elite.commander.reinforcement.deployed") {
+      const metrics = getCommanderMetrics(world);
+      metrics.traitActivations += 1;
+      metrics.reinforcementsSpawned += event.reinforcementIds.length;
+    } else if (event.type === "elite.commander.killed") {
+      const metrics = getCommanderMetrics(world);
+      metrics.killed += 1;
+      metrics.lifetimeTotal += event.lifetime;
+      metrics.killsByWeapon[event.weaponType] += 1;
+    } else if (event.type === "elite.commander.pressure.lowered") {
+      const metrics = getCommanderMetrics(world);
+      metrics.pressureReleases += 1;
+      metrics.supportUnitsReleased += event.releasedEnemyIds.length;
     } else if (event.type === "player.damaged") {
       world.stats.hitsTaken += 1;
       world.stats.damageTaken += event.damage;
@@ -206,4 +223,18 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
   for (const volleyId of Object.keys(world.analytics.activeVolleys)) {
     if (!activeVolleyIds.has(volleyId)) delete world.analytics.activeVolleys[volleyId];
   }
+}
+
+function getCommanderMetrics(world: WorldState) {
+  return (world.stats.encounterMetrics.commander ??= {
+    spawned: 0,
+    killed: 0,
+    telegraphs: 0,
+    traitActivations: 0,
+    reinforcementsSpawned: 0,
+    pressureReleases: 0,
+    supportUnitsReleased: 0,
+    lifetimeTotal: 0,
+    killsByWeapon: { pulse: 0, spread: 0, pierce: 0 },
+  });
 }
