@@ -140,7 +140,7 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 
 | ID | GitHub | チケット | 優先度 | 状態 |
 | --- | --- | --- | --- | --- |
-| `PH-V07-001` | [#43](https://github.com/garchomp-game/create-game/issues/43) | ステージ定義とコンテンツ登録 | P0 | 要件確定・未着手 |
+| `PH-V07-001` | [#43](https://github.com/garchomp-game/create-game/issues/43) | ステージ定義とコンテンツ登録 | P0 | 完了 |
 | `PH-V07-002` | [#56](https://github.com/garchomp-game/create-game/issues/56) | 戦闘展開カードと制御基盤 | P0 | 要件確定・未着手 |
 | `PH-V07-003` | [#57](https://github.com/garchomp-game/create-game/issues/57) | 構造化出現と安全規則 | P0 | 要件確定・未着手 |
 | `PH-V07-004` | [#53](https://github.com/garchomp-game/create-game/issues/53) | 指揮艦エリートと特性1件 | P1 | 要件確定・未着手 |

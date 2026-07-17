@@ -2,6 +2,7 @@ import type { GameConfig } from "../domain/types";
 import { parseSimulationConfig, parseViewConfig } from "./configSchema";
 import { UPGRADE_DEFINITIONS } from "../content/upgradeCatalog";
 import { EXTRA_UPGRADE_DEFINITIONS } from "../content/extraUpgradeCatalog";
+import { ARENA_DEFAULT_STAGE_DEFINITION } from "../content/gameContentCatalog";
 import { RULESET_VERSION } from "./version";
 
 export const SIMULATION_CONFIG_VERSION = RULESET_VERSION;
@@ -20,12 +21,12 @@ const rawSimulationConfig = {
     enemyNavigation: true,
   },
   arena: {
-    width: 960,
-    height: 540,
+    width: ARENA_DEFAULT_STAGE_DEFINITION.arena.width,
+    height: ARENA_DEFAULT_STAGE_DEFINITION.arena.height,
   },
   player: {
-    x: 480,
-    y: 270,
+    x: ARENA_DEFAULT_STAGE_DEFINITION.arena.playerStart.x,
+    y: ARENA_DEFAULT_STAGE_DEFINITION.arena.playerStart.y,
     radius: 16,
     speed: 240,
     maxHp: 100,
@@ -300,12 +301,9 @@ const rawSimulationConfig = {
       damageGrowth: 1.12,
     },
   },
-  obstacles: [
-    { id: "block-a", x: 220, y: 150, width: 120, height: 32 },
-    { id: "block-b", x: 620, y: 150, width: 120, height: 32 },
-    { id: "block-c", x: 220, y: 360, width: 120, height: 32 },
-    { id: "block-d", x: 620, y: 360, width: 120, height: 32 },
-  ],
+  obstacles: ARENA_DEFAULT_STAGE_DEFINITION.obstacles.map((obstacle) => ({
+    ...obstacle,
+  })),
 };
 
 const rawViewConfig = {

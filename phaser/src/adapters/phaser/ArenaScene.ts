@@ -236,6 +236,8 @@ export class ArenaScene extends Phaser.Scene {
       seed: runSeed,
       weaponType: this.selectedWeapon,
       status,
+      modeId: DEFAULT_MODE_ID,
+      stageId: DEFAULT_STAGE_ID,
     });
     this.debugController?.resetRun();
     const runOrigin =
@@ -248,8 +250,8 @@ export class ArenaScene extends Phaser.Scene {
         id: this.createRunId(),
         profileId: this.profile.id,
         startedAt: new Date().toISOString(),
-        modeId: DEFAULT_MODE_ID,
-        stageId: DEFAULT_STAGE_ID,
+        modeId: this.session.modeId,
+        stageId: this.session.stageId,
         difficultyId: DEFAULT_DIFFICULTY_ID,
         rulesetVersion: RULESET_VERSION,
         seedCategory: resolveSeedCategory(fixedSeed),

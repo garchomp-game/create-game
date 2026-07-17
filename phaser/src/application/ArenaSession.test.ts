@@ -36,6 +36,8 @@ describe("ArenaSession", () => {
 
     expect(session.world).toEqual(directWorld);
     expect(session.randomStreams.seeds).toEqual(directRandom.seeds);
+    expect(session.modeId).toBe("endless");
+    expect(session.stageId).toBe("arena-default");
   });
 
   it("owns the active seed, config, weapon, and status without mirror state", () => {
@@ -46,6 +48,10 @@ describe("ArenaSession", () => {
     expect(session.config.seed).toBe(0xffffffff);
     expect(session.randomStreams.rootSeed).toBe(0xffffffff);
     expect(session.world.state).toMatchObject({ weaponType: "pulse", status: "title" });
+    expect(session.stage).toMatchObject({
+      id: "arena-default",
+      clearCondition: { type: "endless" },
+    });
   });
 
   it("requires an active run before exposing state", () => {

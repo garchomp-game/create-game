@@ -68,6 +68,8 @@ v0.7の完了に必要な量を次へ固定します。
 
 ## ステージ要件
 
+基盤状態: 2026-07-17に`endless` / `arena-default` / `endless-core`をRegistryへ登録し、既存地形とRunRecord識別子を挙動変更なしで移行しました。`expedition`定義と専用deck / boss参照は後続チケットで同じRegistryへ追加します。
+
 `StageDefinition`は少なくとも次を持ちます。
 
 ```ts
