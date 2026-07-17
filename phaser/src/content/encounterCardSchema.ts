@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ENCOUNTER_DIRECTIONS } from "../domain/encounterDirector";
+import { SPAWN_GEOMETRY_IDS } from "../domain/structuredSpawning";
 import { ENEMY_TYPE_IDS } from "../domain/types";
 import type {
   EncounterActDefinition,
@@ -36,7 +37,7 @@ const encounterCardDefinitionSchema = z
         intervalMultiplier: positiveNumber,
         budget: z.number().int().positive(),
         enemyWeights: z.partialRecord(z.enum(ENEMY_TYPE_IDS), positiveNumber),
-        geometryId: stableId,
+        geometryId: z.enum(SPAWN_GEOMETRY_IDS),
       })
       .strict()
       .refine((value) => Object.keys(value.enemyWeights).length > 0, {

@@ -1,3 +1,4 @@
+import type { SpawnGeometryId } from "./structuredSpawning";
 import type { EnemyTypeId, RandomSource } from "./types";
 
 export const ENCOUNTER_DIRECTIONS = [
@@ -22,7 +23,7 @@ export type EncounterCardDefinition = {
     intervalMultiplier: number;
     budget: number;
     enemyWeights: Partial<Record<EnemyTypeId, number>>;
-    geometryId: string;
+    geometryId: SpawnGeometryId;
   };
   minimumThreatTier: number;
   cooldownSeconds: number;
