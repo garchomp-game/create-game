@@ -80,6 +80,13 @@ export class PhaserFeedbackLayer {
       } else if (event.type === "elite.commander.pressure.lowered") {
         this.addImpact(event.position, 38, 0x22d3ee);
         this.addBurst(event.position, 0x22d3ee);
+      } else if (event.type === "enemy.charger.telegraph.started") {
+        this.addImpact(event.position, 24, 0xfb7185);
+      } else if (event.type === "enemy.charger.charge.started") {
+        this.addImpact(event.position, 28, 0xfacc15);
+        this.addBurst(event.position, 0xfacc15);
+      } else if (event.type === "enemy.charger.charge.ended") {
+        this.addImpact(event.position, 30, event.hitPlayer ? 0xef4444 : 0x22d3ee);
       } else if (event.type === "contract.offered") {
         this.addImpact(world.player.position, world.player.radius + 18, 0x22d3ee);
       } else if (event.type === "spread.sweep.triggered") {

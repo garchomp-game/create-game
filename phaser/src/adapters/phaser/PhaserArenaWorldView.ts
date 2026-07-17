@@ -239,6 +239,9 @@ export class PhaserArenaWorldView {
     if (enemy.elite?.kind === "commander") {
       this.drawCommanderEliteMark(graphics, enemy, elapsed);
     }
+    if (enemy.action?.kind === "charger") {
+      this.drawChargerAction(graphics, enemy, elapsed);
+    }
     if (
       (enemy.pulseFocusStacks ?? 0) > 0 &&
       (enemy.pulseFocusExpiresAt ?? 0) >= elapsed
@@ -450,6 +453,66 @@ export class PhaserArenaWorldView {
           y + Math.sin(angle) * (radius + 10),
         );
       }
+    }
+  }
+
+  private drawChargerAction(
+    graphics: Phaser.GameObjects.Graphics,
+    enemy: WorldState["enemies"][number],
+    elapsed: number,
+  ): void {
+    const action = enemy.action!;
+    const { x, y } = enemy.position;
+    const radius = enemy.radius + 5;
+    graphics.lineStyle(2, 0xfef08a, 0.95);
+    graphics.strokeCircle(x, y, radius);
+
+    const direction = action.chargeDirection;
+    if (!direction) return;
+    const warning = action.phase === "telegraph" || action.phase === "prepare";
+    if (warning) {
+      const segmentLength = 28;
+      const gap = 11;
+      const alpha = action.phase === "prepare"
+        ? 0.95
+        : 0.55 + Math.sin(elapsed * 12) * 0.2;
+      graphics.lineStyle(action.phase === "prepare" ? 4 : 3, 0xfb7185, alpha);
+      for (let index = 0; index < 7; index += 1) {
+        const startDistance = radius + 4 + index * (segmentLength + gap);
+        const endDistance = startDistance + segmentLength;
+        graphics.lineBetween(
+          x + direction.x * startDistance,
+          y + direction.y * startDistance,
+          x + direction.x * endDistance,
+          y + direction.y * endDistance,
+        );
+      }
+      const tipDistance = radius + 7 * (segmentLength + gap);
+      const perpendicular = { x: -direction.y, y: direction.x };
+      graphics.lineBetween(
+        x + direction.x * tipDistance,
+        y + direction.y * tipDistance,
+        x + direction.x * (tipDistance - 14) + perpendicular.x * 8,
+        y + direction.y * (tipDistance - 14) + perpendicular.y * 8,
+      );
+      graphics.lineBetween(
+        x + direction.x * tipDistance,
+        y + direction.y * tipDistance,
+        x + direction.x * (tipDistance - 14) - perpendicular.x * 8,
+        y + direction.y * (tipDistance - 14) - perpendicular.y * 8,
+      );
+    } else if (action.phase === "charge") {
+      graphics.lineStyle(5, 0xfacc15, 0.72);
+      graphics.lineBetween(
+        x - direction.x * (radius + 34),
+        y - direction.y * (radius + 34),
+        x - direction.x * radius,
+        y - direction.y * radius,
+      );
+    } else if (action.phase === "recovery") {
+      graphics.lineStyle(3, 0x94a3b8, 0.85);
+      graphics.lineBetween(x - radius, y - radius, x + radius, y + radius);
+      graphics.lineBetween(x + radius, y - radius, x - radius, y + radius);
     }
   }
 

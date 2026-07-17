@@ -402,6 +402,7 @@ export type Enemy = CircleBody & {
   enteredArena: boolean;
   elite?: CommanderEliteState;
   support?: CommanderSupportState;
+  action?: ChargerActionState;
   pulseFocusStacks?: number;
   pulseFocusExpiresAt?: number;
 };
@@ -421,6 +422,18 @@ export type CommanderEliteState = {
 export type CommanderSupportState = {
   sourceEnemyId: string;
   speedMultiplier: number;
+};
+
+export type ChargerActionState = {
+  kind: "charger";
+  phase: "approach" | "telegraph" | "prepare" | "charge" | "recovery";
+  spawnedAt: number;
+  phaseStartedAt: number;
+  phaseEndsAt: number;
+  chargeDirection: Vec2 | null;
+  chargeStartPosition: Vec2 | null;
+  charges: number;
+  hitPlayerDuringCharge: boolean;
 };
 
 export type EnemyProjectile = CircleBody & {
@@ -640,6 +653,7 @@ export type EncounterRunStats = {
   peakCollapseStage: number;
   collapseDamageTaken: number;
   commander?: CommanderEncounterRunStats;
+  charger?: ChargerEncounterRunStats;
 };
 
 export type CommanderEncounterRunStats = {
@@ -651,6 +665,19 @@ export type CommanderEncounterRunStats = {
   pressureReleases: number;
   supportUnitsReleased: number;
   lifetimeTotal: number;
+  killsByWeapon: Record<WeaponTypeId, number>;
+};
+
+export type ChargerEncounterRunStats = {
+  spawned: number;
+  telegraphs: number;
+  charges: number;
+  playerHits: number;
+  avoided: number;
+  obstacleInterruptions: number;
+  boundaryInterruptions: number;
+  recoveries: number;
+  killed: number;
   killsByWeapon: Record<WeaponTypeId, number>;
 };
 
@@ -744,6 +771,9 @@ export type WorldState = {
   weaponIdentity: WeaponIdentityState;
   eliteState?: {
     commanderIds: string[];
+  };
+  enemyActionState?: {
+    chargerIds: string[];
   };
   encounter: EncounterState;
   player: Player;
@@ -867,6 +897,57 @@ export type GameEvent =
       type: "elite.commander.pressure.lowered";
       enemyId: string;
       releasedEnemyIds: string[];
+      position: Vec2;
+    }
+  | {
+      type: "enemy.charger.spawned";
+      enemyId: string;
+      position: Vec2;
+    }
+  | {
+      type: "enemy.charger.telegraph.started";
+      enemyId: string;
+      position: Vec2;
+      direction: Vec2;
+      duration: number;
+    }
+  | {
+      type: "enemy.charger.prepare.started";
+      enemyId: string;
+      position: Vec2;
+      direction: Vec2;
+      duration: number;
+    }
+  | {
+      type: "enemy.charger.charge.started";
+      enemyId: string;
+      position: Vec2;
+      direction: Vec2;
+      duration: number;
+    }
+  | {
+      type: "enemy.charger.charge.ended";
+      enemyId: string;
+      position: Vec2;
+      reason: "timeout" | "obstacle" | "arenaBoundary";
+      hitPlayer: boolean;
+      recoveryEndsAt: number;
+    }
+  | {
+      type: "enemy.charger.recovered";
+      enemyId: string;
+      position: Vec2;
+    }
+  | {
+      type: "enemy.charger.player.hit";
+      enemyId: string;
+      damage: number;
+    }
+  | {
+      type: "enemy.charger.killed";
+      enemyId: string;
+      weaponType: WeaponTypeId;
+      phase: ChargerActionState["phase"];
       position: Vec2;
     }
   | {

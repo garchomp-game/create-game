@@ -9,6 +9,10 @@ import type {
 import { circleCircle, segmentCircleFirstIntersection } from "../../math/geometry";
 import type { BulletFrameMotions, BulletMotionSegment } from "./bulletSystem";
 import { releaseCommanderPressure } from "./commanderEliteSystem";
+import {
+  recordChargerKilled,
+  recordChargerPlayerHit,
+} from "./chargerEnemySystem";
 
 export function resolveCombat(
   world: WorldState,
@@ -85,6 +89,7 @@ export function resolveCombat(
       const damage = hpBefore - world.state.hp;
       if (damage > 0) {
         world.state.damageCooldown = config.player.damageCooldown;
+        recordChargerPlayerHit(touchingEnemy, damage, events);
         events.push({
           type: "player.damaged",
           damage,
@@ -169,6 +174,7 @@ function resolveBulletEnemyHit(
 
   deadEnemies.add(enemy);
   releaseCommanderPressure(world, enemy, bullet.weaponType, events);
+  recordChargerKilled(world, enemy, bullet.weaponType, events);
   const scoreAwarded = Math.round(enemy.score * world.encounter.contract.scoreMultiplier);
   world.state.score += scoreAwarded;
   events.push({

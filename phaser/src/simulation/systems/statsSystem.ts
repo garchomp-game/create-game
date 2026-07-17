@@ -114,6 +114,25 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
       const metrics = getCommanderMetrics(world);
       metrics.pressureReleases += 1;
       metrics.supportUnitsReleased += event.releasedEnemyIds.length;
+    } else if (event.type === "enemy.charger.spawned") {
+      getChargerMetrics(world).spawned += 1;
+    } else if (event.type === "enemy.charger.telegraph.started") {
+      getChargerMetrics(world).telegraphs += 1;
+    } else if (event.type === "enemy.charger.charge.started") {
+      getChargerMetrics(world).charges += 1;
+    } else if (event.type === "enemy.charger.charge.ended") {
+      const metrics = getChargerMetrics(world);
+      if (!event.hitPlayer) metrics.avoided += 1;
+      if (event.reason === "obstacle") metrics.obstacleInterruptions += 1;
+      if (event.reason === "arenaBoundary") metrics.boundaryInterruptions += 1;
+    } else if (event.type === "enemy.charger.recovered") {
+      getChargerMetrics(world).recoveries += 1;
+    } else if (event.type === "enemy.charger.player.hit") {
+      getChargerMetrics(world).playerHits += 1;
+    } else if (event.type === "enemy.charger.killed") {
+      const metrics = getChargerMetrics(world);
+      metrics.killed += 1;
+      metrics.killsByWeapon[event.weaponType] += 1;
     } else if (event.type === "player.damaged") {
       world.stats.hitsTaken += 1;
       world.stats.damageTaken += event.damage;
@@ -235,6 +254,21 @@ function getCommanderMetrics(world: WorldState) {
     pressureReleases: 0,
     supportUnitsReleased: 0,
     lifetimeTotal: 0,
+    killsByWeapon: { pulse: 0, spread: 0, pierce: 0 },
+  });
+}
+
+function getChargerMetrics(world: WorldState) {
+  return (world.stats.encounterMetrics.charger ??= {
+    spawned: 0,
+    telegraphs: 0,
+    charges: 0,
+    playerHits: 0,
+    avoided: 0,
+    obstacleInterruptions: 0,
+    boundaryInterruptions: 0,
+    recoveries: 0,
+    killed: 0,
     killsByWeapon: { pulse: 0, spread: 0, pierce: 0 },
   });
 }

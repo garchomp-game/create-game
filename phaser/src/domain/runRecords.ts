@@ -273,6 +273,24 @@ const encounterMetricsSchema = z.object({
       }),
     })
     .optional(),
+  charger: z
+    .object({
+      spawned: z.number().int().nonnegative(),
+      telegraphs: z.number().int().nonnegative(),
+      charges: z.number().int().nonnegative(),
+      playerHits: z.number().int().nonnegative(),
+      avoided: z.number().int().nonnegative(),
+      obstacleInterruptions: z.number().int().nonnegative(),
+      boundaryInterruptions: z.number().int().nonnegative(),
+      recoveries: z.number().int().nonnegative(),
+      killed: z.number().int().nonnegative(),
+      killsByWeapon: z.object({
+        pulse: z.number().int().nonnegative(),
+        spread: z.number().int().nonnegative(),
+        pierce: z.number().int().nonnegative(),
+      }),
+    })
+    .optional(),
 });
 
 const runRecordV2Schema = z.object({
