@@ -116,7 +116,7 @@ description: v0.4からv1.0までの目的と主要チケット。
 
 ## v0.7 最終遠征プロトタイプ
 
-状態: Wave 0から5、最終遠征RC3実装、全回帰、Version Preview公開まで完了。production昇格はRC3のPulse / Spread各3本の手動採否待ちです。
+状態: Wave 0から5、最終遠征RC5実装、全回帰、Version Preview公開まで完了。RC4は周回・回復循環・長時間稼ぎ欠陥により棄却しました。production昇格はRC5のPulse / Spread各1本以上の欠陥特化手動採否待ちです。
 
 目的:
 
@@ -159,7 +159,8 @@ description: v0.4からv1.0までの目的と主要チケット。
 - [`PH-V08-008` #64](https://github.com/garchomp-game/create-game/issues/64) 第1から第4の敵学習系列。
 - [`PH-V08-009` #65](https://github.com/garchomp-game/create-game/issues/65) 第5から第9の複合技能系列。
 - [`PH-V08-010` #66](https://github.com/garchomp-game/create-game/issues/66) 世界観と視覚テーマの決定。
-- [`PH-V08-007` #62](https://github.com/garchomp-game/create-game/issues/62) エクスペディション進行とステージ選択基盤。
+- [`PH-V08-011` #68](https://github.com/garchomp-game/create-game/issues/68) UIプレゼンテーション境界とデザイントークン。
+- [`PH-V08-012` #67](https://github.com/garchomp-game/create-game/issues/67) 比較可能なUI草案とライブラリ採否。
 
 ## v0.9 コンテンツ完成とリリース準備
 
@@ -183,5 +184,6 @@ description: v0.4からv1.0までの目的と主要チケット。
 - [v0.6チケット詳細](../v06-tickets/)
 - [v0.7 最終遠征プロトタイプ](../../design/v07-first-expedition/)
 - [v0.7 実行計画](../v07-execution-plan/)
+- [UI・グラフィック再設計計画](../ui-visual-redesign-plan/)
 - [中長期作業計画](../gameplay-expansion-plan/)
 - [ゲームプレイ拡張設計](../../design/gameplay-expansion-blueprint/)

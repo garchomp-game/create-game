@@ -63,6 +63,7 @@ export default defineConfig({
             { label: "観戦AIチケット詳細", slug: "project-management/auto-pilot-tickets" },
             { label: "Phaser 4移行計画", slug: "project-management/phaser4-migration-plan" },
             { label: "v0.7 実行計画", slug: "project-management/v07-execution-plan" },
+            { label: "UI・グラフィック再設計", slug: "project-management/ui-visual-redesign-plan" },
             { label: "中長期作業計画", slug: "project-management/gameplay-expansion-plan" },
             { label: "ロードマップ", slug: "project-management/roadmap" },
             { label: "チケット一覧", slug: "project-management/tickets" },

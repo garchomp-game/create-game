@@ -147,8 +147,8 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-V07-005` | [#50](https://github.com/garchomp-game/create-game/issues/50) | 予兆付き突進敵 | P1 | 完了 |
 | `PH-V07-006` | [#48](https://github.com/garchomp-game/create-game/issues/48) | エクスペディション縦切り | P0 | 完了。5 Actとボス撃破勝利を接続 |
 | `PH-V07-007` | [#58](https://github.com/garchomp-game/create-game/issues/58) | 指揮艦ボス戦 | P0 | 完了後、RC3で最終ボスへ拡張 |
-| `PH-V07-008` | [#59](https://github.com/garchomp-game/create-game/issues/59) | 統合QAと採否判定 | P0 | RC4自動ゲートとpreview完了。手動再評価待ち |
-| `PH-V07-009` | [#63](https://github.com/garchomp-game/create-game/issues/63) | 最終遠征RC3高難度化 | P0 | RC4で最終遠征RC3を回帰固定。手動再評価待ち |
+| `PH-V07-008` | [#59](https://github.com/garchomp-game/create-game/issues/59) | 統合QAと採否判定 | P0 | RC5自動ゲートとpreview完了。各武器1本以上の手動再評価待ち |
+| `PH-V07-009` | [#63](https://github.com/garchomp-game/create-game/issues/63) | 最終遠征RC3高難度化 | P0 | RC5で周回、回復循環、長時間稼ぎを対策。手動再評価待ち |
 
 ## v0.8 チャレンジ、熟練度、遠征進行
 
@@ -164,6 +164,8 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-V08-008` | [#64](https://github.com/garchomp-game/create-game/issues/64) | 第1から第4の敵学習ステージ |
 | `PH-V08-009` | [#65](https://github.com/garchomp-game/create-game/issues/65) | 第5から第9の複合技能ステージ |
 | `PH-V08-010` | [#66](https://github.com/garchomp-game/create-game/issues/66) | 世界観と視覚テーマの決定 |
+| `PH-V08-011` | [#68](https://github.com/garchomp-game/create-game/issues/68) | UIプレゼンテーション境界とデザイントークン |
+| `PH-V08-012` | [#67](https://github.com/garchomp-game/create-game/issues/67) | 比較可能なUI草案とライブラリ採否 |
 
 ## v0.9 コンテンツ完成とリリース準備
 
