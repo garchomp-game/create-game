@@ -124,6 +124,16 @@ function formatGameOverText(world: WorldState, uiState?: ArenaUiState): string {
     TEXT.ui.result.shotsRecovered(summary.shotsFired, summary.hpRecovered),
   ];
 
+  const expedition = world.stats.encounterMetrics.expedition;
+  if (expedition?.outcome === "victory") {
+    lines.splice(
+      2,
+      0,
+      `完遂 +${expedition.clearScoreBonus.toLocaleString()} / 速攻 +${expedition.timeScoreBonus.toLocaleString()}`,
+      `指揮艦撃破 ${formatTime(expedition.bossFightDuration ?? 0)}`,
+    );
+  }
+
   if (summary.lastDamageSource) {
     lines.push(TEXT.ui.result.cause(formatDamageSource(summary.lastDamageSource)));
   }
@@ -146,11 +156,9 @@ function formatGameOverDetails(uiState?: ArenaUiState): string {
     formatRecordEncounter(record),
     formatBuildLine(record),
     formatRecordSelections(record),
-    `シード: ${record.seed}`,
-    `区分: ${record.seedCategory === "fixed" ? "固定シード" : "ランダム"}`,
+    `シード: ${record.seed} / ${record.seedCategory === "fixed" ? "固定" : "ランダム"}`,
     eligibility,
-    `アプリ: ${record.appVersion} / build ${record.buildCommit}`,
-    `ルール: ${record.rulesetVersion}`,
+    `版: ${record.appVersion} / ${record.buildCommit.slice(0, 8)}`,
     uiState.notice ?? "",
   ].filter(Boolean).join("\n");
 }
@@ -163,6 +171,14 @@ function formatBestLine(
   if (previousBest === null) return TEXT.ui.firstRecord;
   const difference = record.score - previousBest.score;
   if (difference > 0) return TEXT.ui.newBest(difference);
+  if (
+    difference === 0 &&
+    record.modeId === "expedition" &&
+    previousBest.modeId === "expedition" &&
+    record.elapsed < previousBest.elapsed
+  ) {
+    return `自己ベスト更新  完遂 -${formatTime(previousBest.elapsed - record.elapsed)}`;
+  }
   if (difference === 0 && record.elapsed > previousBest.elapsed) {
     return `自己ベスト更新  生存 +${formatTime(record.elapsed - previousBest.elapsed)}`;
   }
@@ -214,7 +230,7 @@ function formatRecordEncounter(record: RunRecord): string {
           : "進行中";
     const boss = metrics.boss;
     const bossLine = boss?.spawnedAt !== null && boss?.spawnedAt !== undefined
-      ? `\n指揮艦: PHASE ${boss.phaseReached} / HP ${Math.ceil(boss.remainingHp ?? 0)} / 最終攻撃 ${formatBossAttack(boss.lastAttackId)} / 被弾 ${Object.values(boss.playerHitsByAttack).reduce((sum, count) => sum + count, 0)}`
+      ? `\n指揮艦: P${boss.phaseReached} / HP ${Math.ceil(boss.remainingHp ?? 0)} / 終 ${formatBossAttack(boss.lastAttackId)} / 被弾 ${Object.values(boss.playerHitsByAttack).reduce((sum, count) => sum + count, 0)}`
       : "";
     return `遠征: ${outcome} / ${formatActName(expedition.reachedActId)} / 遭遇${expedition.cardsCompleted}/${expedition.cardsSelected} / 編隊${expedition.structuredEnemiesSpawned}${bossLine}`;
   }
@@ -425,9 +441,10 @@ function formatActName(actId: string | null): string {
 }
 
 function formatBossAttack(
-  attackId: "targeted-salvo" | "escort-pincer" | null,
+  attackId: "targeted-salvo" | "escort-pincer" | "command-pulse" | null,
 ): string {
   if (attackId === "targeted-salvo") return "照準斉射";
   if (attackId === "escort-pincer") return "挟撃護衛";
+  if (attackId === "command-pulse") return "制圧衝撃波";
   return "未実行";
 }

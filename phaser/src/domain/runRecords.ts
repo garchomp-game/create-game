@@ -315,6 +315,10 @@ const encounterMetricsSchema = z.object({
       structuredSpawnsDeferred: z.number().int().nonnegative(),
       longestMeaningfulGap: z.number().nonnegative(),
       completedAt: z.number().nonnegative().nullable(),
+      scoreBeforeBonus: z.number().int().nonnegative().default(0),
+      clearScoreBonus: z.number().int().nonnegative().default(0),
+      timeScoreBonus: z.number().int().nonnegative().default(0),
+      bossFightDuration: z.number().nonnegative().nullable().default(null),
     })
     .optional(),
   boss: z
@@ -330,20 +334,37 @@ const encounterMetricsSchema = z.object({
       attacksTelegraphed: z.object({
         "targeted-salvo": z.number().int().nonnegative(),
         "escort-pincer": z.number().int().nonnegative(),
+        "command-pulse": z.number().int().nonnegative().default(0),
       }),
       attacksExecuted: z.object({
         "targeted-salvo": z.number().int().nonnegative(),
         "escort-pincer": z.number().int().nonnegative(),
+        "command-pulse": z.number().int().nonnegative().default(0),
       }),
       playerHitsByAttack: z.object({
         "targeted-salvo": z.number().int().nonnegative(),
         "escort-pincer": z.number().int().nonnegative(),
+        "command-pulse": z.number().int().nonnegative().default(0),
       }),
       damageTakenByAttack: z.object({
         "targeted-salvo": z.number().nonnegative(),
         "escort-pincer": z.number().nonnegative(),
+        "command-pulse": z.number().nonnegative().default(0),
       }),
       escortsSpawned: z.number().int().nonnegative(),
+      killsDuringBoss: z.number().int().nonnegative().default(0),
+      healPickupsSpawned: z.number().int().nonnegative().default(0),
+      healDropsSuppressed: z.number().int().nonnegative().default(0),
+      healPickupsCollected: z.number().int().nonnegative().default(0),
+      hpRecoveredDuringBoss: z.number().nonnegative().default(0),
+      commandPulseResults: z
+        .object({
+          hit: z.number().int().nonnegative(),
+          blocked: z.number().int().nonnegative(),
+          outside: z.number().int().nonnegative(),
+          invulnerable: z.number().int().nonnegative(),
+        })
+        .default({ hit: 0, blocked: 0, outside: 0, invulnerable: 0 }),
       defeatedByWeapon: z.enum(WEAPON_TYPE_IDS).nullable(),
     })
     .optional(),

@@ -340,8 +340,12 @@ function formatExpeditionCard(titleKey: string | null): string {
   return labels[titleKey] ?? titleKey;
 }
 
-function formatBossAttack(attackId: "targeted-salvo" | "escort-pincer"): string {
-  return attackId === "targeted-salvo" ? "照準斉射" : "挟撃護衛";
+function formatBossAttack(
+  attackId: "targeted-salvo" | "escort-pincer" | "command-pulse",
+): string {
+  if (attackId === "targeted-salvo") return "照準斉射";
+  if (attackId === "escort-pincer") return "挟撃護衛";
+  return "制圧衝撃波";
 }
 
 function formatBossActionPhase(phase: "telegraph" | "execute" | "recovery"): string {

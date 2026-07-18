@@ -94,8 +94,10 @@ describe("ExpeditionController", () => {
   it("records explicit victory and defeat boundaries", () => {
     const victory = createFixture(44);
     const spawnEvents: GameEvent[] = [];
+    victory.world.state.elapsed = 400;
     const boss = spawnFinalExpeditionBoss(victory.world, spawnEvents)!;
     victory.world.state.elapsed = 480;
+    victory.world.state.score = 40_000;
     const killed: Extract<GameEvent, { type: "enemy.killed" }> = {
       type: "enemy.killed",
       bulletId: "bullet-victory",
@@ -114,13 +116,21 @@ describe("ExpeditionController", () => {
       [killed],
     );
     expect(victoryEvents).toContainEqual(
-      expect.objectContaining({ type: "expedition.completed", elapsed: 480 }),
+      expect.objectContaining({
+        type: "expedition.completed",
+        elapsed: 480,
+        score: 127_000,
+        scoreBeforeBonus: 40_000,
+        clearScoreBonus: 15_000,
+        timeScoreBonus: 72_000,
+        bossFightDuration: 80,
+      }),
     );
     expect(victoryEvents).toContainEqual(
       expect.objectContaining({ type: "game.over", elapsed: 480 }),
     );
     expect(victory.world).toMatchObject({
-      state: { status: "gameOver" },
+      state: { status: "gameOver", score: 127_000 },
       expedition: { status: "victory", outcome: "victory" },
     });
 
@@ -141,6 +151,47 @@ describe("ExpeditionController", () => {
       status: "defeat",
       outcome: "defeat",
     });
+  });
+
+  it("fails the Expedition immediately when a command pulse is lethal", () => {
+    const fixture = createFixture(56);
+    fixture.world.state.elapsed = 400;
+    fixture.world.obstacles = [];
+    const enemy = spawnFinalExpeditionBoss(fixture.world, [])!;
+    enemy.position = { x: 480, y: 270 };
+    fixture.world.player.position = { x: 560, y: 270 };
+    fixture.world.state.hp = 10;
+    fixture.world.expedition!.boss!.action = {
+      attackId: "command-pulse",
+      phase: "telegraph",
+      startedAt: 400,
+      endsAt: 401.35,
+      aimDirection: null,
+      ingressDirection: null,
+    };
+    fixture.world.state.elapsed = 401.35;
+
+    const events = fixture.controller.update(
+      fixture.world,
+      fixture.random,
+      SIMULATION_CONFIG,
+      [],
+    );
+
+    expect(fixture.world).toMatchObject({
+      state: { hp: 0, status: "gameOver" },
+      expedition: { status: "defeat", outcome: "defeat" },
+    });
+    expect(events).toContainEqual(
+      expect.objectContaining({ type: "game.over", elapsed: 401.35 }),
+    );
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        type: "expedition.failed",
+        clearScoreBonus: 0,
+        timeScoreBonus: 0,
+      }),
+    );
   });
 
   it("replays the same card, direction, and placements for the same seed", () => {

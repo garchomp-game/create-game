@@ -24,7 +24,11 @@ export const ENEMY_TYPE_IDS = ["chaser", "brute", "fast", "ranged"] as const;
 export type EnemyTypeId = (typeof ENEMY_TYPE_IDS)[number];
 export type EnemyBehavior = "chase" | "ranged";
 
-export const BOSS_ATTACK_IDS = ["targeted-salvo", "escort-pincer"] as const;
+export const BOSS_ATTACK_IDS = [
+  "targeted-salvo",
+  "escort-pincer",
+  "command-pulse",
+] as const;
 export type BossAttackId = (typeof BOSS_ATTACK_IDS)[number];
 
 export const WEAPON_TYPE_IDS = ["pulse", "spread", "pierce"] as const;
@@ -551,6 +555,10 @@ export type ExpeditionBossState = {
   defeatedAt: number | null;
   nextAttackIndex: number;
   action: ExpeditionBossActionState;
+  sustain: {
+    healDropMinimumIntervalSeconds: number;
+    nextHealDropAt: number;
+  };
 };
 
 export type ExpeditionState = {
@@ -733,7 +741,17 @@ export type ExpeditionEncounterRunStats = {
   structuredSpawnsDeferred: number;
   longestMeaningfulGap: number;
   completedAt: number | null;
+  scoreBeforeBonus: number;
+  clearScoreBonus: number;
+  timeScoreBonus: number;
+  bossFightDuration: number | null;
 };
+
+export type BossCommandPulseResult =
+  | "hit"
+  | "blocked"
+  | "outside"
+  | "invulnerable";
 
 export type BossEncounterRunStats = {
   bossId: string | null;
@@ -749,6 +767,12 @@ export type BossEncounterRunStats = {
   playerHitsByAttack: Record<BossAttackId, number>;
   damageTakenByAttack: Record<BossAttackId, number>;
   escortsSpawned: number;
+  killsDuringBoss: number;
+  healPickupsSpawned: number;
+  healDropsSuppressed: number;
+  healPickupsCollected: number;
+  hpRecoveredDuringBoss: number;
+  commandPulseResults: Record<BossCommandPulseResult, number>;
   defeatedByWeapon: WeaponTypeId | null;
 };
 
@@ -1233,6 +1257,23 @@ export type GameEvent =
       elapsed: number;
     }
   | {
+      type: "boss.command-pulse.resolved";
+      bossId: string;
+      enemyId: string;
+      phase: 1 | 2;
+      radius: number;
+      damage: number;
+      result: BossCommandPulseResult;
+      elapsed: number;
+    }
+  | {
+      type: "boss.heal-drop.suppressed";
+      bossId: string;
+      count: number;
+      reason: "cooldown";
+      elapsed: number;
+    }
+  | {
       type: "boss.escort.deployed";
       bossId: string;
       attackId: "escort-pincer";
@@ -1260,12 +1301,20 @@ export type GameEvent =
       actId: string;
       elapsed: number;
       score: number;
+      scoreBeforeBonus: number;
+      clearScoreBonus: number;
+      timeScoreBonus: number;
+      bossFightDuration: number | null;
     }
   | {
       type: "expedition.failed";
       actId: string;
       elapsed: number;
       score: number;
+      scoreBeforeBonus: number;
+      clearScoreBonus: number;
+      timeScoreBonus: number;
+      bossFightDuration: number | null;
     }
   | { type: "collapse.advanced"; stage: number; inset: number; elapsed: number }
   | { type: "contract.offered"; elapsed: number }

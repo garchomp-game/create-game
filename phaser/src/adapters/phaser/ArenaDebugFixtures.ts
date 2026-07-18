@@ -440,16 +440,19 @@ export function applyExpeditionBossFixture(
   enemy.hp = phase === 2 ? 1_530 : 2_720;
   boss.phase = phase;
   boss.phaseChangedAt = phase === 2 ? world.state.elapsed - 0.35 : null;
+  const timing = attackId === "targeted-salvo"
+    ? FINAL_COMMAND_SHIP_DEFINITION.targetedSalvo
+    : attackId === "escort-pincer"
+      ? FINAL_COMMAND_SHIP_DEFINITION.escortPincer
+      : FINAL_COMMAND_SHIP_DEFINITION.commandPulse;
   boss.action = {
     attackId,
     phase: "telegraph",
     startedAt: world.state.elapsed,
     endsAt:
       world.state.elapsed +
-      (attackId === "targeted-salvo"
-        ? FINAL_COMMAND_SHIP_DEFINITION.targetedSalvo.telegraphSeconds[phase - 1]
-        : FINAL_COMMAND_SHIP_DEFINITION.escortPincer.telegraphSeconds[phase - 1]),
-    aimDirection: { x: -0.2, y: 0.98 },
+      timing.telegraphSeconds[phase - 1],
+    aimDirection: attackId === "command-pulse" ? null : { x: -0.2, y: 0.98 },
     ingressDirection: attackId === "escort-pincer" ? "east" : null,
   };
   world.stats.encounterMetrics.boss = {
@@ -464,11 +467,30 @@ export function applyExpeditionBossFixture(
     attacksTelegraphed: {
       "targeted-salvo": attackId === "targeted-salvo" ? 1 : 0,
       "escort-pincer": attackId === "escort-pincer" ? 1 : 0,
+      "command-pulse": attackId === "command-pulse" ? 1 : 0,
     },
-    attacksExecuted: { "targeted-salvo": 0, "escort-pincer": 0 },
-    playerHitsByAttack: { "targeted-salvo": 0, "escort-pincer": 0 },
-    damageTakenByAttack: { "targeted-salvo": 0, "escort-pincer": 0 },
+    attacksExecuted: {
+      "targeted-salvo": 0,
+      "escort-pincer": 0,
+      "command-pulse": 0,
+    },
+    playerHitsByAttack: {
+      "targeted-salvo": 0,
+      "escort-pincer": 0,
+      "command-pulse": 0,
+    },
+    damageTakenByAttack: {
+      "targeted-salvo": 0,
+      "escort-pincer": 0,
+      "command-pulse": 0,
+    },
     escortsSpawned: 0,
+    killsDuringBoss: 0,
+    healPickupsSpawned: 0,
+    healDropsSuppressed: 0,
+    healPickupsCollected: 0,
+    hpRecoveredDuringBoss: 0,
+    commandPulseResults: { hit: 0, blocked: 0, outside: 0, invulnerable: 0 },
     defeatedByWeapon: null,
   };
   return true;

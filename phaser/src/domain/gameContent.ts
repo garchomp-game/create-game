@@ -48,6 +48,12 @@ export type StageProgressionDefinition = {
   };
 };
 
+export type StageCompletionScoringDefinition = {
+  clearBonus: number;
+  bossFightTargetSeconds: number;
+  bossTimeBonusPerSecond: number;
+};
+
 export type StageDefinition = {
   id: string;
   titleKey: string;
@@ -58,6 +64,7 @@ export type StageDefinition = {
   enemyPoolId: string;
   difficulty?: StageDifficultyDefinition;
   progression?: StageProgressionDefinition;
+  completionScoring?: StageCompletionScoringDefinition;
   clearCondition: ClearConditionDefinition;
   bossId?: string;
 };

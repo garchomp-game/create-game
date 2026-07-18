@@ -136,6 +136,14 @@ const stageProgressionSchema = z
     }
   });
 
+const stageCompletionScoringSchema = z
+  .object({
+    clearBonus: z.number().int().nonnegative(),
+    bossFightTargetSeconds: positiveNumber,
+    bossTimeBonusPerSecond: z.number().int().positive(),
+  })
+  .strict();
+
 const stageDefinitionSchema = z
   .object({
     id: contentId,
@@ -153,6 +161,7 @@ const stageDefinitionSchema = z
     enemyPoolId: contentId,
     difficulty: stageDifficultySchema.optional(),
     progression: stageProgressionSchema.optional(),
+    completionScoring: stageCompletionScoringSchema.optional(),
     clearCondition: clearConditionSchema,
     bossId: contentId.optional(),
   })

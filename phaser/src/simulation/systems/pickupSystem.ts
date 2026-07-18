@@ -64,6 +64,10 @@ function spawnPickupsFromKills(
   events: GameEvent[],
 ): void {
   const killEvents = events.filter((event) => event.type === "enemy.killed");
+  const boss = world.expedition?.boss?.status === "active"
+    ? world.expedition.boss
+    : null;
+  let suppressedHealDrops = 0;
   for (const event of killEvents) {
     if (event.xpAwarded > 0) {
       const xpPickup = createXpPickup(world, config, event.position, event.xpAwarded);
@@ -79,15 +83,22 @@ function spawnPickupsFromKills(
       });
     }
 
+    if (boss && world.state.elapsed < boss.sustain.nextHealDropAt) {
+      suppressedHealDrops += 1;
+      continue;
+    }
+
     const rollIndex = world.runtime.healDropRollIndex;
-    const shouldSpawnHeal = rollHealDrop(
-      config,
-      event.enemyId,
-      event.enemyType,
-      rollIndex,
-      world.runtime.healDropMissCount,
-      getThreatMultipliers(config, world.state.elapsed).healDrop,
-    );
+    const shouldSpawnHeal = boss
+      ? true
+      : rollHealDrop(
+          config,
+          event.enemyId,
+          event.enemyType,
+          rollIndex,
+          world.runtime.healDropMissCount,
+          getThreatMultipliers(config, world.state.elapsed).healDrop,
+        );
     world.runtime.healDropRollIndex += 1;
 
     if (!shouldSpawnHeal) {
@@ -96,6 +107,10 @@ function spawnPickupsFromKills(
     }
 
     world.runtime.healDropMissCount = 0;
+    if (boss) {
+      boss.sustain.nextHealDropAt =
+        world.state.elapsed + boss.sustain.healDropMinimumIntervalSeconds;
+    }
     const healPickup = createHealPickup(world, config, event.position);
     world.pickups.push(healPickup);
     events.push({
@@ -106,6 +121,15 @@ function spawnPickupsFromKills(
       xpValue: 0,
       healValue: healPickup.healValue,
       lifetime: config.pickup.healLifetime,
+    });
+  }
+  if (boss && suppressedHealDrops > 0) {
+    events.push({
+      type: "boss.heal-drop.suppressed",
+      bossId: boss.bossId,
+      count: suppressedHealDrops,
+      reason: "cooldown",
+      elapsed: world.state.elapsed,
     });
   }
 }

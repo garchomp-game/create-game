@@ -1,3 +1,4 @@
+import { FINAL_COMMAND_SHIP_DEFINITION } from "../content/bossCatalog";
 import type { Enemy, Vec2, WeaponTypeId } from "../domain/types";
 import type {
   AutoPilotEnemyTarget,
@@ -95,6 +96,17 @@ export function getAutoPilotWeaponStrategy(
     ? FAIR_WEAPON_STRATEGIES
     : CEILING_WEAPON_STRATEGIES;
   return strategies[frame.world.state.weaponType];
+}
+
+export function getAutoPilotPreferredRange(
+  frame: AutoPilotFrame,
+  target: Enemy,
+): number {
+  const base = getAutoPilotWeaponStrategy(frame).preferredRange;
+  const boss = frame.world.expedition?.boss;
+  if (!target.boss || !boss || boss.status !== "active") return base;
+  const pulseRadius = FINAL_COMMAND_SHIP_DEFINITION.commandPulse.radius[boss.phase - 1];
+  return Math.max(base, pulseRadius + 70);
 }
 
 export function getAutoPilotOpenSpaceWeight(

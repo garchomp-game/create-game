@@ -105,6 +105,10 @@ describe("PhaserAudioEventRouter", () => {
         actId: "command-ship",
         elapsed: 420,
         score: 40_000,
+        scoreBeforeBonus: 25_000,
+        clearScoreBonus: 15_000,
+        timeScoreBonus: 0,
+        bossFightDuration: 120,
       },
       { type: "game.over", score: 40_000, elapsed: 420 },
     ]);

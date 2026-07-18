@@ -284,6 +284,84 @@ describe("final Expedition boss", () => {
     expect(attackEvent?.projectileIds).toHaveLength(15);
   });
 
+  it("forces a close orbit to leave the command pulse radius", () => {
+    const fixture = createBossFixture(2234, "pulse");
+    const boss = fixture.world.expedition!.boss!;
+    const enemy = getActiveBossEnemy(fixture.world)!;
+    fixture.world.obstacles = [];
+    enemy.position = { x: 480, y: 270 };
+    fixture.world.player.position = { x: 580, y: 270 };
+    boss.action = {
+      attackId: "command-pulse",
+      phase: "telegraph",
+      startedAt: 500,
+      endsAt: 501.35,
+      aimDirection: null,
+      ingressDirection: null,
+    };
+    fixture.world.state.elapsed = boss.action.endsAt;
+    const hpBefore = fixture.world.state.hp;
+
+    const events = updateFinalExpeditionBoss(
+      fixture.world,
+      fixture.random,
+      SIMULATION_CONFIG,
+      [],
+    );
+
+    expect(fixture.world.state.hp).toBe(hpBefore - 22);
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        type: "boss.command-pulse.resolved",
+        result: "hit",
+        radius: 175,
+        damage: 22,
+      }),
+    );
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        type: "player.damaged",
+        source: expect.objectContaining({ bossAttackId: "command-pulse" }),
+      }),
+    );
+  });
+
+  it("lets an obstacle block the phase-two command pulse", () => {
+    const fixture = createBossFixture(3234, "spread");
+    const boss = fixture.world.expedition!.boss!;
+    const enemy = getActiveBossEnemy(fixture.world)!;
+    enemy.position = { x: 160, y: 166 };
+    fixture.world.player.position = { x: 355, y: 166 };
+    boss.phase = 2;
+    boss.action = {
+      attackId: "command-pulse",
+      phase: "telegraph",
+      startedAt: 500,
+      endsAt: 501.05,
+      aimDirection: null,
+      ingressDirection: null,
+    };
+    fixture.world.state.elapsed = boss.action.endsAt;
+    const hpBefore = fixture.world.state.hp;
+
+    const events = updateFinalExpeditionBoss(
+      fixture.world,
+      fixture.random,
+      SIMULATION_CONFIG,
+      [],
+    );
+
+    expect(fixture.world.state.hp).toBe(hpBefore);
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        type: "boss.command-pulse.resolved",
+        result: "blocked",
+        radius: 220,
+        damage: 0,
+      }),
+    );
+  });
+
   it("completes the Expedition once when the registered boss is defeated", () => {
     const random = createRandomStreams(123);
     const world = createWorld(SIMULATION_CONFIG);

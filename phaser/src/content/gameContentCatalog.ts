@@ -103,6 +103,11 @@ export const FINAL_EXPEDITION_STAGE_DEFINITION = {
       maxXp: 900,
     },
   },
+  completionScoring: {
+    clearBonus: 15_000,
+    bossFightTargetSeconds: 240,
+    bossTimeBonusPerSecond: 450,
+  },
   clearCondition: { type: "bossDefeat", bossId: FINAL_COMMAND_SHIP_BOSS_ID },
   bossId: FINAL_COMMAND_SHIP_BOSS_ID,
 } satisfies GameContentDefinitions["stages"][number];

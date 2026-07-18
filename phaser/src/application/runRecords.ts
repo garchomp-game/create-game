@@ -108,9 +108,13 @@ function createEmptyEncounterMetrics(): EncounterRunStats {
 }
 
 export function compareRunRecords(left: RunRecord, right: RunRecord): number {
+  const elapsedComparison =
+    left.modeId === "expedition" && right.modeId === "expedition"
+      ? left.elapsed - right.elapsed
+      : right.elapsed - left.elapsed;
   return (
     right.score - left.score ||
-    right.elapsed - left.elapsed ||
+    elapsedComparison ||
     left.capturedAt.localeCompare(right.capturedAt) ||
     left.id.localeCompare(right.id)
   );

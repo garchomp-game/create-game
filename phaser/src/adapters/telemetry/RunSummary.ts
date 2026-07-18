@@ -106,6 +106,10 @@ export const RUN_SUMMARY_COLUMNS = [
   "expedition_structured_enemies_spawned",
   "expedition_structured_spawns_deferred",
   "expedition_longest_meaningful_gap_seconds",
+  "expedition_score_before_bonus",
+  "expedition_clear_score_bonus",
+  "expedition_time_score_bonus",
+  "expedition_boss_fight_seconds",
   "commander_spawned",
   "commander_killed",
   "commander_trait_activations",
@@ -124,11 +128,22 @@ export const RUN_SUMMARY_COLUMNS = [
   "boss_phase_reached",
   "boss_targeted_salvos",
   "boss_escort_pincers",
+  "boss_command_pulses",
   "boss_targeted_salvo_player_hits",
   "boss_escort_pincer_player_hits",
+  "boss_command_pulse_player_hits",
   "boss_targeted_salvo_damage",
   "boss_escort_pincer_damage",
+  "boss_command_pulse_damage",
   "boss_escorts_spawned",
+  "boss_kills_during_fight",
+  "boss_heal_pickups_spawned",
+  "boss_heal_drops_suppressed",
+  "boss_heal_pickups_collected",
+  "boss_hp_recovered",
+  "boss_command_pulse_blocked",
+  "boss_command_pulse_outside",
+  "boss_command_pulse_invulnerable",
   "boss_defeated_by_weapon",
   "navigation_direct_frames",
   "navigation_path_frames",
@@ -179,6 +194,7 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
   const bossAttacksExecuted = recordAt(bossMetrics, "attacksExecuted");
   const bossPlayerHitsByAttack = recordAt(bossMetrics, "playerHitsByAttack");
   const bossDamageTakenByAttack = recordAt(bossMetrics, "damageTakenByAttack");
+  const bossCommandPulseResults = recordAt(bossMetrics, "commandPulseResults");
   const extraSelections = unknownArrayAt(progressionMetrics, "extraSelections");
   const automaticExtraSelections = extraSelections.filter(
     (selection) => isRecord(selection) && selection.automatic === true,
@@ -315,6 +331,11 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
       numberAt(expeditionMetrics, "structuredSpawnsDeferred") ?? 0,
     expedition_longest_meaningful_gap_seconds:
       roundedNumber(expeditionMetrics, "longestMeaningfulGap"),
+    expedition_score_before_bonus: numberAt(expeditionMetrics, "scoreBeforeBonus") ?? 0,
+    expedition_clear_score_bonus: numberAt(expeditionMetrics, "clearScoreBonus") ?? 0,
+    expedition_time_score_bonus: numberAt(expeditionMetrics, "timeScoreBonus") ?? 0,
+    expedition_boss_fight_seconds:
+      nullableRoundedNumber(expeditionMetrics, "bossFightDuration"),
     commander_spawned: numberAt(commanderMetrics, "spawned") ?? 0,
     commander_killed: commandersKilled,
     commander_trait_activations: numberAt(commanderMetrics, "traitActivations") ?? 0,
@@ -335,15 +356,31 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
     boss_phase_reached: numberAt(bossMetrics, "phaseReached") ?? 0,
     boss_targeted_salvos: numberAt(bossAttacksExecuted, "targeted-salvo") ?? 0,
     boss_escort_pincers: numberAt(bossAttacksExecuted, "escort-pincer") ?? 0,
+    boss_command_pulses: numberAt(bossAttacksExecuted, "command-pulse") ?? 0,
     boss_targeted_salvo_player_hits:
       numberAt(bossPlayerHitsByAttack, "targeted-salvo") ?? 0,
     boss_escort_pincer_player_hits:
       numberAt(bossPlayerHitsByAttack, "escort-pincer") ?? 0,
+    boss_command_pulse_player_hits:
+      numberAt(bossPlayerHitsByAttack, "command-pulse") ?? 0,
     boss_targeted_salvo_damage:
       numberAt(bossDamageTakenByAttack, "targeted-salvo") ?? 0,
     boss_escort_pincer_damage:
       numberAt(bossDamageTakenByAttack, "escort-pincer") ?? 0,
+    boss_command_pulse_damage:
+      numberAt(bossDamageTakenByAttack, "command-pulse") ?? 0,
     boss_escorts_spawned: numberAt(bossMetrics, "escortsSpawned") ?? 0,
+    boss_kills_during_fight: numberAt(bossMetrics, "killsDuringBoss") ?? 0,
+    boss_heal_pickups_spawned: numberAt(bossMetrics, "healPickupsSpawned") ?? 0,
+    boss_heal_drops_suppressed: numberAt(bossMetrics, "healDropsSuppressed") ?? 0,
+    boss_heal_pickups_collected: numberAt(bossMetrics, "healPickupsCollected") ?? 0,
+    boss_hp_recovered: numberAt(bossMetrics, "hpRecoveredDuringBoss") ?? 0,
+    boss_command_pulse_blocked:
+      numberAt(bossCommandPulseResults, "blocked") ?? 0,
+    boss_command_pulse_outside:
+      numberAt(bossCommandPulseResults, "outside") ?? 0,
+    boss_command_pulse_invulnerable:
+      numberAt(bossCommandPulseResults, "invulnerable") ?? 0,
     boss_defeated_by_weapon: stringAt(bossMetrics, "defeatedByWeapon") ?? "",
     navigation_direct_frames: navigationDirect,
     navigation_path_frames: navigationPath,

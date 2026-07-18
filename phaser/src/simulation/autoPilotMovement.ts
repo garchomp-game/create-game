@@ -1,3 +1,4 @@
+import { FINAL_COMMAND_SHIP_DEFINITION } from "../content/bossCatalog";
 import type { Enemy, EnemyProjectile, Vec2 } from "../domain/types";
 import { normalize } from "../math/vector";
 import type {
@@ -55,6 +56,7 @@ type CandidateAssessment = {
 };
 
 const MOTION_HORIZON_SECONDS = 0.58;
+const COMMAND_PULSE_ANTICIPATION_SECONDS = 1.1;
 const BASE_DIRECTION_COUNT = 16;
 const ESCAPE_DIRECTION_COUNT = 6;
 const MAX_RELEVANT_PROJECTILES = 40;
@@ -436,12 +438,16 @@ function assessCandidate(
   const openSpaceClearance = getOpenSpaceClearance(endpoint, frame);
   const escapeRoutes = countEscapeRoutes(endpoint, frame, navigation);
   const wastedHealPenalty = getWastedHealMagnetPenalty(frame, intent, endpoint);
-  const collisionCount = projectile.collisions + enemies.collisions;
-  const dangerTier = getDangerTier(
-    collisionCount,
-    projectile.minimumClearance,
-    enemies.minimumClearance,
-  );
+  const bossPulse = assessBossCommandPulse(frame, navigation, velocity);
+  const collisionCount =
+    projectile.collisions + enemies.collisions + bossPulse.collisions;
+  const dangerTier = bossPulse.collisions > 0
+    ? 4
+    : getDangerTier(
+        collisionCount,
+        projectile.minimumClearance,
+        enemies.minimumClearance,
+      );
   const openSpaceWeight = getAutoPilotOpenSpaceWeight(
     frame,
     intent.mode,
@@ -454,15 +460,18 @@ function assessCandidate(
     enemies.risk * 920 * weaponStrategy.enemyRiskMultiplier;
   const rangedExposureCost =
     rangedExposure * 85 * weaponStrategy.rangedExposureMultiplier;
+  const bossPulseRiskCost = bossPulse.risk * 3_200;
   const escapeRisk = 0.2 * (1 - escapeRoutes / ESCAPE_DIRECTION_COUNT);
-  const riskScore = clamp(threat.riskScore + escapeRisk, 0, 1);
+  const riskScore = clamp(threat.riskScore + bossPulse.risk + escapeRisk, 0, 1);
   const safetyScore =
     -projectileRiskCost -
     enemyRiskCost -
-    rangedExposureCost +
+    rangedExposureCost -
+    bossPulseRiskCost +
     Math.min(180, openSpaceClearance) * openSpaceWeight +
     escapeRoutes * (intent.mode === "survive" ? 27 : 16.5);
-  const hazardCost = projectileRiskCost + enemyRiskCost + rangedExposureCost;
+  const hazardCost =
+    projectileRiskCost + enemyRiskCost + rangedExposureCost + bossPulseRiskCost;
   const objectiveScore = getIntentScore(
     frame,
     intent,
@@ -484,16 +493,100 @@ function assessCandidate(
     projectileCollisionCount: projectile.collisions,
     dangerousProjectileCount: projectile.dangerousProjectiles,
     enemyCollisionCount: enemies.collisions,
-    earliestCollision: Math.min(projectile.earliestCollision, enemies.earliestCollision),
+    earliestCollision: Math.min(
+      projectile.earliestCollision,
+      enemies.earliestCollision,
+      bossPulse.earliestCollision,
+    ),
     dangerTier,
     minimumProjectileClearance: projectile.minimumClearance,
     minimumEnemyClearance: enemies.minimumClearance,
     openSpaceClearance,
     hazardCost,
     riskScore,
-    minimumTtc: threat.minimumTtc,
-    predictedDamage: threat.predictedDamage,
+    minimumTtc: Math.min(threat.minimumTtc, bossPulse.earliestCollision),
+    predictedDamage: threat.predictedDamage + bossPulse.predictedDamage,
     score: safetyScore + objectiveScore + continuity,
+  };
+}
+
+function assessBossCommandPulse(
+  frame: AutoPilotFrame,
+  navigation: AutoPilotNavigationPort,
+  velocity: Vec2,
+): {
+  collisions: number;
+  earliestCollision: number;
+  predictedDamage: number;
+  risk: number;
+} {
+  const boss = frame.world.expedition?.boss;
+  if (
+    !boss ||
+    boss.status !== "active" ||
+    boss.action.attackId !== "command-pulse" ||
+    boss.action.phase !== "telegraph"
+  ) {
+    return {
+      collisions: 0,
+      earliestCollision: Number.POSITIVE_INFINITY,
+      predictedDamage: 0,
+      risk: 0,
+    };
+  }
+  const timeUntilImpact = Math.max(0, boss.action.endsAt - frame.world.state.elapsed);
+  if (timeUntilImpact > COMMAND_PULSE_ANTICIPATION_SECONDS) {
+    return {
+      collisions: 0,
+      earliestCollision: Number.POSITIVE_INFINITY,
+      predictedDamage: 0,
+      risk: 0,
+    };
+  }
+  const enemy = frame.world.enemies.find((candidate) => candidate.id === boss.enemyId);
+  if (!enemy) {
+    return {
+      collisions: 0,
+      earliestCollision: Number.POSITIVE_INFINITY,
+      predictedDamage: 0,
+      risk: 0,
+    };
+  }
+  const predictedPosition = positionAt(
+    frame.world.player.position,
+    velocity,
+    timeUntilImpact,
+  );
+  const radius = FINAL_COMMAND_SHIP_DEFINITION.commandPulse.radius[boss.phase - 1];
+  if (distanceBetween(enemy.position, predictedPosition) > radius) {
+    return {
+      collisions: 0,
+      earliestCollision: Number.POSITIVE_INFINITY,
+      predictedDamage: 0,
+      risk: 0,
+    };
+  }
+  if (
+    !navigation.hasClearPath(
+      frame,
+      enemy.position,
+      predictedPosition,
+      frame.world.player.radius + 2,
+    )
+  ) {
+    return {
+      collisions: 0,
+      earliestCollision: Number.POSITIVE_INFINITY,
+      predictedDamage: 0,
+      risk: 0,
+    };
+  }
+  return {
+    collisions: 1,
+    earliestCollision: timeUntilImpact,
+    predictedDamage:
+      FINAL_COMMAND_SHIP_DEFINITION.commandPulse.damage[boss.phase - 1],
+    risk: 1,
   };
 }
 

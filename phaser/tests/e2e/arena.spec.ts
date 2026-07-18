@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { APP_VERSION, RULESET_VERSION } from "../../src/config/version";
 import type { RunRecord } from "../../src/domain/runRecords";
 import { probeVisibleCanvasSamples, probeWebglCanvas } from "./webglCanvasProbe";
 
@@ -152,7 +153,13 @@ test("runs the final expedition from mode selection through result and retry", a
     modeId: "expedition",
     stageId: "final-expedition",
     encounterMetrics: {
-      expedition: { outcome: "victory", reachedActId: "command-ship" },
+      expedition: {
+        outcome: "victory",
+        reachedActId: "command-ship",
+        clearScoreBonus: 15_000,
+        timeScoreBonus: expect.any(Number),
+        bossFightDuration: expect.any(Number),
+      },
       boss: {
         bossId: "final-command-ship",
         phaseReached: 2,
@@ -505,9 +512,9 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   const runExport = await page.evaluate(() => window.__ARENA_DEBUG__?.getRunExport());
   expect(runExport).toBeTruthy();
   expect(runExport?.game).toBe("arena-core-phaser");
-  expect(runExport?.appVersion).toBe("0.7.0");
-  expect(runExport?.rulesetVersion).toBe("phaser-v0.7.0-final-expedition-rc4");
-  expect(runExport?.configVersion).toBe("phaser-v0.7.0-final-expedition-rc4");
+  expect(runExport?.appVersion).toBe(APP_VERSION);
+  expect(runExport?.rulesetVersion).toBe(RULESET_VERSION);
+  expect(runExport?.configVersion).toBe(RULESET_VERSION);
   expect(runExport?.buildCommit).toMatch(/^[0-9a-f]{12}$/);
   expect(runExport?.runOrigin).toBe("test");
   expect(runExport?.rankEligibility).toEqual({

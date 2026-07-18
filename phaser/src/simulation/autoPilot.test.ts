@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { FINAL_EXPEDITION_STAGE_DEFINITION } from "../content/gameContentCatalog";
 import { SIMULATION_CONFIG } from "../config/gameConfig";
 import type { Enemy, Pickup } from "../domain/types";
 import { createRandomStreams } from "../math/random";
@@ -8,6 +9,8 @@ import {
   createAutoPilotInput,
 } from "./autoPilot";
 import { createWorld } from "./createWorld";
+import { ExpeditionController } from "./ExpeditionController";
+import { spawnFinalExpeditionBoss } from "./systems/bossSystem";
 import { ROT_AUTO_PILOT_NAVIGATION } from "./autoPilotNavigation";
 import { assessAutoPilotPressure } from "./autoPilotPressure";
 import {
@@ -69,6 +72,32 @@ describe("createAutoPilotInput", () => {
     expect(decision.aimTargetId).toBe(chaser.id);
   });
 
+  it("leaves the command pulse radius before impact", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    const random = createRandomStreams(404);
+    new ExpeditionController(FINAL_EXPEDITION_STAGE_DEFINITION).initialize(
+      world,
+      random,
+    );
+    world.obstacles = [];
+    const enemy = spawnFinalExpeditionBoss(world, [])!;
+    enemy.position = { x: 480, y: 270 };
+    world.player.position = { x: 650, y: 270 };
+    world.expedition!.boss!.action = {
+      attackId: "command-pulse",
+      phase: "telegraph",
+      startedAt: 0,
+      endsAt: 0.4,
+      aimDirection: null,
+      ingressDirection: null,
+    };
+
+    const decision = createAutoPilotDecision(world, SIMULATION_CONFIG);
+
+    expect(decision.input.move.x).toBeGreaterThan(0.5);
+    expect(Math.abs(decision.input.move.y)).toBeLessThan(0.75);
+  });
+
   it("weights ranged threats above non-imminent chasers", () => {
     const world = createWorld(SIMULATION_CONFIG);
     const chaser = createEnemy("chaser", { x: 830, y: 270 });
@@ -103,6 +132,30 @@ describe("createAutoPilotInput", () => {
     const decision = createAutoPilotDecision(world, SIMULATION_CONFIG);
 
     expect(decision.aimTargetId).toBe(commander.id);
+  });
+
+  it("focuses the boss unless a contact threat is immediately lethal", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    const random = createRandomStreams(405);
+    new ExpeditionController(FINAL_EXPEDITION_STAGE_DEFINITION).initialize(
+      world,
+      random,
+    );
+    const boss = spawnFinalExpeditionBoss(world, [])!;
+    const fodder = createEnemy("boss-fight-fodder", {
+      x: world.player.position.x + 80,
+      y: world.player.position.y,
+    });
+    world.enemies.push(fodder);
+
+    const focused = createAutoPilotDecision(world, SIMULATION_CONFIG);
+
+    expect(focused.aimTargetId).toBe(boss.id);
+
+    fodder.position.x = world.player.position.x + 30;
+    const emergency = createAutoPilotDecision(world, SIMULATION_CONFIG);
+
+    expect(emergency.aimTargetId).toBe(fodder.id);
   });
 
   it("keeps Pulse focus on a stacked target when it remains hittable", () => {

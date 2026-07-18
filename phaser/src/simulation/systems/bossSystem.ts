@@ -14,7 +14,10 @@ import type {
 } from "../../domain/types";
 import type { RandomStreams } from "../../math/random";
 import { normalize } from "../../math/vector";
-import { estimatePointNavigationPath } from "../navigationField";
+import {
+  estimatePointNavigationPath,
+  hasClearNavigationPath,
+} from "../navigationField";
 import { planStructuredSpawn } from "../structuredSpawnPlanner";
 import { getSpawnWave, spawnEnemyAtPosition } from "./spawnSystem";
 
@@ -26,7 +29,7 @@ export function spawnFinalExpeditionBoss(
   definition: FinalCommandShipDefinition = FINAL_COMMAND_SHIP_DEFINITION,
 ): Enemy | null {
   const expedition = world.expedition;
-  if (!expedition || expedition.boss?.status === "active") return null;
+  if (!expedition || expedition.boss) return null;
 
   // Clear the transition frame, then let the final wave repopulate around the boss.
   world.enemies.length = 0;
@@ -61,6 +64,11 @@ export function spawnFinalExpeditionBoss(
     defeatedAt: null,
     nextAttackIndex: 1,
     action,
+    sustain: {
+      healDropMinimumIntervalSeconds:
+        definition.sustain.healDropMinimumIntervalSeconds,
+      nextHealDropAt: world.state.elapsed,
+    },
   };
   expedition.objective = "指揮艦と増援を同時に撃破する";
   expedition.spawnOverride = null;
@@ -142,31 +150,23 @@ export function updateFinalExpeditionBoss(
     if (world.state.elapsed < boss.action.endsAt) break;
     const transitionAt = boss.action.endsAt;
     if (boss.action.phase === "telegraph") {
-      const projectileIds =
-        boss.action.attackId === "targeted-salvo"
-          ? executeTargetedSalvo(world, enemy, boss.phase, config, definition)
-          : executeEscortSuppressiveSalvo(
-              world,
-              enemy,
-              boss.phase,
-              config,
-              definition,
-            );
-      if (boss.action.attackId === "escort-pincer") {
-        events.push(...executeEscortPincer(world, random, config, definition));
-      }
+      const execution = executeBossAttack(
+        world,
+        enemy,
+        boss.action.attackId,
+        boss.phase,
+        random,
+        config,
+        definition,
+      );
       boss.action = {
         ...boss.action,
         phase: "execute",
         startedAt: transitionAt,
-        endsAt:
-          transitionAt +
-          phaseValue(
-            boss.action.attackId === "targeted-salvo"
-              ? definition.targetedSalvo.executeSeconds
-              : definition.escortPincer.executeSeconds,
-            boss.phase,
-          ),
+        endsAt: transitionAt + phaseValue(
+          getAttackTiming(definition, boss.action.attackId).executeSeconds,
+          boss.phase,
+        ),
       };
       events.push({
         type: "boss.attack.executed",
@@ -174,16 +174,15 @@ export function updateFinalExpeditionBoss(
         enemyId: boss.enemyId,
         attackId: boss.action.attackId,
         phase: boss.phase,
-        projectileIds,
+        projectileIds: execution.projectileIds,
         elapsed: transitionAt,
       });
+      events.push(...execution.events);
       continue;
     }
     if (boss.action.phase === "execute") {
       const recoverySeconds = phaseValue(
-        boss.action.attackId === "targeted-salvo"
-          ? definition.targetedSalvo.recoverySeconds
-          : definition.escortPincer.recoverySeconds,
+        getAttackTiming(definition, boss.action.attackId).recoverySeconds,
         boss.phase,
       );
       boss.action = {
@@ -238,12 +237,12 @@ function createAttackState(
 ) {
   const attackId = definition.attackOrder[attackIndex % definition.attackOrder.length]!;
   const telegraphSeconds = phaseValue(
-    attackId === "targeted-salvo"
-      ? definition.targetedSalvo.telegraphSeconds
-      : definition.escortPincer.telegraphSeconds,
+    getAttackTiming(definition, attackId).telegraphSeconds,
     phase,
   );
-  const aimDirection = directionBetween(enemy.position, world.player.position);
+  const aimDirection = attackId === "command-pulse"
+    ? null
+    : directionBetween(enemy.position, world.player.position);
   const ingressDirection =
     attackId === "escort-pincer"
       ? INGRESS_DIRECTIONS[attackIndex % INGRESS_DIRECTIONS.length]!
@@ -256,6 +255,121 @@ function createAttackState(
     aimDirection,
     ingressDirection,
   };
+}
+
+function executeBossAttack(
+  world: WorldState,
+  enemy: Enemy,
+  attackId: BossAttackId,
+  phase: 1 | 2,
+  random: RandomStreams,
+  config: SimulationConfig,
+  definition: FinalCommandShipDefinition,
+): { projectileIds: string[]; events: GameEvent[] } {
+  if (attackId === "targeted-salvo") {
+    return {
+      projectileIds: executeTargetedSalvo(world, enemy, phase, config, definition),
+      events: [],
+    };
+  }
+  if (attackId === "escort-pincer") {
+    return {
+      projectileIds: executeEscortSuppressiveSalvo(
+        world,
+        enemy,
+        phase,
+        config,
+        definition,
+      ),
+      events: executeEscortPincer(world, random, config, definition),
+    };
+  }
+  return {
+    projectileIds: [],
+    events: executeCommandPulse(world, enemy, phase, config, definition),
+  };
+}
+
+function executeCommandPulse(
+  world: WorldState,
+  enemy: Enemy,
+  phase: 1 | 2,
+  config: SimulationConfig,
+  definition: FinalCommandShipDefinition,
+): GameEvent[] {
+  const boss = world.expedition!.boss!;
+  const radius = phaseValue(definition.commandPulse.radius, phase);
+  const distance = Math.hypot(
+    world.player.position.x - enemy.position.x,
+    world.player.position.y - enemy.position.y,
+  );
+  let result: Extract<
+    GameEvent,
+    { type: "boss.command-pulse.resolved" }
+  >["result"] = "outside";
+  let damage = 0;
+  const events: GameEvent[] = [];
+
+  if (distance <= radius) {
+    const protectedByObstacle = !hasClearNavigationPath(
+      enemy.position,
+      world.player.position,
+      world.player.radius + 2,
+      world.obstacles,
+    );
+    if (protectedByObstacle) {
+      result = "blocked";
+    } else if (world.state.damageCooldown > 0 || world.state.hp <= 0) {
+      result = "invulnerable";
+    } else {
+      const hpBefore = world.state.hp;
+      world.state.hp = Math.max(
+        0,
+        hpBefore - phaseValue(definition.commandPulse.damage, phase),
+      );
+      damage = hpBefore - world.state.hp;
+      result = damage > 0 ? "hit" : "invulnerable";
+      if (damage > 0) {
+        world.state.damageCooldown = config.player.damageCooldown;
+        events.push({
+          type: "player.damaged",
+          damage,
+          hpAfter: world.state.hp,
+          source: {
+            kind: "projectile",
+            projectileId: `boss-command-pulse-${Math.round(boss.action.startedAt * 1_000)}`,
+            bossId: boss.bossId,
+            bossAttackId: "command-pulse",
+          },
+        });
+      }
+    }
+  }
+
+  events.push({
+    type: "boss.command-pulse.resolved",
+    bossId: boss.bossId,
+    enemyId: boss.enemyId,
+    phase,
+    radius,
+    damage,
+    result,
+    elapsed: world.state.elapsed,
+  });
+  return events;
+}
+
+function getAttackTiming(
+  definition: FinalCommandShipDefinition,
+  attackId: BossAttackId,
+): {
+  telegraphSeconds: [number, number];
+  executeSeconds: [number, number];
+  recoverySeconds: [number, number];
+} {
+  if (attackId === "targeted-salvo") return definition.targetedSalvo;
+  if (attackId === "escort-pincer") return definition.escortPincer;
+  return definition.commandPulse;
 }
 
 function createTelegraphEvent(

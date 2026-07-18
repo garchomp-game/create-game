@@ -89,6 +89,23 @@ describe("run records", () => {
     ]);
   });
 
+  it("prefers a faster Expedition clear when scores are tied", () => {
+    const expeditionKey: RunComparisonKey = {
+      ...comparisonKey,
+      modeId: "expedition",
+      stageId: "final-expedition",
+    };
+    const records = [
+      makeRecord({ id: "slow", score: 100_000, elapsed: 520 }),
+      makeRecord({ id: "fast", score: 100_000, elapsed: 470 }),
+    ].map((record) => ({ ...record, ...expeditionKey }));
+
+    expect(selectRanking(records, expeditionKey).map((record) => record.id)).toEqual([
+      "fast",
+      "slow",
+    ]);
+  });
+
   it("rejects contradictory rank eligibility data", () => {
     const record = makeRecord();
     record.rankEligibility = { eligible: true, reasons: ["debugRun"] };
@@ -233,6 +250,60 @@ describe("run records", () => {
           lineEnhancedHits: 0,
           targetBonusDamage: 0,
           lineBonusDamage: 0,
+        },
+      },
+    });
+  });
+
+  it("defaults RC5 Expedition and boss metrics on RC4 records", () => {
+    const legacy = structuredClone(makeRecord()) as unknown as Record<string, unknown>;
+    const encounter = legacy.encounterMetrics as Record<string, unknown>;
+    encounter.expedition = {
+      outcome: "victory",
+      reachedActId: "command-ship",
+      reachedActIds: ["command-ship"],
+      actChanges: 1,
+      cardsSelected: 1,
+      cardsCompleted: 1,
+      cardsFailed: 0,
+      cardsInterrupted: 0,
+      cardsDeferred: 0,
+      structuredEnemiesSpawned: 4,
+      structuredSpawnsDeferred: 0,
+      longestMeaningfulGap: 0,
+      completedAt: 500,
+    };
+    encounter.boss = {
+      bossId: "final-command-ship",
+      spawnedAt: 400,
+      defeatedAt: 500,
+      remainingHp: 0,
+      maximumHp: 3400,
+      phaseReached: 2,
+      phaseChanges: 1,
+      lastAttackId: "escort-pincer",
+      attacksTelegraphed: { "targeted-salvo": 4, "escort-pincer": 3 },
+      attacksExecuted: { "targeted-salvo": 4, "escort-pincer": 3 },
+      playerHitsByAttack: { "targeted-salvo": 2, "escort-pincer": 1 },
+      damageTakenByAttack: { "targeted-salvo": 16, "escort-pincer": 7 },
+      escortsSpawned: 15,
+      defeatedByWeapon: "pulse",
+    };
+
+    expect(runRecordSchema.parse(legacy)).toMatchObject({
+      encounterMetrics: {
+        expedition: {
+          scoreBeforeBonus: 0,
+          clearScoreBonus: 0,
+          timeScoreBonus: 0,
+          bossFightDuration: null,
+        },
+        boss: {
+          attacksExecuted: { "command-pulse": 0 },
+          killsDuringBoss: 0,
+          healPickupsSpawned: 0,
+          healDropsSuppressed: 0,
+          commandPulseResults: { hit: 0, blocked: 0, outside: 0, invulnerable: 0 },
         },
       },
     });

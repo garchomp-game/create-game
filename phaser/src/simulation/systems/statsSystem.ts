@@ -1,4 +1,9 @@
-import type { GameEvent, WorldState } from "../../domain/types";
+import {
+  BOSS_ATTACK_IDS,
+  type BossAttackId,
+  type GameEvent,
+  type WorldState,
+} from "../../domain/types";
 
 export function updateRunStats(world: WorldState, events: GameEvent[]): void {
   for (const event of events) {
@@ -93,6 +98,9 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
       if (world.encounter.director.phase === "active") {
         world.stats.encounterMetrics.killsDuringActiveByEnemyType[event.enemyType] += 1;
       }
+      if (world.expedition?.boss?.status === "active") {
+        getBossMetrics(world).killsDuringBoss += 1;
+      }
     } else if (event.type === "enemy.spawned") {
       if (world.encounter.director.phase === "active" && event.enemyType === "ranged") {
         world.stats.encounterMetrics.rangedEnemiesSpawned += 1;
@@ -155,6 +163,13 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
         boss.playerHitsByAttack[event.source.bossAttackId] += 1;
         boss.damageTakenByAttack[event.source.bossAttackId] += event.damage;
       }
+    } else if (event.type === "pickup.spawned") {
+      if (
+        event.pickupKind === "heal" &&
+        world.expedition?.boss?.status === "active"
+      ) {
+        getBossMetrics(world).healPickupsSpawned += 1;
+      }
     } else if (event.type === "pickup.collected") {
       world.stats.pickupsCollected += 1;
       if (event.pickupKind === "xp") {
@@ -164,6 +179,11 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
         world.stats.hpRecovered += event.hpRecovered;
         if (event.hpRecovered > 0) {
           world.stats.effectiveHealPickupsCollected += 1;
+        }
+        if (world.expedition?.boss?.status === "active") {
+          const boss = getBossMetrics(world);
+          boss.healPickupsCollected += 1;
+          boss.hpRecoveredDuringBoss += event.hpRecovered;
         }
       }
     } else if (event.type === "upgrade.offered") {
@@ -267,6 +287,10 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
       const metrics = getBossMetrics(world);
       metrics.attacksExecuted[event.attackId] += 1;
       metrics.lastAttackId = event.attackId;
+    } else if (event.type === "boss.command-pulse.resolved") {
+      getBossMetrics(world).commandPulseResults[event.result] += 1;
+    } else if (event.type === "boss.heal-drop.suppressed") {
+      getBossMetrics(world).healDropsSuppressed += event.count;
     } else if (event.type === "boss.escort.deployed") {
       getBossMetrics(world).escortsSpawned += event.enemyIds.length;
     } else if (event.type === "boss.defeated") {
@@ -282,6 +306,10 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
       metrics.outcome = event.type === "expedition.completed" ? "victory" : "defeat";
       metrics.reachedActId = event.actId;
       metrics.completedAt = event.elapsed;
+      metrics.scoreBeforeBonus = event.scoreBeforeBonus;
+      metrics.clearScoreBonus = event.clearScoreBonus;
+      metrics.timeScoreBonus = event.timeScoreBonus;
+      metrics.bossFightDuration = event.bossFightDuration;
     } else if (event.type === "collapse.advanced") {
       world.stats.encounterMetrics.collapseStartedAt ??= event.elapsed;
       world.stats.encounterMetrics.peakCollapseStage = Math.max(
@@ -360,6 +388,10 @@ function getExpeditionMetrics(world: WorldState) {
     structuredSpawnsDeferred: 0,
     longestMeaningfulGap: 0,
     completedAt: null,
+    scoreBeforeBonus: 0,
+    clearScoreBonus: 0,
+    timeScoreBonus: 0,
+    bossFightDuration: null,
   });
 }
 
@@ -373,11 +405,24 @@ function getBossMetrics(world: WorldState) {
     phaseReached: 0,
     phaseChanges: 0,
     lastAttackId: null,
-    attacksTelegraphed: { "targeted-salvo": 0, "escort-pincer": 0 },
-    attacksExecuted: { "targeted-salvo": 0, "escort-pincer": 0 },
-    playerHitsByAttack: { "targeted-salvo": 0, "escort-pincer": 0 },
-    damageTakenByAttack: { "targeted-salvo": 0, "escort-pincer": 0 },
+    attacksTelegraphed: createBossAttackCounts(),
+    attacksExecuted: createBossAttackCounts(),
+    playerHitsByAttack: createBossAttackCounts(),
+    damageTakenByAttack: createBossAttackCounts(),
     escortsSpawned: 0,
+    killsDuringBoss: 0,
+    healPickupsSpawned: 0,
+    healDropsSuppressed: 0,
+    healPickupsCollected: 0,
+    hpRecoveredDuringBoss: 0,
+    commandPulseResults: { hit: 0, blocked: 0, outside: 0, invulnerable: 0 },
     defeatedByWeapon: null,
   });
+}
+
+function createBossAttackCounts(): Record<BossAttackId, number> {
+  return Object.fromEntries(BOSS_ATTACK_IDS.map((id) => [id, 0])) as Record<
+    BossAttackId,
+    number
+  >;
 }

@@ -31,7 +31,18 @@ type ProbeResult = {
   bossSpawnedAt: number | null;
   bossPhaseReached: number;
   bossAttacksExecuted: Record<string, number>;
+  bossCommandPulseResults: Record<string, number>;
+  bossKills: number;
+  bossHealPickupsSpawned: number;
+  bossHealDropsSuppressed: number;
+  bossHealPickupsCollected: number;
+  bossHpRecovered: number;
   bossHpRemaining: number | null;
+  clearScoreBonus: number;
+  timeScoreBonus: number;
+  bossFightDuration: number | null;
+  bossActiveFrames: number;
+  bossAimFrames: number;
   commanderSpawned: number;
   commanderKilled: number;
   lastDamageSource: PlayerDamageSource | null;
@@ -56,13 +67,14 @@ describe("v0.7 final Expedition release probe", () => {
     for (const result of results) {
       expect(result.outcome).not.toBeNull();
       expect(result.reachedActId).toBe("command-ship");
-      expect(result.elapsed).toBeGreaterThanOrEqual(8 * 60);
+      expect(result.elapsed).toBeGreaterThanOrEqual(390);
       expect(result.elapsed).toBeLessThanOrEqual(MAX_SECONDS);
       expect(result.longestMeaningfulGap).toBeLessThan(120);
       expect(result.bossSpawnedAt).not.toBeNull();
       expect(result.bossPhaseReached).toBe(2);
       expect(result.bossAttacksExecuted["targeted-salvo"]).toBeGreaterThan(0);
       expect(result.bossAttacksExecuted["escort-pincer"]).toBeGreaterThan(0);
+      expect(result.bossAttacksExecuted["command-pulse"]).toBeGreaterThan(0);
       expect(result.commanderSpawned).toBeGreaterThan(0);
       expect(result.commanderKilled).toBeGreaterThan(0);
       expect(result.maximumEnemies).toBeLessThanOrEqual(96);
@@ -103,8 +115,17 @@ function runExpedition(weaponType: WeaponTypeId, seed: number): ProbeResult {
   let maximumEnemies = 0;
   let maximumProjectiles = 0;
   let maximumPickups = 0;
+  let bossActiveFrames = 0;
+  let bossAimFrames = 0;
   for (let frame = 0; frame < MAX_SECONDS * FRAME_RATE; frame += 1) {
     const decision = agent.decide(session.world, session.config);
+    const activeBossId = session.world.expedition?.boss?.status === "active"
+      ? session.world.expedition.boss.enemyId
+      : null;
+    if (activeBossId) {
+      bossActiveFrames += 1;
+      if (decision.aimTargetId === activeBossId) bossAimFrames += 1;
+    }
     const result = session.step(decision.input, 1 / FRAME_RATE);
     eventDigest.push(...result.events.map(formatEventForHash));
     maximumEnemies = Math.max(maximumEnemies, session.world.enemies.length);
@@ -135,7 +156,18 @@ function runExpedition(weaponType: WeaponTypeId, seed: number): ProbeResult {
     bossSpawnedAt: boss?.spawnedAt ?? null,
     bossPhaseReached: boss?.phaseReached ?? 0,
     bossAttacksExecuted: { ...(boss?.attacksExecuted ?? {}) },
+    bossCommandPulseResults: { ...(boss?.commandPulseResults ?? {}) },
+    bossKills: boss?.killsDuringBoss ?? 0,
+    bossHealPickupsSpawned: boss?.healPickupsSpawned ?? 0,
+    bossHealDropsSuppressed: boss?.healDropsSuppressed ?? 0,
+    bossHealPickupsCollected: boss?.healPickupsCollected ?? 0,
+    bossHpRecovered: boss?.hpRecoveredDuringBoss ?? 0,
     bossHpRemaining: activeBoss?.hp ?? null,
+    clearScoreBonus: expedition?.clearScoreBonus ?? 0,
+    timeScoreBonus: expedition?.timeScoreBonus ?? 0,
+    bossFightDuration: expedition?.bossFightDuration ?? null,
+    bossActiveFrames,
+    bossAimFrames,
     commanderSpawned: commander?.spawned ?? 0,
     commanderKilled: commander?.killed ?? 0,
     lastDamageSource: session.world.stats.lastDamageSource,

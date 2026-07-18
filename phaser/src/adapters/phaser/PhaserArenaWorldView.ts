@@ -207,6 +207,22 @@ export class PhaserArenaWorldView {
         action.phase === "execute",
       );
     }
+    if (action.attackId === "command-pulse") {
+      const radius = FINAL_COMMAND_SHIP_DEFINITION.commandPulse.radius[boss.phase - 1];
+      const telegraph = action.phase === "telegraph";
+      const color = telegraph ? 0xfacc15 : 0xfb7185;
+      graphics.fillStyle(color, telegraph ? 0.08 : 0.16);
+      graphics.fillCircle(enemy.position.x, enemy.position.y, radius);
+      graphics.lineStyle(telegraph ? 4 : 6, color, telegraph ? 0.9 : 0.72);
+      graphics.strokeCircle(enemy.position.x, enemy.position.y, radius);
+      graphics.lineStyle(2, color, telegraph ? 0.56 : 0.4);
+      graphics.strokeCircle(
+        enemy.position.x,
+        enemy.position.y,
+        Math.max(enemy.radius + 8, radius - 18),
+      );
+      return;
+    }
     if (!action.aimDirection) return;
 
     const color = action.phase === "telegraph" ? 0xfacc15 : 0xf97316;

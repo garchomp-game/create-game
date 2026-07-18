@@ -80,6 +80,10 @@ export class ExpeditionController {
       structuredSpawnsDeferred: 0,
       longestMeaningfulGap: 0,
       completedAt: null,
+      scoreBeforeBonus: 0,
+      clearScoreBonus: 0,
+      timeScoreBonus: 0,
+      bossFightDuration: null,
     };
   }
 
@@ -103,6 +107,16 @@ export class ExpeditionController {
       baseEvents,
     );
     const events: GameEvent[] = [...bossEvents];
+    if (world.state.hp <= 0 && world.state.status === "playing") {
+      world.state.status = "gameOver";
+      events.push({
+        type: "game.over",
+        score: world.state.score,
+        elapsed: world.state.elapsed,
+      });
+      events.push(this.complete(world, "defeat"));
+      return events;
+    }
     const signals: string[] = [];
     if (bossEvents.some((event) => event.type === "boss.defeated")) {
       signals.push("boss-defeated");
@@ -354,6 +368,25 @@ export class ExpeditionController {
     outcome: "victory" | "defeat",
   ): Extract<GameEvent, { type: "expedition.completed" | "expedition.failed" }> {
     const expedition = world.expedition!;
+    const scoreBeforeBonus = world.state.score;
+    const bossFightDuration = expedition.boss
+      ? Math.max(0, world.state.elapsed - expedition.boss.spawnedAt)
+      : null;
+    const scoring = this.stage.completionScoring;
+    const clearScoreBonus = outcome === "victory" && scoring
+      ? scoring.clearBonus
+      : 0;
+    const timeScoreBonus =
+      outcome === "victory" && scoring && bossFightDuration !== null
+        ? Math.max(
+            0,
+            Math.floor(
+              (scoring.bossFightTargetSeconds - bossFightDuration) *
+                scoring.bossTimeBonusPerSecond,
+            ),
+          )
+        : 0;
+    world.state.score += clearScoreBonus + timeScoreBonus;
     expedition.status = outcome;
     expedition.outcome = outcome;
     expedition.completedAt = world.state.elapsed;
@@ -363,6 +396,10 @@ export class ExpeditionController {
       actId: expedition.actId,
       elapsed: world.state.elapsed,
       score: world.state.score,
+      scoreBeforeBonus,
+      clearScoreBonus,
+      timeScoreBonus,
+      bossFightDuration,
     };
   }
 }

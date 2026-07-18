@@ -80,6 +80,44 @@ describe("createArenaScreenViewModel", () => {
     expect(viewModel.detailText).toBe("記録を保存できませんでした");
   });
 
+  it("keeps Expedition completion bonuses on separate readable lines", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.state.status = "gameOver";
+    world.state.score = 141_292;
+    world.stats.encounterMetrics.expedition = {
+      outcome: "victory",
+      reachedActId: "command-ship",
+      reachedActIds: ["command-ship"],
+      actChanges: 1,
+      cardsSelected: 1,
+      cardsCompleted: 1,
+      cardsFailed: 0,
+      cardsInterrupted: 0,
+      cardsDeferred: 0,
+      structuredEnemiesSpawned: 0,
+      structuredSpawnsDeferred: 0,
+      longestMeaningfulGap: 0,
+      completedAt: 421.4,
+      scoreBeforeBonus: 18_300,
+      clearScoreBonus: 15_000,
+      timeScoreBonus: 107_992,
+      bossFightDuration: 0.016,
+    };
+
+    const viewModel = createArenaScreenViewModel(
+      world,
+      SIMULATION_CONFIG,
+      createUiState(),
+    );
+
+    expect(viewModel.statusText?.split("\n")).toEqual(
+      expect.arrayContaining([
+        "完遂 +15,000 / 速攻 +107,992",
+        "指揮艦撃破 00:00",
+      ]),
+    );
+  });
+
   it("names the boss attack that ended an Expedition", () => {
     const world = createWorld(SIMULATION_CONFIG);
     world.state.status = "gameOver";
@@ -104,6 +142,10 @@ describe("createArenaScreenViewModel", () => {
       structuredSpawnsDeferred: 0,
       longestMeaningfulGap: 0,
       completedAt: 430,
+      scoreBeforeBonus: 20_000,
+      clearScoreBonus: 0,
+      timeScoreBonus: 0,
+      bossFightDuration: 30,
     };
 
     const viewModel = createArenaScreenViewModel(

@@ -1,5 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import { SIMULATION_CONFIG } from "../../src/config/gameConfig";
+import type { BossAttackId } from "../../src/domain/types";
 import { probeWebglCanvas } from "./webglCanvasProbe";
 
 async function gotoArena(page: Page): Promise<void> {
@@ -75,7 +76,7 @@ async function showExpeditionChargerPresentation(page: Page): Promise<void> {
 
 async function showExpeditionBossPresentation(
   page: Page,
-  attackId: "targeted-salvo" | "escort-pincer",
+  attackId: BossAttackId,
   phase: 1 | 2,
 ): Promise<void> {
   await moveMouseToCanvasLogical(page, 480, 339);
@@ -281,6 +282,41 @@ test("shows the phase-two command ship and targeted salvo", async ({ page }) => 
   expect(snapshot?.renderPerformance.screenHud.averageMs).toBeLessThan(5);
   expect(snapshot?.renderPerformance.feedback.averageMs).toBeLessThan(3);
   await expect(canvas).toHaveScreenshot("arena-expedition-boss-salvo.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("shows the phase-two command pulse safety boundary", async ({ page }) => {
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+  await showExpeditionBossPresentation(page, "command-pulse", 2);
+
+  const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+  expect(snapshot?.expedition?.boss).toMatchObject({
+    bossId: "final-command-ship",
+    phase: 2,
+    action: { attackId: "command-pulse", phase: "telegraph" },
+  });
+  await expect(canvas).toHaveScreenshot("arena-expedition-boss-command-pulse.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("keeps the expedition score breakdown readable on results", async ({ page }) => {
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+  await showExpeditionBossPresentation(page, "targeted-salvo", 2);
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
+    if (!debug) throw new Error("Debug API is not available.");
+    debug.armExpeditionBossDefeat();
+    debug.step({}, 1 / 60);
+  });
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+    .toBe("gameOver");
+
+  await expect(canvas).toHaveScreenshot("arena-expedition-result.png", {
     maxDiffPixelRatio: 0.01,
   });
 });

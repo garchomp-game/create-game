@@ -297,11 +297,33 @@ describe("updateRunStats comparison metrics", () => {
       phaseReached: 2,
       phaseChanges: 1,
       lastAttackId: "targeted-salvo",
-      attacksTelegraphed: { "targeted-salvo": 1, "escort-pincer": 0 },
-      attacksExecuted: { "targeted-salvo": 1, "escort-pincer": 0 },
-      playerHitsByAttack: { "targeted-salvo": 1, "escort-pincer": 1 },
-      damageTakenByAttack: { "targeted-salvo": 10, "escort-pincer": 7 },
+      attacksTelegraphed: {
+        "targeted-salvo": 1,
+        "escort-pincer": 0,
+        "command-pulse": 0,
+      },
+      attacksExecuted: {
+        "targeted-salvo": 1,
+        "escort-pincer": 0,
+        "command-pulse": 0,
+      },
+      playerHitsByAttack: {
+        "targeted-salvo": 1,
+        "escort-pincer": 1,
+        "command-pulse": 0,
+      },
+      damageTakenByAttack: {
+        "targeted-salvo": 10,
+        "escort-pincer": 7,
+        "command-pulse": 0,
+      },
       escortsSpawned: 2,
+      killsDuringBoss: 0,
+      healPickupsSpawned: 0,
+      healDropsSuppressed: 0,
+      healPickupsCollected: 0,
+      hpRecoveredDuringBoss: 0,
+      commandPulseResults: { hit: 0, blocked: 0, outside: 0, invulnerable: 0 },
       defeatedByWeapon: "pulse",
     });
   });

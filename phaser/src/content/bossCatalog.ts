@@ -42,6 +42,16 @@ export type FinalCommandShipDefinition = {
       projectileDamage: [number, number];
     };
   };
+  commandPulse: {
+    telegraphSeconds: [number, number];
+    executeSeconds: [number, number];
+    recoverySeconds: [number, number];
+    radius: [number, number];
+    damage: [number, number];
+  };
+  sustain: {
+    healDropMinimumIntervalSeconds: number;
+  };
 };
 
 export const FINAL_COMMAND_SHIP_DEFINITION: FinalCommandShipDefinition = {
@@ -56,7 +66,7 @@ export const FINAL_COMMAND_SHIP_DEFINITION: FinalCommandShipDefinition = {
   movementSpeed: [72, 96],
   phaseTwoHpRatio: 0.5,
   phaseTransitionRecoverySeconds: 1.1,
-  attackOrder: ["targeted-salvo", "escort-pincer"],
+  attackOrder: ["targeted-salvo", "escort-pincer", "command-pulse"],
   targetedSalvo: {
     telegraphSeconds: [1.2, 0.85],
     executeSeconds: [0.25, 0.2],
@@ -83,5 +93,15 @@ export const FINAL_COMMAND_SHIP_DEFINITION: FinalCommandShipDefinition = {
       projectileLifetime: 3.6,
       projectileDamage: [7, 9],
     },
+  },
+  commandPulse: {
+    telegraphSeconds: [1.35, 1.05],
+    executeSeconds: [0.22, 0.18],
+    recoverySeconds: [0.9, 0.68],
+    radius: [175, 220],
+    damage: [22, 34],
+  },
+  sustain: {
+    healDropMinimumIntervalSeconds: 1,
   },
 };
