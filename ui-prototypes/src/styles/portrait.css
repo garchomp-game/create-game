@@ -1,0 +1,311 @@
+/* Portrait composition */
+
+.prototype-frame--portrait .frame-status {
+  top: 15px;
+}
+
+.prototype-frame--portrait .frame-footer {
+  bottom: 14px;
+}
+
+.prototype-frame--portrait .frame-signal,
+.prototype-frame--portrait .frame-footer span:first-child {
+  display: none;
+}
+
+.prototype-frame--portrait .prototype-screen:not(.screen--combat) {
+  inset: 48px 0 34px;
+}
+
+.prototype-frame--portrait .screen--title {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: stretch;
+  justify-content: flex-end;
+  padding: 38px 24px 30px;
+  text-align: left;
+}
+
+.prototype-frame--portrait .brand-block {
+  margin-bottom: auto;
+  align-self: stretch;
+}
+
+.prototype-frame--portrait .brand-block h1,
+.prototype-frame--portrait[data-concept="arcade"] .brand-block h1,
+.prototype-frame--portrait[data-concept="recovery"] .brand-block h1 {
+  max-width: 320px;
+  margin: 10px 0 14px;
+  font-size: 48px;
+  line-height: 0.95;
+  text-align: left;
+}
+
+.prototype-frame--portrait .brand-tagline {
+  font-size: 15px;
+}
+
+.prototype-frame--portrait .mode-list,
+.prototype-frame--portrait[data-concept="arcade"] .mode-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+}
+
+.prototype-frame--portrait .mode-option {
+  min-height: 84px;
+}
+
+.prototype-frame--portrait .title-metrics {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.prototype-frame--portrait .title-metrics div {
+  min-width: 0;
+  padding: 8px;
+}
+
+.prototype-frame--portrait .title-metrics dd {
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prototype-frame--portrait .screen--stage,
+.prototype-frame--portrait .screen--upgrade,
+.prototype-frame--portrait .screen--result {
+  padding: 22px 20px 26px;
+}
+
+.prototype-frame--portrait .screen-heading h1 {
+  font-size: 22px;
+}
+
+.prototype-frame--portrait .stage-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+  gap: 14px;
+  height: calc(100% - 65px);
+  margin-top: 18px;
+}
+
+.prototype-frame--portrait .stage-list,
+.prototype-frame--portrait[data-concept="recovery"] .stage-list,
+.prototype-frame--portrait[data-concept="arcade"] .stage-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 7px;
+}
+
+.prototype-frame--portrait .stage-option,
+.prototype-frame--portrait[data-concept="recovery"] .stage-option,
+.prototype-frame--portrait[data-concept="arcade"] .stage-option {
+  grid-template-columns: 38px 1fr 62px;
+  min-height: 66px;
+  text-align: left;
+}
+
+.prototype-frame--portrait .stage-number,
+.prototype-frame--portrait .stage-status {
+  justify-self: auto;
+}
+
+.prototype-frame--portrait .stage-status {
+  grid-column: auto;
+  justify-content: flex-end;
+}
+
+.prototype-frame--portrait .stage-brief,
+.prototype-frame--portrait[data-concept="recovery"] .stage-brief,
+.prototype-frame--portrait[data-concept="arcade"] .stage-brief {
+  display: grid;
+  grid-template-columns: 54px 1fr;
+  grid-template-rows: 1fr auto;
+  align-items: start;
+  padding: 19px;
+}
+
+.prototype-frame--portrait .stage-brief-number {
+  font-size: 38px;
+}
+
+.prototype-frame--portrait .stage-brief-copy h2 {
+  font-size: 21px;
+}
+
+.prototype-frame--portrait .stage-brief .frame-command {
+  grid-column: 1 / -1;
+  width: 100%;
+  margin-top: 18px;
+}
+
+.prototype-frame--portrait .build-progress {
+  position: relative;
+  top: auto;
+  right: auto;
+  width: 100%;
+  margin-top: 14px;
+}
+
+.prototype-frame--portrait .upgrade-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 9px;
+  height: auto;
+  margin-top: 14px;
+}
+
+.prototype-frame--portrait .upgrade-option,
+.prototype-frame--portrait[data-concept="arcade"] .upgrade-option {
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  grid-template-rows: auto auto auto;
+  min-height: 142px;
+  align-items: center;
+  padding: 13px 15px;
+  text-align: left;
+}
+
+.prototype-frame--portrait .upgrade-index {
+  display: none;
+}
+
+.prototype-frame--portrait .upgrade-icon {
+  grid-row: 1 / 3;
+  margin: 0 10px 0 0;
+}
+
+.prototype-frame--portrait .upgrade-category {
+  grid-column: 2;
+}
+
+.prototype-frame--portrait .upgrade-option > strong {
+  grid-column: 2;
+  margin: 2px 0;
+  font-size: 18px;
+}
+
+.prototype-frame--portrait .upgrade-rank {
+  grid-column: 3;
+  grid-row: 1 / 3;
+}
+
+.prototype-frame--portrait .upgrade-description {
+  grid-column: 1 / -1;
+  margin-top: 9px;
+}
+
+.prototype-frame--portrait .upgrade-metric {
+  grid-column: 1 / -1;
+  margin-top: 8px;
+}
+
+.prototype-frame--portrait .upgrade-confirmation {
+  flex-direction: column;
+  align-items: stretch;
+  margin-top: 12px;
+  padding: 10px 0 0;
+  border-top: 1px solid var(--border);
+  border-left: 0;
+}
+
+.prototype-frame--portrait .upgrade-confirmation .frame-command {
+  width: 100%;
+}
+
+.prototype-frame--portrait .screen--combat::before {
+  height: 178px;
+}
+
+.prototype-frame--portrait .screen--combat::after {
+  height: 164px;
+}
+
+.prototype-frame--portrait .hud-vitals {
+  top: 48px;
+  right: 16px;
+  left: 16px;
+  width: auto;
+}
+
+.prototype-frame--portrait .hud-score {
+  top: 15px;
+  right: 16px;
+  width: 180px;
+  border: 0;
+  background: transparent;
+}
+
+.prototype-frame--portrait .hud-score > strong {
+  font-size: 25px;
+}
+
+.prototype-frame--portrait .event-callout,
+.prototype-frame--portrait[data-concept="recovery"] .event-callout,
+.prototype-frame--portrait[data-concept="arcade"] .event-callout {
+  top: 193px;
+  left: 16px;
+  width: calc(100% - 32px);
+  transform: none;
+}
+
+.prototype-frame--portrait .boss-meter,
+.prototype-frame--portrait[data-concept="recovery"] .boss-meter,
+.prototype-frame--portrait[data-concept="arcade"] .boss-meter {
+  right: 16px;
+  bottom: 58px;
+  left: 16px;
+}
+
+.prototype-frame--portrait .weapon-identity,
+.prototype-frame--portrait[data-concept="recovery"] .weapon-identity {
+  right: 16px;
+  bottom: 128px;
+}
+
+.prototype-frame--portrait .screen--result,
+.prototype-frame--portrait[data-concept="arcade"] .screen--result {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left;
+}
+
+.prototype-frame--portrait .result-primary {
+  align-self: stretch;
+}
+
+.prototype-frame--portrait .result-primary h1,
+.prototype-frame--portrait[data-concept="arcade"] .result-primary h1 {
+  font-size: 48px;
+}
+
+.prototype-frame--portrait .result-details {
+  align-self: stretch;
+  border-top: 1px solid var(--border-strong);
+  border-left: 0;
+  padding-top: 14px;
+  padding-left: 0;
+}
+
+.prototype-frame--portrait .result-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+  margin-top: auto;
+}
+
+.prototype-frame--portrait .result-actions .frame-command {
+  width: 100%;
+}
+
+.prototype-frame--portrait .result-rank {
+  top: 80px;
+  right: 15px;
+  font-size: 150px;
+}

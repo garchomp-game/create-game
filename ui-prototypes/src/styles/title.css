@@ -1,0 +1,181 @@
+/* Title */
+
+.screen--title {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  grid-template-rows: 1fr auto;
+  gap: 16px 40px;
+  align-items: center;
+  padding: 30px 54px 18px;
+}
+
+.brand-block {
+  align-self: center;
+}
+
+.brand-block h1 {
+  max-width: 620px;
+  margin: 8px 0 12px;
+  color: var(--text);
+  font-size: 58px;
+  font-weight: 950;
+  line-height: 0.95;
+}
+
+.brand-tagline {
+  max-width: 460px;
+  margin: 0;
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 650;
+  line-height: 1.6;
+}
+
+.mode-list {
+  display: grid;
+  gap: 9px;
+}
+
+.mode-option {
+  display: grid;
+  grid-template-columns: 36px 1fr 18px;
+  min-height: 78px;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 13px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text);
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.mode-option:hover,
+.mode-option--primary {
+  border-color: var(--primary);
+}
+
+.mode-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  font-size: 17px;
+}
+
+.mode-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.mode-copy small,
+.mode-copy span {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.25;
+}
+
+.mode-copy strong {
+  margin: 3px 0;
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.title-metrics {
+  display: flex;
+  grid-column: 1 / -1;
+  gap: 1px;
+  margin: 0;
+  align-self: end;
+}
+
+.title-metrics div {
+  min-width: 126px;
+  padding: 8px 12px;
+  border-left: 2px solid var(--primary);
+  background: var(--surface);
+}
+
+.title-metrics dt,
+.title-metrics dd {
+  margin: 0;
+}
+
+.title-metrics dt {
+  color: var(--muted);
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 8px;
+}
+
+.title-metrics dd {
+  margin-top: 3px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+[data-concept="recovery"] .screen--title {
+  grid-template-columns: 1fr 360px;
+  align-items: end;
+  padding-bottom: 34px;
+}
+
+[data-concept="recovery"] .brand-block {
+  align-self: end;
+  padding-left: 14px;
+  border-left: 5px solid var(--primary);
+}
+
+[data-concept="recovery"] .brand-block h1 {
+  font-size: 52px;
+}
+
+[data-concept="recovery"] .mode-option {
+  border-left: 5px solid var(--primary);
+}
+
+[data-concept="recovery"] .mode-icon {
+  border-radius: 50%;
+}
+
+[data-concept="arcade"] .screen--title {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr auto auto;
+  justify-items: center;
+  padding: 22px 90px 24px;
+  text-align: center;
+}
+
+[data-concept="arcade"] .brand-block h1 {
+  margin-top: 10px;
+  color: #ffffff;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 62px;
+}
+
+[data-concept="arcade"] .brand-tagline {
+  margin-inline: auto;
+}
+
+[data-concept="arcade"] .mode-list {
+  grid-template-columns: repeat(2, minmax(0, 260px));
+  width: 100%;
+  justify-content: center;
+}
+
+[data-concept="arcade"] .mode-option {
+  border-width: 2px;
+}
+
+[data-concept="arcade"] .title-metrics {
+  justify-content: center;
+}
+
+[data-concept="arcade"] .title-metrics div {
+  border-right: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+}

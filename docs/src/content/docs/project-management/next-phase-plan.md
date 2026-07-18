@@ -78,8 +78,9 @@ Session、Run Lifecycle、Debug、AI、Performanceを単一所有者へ分け、
 9. 完了: RC5をproduction trafficなしでVersion Previewへ公開し、実URLsmokeを通過。
 10. 残り: RC5 PreviewでPulse / Spread各1本以上を使い、制圧衝撃波、回復制御、速攻得点を手動採否。
 11. 完了: `PH-V08-011`でResult / Secondary Menu / Choice Presenter、Passive DOM View、共有theme tokenを実装し、既存画像を維持。
-12. 次段: `PH-V08-012`のproduction外比較草案と`PH-V08-010`の世界観採否を進める。
-13. その後: 端末内進行、ステージ選択、第1から第4の学習ステージを依存順に実装。
+12. 完了: `PH-V08-012`でproduction外の3案×5画面を比較し、A「戦術管制」を基礎採用、Tailwindをprototype限定、Lucideを将来のDOMコマンド限定候補とした。
+13. 次段: `PH-V08-010`の世界観・素材判断と、`PH-V08-013`でPresenter境界を使う選択画面のproduction縦切りを進める。
+14. その後: 端末内進行、ステージ選択、第1から第4の学習ステージを依存順に実装。
 
 ## production昇格判定
 

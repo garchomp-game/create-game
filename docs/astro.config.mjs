@@ -49,6 +49,7 @@ export default defineConfig({
           items: [
             { label: "アーキテクチャ", slug: "engineering/architecture" },
             { label: "Phaserプレゼンテーション再設計", slug: "engineering/phaser-presentation-architecture" },
+            { label: "UIライブラリと視覚方向", slug: "engineering/ui-library-and-visual-direction-adr" },
             { label: "観戦AIの設計判断", slug: "engineering/auto-pilot-architecture" },
             { label: "品質戦略", slug: "engineering/quality-strategy" }
           ]

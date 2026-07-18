@@ -1,0 +1,155 @@
+/* Upgrade */
+
+.screen--upgrade {
+  padding: 18px 44px 20px;
+}
+
+.build-progress {
+  position: absolute;
+  top: 29px;
+  right: 44px;
+  width: 210px;
+  height: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-solid);
+}
+
+.build-progress span {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+}
+
+.upgrade-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  height: 302px;
+  margin-top: 18px;
+}
+
+.upgrade-option {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text);
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.upgrade-option:hover,
+.upgrade-option--selected {
+  border-color: var(--primary);
+  background: var(--surface-raised);
+}
+
+.upgrade-index {
+  position: absolute;
+  top: 13px;
+  right: 13px;
+  color: var(--muted);
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 10px;
+}
+
+.upgrade-icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  margin-bottom: 14px;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  font-size: 18px;
+}
+
+.upgrade-category,
+.upgrade-rank {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.upgrade-option > strong {
+  margin: 5px 0;
+  font-size: 21px;
+  line-height: 1.2;
+}
+
+.upgrade-rank {
+  color: var(--secondary);
+}
+
+.upgrade-description {
+  margin-top: 13px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.upgrade-metric {
+  width: 100%;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.upgrade-option--mobility .upgrade-icon,
+.upgrade-option--mobility .upgrade-metric {
+  color: var(--secondary);
+  border-color: var(--secondary);
+}
+
+.upgrade-option--survival .upgrade-icon,
+.upgrade-option--survival .upgrade-metric {
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.upgrade-confirmation {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 12px;
+  padding-left: 14px;
+  border-left: 3px solid var(--primary);
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.upgrade-confirmation strong {
+  color: var(--text);
+}
+
+[data-concept="recovery"] .upgrade-option {
+  border-top: 5px solid var(--primary);
+}
+
+[data-concept="recovery"] .upgrade-option--mobility {
+  border-top-color: var(--secondary);
+}
+
+[data-concept="recovery"] .upgrade-option--survival {
+  border-top-color: var(--success);
+}
+
+[data-concept="arcade"] .upgrade-option {
+  align-items: center;
+  border-width: 2px;
+  text-align: center;
+}
+
+[data-concept="arcade"] .upgrade-metric {
+  text-align: center;
+}

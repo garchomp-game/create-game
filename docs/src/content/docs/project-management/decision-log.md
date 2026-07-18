@@ -659,3 +659,17 @@ RC3の固定事項:
 - React / Vue / Svelteや重量級component libraryは、現在の状態量に対してbundleと二重lifecycleを増やす。
 
 管理は要件・判断をStarlight、作業状態をGitHub Issues / Projectsへ一本化する。Linearや独自管理ツールは、二重更新を上回る不足が生じるまで追加しない。
+
+## 2026-07-18: 戦術管制をUI基礎に採用し、ライブラリ導入を局所化する
+
+決定: 同一データから作った3案×5画面の比較により、A「戦術管制」をproductionの情報階層と警告表現の基礎へ採用する。B「回収航路」は遠征進行と資源経路、C「精密アーケード」は武器成果とリザルトだけへ限定する。Tailwind CSSは独立prototype専用、Lucideは将来のDOMコマンド限定候補とし、現時点のPhaser production依存へ追加しない。
+
+根拠:
+
+- Aは四方侵入、障害物、危険予告、HP、進行の優先順をdesktopとportraitで最も安定して示した。
+- BはXP、回復、ステージ継続を説明しやすいが、瞬間的な技能成果を伝える力が弱かった。
+- CはPulse精度、Spread制圧、スコア更新を強く見せるが、戦闘HUD全体へ使うと通常情報と競合した。
+- Tailwindの静的生成は草案比較を速めたが、既存`arena.css`と`ArenaTheme`を置き換える保守上の利益はまだない。
+- 現行選択画面は文字主体で、Lucideを入れてもproductionの操作性や意味理解を直ちに改善しない。
+
+最初のproduction縦切りは、`ArenaChoicePresenter`と入力callbackを維持したまま、武器・通常強化・EX強化・契約のPassive DOM Viewだけを採用方向へ置き換える。simulation、乱数、スコア、保存schema、ルール版は変更しない。

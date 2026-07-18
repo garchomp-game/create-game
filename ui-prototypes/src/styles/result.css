@@ -1,0 +1,151 @@
+/* Result */
+
+.screen--result {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.95fr) minmax(320px, 1.05fr);
+  grid-template-rows: 1fr auto;
+  gap: 18px 28px;
+  padding: 22px 50px 22px;
+}
+
+.result-primary {
+  align-self: center;
+}
+
+.result-primary h1 {
+  margin: 7px 0 0;
+  color: var(--text);
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 56px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.result-label {
+  margin: 8px 0 16px;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 850;
+}
+
+.result-bonuses,
+.result-stats {
+  display: grid;
+  margin: 0;
+}
+
+.result-bonuses {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+}
+
+.result-bonuses div,
+.result-stats div {
+  padding: 8px 10px;
+  background: var(--surface);
+}
+
+.result-bonuses dt,
+.result-bonuses dd,
+.result-stats dt,
+.result-stats dd {
+  margin: 0;
+}
+
+.result-bonuses dt,
+.result-stats dt {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.result-bonuses dd,
+.result-stats dd {
+  margin-top: 4px;
+  color: var(--text);
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.result-details {
+  align-self: center;
+  border-left: 1px solid var(--border-strong);
+  padding-left: 22px;
+}
+
+.result-stats {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+}
+
+.result-build {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.result-build > span {
+  color: var(--primary);
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.result-build ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 9px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.result-build li {
+  padding: 4px 7px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 10px;
+}
+
+.result-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  justify-content: center;
+  gap: 8px;
+}
+
+.result-rank {
+  position: absolute;
+  z-index: -1;
+  top: 34px;
+  right: 52px;
+  color: color-mix(in srgb, var(--primary) 18%, transparent);
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 190px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+[data-concept="recovery"] .result-primary {
+  padding-left: 16px;
+  border-left: 6px solid var(--primary);
+}
+
+[data-concept="arcade"] .screen--result {
+  grid-template-columns: 1fr 1fr;
+  text-align: center;
+}
+
+[data-concept="arcade"] .result-primary h1 {
+  color: var(--primary);
+  font-size: 68px;
+}
+
+[data-concept="arcade"] .result-details {
+  text-align: left;
+}
+
+[data-concept="arcade"] .result-rank {
+  color: color-mix(in srgb, var(--secondary) 18%, transparent);
+}

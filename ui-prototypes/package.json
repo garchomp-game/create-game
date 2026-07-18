@@ -1,0 +1,23 @@
+{
+  "name": "arena-core-ui-prototypes",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test:e2e": "playwright test",
+    "verify:isolation": "node scripts/verify-isolation.mjs"
+  },
+  "dependencies": {
+    "lucide": "1.25.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "@tailwindcss/vite": "4.3.3",
+    "tailwindcss": "4.3.3",
+    "typescript": "6.0.3",
+    "vite": "8.1.5"
+  }
+}

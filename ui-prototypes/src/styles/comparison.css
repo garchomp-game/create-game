@@ -1,0 +1,282 @@
+/* Comparison density */
+
+.prototype-frame--comparison .frame-status,
+.prototype-frame--comparison .frame-footer {
+  right: 9px;
+  left: 9px;
+  font-size: 7px;
+}
+
+.prototype-frame--comparison .frame-signal {
+  display: none;
+}
+
+.prototype-frame--comparison .prototype-screen:not(.screen--combat) {
+  inset: 28px 0 20px;
+}
+
+.prototype-frame--comparison .screen--title {
+  grid-template-columns: 1fr 180px;
+  gap: 8px 18px;
+  padding: 14px 24px 10px;
+}
+
+.prototype-frame--comparison .brand-block h1 {
+  margin: 4px 0 6px;
+  font-size: 32px;
+}
+
+.prototype-frame--comparison .brand-tagline {
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.prototype-frame--comparison .mode-option {
+  grid-template-columns: 25px 1fr 12px;
+  min-height: 48px;
+  gap: 7px;
+  padding: 5px 7px;
+}
+
+.prototype-frame--comparison .mode-icon {
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
+}
+
+.prototype-frame--comparison .mode-copy strong {
+  font-size: 12px;
+}
+
+.prototype-frame--comparison .mode-copy span,
+.prototype-frame--comparison .title-metrics,
+.prototype-frame--comparison .screen-kicker {
+  display: none;
+}
+
+.prototype-frame--comparison .screen--stage,
+.prototype-frame--comparison .screen--upgrade,
+.prototype-frame--comparison .screen--result {
+  padding: 10px 20px;
+}
+
+.prototype-frame--comparison .screen-heading-icon {
+  width: 27px;
+  height: 27px;
+  font-size: 13px;
+}
+
+.prototype-frame--comparison .screen-heading h1 {
+  font-size: 15px;
+}
+
+.prototype-frame--comparison .screen-heading p,
+.prototype-frame--comparison .stage-copy small,
+.prototype-frame--comparison .stage-brief-copy h2 + p,
+.prototype-frame--comparison .upgrade-description,
+.prototype-frame--comparison .concept-note {
+  display: none;
+}
+
+.prototype-frame--comparison .stage-layout {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+  gap: 6px;
+  height: calc(100% - 34px);
+  margin-top: 7px;
+}
+
+.prototype-frame--comparison .stage-list {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.prototype-frame--comparison .stage-option {
+  grid-template-columns: 26px 1fr;
+  min-height: 40px;
+  gap: 4px;
+  padding: 4px 6px;
+}
+
+.prototype-frame--comparison .stage-number {
+  font-size: 14px;
+}
+
+.prototype-frame--comparison .stage-copy strong {
+  font-size: 9px;
+}
+
+.prototype-frame--comparison .stage-status {
+  display: none;
+}
+
+.prototype-frame--comparison .stage-brief {
+  grid-template-columns: 40px 1fr auto;
+  grid-template-rows: 1fr;
+  align-items: center;
+  padding: 8px 10px;
+}
+
+.prototype-frame--comparison .stage-brief-number {
+  font-size: 26px;
+}
+
+.prototype-frame--comparison .stage-brief-copy h2 {
+  font-size: 14px;
+}
+
+.prototype-frame--comparison .enemy-tags,
+.prototype-frame--comparison .stage-brief-copy > p:first-child {
+  display: none;
+}
+
+.prototype-frame--comparison .frame-command {
+  min-height: 30px;
+  padding: 0 9px;
+  font-size: 9px;
+}
+
+.prototype-frame--comparison .build-progress {
+  top: 18px;
+  right: 20px;
+  width: 100px;
+  height: 4px;
+}
+
+.prototype-frame--comparison .upgrade-grid {
+  gap: 5px;
+  height: 150px;
+  margin-top: 7px;
+}
+
+.prototype-frame--comparison .upgrade-option {
+  padding: 8px;
+}
+
+.prototype-frame--comparison .upgrade-icon {
+  width: 22px;
+  height: 22px;
+  margin-bottom: 5px;
+  font-size: 11px;
+}
+
+.prototype-frame--comparison .upgrade-option > strong {
+  margin: 3px 0;
+  font-size: 12px;
+}
+
+.prototype-frame--comparison .upgrade-category,
+.prototype-frame--comparison .upgrade-rank,
+.prototype-frame--comparison .upgrade-metric {
+  font-size: 7px;
+}
+
+.prototype-frame--comparison .upgrade-confirmation {
+  min-height: 30px;
+  margin-top: 5px;
+  font-size: 8px;
+}
+
+.prototype-frame--comparison .screen--combat::before,
+.prototype-frame--comparison .screen--combat::after {
+  height: 65px;
+}
+
+.prototype-frame--comparison .hud-vitals {
+  top: 8px;
+  left: 8px;
+  width: 160px;
+  padding: 5px 7px;
+}
+
+.prototype-frame--comparison .hud-score {
+  top: 8px;
+  right: 8px;
+  width: 120px;
+  padding: 5px 7px;
+}
+
+.prototype-frame--comparison .hud-score > strong {
+  font-size: 17px;
+}
+
+.prototype-frame--comparison .hud-score p,
+.prototype-frame--comparison .hud-heading {
+  font-size: 7px;
+}
+
+.prototype-frame--comparison .event-callout {
+  top: 72px;
+  width: 210px;
+  min-height: 35px;
+  grid-template-columns: 18px 1fr auto;
+  gap: 5px;
+  padding: 4px 6px;
+}
+
+.prototype-frame--comparison .event-callout strong {
+  font-size: 9px;
+}
+
+.prototype-frame--comparison .boss-meter {
+  right: 80px;
+  bottom: 8px;
+  left: 80px;
+  padding: 5px 8px;
+}
+
+.prototype-frame--comparison .weapon-identity {
+  right: 8px;
+  bottom: 8px;
+  width: 66px;
+  height: 43px;
+  padding: 5px;
+}
+
+.prototype-frame--comparison .weapon-identity small {
+  display: none;
+}
+
+.prototype-frame--comparison .weapon-identity strong {
+  font-size: 10px;
+}
+
+.prototype-frame--comparison .result-primary h1 {
+  font-size: 32px;
+}
+
+.prototype-frame--comparison .result-label {
+  margin: 4px 0 7px;
+  font-size: 11px;
+}
+
+.prototype-frame--comparison .result-details {
+  padding-left: 8px;
+}
+
+.prototype-frame--comparison .result-bonuses div,
+.prototype-frame--comparison .result-stats div,
+.prototype-frame--comparison .result-build {
+  padding: 4px 5px;
+}
+
+.prototype-frame--comparison .result-bonuses dt,
+.prototype-frame--comparison .result-bonuses dd,
+.prototype-frame--comparison .result-stats dt,
+.prototype-frame--comparison .result-stats dd,
+.prototype-frame--comparison .result-build li {
+  font-size: 7px;
+}
+
+.prototype-frame--comparison .result-build {
+  margin-top: 5px;
+}
+
+.prototype-frame--comparison .result-build ul {
+  gap: 2px;
+  margin-top: 3px;
+}
+
+.prototype-frame--comparison .result-rank {
+  font-size: 90px;
+}
