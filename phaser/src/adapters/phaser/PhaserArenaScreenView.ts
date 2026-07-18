@@ -94,12 +94,12 @@ export class PhaserArenaScreenView {
       return;
     }
     if (screen.kind === "upgradeSelect") {
-      graphics.fillStyle(COLOR.overlay, 0.9);
+      graphics.fillStyle(COLOR.overlay, 0.32);
       graphics.fillRect(0, 0, width, height);
       return;
     }
     if (screen.kind === "contractSelect") {
-      graphics.fillStyle(COLOR.overlay, 0.94);
+      graphics.fillStyle(COLOR.overlay, 0.38);
       graphics.fillRect(0, 0, width, height);
       return;
     }
@@ -126,7 +126,7 @@ export class PhaserArenaScreenView {
       return;
     }
     if (screen.kind === "weaponSelect") {
-      graphics.fillStyle(COLOR.overlayStrong, 0.94);
+      graphics.fillStyle(COLOR.overlayStrong, 0.55);
       graphics.fillRect(0, 0, width, height);
       return;
     }

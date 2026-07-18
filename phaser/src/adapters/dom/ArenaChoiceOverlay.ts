@@ -27,6 +27,7 @@ export class ArenaChoiceOverlay {
 
     this.root = document.createElement("div");
     this.root.className = "arena-choice-overlay";
+    this.root.tabIndex = -1;
     this.root.setAttribute("aria-hidden", "true");
     this.root.addEventListener("keydown", (event) => this.handleKeyDown(event));
     parent.append(this.root);
@@ -35,9 +36,12 @@ export class ArenaChoiceOverlay {
   render(world: WorldState, enabled = true): void {
     this.syncBounds();
     const model = createArenaChoiceViewModel(world, this.config, enabled);
+    const wasVisible = this.root.classList.contains("arena-choice-overlay--visible");
     this.root.classList.toggle("arena-choice-overlay--visible", model.visible);
     this.root.setAttribute("aria-hidden", model.visible ? "false" : "true");
     if (!model.visible) {
+      delete this.root.dataset.choicePhase;
+      if (wasVisible) this.root.blur();
       this.signature = "";
       this.visibleChoiceCount = 0;
       return;
@@ -45,6 +49,7 @@ export class ArenaChoiceOverlay {
     if (model.phase === null) {
       throw new Error("Visible choice model must provide a presentation phase.");
     }
+    this.root.dataset.choicePhase = model.phase;
 
     if (model.signature === this.signature) return;
     this.signature = model.signature;
@@ -77,6 +82,7 @@ export class ArenaChoiceOverlay {
       shell.append(back);
     }
     this.root.append(shell);
+    this.root.focus({ preventScroll: true });
   }
 
   consumeInput(): ArenaChoiceInput {
@@ -136,7 +142,7 @@ export class ArenaChoiceOverlay {
     marker.setAttribute("aria-hidden", "true");
     cardHeader.append(
       marker,
-      element("span", "arena-choice-index", card.indexLabel),
+      element("kbd", "arena-choice-index", card.indexLabel),
       element("span", "arena-choice-role", card.role),
     );
     if (card.rank) cardHeader.append(element("span", "arena-choice-rank", card.rank));

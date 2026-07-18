@@ -305,7 +305,7 @@ function getUpgradeTone(category: UpgradeCategory): ArenaChoiceTone {
 }
 
 function formatChoiceIndex(index: number): string {
-  return String(index + 1).padStart(2, "0");
+  return String(index + 1);
 }
 
 function createSignature(world: WorldState): string {

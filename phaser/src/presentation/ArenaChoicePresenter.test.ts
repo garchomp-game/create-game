@@ -41,7 +41,7 @@ describe("createArenaChoiceViewModel", () => {
     expect(model.cards).toEqual([
       expect.objectContaining({
         id: "pulse",
-        indexLabel: "01",
+        indexLabel: "1",
         tone: "pulse",
         role: "単体集中",
         metricLabel: "武器特性",
@@ -50,7 +50,7 @@ describe("createArenaChoiceViewModel", () => {
       }),
       expect.objectContaining({
         id: "spread",
-        indexLabel: "02",
+        indexLabel: "2",
         tone: "spread",
         role: "範囲制圧",
         selection: { kind: "menu", action: "selectSpread" },
@@ -77,7 +77,7 @@ describe("createArenaChoiceViewModel", () => {
     expect(model.cards).toHaveLength(3);
     expect(model.cards[0]).toMatchObject({
       id: "rapidFire",
-      indexLabel: "01",
+      indexLabel: "1",
       tone: "upgrade-weapon",
       title: "連射強化",
       rank: "ランク 2/5",
@@ -133,7 +133,7 @@ describe("createArenaChoiceViewModel", () => {
     expect(model.cards).toEqual([
       expect.objectContaining({
         id: "standard",
-        indexLabel: "01",
+        indexLabel: "1",
         tone: "contract-standard",
         metricLabel: "契約結果",
         actionLabel: "この契約を選択",
@@ -141,7 +141,7 @@ describe("createArenaChoiceViewModel", () => {
       }),
       expect.objectContaining({
         id: "overdrive",
-        indexLabel: "02",
+        indexLabel: "2",
         tone: "contract-overdrive",
         selection: { kind: "contract", index: 1 },
       }),

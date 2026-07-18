@@ -63,7 +63,9 @@ test("uses aligned semantic DOM controls at high pixel density", async ({ page }
   await expect(overlay).toBeVisible();
   await expect(weaponChoices).toHaveCount(2);
   await expect(weaponChoices.first()).toHaveJSProperty("tagName", "BUTTON");
+  await expect(overlay).toBeFocused();
   await expect(weaponChoices.first()).toHaveAttribute("aria-keyshortcuts", "1");
+  await expect(weaponChoices.first().locator("kbd.arena-choice-index")).toHaveText("1");
   await expect(weaponChoices.first().locator(".arena-choice-card-action")).toHaveText(
     "この武器で開始",
   );
@@ -78,8 +80,6 @@ test("uses aligned semantic DOM controls at high pixel density", async ({ page }
   expect(typography.fontFamily).toContain("Noto Sans CJK JP");
   expect(typography.cursor).toBe("pointer");
 
-  await page.keyboard.press("Tab");
-  await expect(weaponChoices.first()).toBeFocused();
   await page.keyboard.press("2");
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "playing",
@@ -109,6 +109,7 @@ test("stacks upgrade cards across the full portrait viewport", async ({ page }) 
   const overlay = page.locator(".arena-choice-overlay--visible");
   const cards = overlay.locator("[data-choice-kind='upgrade']");
   await expect(overlay).toHaveClass(/arena-choice-overlay--portrait/);
+  await expect(overlay).toHaveCSS("background-color", "rgba(2, 6, 23, 0.16)");
   const overlayBox = await overlay.boundingBox();
   expect(overlayBox).toMatchObject({ x: 0, y: 0, width: 390, height: 844 });
   const first = await cards.nth(0).boundingBox();
@@ -176,4 +177,52 @@ test("fits weapon, EX, and contract choices in portrait", async ({ page }) => {
     "contractSelect",
   );
   await expectChoiceCardsFit(page, 2);
+});
+
+test("keeps the previous aim active after a number-key upgrade", async ({ page }) => {
+  await page.goto("/");
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  await page.evaluate(() => window.__ARENA_DEBUG__?.restart());
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "playing",
+  );
+
+  const canvas = page.locator("canvas");
+  const box = await canvas.boundingBox();
+  if (!box) throw new Error("Canvas is not visible.");
+  const size = await canvas.evaluate((node: HTMLCanvasElement) => ({
+    width: node.width,
+    height: node.height,
+  }));
+  await page.mouse.move(
+    box.x + (720 / size.width) * box.width,
+    box.y + (270 / size.height) * box.height,
+  );
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().stats.shotsFired))
+    .toBeGreaterThan(0);
+
+  const before = await page.evaluate(() => {
+    const snapshot = window.__ARENA_DEBUG__?.getSnapshot();
+    return snapshot
+      ? { shotsFired: snapshot.stats.shotsFired, lastAim: snapshot.lastAim }
+      : null;
+  });
+  if (!before) throw new Error("Arena snapshot is unavailable.");
+
+  await page.evaluate(() => window.__ARENA_DEBUG__?.forceUpgradeSelect(true));
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "upgradeSelect",
+  );
+  await expect(page.locator(".arena-choice-overlay--visible")).toBeFocused();
+  await page.keyboard.press("1");
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "playing",
+  );
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().stats.shotsFired))
+    .toBeGreaterThan(before.shotsFired);
+  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().lastAim)).toEqual(
+    before.lastAim,
+  );
 });
