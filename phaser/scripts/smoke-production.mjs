@@ -68,6 +68,7 @@ try {
   await page.waitForTimeout(250);
   await capture(page, "02-settings.png");
   await clickCanvasLogical(page, 480, 347);
+  await page.waitForTimeout(200);
   const autoFireEnabled = await page.evaluate(() => {
     const raw = localStorage.getItem("arena-core.settings.v1");
     return raw ? JSON.parse(raw).autoFireEnabled : null;
