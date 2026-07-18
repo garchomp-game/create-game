@@ -138,7 +138,7 @@ description: v0.4からv1.0までの目的と主要チケット。
 - [`PH-V07-006` #48](https://github.com/garchomp-game/create-game/issues/48) エクスペディション縦切り。
 - [`PH-V07-007` #58](https://github.com/garchomp-game/create-game/issues/58) 指揮艦ボス戦。
 - [`PH-V07-008` #59](https://github.com/garchomp-game/create-game/issues/59) 統合QAと採否判定。
-- [`PH-V07-009` #63](https://github.com/garchomp-game/create-game/issues/63) 最終遠征RC3高難度化。
+- [`PH-V07-009` #63](https://github.com/garchomp-game/create-game/issues/63) 最終遠征RC5ボス終盤調整。
 
 ## v0.8 チャレンジ、熟練度、遠征進行
 
