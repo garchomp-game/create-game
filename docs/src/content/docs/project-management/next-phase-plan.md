@@ -1,17 +1,17 @@
 ---
 title: 直近フェーズ
-description: v0.7最終遠征RC3を検証し、10ステージ展開へ進む条件を判断する現在の計画。
+description: v0.7最終遠征RC3とEndless RC4を検証し、10ステージ展開へ進む条件を判断する現在の計画。
 ---
 
-最終整理日: 2026-07-17
+最終整理日: 2026-07-18
 
 ## 現在の判断
 
 v0.6.8公開ベータはcommit `ff686f992a65`、Cloudflare Version ID `e86f90b8-ea15-4d1d-b01b-59e4f9fea78e`としてproductionへ固定しています。v0.7では責務分離、Stage / Encounter基盤、構造化出現、Commander、Charger、5 ActのExpedition、2攻撃・2段階の指揮艦ボスまで実装しました。
 
-RC1とRC2の手動所感から、道中に対してボスが易しい難度逆転と、初心者向け学習ステージとしては道中が難しすぎることが分かりました。現行縦切りを第10ステージへ再分類し、候補版を`0.7.0` / `phaser-v0.7.0-final-expedition-rc3`へ更新しています。
+RC1とRC2の手動所感から、道中に対してボスが易しい難度逆転と、初心者向け学習ステージとしては道中が難しすぎることが分かりました。現行縦切りを第10ステージへ再分類し、RC3で最終遠征の戦闘値を固定しました。現在の候補版はEndless C5到達性も分離調整した`0.7.0` / `phaser-v0.7.0-final-expedition-rc4`です。
 
-RC3は敵を`赤 -> 大型黄 -> 小型黄緑 -> 紫`の順で解禁し、大型黄をHP 8、CommanderをHP 500にします。最終ボスはプレイヤーを追跡し、通常ウェーブを止めず、広域射撃と挟撃増援を続けます。全回帰とVersion Preview更新は完了し、次の作業はPulse / Spread各3本の手動採否です。
+RC3は敵を`赤 -> 大型黄 -> 小型黄緑 -> 紫`の順で解禁し、大型黄をHP 8、CommanderをHP 500にします。最終ボスはプレイヤーを追跡し、通常ウェーブを止めず、広域射撃と挟撃増援を続けます。RC4では最終遠征をそのまま固定し、EndlessだけEX C5到達性を改善しました。全回帰とVersion Preview更新は完了し、次の作業はPulse / Spread各3本の手動採否です。
 
 - 体験要件: [v0.7 最終遠征プロトタイプ](../../design/v07-first-expedition/)
 - 実装順と受け入れ条件: [v0.7 実行計画](../v07-execution-plan/)
@@ -24,9 +24,9 @@ RC3は敵を`赤 -> 大型黄 -> 小型黄緑 -> 紫`の順で解禁し、大型
 
 productionはv0.6.8のまま維持します。v0.7はCloudflare Version Previewだけへ公開し、手動採否が終わるまで`wrangler deploy`やtraffic昇格を行いません。保存比較は新しいルール版へ分かれるため、旧履歴を残してもランキングへ混ざりません。
 
-- RC3 Preview: `https://v07-final-expedition-arena-core.garchomp-game.workers.dev`
-- commit: `7fc7a67953b7`
-- Cloudflare Version: `0a4ebb54-f788-485c-96ee-3828377be5aa`
+- RC4 Preview: `https://v07-final-expedition-arena-core.garchomp-game.workers.dev`
+- commit: `f995519506f2`
+- Cloudflare Version: `ba24981b-3826-4f51-81bc-7b2580ce4ec3`
 - production: Version `e86f90b8-ea15-4d1d-b01b-59e4f9fea78e` 100%を維持
 
 ## 入口ゲート

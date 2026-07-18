@@ -211,15 +211,15 @@ v0.6の手動採否、外周反射の公開固定、長時間HUD、Phaser 4.2.1 
 
 ## v0.7 preview候補
 
-有限ランの縦切りは、5 Act、構造化出現、HP 500のCommander、Charger、2攻撃・2段階の指揮艦ボス、勝敗と攻撃源記録まで統合しました。手動所感で道中とボスの難度逆転が判明し、さらに10ステージ構成の最終面として使う方針へ変更したため、候補版を`0.7.0` / `phaser-v0.7.0-final-expedition-rc3`へ分けています。
+有限ランの縦切りは、5 Act、構造化出現、HP 500のCommander、Charger、2攻撃・2段階の指揮艦ボス、勝敗と攻撃源記録まで統合しました。手動所感で道中とボスの難度逆転が判明し、さらに10ステージ構成の最終面として使う方針へ変更しました。候補版は`0.7.0` / `phaser-v0.7.0-final-expedition-rc4`です。
 
-RC3は`赤 -> 大型黄 -> 小型黄緑 -> 紫`の順で敵を解禁し、大型黄だけHPを3から8へ上げます。最終ボスはプレイヤーを追跡し、通常ウェーブを止めず、広域射撃と挟撃増援を継続します。固定3シードの早送りではPulse 1勝2敗、Spread 3勝で、全6ランがCommanderを撃破しボス第2段階へ到達しました。最大敵76、最大総弾99、最大Pickup 196で上限内です。
+RC3で`赤 -> 大型黄 -> 小型黄緑 -> 紫`の順で敵を解禁し、大型黄だけHPを3から8へ上げました。最終ボスはプレイヤーを追跡し、通常ウェーブを止めず、広域射撃と挟撃増援を継続します。RC4はこの最終遠征の戦闘値を固定したまま、EndlessのEX C5を累計4,258 XPで到達可能にしました。固定3 seed x 2武器のEndless比較ではC5以上が0 / 6から3 / 6へ増え、最終遠征probeはRC3と完全一致しました。
 
-自動回帰は完了し、commit `7fc7a67953b7`、Cloudflare Version `0a4ebb54-f788-485c-96ee-3828377be5aa`を`https://v07-final-expedition-arena-core.garchomp-game.workers.dev`へ公開しました。v0.6.8 productionを維持したまま、残るPulse / Spread各3本の手動採否を行います。詳細は[v0.7 統合QAレポート](../../playtest/v07-qa-report/)へ集約します。
+自動回帰は完了し、commit `f995519506f2`、Cloudflare Version `ba24981b-3826-4f51-81bc-7b2580ce4ec3`を`https://v07-final-expedition-arena-core.garchomp-game.workers.dev`へ公開しました。v0.6.8 productionを維持したまま、残るPulse / Spread各3本の手動採否を行います。詳細は[v0.7 統合QAレポート](../../playtest/v07-qa-report/)へ集約します。
 
 ## 次の優先順
 
-公開ベータ基準とproduction証跡は固定済みです。v0.7は最終遠征RC3の技術QAを完了させ、その後にVersion Previewで人間採否します。
+公開ベータ基準とproduction証跡は固定済みです。v0.7 RC4の技術QAは完了し、Version Previewで最終遠征の人間採否を続けます。
 
 1. 公開ベータの複数ランでPulse / Spreadのスコア、生存、EX巡回、崩壊段階を継続観測する。
 2. 600秒以降の崩壊体感は非停止条件として監視し、現行ルール値は先回りして変更しない。
