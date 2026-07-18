@@ -96,6 +96,13 @@ export const FINAL_EXPEDITION_STAGE_DEFINITION = {
       healDropChanceMultiplier: 1.35,
     },
   },
+  progression: {
+    extraXpCurve: {
+      baseXp: 180,
+      growth: 1.12,
+      maxXp: 900,
+    },
+  },
   clearCondition: { type: "bossDefeat", bossId: FINAL_COMMAND_SHIP_BOSS_ID },
   bossId: FINAL_COMMAND_SHIP_BOSS_ID,
 } satisfies GameContentDefinitions["stages"][number];

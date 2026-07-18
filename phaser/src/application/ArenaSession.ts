@@ -201,6 +201,15 @@ function applyStageToConfig(
           ...difficulty.threat,
         }
       : baseConfig.threat,
+    leveling: stage.progression
+      ? {
+          ...baseConfig.leveling,
+          extra: {
+            ...baseConfig.leveling.extra,
+            ...stage.progression.extraXpCurve,
+          },
+        }
+      : baseConfig.leveling,
     obstacles: stage.obstacles.map((obstacle) => ({ ...obstacle })),
   };
 }

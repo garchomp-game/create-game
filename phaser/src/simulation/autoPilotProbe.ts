@@ -81,6 +81,9 @@ export type AutoPilotProbeRun = AutoPilotCoverageProbeRun & AutoPilotMotionProbe
   kills: number;
   killsPerMinute: number;
   xpCollected: number;
+  extraLevel: number;
+  extraCycle: number;
+  buildCompletedAt: number | null;
   pickupsCollected: number;
   hitsTaken: number;
   damageTakenBySource: DamageTakenBySource;
@@ -614,6 +617,9 @@ function createProbeRun(
     killsPerMinute:
       world.stats.enemiesKilled / Math.max(1 / 60, world.state.elapsed / 60),
     xpCollected: world.stats.xpCollected,
+    extraLevel: world.progression.extraLevel,
+    extraCycle: world.progression.extraCycle,
+    buildCompletedAt: world.progression.buildCompletedAt,
     pickupsCollected: world.stats.pickupsCollected,
     hitsTaken: world.stats.hitsTaken,
     damageTakenBySource: { ...world.stats.damageTakenBySource },

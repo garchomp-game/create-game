@@ -196,8 +196,8 @@ const rawSimulationConfig = {
     upgradeChoiceCount: 3,
     extra: {
       baseXp: 180,
-      growth: 1.12,
-      maxXp: 900,
+      growth: 1.04,
+      maxXp: 360,
       upgradeChoiceCount: 3,
     },
   },

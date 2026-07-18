@@ -1,5 +1,5 @@
 export const APP_VERSION = "0.7.0";
-export const RULESET_VERSION = "phaser-v0.7.0-final-expedition-rc3";
+export const RULESET_VERSION = "phaser-v0.7.0-final-expedition-rc4";
 export const RELEASE_CHANNEL_LABEL = "技術プレビュー";
 export const DEFAULT_MODE_ID = "endless";
 export const DEFAULT_STAGE_ID = "arena-default";

@@ -52,6 +52,11 @@ describe("ArenaSession", () => {
       id: "arena-default",
       clearCondition: { type: "endless" },
     });
+    expect(session.config.leveling.extra).toMatchObject({
+      baseXp: 180,
+      growth: 1.04,
+      maxXp: 360,
+    });
   });
 
   it("starts the final expedition with isolated runtime features and progress state", () => {
@@ -112,6 +117,11 @@ describe("ArenaSession", () => {
     expect(session.config.threat).toMatchObject({
       pressureStartAt: 390,
       statStartAt: 450,
+    });
+    expect(session.config.leveling.extra).toMatchObject({
+      baseXp: 180,
+      growth: 1.12,
+      maxXp: 900,
     });
     expect(session.config.enemies).toMatchObject({
       chaser: { xpValue: 2, score: 15 },

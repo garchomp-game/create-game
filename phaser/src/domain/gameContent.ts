@@ -40,6 +40,14 @@ export type StageCampaignDefinition = {
   role: "standard" | "final";
 };
 
+export type StageProgressionDefinition = {
+  extraXpCurve: {
+    baseXp: number;
+    growth: number;
+    maxXp: number;
+  };
+};
+
 export type StageDefinition = {
   id: string;
   titleKey: string;
@@ -49,6 +57,7 @@ export type StageDefinition = {
   encounterDeckId: string;
   enemyPoolId: string;
   difficulty?: StageDifficultyDefinition;
+  progression?: StageProgressionDefinition;
   clearCondition: ClearConditionDefinition;
   bossId?: string;
 };

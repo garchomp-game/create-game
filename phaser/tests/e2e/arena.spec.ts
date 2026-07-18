@@ -506,8 +506,8 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   expect(runExport).toBeTruthy();
   expect(runExport?.game).toBe("arena-core-phaser");
   expect(runExport?.appVersion).toBe("0.7.0");
-  expect(runExport?.rulesetVersion).toBe("phaser-v0.7.0-final-expedition-rc3");
-  expect(runExport?.configVersion).toBe("phaser-v0.7.0-final-expedition-rc3");
+  expect(runExport?.rulesetVersion).toBe("phaser-v0.7.0-final-expedition-rc4");
+  expect(runExport?.configVersion).toBe("phaser-v0.7.0-final-expedition-rc4");
   expect(runExport?.buildCommit).toMatch(/^[0-9a-f]{12}$/);
   expect(runExport?.runOrigin).toBe("test");
   expect(runExport?.rankEligibility).toEqual({

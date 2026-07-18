@@ -12,8 +12,8 @@ import {
 describe("extra progression", () => {
   it("grows its XP requirement up to a stable cap", () => {
     expect(getExtraXpToNextLevel(0, SIMULATION_CONFIG)).toBe(180);
-    expect(getExtraXpToNextLevel(1, SIMULATION_CONFIG)).toBe(201);
-    expect(getExtraXpToNextLevel(100, SIMULATION_CONFIG)).toBe(900);
+    expect(getExtraXpToNextLevel(1, SIMULATION_CONFIG)).toBe(187);
+    expect(getExtraXpToNextLevel(100, SIMULATION_CONFIG)).toBe(360);
   });
 
   it("offers deterministic unique choices from the current cycle", () => {

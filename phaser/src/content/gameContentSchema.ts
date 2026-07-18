@@ -115,6 +115,27 @@ const stageDifficultySchema = z
     }
   });
 
+const stageProgressionSchema = z
+  .object({
+    extraXpCurve: z
+      .object({
+        baseXp: z.number().int().positive(),
+        growth: z.number().finite().min(1),
+        maxXp: z.number().int().positive(),
+      })
+      .strict(),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    if (value.extraXpCurve.maxXp < value.extraXpCurve.baseXp) {
+      context.addIssue({
+        code: "custom",
+        message: "extra XP max must be greater than or equal to base XP",
+        path: ["extraXpCurve", "maxXp"],
+      });
+    }
+  });
+
 const stageDefinitionSchema = z
   .object({
     id: contentId,
@@ -131,6 +152,7 @@ const stageDefinitionSchema = z
     encounterDeckId: contentId,
     enemyPoolId: contentId,
     difficulty: stageDifficultySchema.optional(),
+    progression: stageProgressionSchema.optional(),
     clearCondition: clearConditionSchema,
     bossId: contentId.optional(),
   })

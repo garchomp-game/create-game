@@ -69,6 +69,9 @@ describe("GameContentRegistry", () => {
             healDropChanceMultiplier: 1.35,
           },
         },
+        progression: {
+          extraXpCurve: { baseXp: 180, growth: 1.12, maxXp: 900 },
+        },
         clearCondition: { type: "bossDefeat", bossId: "final-command-ship" },
       },
     });
@@ -120,6 +123,17 @@ describe("GameContentRegistry", () => {
     invalidDifficulty.stages[1]!.difficulty!.waves[1]!.start = 0;
     expect(() => new GameContentRegistry(invalidDifficulty)).toThrow(
       "stage wave starts must be strictly ascending",
+    );
+  });
+
+  it("rejects an extra XP cap below its stage base requirement", () => {
+    const invalidProgression = cloneDefinitions();
+    invalidProgression.stages[0]!.progression = {
+      extraXpCurve: { baseXp: 180, growth: 1.04, maxXp: 179 },
+    };
+
+    expect(() => new GameContentRegistry(invalidProgression)).toThrow(
+      "extra XP max must be greater than or equal to base XP",
     );
   });
 });
