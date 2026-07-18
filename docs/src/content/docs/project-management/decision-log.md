@@ -673,3 +673,20 @@ RC3の固定事項:
 - 現行選択画面は文字主体で、Lucideを入れてもproductionの操作性や意味理解を直ちに改善しない。
 
 最初のproduction縦切りは、`ArenaChoicePresenter`と入力callbackを維持したまま、武器・通常強化・EX強化・契約のPassive DOM Viewだけを採用方向へ置き換える。simulation、乱数、スコア、保存schema、ルール版は変更しない。
+
+## 2026-07-18: 採用UIの最初の縦切りを選択画面へ限定する
+
+決定: A「戦術管制」の情報階層を、武器・通常強化・EX強化・契約のsemantic DOM選択画面へ反映する。候補番号、役割、ランク、説明、取得後数値、選択コマンドを別領域へ置き、色とmarker形状を併用する。タイトル、戦闘HUD、リザルト、ゲームルールは同時に変更しない。
+
+根拠:
+
+- `ArenaChoicePresenter`と`ArenaChoiceOverlay`の境界が既にあり、simulationと乱数へ触れずに実画面を比較できる。
+- 960 x 540の横比較と390 x 844の縦積みで、武器、通常、EX、契約の全種がoverflowせず、文字解像度とfocusを維持できた。
+- Tailwind、Lucide、外部fontをproductionへ入れず、既存theme tokenとCSSだけで採用方向を表現できた。
+- 固定6ランの勝敗、event hash、world hashがRC5基準へ完全一致した。
+
+制約:
+
+- RC5の人間プレイ採否が終わるまでproduction trafficを変更しない。
+- 世界観、bitmap素材、fontは`PH-V08-010`のライセンス判断前に取り込まない。
+- 次の画面を変更するときも、選択画面の変更と同じPRへ混ぜず、画像と入力契約を画面単位で固定する。

@@ -8,6 +8,7 @@ export const ARENA_DOM_THEME_VARIABLES = {
   "--arena-surface-card-hovered": ARENA_THEME.surfaces.cardHovered,
   "--arena-color-border": ARENA_THEME.colors.border,
   "--arena-color-border-strong": ARENA_THEME.colors.borderStrong,
+  "--arena-color-border-subtle": ARENA_THEME.colors.borderSubtle,
   "--arena-color-text": ARENA_THEME.colors.text,
   "--arena-color-text-strong": ARENA_THEME.colors.textStrong,
   "--arena-color-text-secondary": ARENA_THEME.colors.textSecondary,

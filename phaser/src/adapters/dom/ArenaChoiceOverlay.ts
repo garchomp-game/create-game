@@ -42,13 +42,22 @@ export class ArenaChoiceOverlay {
       this.visibleChoiceCount = 0;
       return;
     }
+    if (model.phase === null) {
+      throw new Error("Visible choice model must provide a presentation phase.");
+    }
 
     if (model.signature === this.signature) return;
     this.signature = model.signature;
     this.visibleChoiceCount = model.cards.length;
     this.root.replaceChildren();
 
-    const shell = this.createShell(model.title, model.subtitle);
+    const shell = this.createShell(
+      model.phase,
+      model.eyebrow,
+      model.statusLabel,
+      model.title,
+      model.subtitle,
+    );
     const grid = element(
       "div",
       `arena-choice-grid arena-choice-grid--${model.cards.length === 2 ? "two" : "three"}`,
@@ -61,6 +70,7 @@ export class ArenaChoiceOverlay {
       const back = element("button", "arena-choice-back", "戻る");
       back.type = "button";
       back.dataset.choiceAction = backAction;
+      back.setAttribute("aria-keyshortcuts", "Escape");
       back.addEventListener("click", () =>
         this.applySelection({ kind: "menu", action: backAction }),
       );
@@ -83,11 +93,27 @@ export class ArenaChoiceOverlay {
     this.root.remove();
   }
 
-  private createShell(title: string, subtitle: string): HTMLElement {
+  private createShell(
+    phase: NonNullable<ReturnType<typeof createArenaChoiceViewModel>["phase"]>,
+    eyebrow: string,
+    statusLabel: string,
+    title: string,
+    subtitle: string,
+  ): HTMLElement {
     const shell = element("section", "arena-choice-shell");
     shell.setAttribute("aria-label", title);
+    shell.dataset.choicePhase = phase;
     const header = element("header", "arena-choice-header");
+    const commandLine = element("div", "arena-choice-command-line");
+    const signal = element("span", "arena-choice-signal");
+    signal.setAttribute("aria-hidden", "true");
+    commandLine.append(
+      signal,
+      element("span", "arena-choice-eyebrow", eyebrow),
+      element("span", "arena-choice-status", statusLabel),
+    );
     header.append(
+      commandLine,
       element("h1", "arena-choice-title", title),
       element("p", "arena-choice-subtitle", subtitle),
     );
@@ -101,17 +127,36 @@ export class ArenaChoiceOverlay {
     button.dataset.choiceKind = card.kind;
     button.dataset.choiceIndex = String(card.index);
     button.dataset.choiceId = card.id;
+    button.setAttribute("aria-keyshortcuts", String(card.index + 1));
     if (card.selection.kind === "menu") {
       button.dataset.choiceAction = card.selection.action;
     }
-    button.append(
+    const cardHeader = element("span", "arena-choice-card-header");
+    const marker = element("span", "arena-choice-card-marker");
+    marker.setAttribute("aria-hidden", "true");
+    cardHeader.append(
+      marker,
+      element("span", "arena-choice-index", card.indexLabel),
       element("span", "arena-choice-role", card.role),
-      element("strong", "arena-choice-card-title", card.title),
     );
-    if (card.rank) button.append(element("span", "arena-choice-rank", card.rank));
+    if (card.rank) cardHeader.append(element("span", "arena-choice-rank", card.rank));
+
+    const metric = element("span", "arena-choice-card-metric");
+    metric.append(
+      element("span", "arena-choice-card-metric-label", card.metricLabel),
+      element("strong", "arena-choice-card-metric-value", card.metric),
+    );
+    const action = element("span", "arena-choice-card-action", card.actionLabel);
+    const actionMarker = element("span", "arena-choice-action-marker");
+    actionMarker.setAttribute("aria-hidden", "true");
+    action.append(actionMarker);
+
     button.append(
+      cardHeader,
+      element("strong", "arena-choice-card-title", card.title),
       element("span", "arena-choice-card-description", card.description),
-      element("span", "arena-choice-card-metric", card.metric),
+      metric,
+      action,
     );
     button.addEventListener("click", () => this.applySelection(card.selection));
     return button;

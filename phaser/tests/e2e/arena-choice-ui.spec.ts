@@ -19,6 +19,36 @@ async function clickCanvasLogical(page: Page, x: number, y: number): Promise<voi
   await page.mouse.up();
 }
 
+async function expectChoiceCardsFit(page: Page, expectedCount: number): Promise<void> {
+  const overlay = page.locator(".arena-choice-overlay--visible");
+  const cards = overlay.locator(".arena-choice-card");
+  await expect(cards).toHaveCount(expectedCount);
+
+  const overlayBox = await overlay.boundingBox();
+  if (!overlayBox) throw new Error("Choice overlay is not visible.");
+  const cardBoxes = await cards.evaluateAll((nodes) =>
+    nodes.map((node) => {
+      const rect = node.getBoundingClientRect();
+      return {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        horizontalOverflow: node.scrollWidth - node.clientWidth,
+        verticalOverflow: node.scrollHeight - node.clientHeight,
+      };
+    }),
+  );
+  for (const box of cardBoxes) {
+    expect(box.left).toBeGreaterThanOrEqual(overlayBox.x);
+    expect(box.top).toBeGreaterThanOrEqual(overlayBox.y);
+    expect(box.right).toBeLessThanOrEqual(overlayBox.x + overlayBox.width);
+    expect(box.bottom).toBeLessThanOrEqual(overlayBox.y + overlayBox.height);
+    expect(box.horizontalOverflow).toBe(0);
+    expect(box.verticalOverflow).toBe(0);
+  }
+}
+
 test("uses aligned semantic DOM controls at high pixel density", async ({ page }) => {
   await page.goto("/");
   await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
@@ -33,6 +63,10 @@ test("uses aligned semantic DOM controls at high pixel density", async ({ page }
   await expect(overlay).toBeVisible();
   await expect(weaponChoices).toHaveCount(2);
   await expect(weaponChoices.first()).toHaveJSProperty("tagName", "BUTTON");
+  await expect(weaponChoices.first()).toHaveAttribute("aria-keyshortcuts", "1");
+  await expect(weaponChoices.first().locator(".arena-choice-card-action")).toHaveText(
+    "この武器で開始",
+  );
   expect(await page.evaluate(() => window.devicePixelRatio)).toBe(2);
 
   const [overlayBox, canvasBox] = await Promise.all([overlay.boundingBox(), canvas.boundingBox()]);
@@ -85,4 +119,61 @@ test("stacks upgrade cards across the full portrait viewport", async ({ page }) 
   expect(await cards.first().locator(".arena-choice-card-title").evaluate((node) =>
     Number.parseFloat(getComputedStyle(node).fontSize),
   )).toBeGreaterThanOrEqual(20);
+  expect(
+    await overlay.evaluate((node) => ({
+      horizontal: node.scrollWidth - node.clientWidth,
+      vertical: node.scrollHeight - node.clientHeight,
+    })),
+  ).toEqual({ horizontal: 0, vertical: 0 });
+  expect(
+    await cards.evaluateAll((nodes) =>
+      nodes.map((node) => ({
+        horizontal: node.scrollWidth - node.clientWidth,
+        vertical: node.scrollHeight - node.clientHeight,
+      })),
+    ),
+  ).toEqual([
+    { horizontal: 0, vertical: 0 },
+    { horizontal: 0, vertical: 0 },
+    { horizontal: 0, vertical: 0 },
+  ]);
+});
+
+test("fits weapon, EX, and contract choices in portrait", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+
+  await clickCanvasLogical(page, 480, 307);
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "weaponSelect",
+  );
+  await expectChoiceCardsFit(page, 2);
+
+  await page.evaluate(() => window.__ARENA_DEBUG__?.forceExtraUpgradeSelect());
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "upgradeSelect",
+  );
+  await expect(page.locator(".arena-choice-shell")).toHaveAttribute("data-choice-phase", "extra");
+  await expectChoiceCardsFit(page, 3);
+
+  await page.goto("/");
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
+    debug?.restart();
+    debug?.step({}, 1 / 60);
+    const scheduledAt = debug?.getSnapshot().encounter.director.scheduledAt;
+    if (scheduledAt === null || scheduledAt === undefined) {
+      throw new Error("Encounter was not scheduled.");
+    }
+    debug?.setElapsed(scheduledAt + 40);
+    debug?.step({}, 1 / 60);
+    debug?.setElapsed(240);
+    debug?.step({}, 1 / 60);
+  });
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "contractSelect",
+  );
+  await expectChoiceCardsFit(page, 2);
 });

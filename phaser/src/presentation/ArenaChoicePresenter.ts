@@ -3,6 +3,7 @@ import type {
   ExtraUpgradeEffect,
   ProgressionChoiceId,
   SimulationConfig,
+  UpgradeCategory,
   UpgradeId,
   WeaponTypeId,
   WorldState,
@@ -13,6 +14,18 @@ import { isExtraUpgradeId } from "../simulation/extraProgression";
 import { createUpgradePreview, formatUpgradePreview } from "../simulation/upgradePreview";
 
 export type ArenaChoiceKind = "weapon" | "upgrade" | "contract";
+export type ArenaChoicePhase = ArenaChoiceKind | "extra";
+export type ArenaChoiceTone =
+  | "pulse"
+  | "spread"
+  | "upgrade-weapon"
+  | "upgrade-mobility"
+  | "upgrade-survival"
+  | "upgrade-support"
+  | "upgrade-capstone"
+  | "upgrade-extra"
+  | "contract-standard"
+  | "contract-overdrive";
 
 export type ArenaChoiceSelection =
   | { kind: "menu"; action: MenuAction }
@@ -22,19 +35,25 @@ export type ArenaChoiceSelection =
 export type ArenaChoiceCardViewModel = {
   kind: ArenaChoiceKind;
   index: number;
+  indexLabel: string;
   id: string;
-  tone: "pulse" | "spread" | "upgrade" | "contract-standard" | "contract-overdrive";
+  tone: ArenaChoiceTone;
   role: string;
   title: string;
   rank: string | null;
   description: string;
+  metricLabel: string;
   metric: string;
+  actionLabel: string;
   selection: ArenaChoiceSelection;
 };
 
 export type ArenaChoiceViewModel = {
   visible: boolean;
   kind: ArenaChoiceKind | null;
+  phase: ArenaChoicePhase | null;
+  eyebrow: string;
+  statusLabel: string;
   title: string;
   subtitle: string;
   cards: ArenaChoiceCardViewModel[];
@@ -52,6 +71,9 @@ export function createArenaChoiceViewModel(
     return {
       visible: false,
       kind: null,
+      phase: null,
+      eyebrow: "",
+      statusLabel: "",
       title: "",
       subtitle: "",
       cards: [],
@@ -74,6 +96,9 @@ function createWeaponChoices(world: WorldState): ArenaChoiceViewModel {
   return {
     visible: true,
     kind: "weapon",
+    phase: "weapon",
+    eyebrow: expedition ? "FINAL EXPEDITION / LOADOUT" : "ENDLESS / LOADOUT",
+    statusLabel: "開始装備",
     title: expedition ? `最終遠征 / ${TEXT.ui.weaponSelectTitle}` : TEXT.ui.weaponSelectTitle,
     subtitle: expedition
       ? "5つのActを突破する開始ビルドを選択"
@@ -112,13 +137,16 @@ function createWeaponCard(
   return {
     kind: "weapon",
     index,
+    indexLabel: formatChoiceIndex(index),
     id: weaponId,
     tone: weaponId,
     role,
     title: TEXT.hud.weaponNames[weaponId],
     rank: null,
     description,
+    metricLabel: "武器特性",
     metric,
+    actionLabel: "この武器で開始",
     selection: { kind: "menu", action },
   };
 }
@@ -132,6 +160,9 @@ function createUpgradeChoices(
   return {
     visible: true,
     kind: "upgrade",
+    phase: extra ? "extra" : "upgrade",
+    eyebrow: extra ? "EXTRA CYCLE / BUILD" : "LEVEL UP / BUILD",
+    statusLabel: extra ? `EX強化 C${world.progression.extraCycle}` : "通常強化",
     title: extra
       ? `EXTRA LEVEL ${world.progression.extraLevel}`
       : `レベル ${world.progression.level} 強化選択`,
@@ -157,13 +188,16 @@ function createUpgradeCard(
     return {
       kind: "upgrade",
       index,
+      indexLabel: formatChoiceIndex(index),
       id: choiceId,
-      tone: "upgrade",
+      tone: "upgrade-extra",
       role: TEXT.upgrades.extraCategoryLabel,
       title: display.title,
       rank: `${TEXT.ui.rank} ${rank}`,
       description: display.description,
+      metricLabel: "取得後",
       metric: formatExtraPreview(definition.effect, currentRank),
+      actionLabel: "この強化を取得",
       selection: { kind: "upgrade", index },
     };
   }
@@ -179,13 +213,16 @@ function createUpgradeCard(
   return {
     kind: "upgrade",
     index,
+    indexLabel: formatChoiceIndex(index),
     id: choiceId,
-    tone: "upgrade",
+    tone: getUpgradeTone(definition.category),
     role: TEXT.upgrades.categoryLabels[definition.category],
     title: display.title,
     rank: `${TEXT.ui.rank} ${currentRank + 1}/${definition.maxRank}`,
     description: display.description,
+    metricLabel: "取得後",
     metric: preview,
+    actionLabel: "この強化を取得",
     selection: { kind: "upgrade", index },
   };
 }
@@ -194,31 +231,40 @@ function createContractChoices(world: WorldState): ArenaChoiceViewModel {
   return {
     visible: true,
     kind: "contract",
+    phase: "contract",
+    eyebrow: "ENDLESS / RISK CONTRACT",
+    statusLabel: "危険契約",
     title: TEXT.ui.contractTitle,
     subtitle: "ラン後半のリスクと記録区分を選択",
     cards: [
       {
         kind: "contract",
         index: 0,
+        indexLabel: formatChoiceIndex(0),
         id: "standard",
         tone: "contract-standard",
         role: "安定",
         title: "標準維持",
         rank: null,
         description: "現在の難易度倍率を維持",
+        metricLabel: "契約結果",
         metric: "ランキング対象を継続",
+        actionLabel: "この契約を選択",
         selection: { kind: "contract", index: 0 },
       },
       {
         kind: "contract",
         index: 1,
+        indexLabel: formatChoiceIndex(1),
         id: "overdrive",
         tone: "contract-overdrive",
         role: "高リスク",
         title: "過負荷",
         rank: null,
         description: "敵速度 +12% / スコア x1.3",
+        metricLabel: "契約結果",
         metric: "ランキング対象外",
+        actionLabel: "この契約を選択",
         selection: { kind: "contract", index: 1 },
       },
     ],
@@ -252,6 +298,14 @@ function getCapstoneId(weaponId: WeaponTypeId): UpgradeId | null {
   if (weaponId === "pulse") return "pulseRicochet";
   if (weaponId === "spread") return "spreadSweep";
   return null;
+}
+
+function getUpgradeTone(category: UpgradeCategory): ArenaChoiceTone {
+  return `upgrade-${category}`;
+}
+
+function formatChoiceIndex(index: number): string {
+  return String(index + 1).padStart(2, "0");
 }
 
 function createSignature(world: WorldState): string {

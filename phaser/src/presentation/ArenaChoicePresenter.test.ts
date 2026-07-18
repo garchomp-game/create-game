@@ -11,6 +11,9 @@ describe("createArenaChoiceViewModel", () => {
     expect(createArenaChoiceViewModel(world, SIMULATION_CONFIG)).toEqual({
       visible: false,
       kind: null,
+      phase: null,
+      eyebrow: "",
+      statusLabel: "",
       title: "",
       subtitle: "",
       cards: [],
@@ -29,18 +32,25 @@ describe("createArenaChoiceViewModel", () => {
     expect(model).toMatchObject({
       visible: true,
       kind: "weapon",
+      phase: "weapon",
+      eyebrow: "ENDLESS / LOADOUT",
+      statusLabel: "開始装備",
       title: TEXT.ui.weaponSelectTitle,
       backAction: "back",
     });
     expect(model.cards).toEqual([
       expect.objectContaining({
         id: "pulse",
+        indexLabel: "01",
         tone: "pulse",
         role: "単体集中",
+        metricLabel: "武器特性",
+        actionLabel: "この武器で開始",
         selection: { kind: "menu", action: "selectPulse" },
       }),
       expect.objectContaining({
         id: "spread",
+        indexLabel: "02",
         tone: "spread",
         role: "範囲制圧",
         selection: { kind: "menu", action: "selectSpread" },
@@ -59,11 +69,20 @@ describe("createArenaChoiceViewModel", () => {
     const model = createArenaChoiceViewModel(world, SIMULATION_CONFIG);
 
     expect(model.title).toBe("レベル 4 強化選択");
+    expect(model).toMatchObject({
+      phase: "upgrade",
+      eyebrow: "LEVEL UP / BUILD",
+      statusLabel: "通常強化",
+    });
     expect(model.cards).toHaveLength(3);
     expect(model.cards[0]).toMatchObject({
       id: "rapidFire",
+      indexLabel: "01",
+      tone: "upgrade-weapon",
       title: "連射強化",
       rank: "ランク 2/5",
+      metricLabel: "取得後",
+      actionLabel: "この強化を取得",
       selection: { kind: "upgrade", index: 0 },
     });
     expect(model.cards[0]?.metric).toContain("連射");
@@ -84,9 +103,12 @@ describe("createArenaChoiceViewModel", () => {
     const model = createArenaChoiceViewModel(world, SIMULATION_CONFIG);
 
     expect(model.title).toBe("EXTRA LEVEL 6");
+    expect(model.phase).toBe("extra");
+    expect(model.statusLabel).toBe("EX強化 C2");
     expect(model.subtitle).toBe("通常ビルド完成 / EXサイクル C2 / 未取得 2");
     expect(model.cards[0]).toMatchObject({
       id: "limitPower",
+      tone: "upgrade-extra",
       title: "限界出力",
       rank: "ランク 4",
     });
@@ -102,17 +124,24 @@ describe("createArenaChoiceViewModel", () => {
 
     expect(model).toMatchObject({
       kind: "contract",
+      phase: "contract",
+      eyebrow: "ENDLESS / RISK CONTRACT",
+      statusLabel: "危険契約",
       title: TEXT.ui.contractTitle,
       backAction: null,
     });
     expect(model.cards).toEqual([
       expect.objectContaining({
         id: "standard",
+        indexLabel: "01",
         tone: "contract-standard",
+        metricLabel: "契約結果",
+        actionLabel: "この契約を選択",
         selection: { kind: "contract", index: 0 },
       }),
       expect.objectContaining({
         id: "overdrive",
+        indexLabel: "02",
         tone: "contract-overdrive",
         selection: { kind: "contract", index: 1 },
       }),
