@@ -77,8 +77,9 @@ Session、Run Lifecycle、Debug、AI、Performanceを単一所有者へ分け、
 8. 完了: RC4の周回・回復・長時間稼ぎ欠陥を手動5ランから分類し、RC5の局所対策と自動回帰を実装。
 9. 完了: RC5をproduction trafficなしでVersion Previewへ公開し、実URLsmokeを通過。
 10. 残り: RC5 PreviewでPulse / Spread各1本以上を使い、制圧衝撃波、回復制御、速攻得点を手動採否。
-11. 並行可能: `PH-V08-011`のUI責務マップとtheme token設計、`PH-V08-012`のproduction外比較草案。
-12. 次段: 端末内進行、ステージ選択、第1から第4の学習ステージを依存順に実装。
+11. 完了: `PH-V08-011`でResult / Secondary Menu / Choice Presenter、Passive DOM View、共有theme tokenを実装し、既存画像を維持。
+12. 次段: `PH-V08-012`のproduction外比較草案と`PH-V08-010`の世界観採否を進める。
+13. その後: 端末内進行、ステージ選択、第1から第4の学習ステージを依存順に実装。
 
 ## production昇格判定
 

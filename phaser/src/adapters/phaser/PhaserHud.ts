@@ -2,6 +2,8 @@ import * as Phaser from "phaser";
 import type { SimulationConfig, WorldState } from "../../domain/types";
 import { formatTime } from "../../format/time";
 import { TEXT } from "../../lang";
+import { formatBossAttack } from "../../presentation/ArenaRecordFormatters";
+import { ARENA_PHASER_COLORS as COLOR, ARENA_THEME } from "../../presentation/ArenaTheme";
 import { getWaveBand } from "../../simulation/waveDirector";
 import { getThreatTier } from "../../simulation/threatDirector";
 import { getNextCollapseAt } from "../../simulation/systems/collapseSystem";
@@ -42,7 +44,7 @@ export class PhaserHud {
       .setFontSize(14);
     this.autoPilotText = this.createText(scene, simulationConfig.arena.width / 2, 29)
       .setOrigin(0.5)
-      .setColor("#67e8f9")
+      .setColor(ARENA_THEME.colors.accentBright)
       .setText("AI観戦");
   }
 
@@ -74,35 +76,53 @@ export class PhaserHud {
         : 0;
     const wave = getWaveBand(this.simulationConfig, world.state.elapsed);
     const threatTier = getThreatTier(this.simulationConfig, world.state.elapsed);
-    this.graphics.fillStyle(0x020617, 0.76);
-    this.graphics.fillRoundedRect(leftPanel.x, leftPanel.y, leftPanel.width, leftPanel.height, 6);
-    this.graphics.fillRoundedRect(rightPanel.x, rightPanel.y, rightPanel.width, rightPanel.height, 6);
-    this.graphics.lineStyle(1, 0x334155, 0.95);
+    this.graphics.fillStyle(COLOR.overlay, 0.76);
+    this.graphics.fillRoundedRect(
+      leftPanel.x,
+      leftPanel.y,
+      leftPanel.width,
+      leftPanel.height,
+      ARENA_THEME.radii.control,
+    );
+    this.graphics.fillRoundedRect(
+      rightPanel.x,
+      rightPanel.y,
+      rightPanel.width,
+      rightPanel.height,
+      ARENA_THEME.radii.control,
+    );
+    this.graphics.lineStyle(1, COLOR.borderSubtle, 0.95);
     this.graphics.strokeRoundedRect(
       leftPanel.x + 0.5,
       leftPanel.y + 0.5,
       leftPanel.width - 1,
       leftPanel.height - 1,
-      6,
+      ARENA_THEME.radii.control,
     );
     this.graphics.strokeRoundedRect(
       rightPanel.x + 0.5,
       rightPanel.y + 0.5,
       rightPanel.width - 1,
       rightPanel.height - 1,
-      6,
+      ARENA_THEME.radii.control,
     );
     if (autoPilotEnabled) {
       const badge = { x: this.simulationConfig.arena.width / 2 - 78, y: 14, width: 156, height: 30 };
-      this.graphics.fillStyle(0x083344, 0.9);
-      this.graphics.fillRoundedRect(badge.x, badge.y, badge.width, badge.height, 4);
-      this.graphics.lineStyle(1, 0x22d3ee, 0.95);
+      this.graphics.fillStyle(COLOR.autoPilotSurface, 0.9);
+      this.graphics.fillRoundedRect(
+        badge.x,
+        badge.y,
+        badge.width,
+        badge.height,
+        ARENA_THEME.radii.badge,
+      );
+      this.graphics.lineStyle(1, COLOR.cyan, 0.95);
       this.graphics.strokeRoundedRect(
         badge.x + 0.5,
         badge.y + 0.5,
         badge.width - 1,
         badge.height - 1,
-        4,
+        ARENA_THEME.radii.badge,
       );
     }
     this.autoPilotText
@@ -110,7 +130,7 @@ export class PhaserHud {
       .setVisible(autoPilotEnabled);
 
     this.drawBar(28, 40, 324, 8, hpRatio, getHpBarColor(hpRatio));
-    this.drawBar(28, 73, 324, 8, xpRatio, 0x38bdf8);
+    this.drawBar(28, 73, 324, 8, xpRatio, COLOR.accent);
 
     this.hpText.setText(TEXT.hud.hpLabel);
     this.hpValueText.setText(TEXT.hud.hpValue(Math.ceil(world.state.hp), maxHp));
@@ -159,11 +179,30 @@ export class PhaserHud {
           `敵指揮艦  PHASE ${boss.phase}  ${Math.ceil(bossEnemy.hp)} / ${boss.maxHp}\n${formatBossAttack(boss.action.attackId)} ${formatBossActionPhase(boss.action.phase)} ${seconds.toFixed(1)}s`,
         )
         .setVisible(true);
-      this.graphics.fillStyle(0x020617, 0.9);
-      this.graphics.fillRoundedRect(panel.x, panel.y, panel.width, panel.height, 6);
-      this.graphics.lineStyle(2, boss.phase === 2 ? 0xfb7185 : 0xfacc15, 0.98);
-      this.graphics.strokeRoundedRect(panel.x, panel.y, panel.width, panel.height, 6);
-      this.drawBar(panel.x + 28, panel.y + 48, panel.width - 56, 8, hpRatio, 0xef4444);
+      this.graphics.fillStyle(COLOR.overlay, 0.9);
+      this.graphics.fillRoundedRect(
+        panel.x,
+        panel.y,
+        panel.width,
+        panel.height,
+        ARENA_THEME.radii.control,
+      );
+      this.graphics.lineStyle(2, boss.phase === 2 ? COLOR.danger : COLOR.focus, 0.98);
+      this.graphics.strokeRoundedRect(
+        panel.x,
+        panel.y,
+        panel.width,
+        panel.height,
+        ARENA_THEME.radii.control,
+      );
+      this.drawBar(
+        panel.x + 28,
+        panel.y + 48,
+        panel.width - 56,
+        8,
+        hpRatio,
+        COLOR.dangerStrong,
+      );
     } else {
       this.bossText.setVisible(false);
       const encounterLabel = this.getEncounterLabel(world);
@@ -178,18 +217,30 @@ export class PhaserHud {
           width: 700,
           height: world.expedition ? (commanderActive ? 62 : 44) : 34,
         };
-        this.graphics.fillStyle(0x020617, 0.88);
-        this.graphics.fillRoundedRect(banner.x, banner.y, banner.width, banner.height, 6);
+        this.graphics.fillStyle(COLOR.overlay, 0.88);
+        this.graphics.fillRoundedRect(
+          banner.x,
+          banner.y,
+          banner.width,
+          banner.height,
+          ARENA_THEME.radii.control,
+        );
         this.graphics.lineStyle(
           2,
           world.encounter.director.phase === "active" ||
               world.expedition?.director.phase === "active" ||
               world.encounter.collapse.stage > 0
-            ? 0xf97316
-            : 0xfacc15,
+            ? COLOR.warning
+            : COLOR.focus,
           0.95,
         );
-        this.graphics.strokeRoundedRect(banner.x, banner.y, banner.width, banner.height, 6);
+        this.graphics.strokeRoundedRect(
+          banner.x,
+          banner.y,
+          banner.width,
+          banner.height,
+          ARENA_THEME.radii.control,
+        );
       }
     }
   }
@@ -197,9 +248,9 @@ export class PhaserHud {
   private createText(scene: Phaser.Scene, x: number, y: number): Phaser.GameObjects.Text {
     return scene.add
       .text(x, y, "", {
-        fontFamily: "Arial, sans-serif",
+        fontFamily: ARENA_THEME.typography.canvasFontFamily,
         fontSize: "14px",
-        color: "#f8fafc",
+        color: ARENA_THEME.colors.text,
       })
       .setDepth(11)
       .setVisible(false);
@@ -214,11 +265,11 @@ export class PhaserHud {
     fillColor: number,
   ): void {
     const clampedRatio = Math.max(0, Math.min(1, ratio));
-    this.graphics.fillStyle(0x0f172a, 0.95);
+    this.graphics.fillStyle(COLOR.barTrack, 0.95);
     this.graphics.fillRoundedRect(x, y, width, height, 4);
     this.graphics.fillStyle(fillColor, 0.95);
     this.graphics.fillRoundedRect(x, y, width * clampedRatio, height, 4);
-    this.graphics.lineStyle(1, 0x64748b, 0.8);
+    this.graphics.lineStyle(1, COLOR.border, 0.8);
     this.graphics.strokeRoundedRect(x + 0.5, y + 0.5, width - 1, height - 1, 4);
   }
 
@@ -340,14 +391,6 @@ function formatExpeditionCard(titleKey: string | null): string {
   return labels[titleKey] ?? titleKey;
 }
 
-function formatBossAttack(
-  attackId: "targeted-salvo" | "escort-pincer" | "command-pulse",
-): string {
-  if (attackId === "targeted-salvo") return "照準斉射";
-  if (attackId === "escort-pincer") return "挟撃護衛";
-  return "制圧衝撃波";
-}
-
 function formatBossActionPhase(phase: "telegraph" | "execute" | "recovery"): string {
   if (phase === "telegraph") return "予告";
   if (phase === "execute") return "攻撃";
@@ -366,9 +409,9 @@ function formatExpeditionDirection(
 }
 
 function getHpBarColor(ratio: number): number {
-  if (ratio <= 0.25) return 0xef4444;
-  if (ratio <= 0.5) return 0xf59e0b;
-  return 0x22c55e;
+  if (ratio <= 0.25) return COLOR.dangerStrong;
+  if (ratio <= 0.5) return COLOR.spread;
+  return COLOR.healthy;
 }
 
 function formatAutoPilotMode(mode: AutoPilotMode | null): string {
