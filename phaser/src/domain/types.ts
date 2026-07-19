@@ -561,6 +561,8 @@ export type ExpeditionBossState = {
   sustain: {
     healDropMinimumIntervalSeconds: number;
     nextHealDropAt: number;
+    repairBudgetInitial: number | null;
+    repairBudgetRemaining: number | null;
   };
 };
 
@@ -759,6 +761,10 @@ export type BossCommandPulseResult =
   | "outside"
   | "invulnerable";
 
+export type BossHealDropSuppressionReason =
+  | "cooldown"
+  | "repair-budget-exhausted";
+
 export type BossEncounterRunStats = {
   bossId: string | null;
   spawnedAt: number | null;
@@ -774,10 +780,18 @@ export type BossEncounterRunStats = {
   damageTakenByAttack: Record<BossAttackId, number>;
   escortsSpawned: number;
   killsDuringBoss: number;
+  damageTakenDuringBoss: number;
   healPickupsSpawned: number;
+  healValueSuppliedDuringBoss: number;
   healDropsSuppressed: number;
+  healDropsSuppressedByReason: Record<BossHealDropSuppressionReason, number>;
   healPickupsCollected: number;
+  healPickupsCollectedAtFullHp: number;
+  healPickupsExpired: number;
   hpRecoveredDuringBoss: number;
+  repairBudgetInitial: number | null;
+  repairBudgetSpent: number;
+  repairBudgetRemaining: number | null;
   commandPulseResults: Record<BossCommandPulseResult, number>;
   defeatedByWeapon: WeaponTypeId | null;
 };
@@ -1246,6 +1260,7 @@ export type GameEvent =
       enemyId: string;
       position: Vec2;
       maximumHp: number;
+      repairBudgetInitial: number | null;
       elapsed: number;
     }
   | {
@@ -1298,7 +1313,7 @@ export type GameEvent =
       type: "boss.heal-drop.suppressed";
       bossId: string;
       count: number;
-      reason: "cooldown";
+      reason: BossHealDropSuppressionReason;
       elapsed: number;
     }
   | {

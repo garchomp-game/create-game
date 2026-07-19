@@ -58,12 +58,14 @@ Issue: [PH-V07-011 #74](https://github.com/garchomp-game/create-game/issues/74)
 
 Issue: [PH-V07-012 #75](https://github.com/garchomp-game/create-game/issues/75)
 
-状態: 着手可能。Wave 2のRC6基礎版をcontrolとして固定します。
+状態: 完了。2400 HP・補充なしのcandidate Aは0/6勝利となり棄却しました。Wave 2のRC6基礎版をcontrolとして維持します。
 
 - Wave 1 / 2を通したRC6基礎版をcontrolにする。
 - 同じ3 seed x 2武器で有限repair budget候補をペア比較する。
 - 回復相殺率を`ボス中の実HP回復量 / ボス中の総被ダメージ`で統一する。
 - 回復全体、Endless、武器数値を同時に変えない。
+- control 3/6勝利に対してcandidate Aは0/6勝利だったため、結果を見て値を変更せず不採用とする。
+- 比較結果は[RC6 有限回復予算 比較結果](../../playtest/v07-rc6-repair-budget-report/)を正本にする。
 
 ### Wave 4: 統合QAと採否
 

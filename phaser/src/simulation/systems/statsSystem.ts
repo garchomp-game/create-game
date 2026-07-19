@@ -144,6 +144,9 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
     } else if (event.type === "player.damaged") {
       world.stats.hitsTaken += 1;
       world.stats.damageTaken += event.damage;
+      if (isBossEncounterActive(world)) {
+        getBossMetrics(world).damageTakenDuringBoss += event.damage;
+      }
       if (event.source) {
         world.stats.damageTakenBySource[event.source.kind] += event.damage;
         world.stats.lastDamageSource = { ...event.source };
@@ -164,11 +167,17 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
         boss.damageTakenByAttack[event.source.bossAttackId] += event.damage;
       }
     } else if (event.type === "pickup.spawned") {
-      if (
-        event.pickupKind === "heal" &&
-        world.expedition?.boss?.status === "active"
-      ) {
-        getBossMetrics(world).healPickupsSpawned += 1;
+      if (event.pickupKind === "heal" && isBossEncounterActive(world)) {
+        const boss = getBossMetrics(world);
+        boss.healPickupsSpawned += 1;
+        boss.healValueSuppliedDuringBoss += event.healValue;
+        if (boss.repairBudgetInitial !== null) {
+          boss.repairBudgetSpent += event.healValue;
+          boss.repairBudgetRemaining = Math.max(
+            0,
+            boss.repairBudgetInitial - boss.repairBudgetSpent,
+          );
+        }
       }
     } else if (event.type === "pickup.collected") {
       world.stats.pickupsCollected += 1;
@@ -180,12 +189,21 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
         if (event.hpRecovered > 0) {
           world.stats.effectiveHealPickupsCollected += 1;
         }
-        if (world.expedition?.boss?.status === "active") {
+        if (isBossEncounterActive(world)) {
           const boss = getBossMetrics(world);
           boss.healPickupsCollected += 1;
+          if (event.hpRecovered === 0) {
+            boss.healPickupsCollectedAtFullHp += 1;
+          }
           boss.hpRecoveredDuringBoss += event.hpRecovered;
         }
       }
+    } else if (
+      event.type === "pickup.expired" &&
+      event.pickupKind === "heal" &&
+      isBossEncounterActive(world)
+    ) {
+      getBossMetrics(world).healPickupsExpired += 1;
     } else if (event.type === "upgrade.offered") {
       const progression = world.stats.progressionMetrics;
       progression.firstOfferAt ??= world.state.elapsed;
@@ -283,6 +301,8 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
       metrics.remainingHp = event.maximumHp;
       metrics.maximumHp = event.maximumHp;
       metrics.phaseReached = 1;
+      metrics.repairBudgetInitial = event.repairBudgetInitial;
+      metrics.repairBudgetRemaining = event.repairBudgetInitial;
     } else if (event.type === "boss.phase.changed") {
       const metrics = getBossMetrics(world);
       metrics.phaseReached = event.phase;
@@ -296,7 +316,9 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
     } else if (event.type === "boss.command-pulse.resolved") {
       getBossMetrics(world).commandPulseResults[event.result] += 1;
     } else if (event.type === "boss.heal-drop.suppressed") {
-      getBossMetrics(world).healDropsSuppressed += event.count;
+      const metrics = getBossMetrics(world);
+      metrics.healDropsSuppressed += event.count;
+      metrics.healDropsSuppressedByReason[event.reason] += event.count;
     } else if (event.type === "boss.escort.deployed") {
       getBossMetrics(world).escortsSpawned += event.enemyIds.length;
     } else if (event.type === "boss.defeated") {
@@ -429,13 +451,31 @@ function getBossMetrics(world: WorldState) {
     damageTakenByAttack: createBossAttackCounts(),
     escortsSpawned: 0,
     killsDuringBoss: 0,
+    damageTakenDuringBoss: 0,
     healPickupsSpawned: 0,
+    healValueSuppliedDuringBoss: 0,
     healDropsSuppressed: 0,
+    healDropsSuppressedByReason: {
+      cooldown: 0,
+      "repair-budget-exhausted": 0,
+    },
     healPickupsCollected: 0,
+    healPickupsCollectedAtFullHp: 0,
+    healPickupsExpired: 0,
     hpRecoveredDuringBoss: 0,
+    repairBudgetInitial: null,
+    repairBudgetSpent: 0,
+    repairBudgetRemaining: null,
     commandPulseResults: { hit: 0, blocked: 0, outside: 0, invulnerable: 0 },
     defeatedByWeapon: null,
   });
+}
+
+function isBossEncounterActive(world: WorldState): boolean {
+  const metrics = world.stats.encounterMetrics.boss;
+  return Boolean(
+    metrics && metrics.spawnedAt !== null && metrics.defeatedAt === null,
+  );
 }
 
 function createBossAttackCounts(): Record<BossAttackId, number> {

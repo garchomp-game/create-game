@@ -385,10 +385,23 @@ const encounterMetricsSchema = z.object({
       }),
       escortsSpawned: z.number().int().nonnegative(),
       killsDuringBoss: z.number().int().nonnegative().default(0),
+      damageTakenDuringBoss: z.number().nonnegative().default(0),
       healPickupsSpawned: z.number().int().nonnegative().default(0),
+      healValueSuppliedDuringBoss: z.number().nonnegative().default(0),
       healDropsSuppressed: z.number().int().nonnegative().default(0),
+      healDropsSuppressedByReason: z
+        .object({
+          cooldown: z.number().int().nonnegative(),
+          "repair-budget-exhausted": z.number().int().nonnegative(),
+        })
+        .optional(),
       healPickupsCollected: z.number().int().nonnegative().default(0),
+      healPickupsCollectedAtFullHp: z.number().int().nonnegative().default(0),
+      healPickupsExpired: z.number().int().nonnegative().default(0),
       hpRecoveredDuringBoss: z.number().nonnegative().default(0),
+      repairBudgetInitial: z.number().nonnegative().nullable().default(null),
+      repairBudgetSpent: z.number().nonnegative().default(0),
+      repairBudgetRemaining: z.number().nonnegative().nullable().default(null),
       commandPulseResults: z
         .object({
           hit: z.number().int().nonnegative(),
@@ -399,6 +412,13 @@ const encounterMetricsSchema = z.object({
         .default({ hit: 0, blocked: 0, outside: 0, invulnerable: 0 }),
       defeatedByWeapon: z.enum(WEAPON_TYPE_IDS).nullable(),
     })
+    .transform((boss) => ({
+      ...boss,
+      healDropsSuppressedByReason: boss.healDropsSuppressedByReason ?? {
+        cooldown: boss.healDropsSuppressed,
+        "repair-budget-exhausted": 0,
+      },
+    }))
     .optional(),
 });
 

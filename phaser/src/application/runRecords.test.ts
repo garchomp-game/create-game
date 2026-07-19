@@ -356,6 +356,7 @@ describe("run records", () => {
       playerHitsByAttack: { "targeted-salvo": 2, "escort-pincer": 1 },
       damageTakenByAttack: { "targeted-salvo": 16, "escort-pincer": 7 },
       escortsSpawned: 15,
+      healDropsSuppressed: 63,
       defeatedByWeapon: "pulse",
     };
 
@@ -373,8 +374,19 @@ describe("run records", () => {
         boss: {
           attacksExecuted: { "command-pulse": 0 },
           killsDuringBoss: 0,
+          damageTakenDuringBoss: 0,
           healPickupsSpawned: 0,
-          healDropsSuppressed: 0,
+          healValueSuppliedDuringBoss: 0,
+          healDropsSuppressed: 63,
+          healDropsSuppressedByReason: {
+            cooldown: 63,
+            "repair-budget-exhausted": 0,
+          },
+          healPickupsCollectedAtFullHp: 0,
+          healPickupsExpired: 0,
+          repairBudgetInitial: null,
+          repairBudgetSpent: 0,
+          repairBudgetRemaining: null,
           commandPulseResults: { hit: 0, blocked: 0, outside: 0, invulnerable: 0 },
         },
       },

@@ -43,6 +43,10 @@ describe("final Expedition boss", () => {
 
     expect(world.enemies).toEqual([boss]);
     expect(world.enemyProjectiles).toEqual([]);
+    expect(world.expedition?.boss?.sustain).toMatchObject({
+      repairBudgetInitial: null,
+      repairBudgetRemaining: null,
+    });
   });
 
   it.each<WeaponTypeId>(["pulse", "spread"])(

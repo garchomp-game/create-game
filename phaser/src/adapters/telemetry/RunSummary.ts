@@ -139,10 +139,20 @@ export const RUN_SUMMARY_COLUMNS = [
   "boss_command_pulse_damage",
   "boss_escorts_spawned",
   "boss_kills_during_fight",
+  "boss_damage_taken_during_fight",
   "boss_heal_pickups_spawned",
+  "boss_heal_value_supplied",
   "boss_heal_drops_suppressed",
+  "boss_heal_drops_suppressed_cooldown",
+  "boss_heal_drops_suppressed_budget",
   "boss_heal_pickups_collected",
+  "boss_heal_pickups_full_hp",
+  "boss_heal_pickups_expired",
   "boss_hp_recovered",
+  "boss_repair_offset_ratio",
+  "boss_repair_budget_initial",
+  "boss_repair_budget_spent",
+  "boss_repair_budget_remaining",
   "boss_command_pulse_blocked",
   "boss_command_pulse_outside",
   "boss_command_pulse_invulnerable",
@@ -196,6 +206,10 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
   const bossAttacksExecuted = recordAt(bossMetrics, "attacksExecuted");
   const bossPlayerHitsByAttack = recordAt(bossMetrics, "playerHitsByAttack");
   const bossDamageTakenByAttack = recordAt(bossMetrics, "damageTakenByAttack");
+  const bossHealDropsSuppressedByReason = recordAt(
+    bossMetrics,
+    "healDropsSuppressedByReason",
+  );
   const bossCommandPulseResults = recordAt(bossMetrics, "commandPulseResults");
   const extraSelections = unknownArrayAt(progressionMetrics, "extraSelections");
   const automaticExtraSelections = extraSelections.filter(
@@ -205,6 +219,8 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
   const navigationPath = numberAt(navigationMetrics, "pathFrames") ?? 0;
   const navigationFallback = numberAt(navigationMetrics, "fallbackFrames") ?? 0;
   const navigationFrames = navigationDirect + navigationPath + navigationFallback;
+  const bossDamageTaken = numberAt(bossMetrics, "damageTakenDuringBoss") ?? 0;
+  const bossHpRecovered = numberAt(bossMetrics, "hpRecoveredDuringBoss") ?? 0;
   const commandersKilled = numberAt(commanderMetrics, "killed") ?? 0;
   const commanderLifetimeTotal = numberAt(commanderMetrics, "lifetimeTotal") ?? 0;
   const projectilesFired = sumWeaponMetric(weaponMetrics, "projectilesFired");
@@ -375,10 +391,27 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
       numberAt(bossDamageTakenByAttack, "command-pulse") ?? 0,
     boss_escorts_spawned: numberAt(bossMetrics, "escortsSpawned") ?? 0,
     boss_kills_during_fight: numberAt(bossMetrics, "killsDuringBoss") ?? 0,
+    boss_damage_taken_during_fight: bossDamageTaken,
     boss_heal_pickups_spawned: numberAt(bossMetrics, "healPickupsSpawned") ?? 0,
+    boss_heal_value_supplied:
+      numberAt(bossMetrics, "healValueSuppliedDuringBoss") ?? 0,
     boss_heal_drops_suppressed: numberAt(bossMetrics, "healDropsSuppressed") ?? 0,
+    boss_heal_drops_suppressed_cooldown:
+      numberAt(bossHealDropsSuppressedByReason, "cooldown") ?? 0,
+    boss_heal_drops_suppressed_budget:
+      numberAt(bossHealDropsSuppressedByReason, "repair-budget-exhausted") ?? 0,
     boss_heal_pickups_collected: numberAt(bossMetrics, "healPickupsCollected") ?? 0,
-    boss_hp_recovered: numberAt(bossMetrics, "hpRecoveredDuringBoss") ?? 0,
+    boss_heal_pickups_full_hp:
+      numberAt(bossMetrics, "healPickupsCollectedAtFullHp") ?? 0,
+    boss_heal_pickups_expired: numberAt(bossMetrics, "healPickupsExpired") ?? 0,
+    boss_hp_recovered: bossHpRecovered,
+    boss_repair_offset_ratio:
+      bossDamageTaken > 0 ? round(bossHpRecovered / bossDamageTaken, 4) : null,
+    boss_repair_budget_initial:
+      nullableRoundedNumber(bossMetrics, "repairBudgetInitial"),
+    boss_repair_budget_spent: numberAt(bossMetrics, "repairBudgetSpent") ?? 0,
+    boss_repair_budget_remaining:
+      nullableRoundedNumber(bossMetrics, "repairBudgetRemaining"),
     boss_command_pulse_blocked:
       numberAt(bossCommandPulseResults, "blocked") ?? 0,
     boss_command_pulse_outside:

@@ -1,4 +1,8 @@
 import {
+  FINAL_COMMAND_SHIP_DEFINITION,
+  type FinalCommandShipDefinition,
+} from "../content/bossCatalog";
+import {
   FINAL_EXPEDITION_ACTS,
   FINAL_EXPEDITION_ENCOUNTER_CARDS,
   FINAL_EXPEDITION_ENCOUNTER_DECK,
@@ -48,8 +52,23 @@ export class ExpeditionController {
     cards: FINAL_EXPEDITION_ENCOUNTER_CARDS,
     acts: FINAL_EXPEDITION_ACTS,
   });
+  private readonly bossDefinition: FinalCommandShipDefinition;
 
-  constructor(private readonly stage: StageDefinition) {}
+  constructor(
+    private readonly stage: StageDefinition,
+    bossSustain: FinalCommandShipDefinition["sustain"] =
+      FINAL_COMMAND_SHIP_DEFINITION.sustain,
+  ) {
+    this.bossDefinition = {
+      ...FINAL_COMMAND_SHIP_DEFINITION,
+      sustain: {
+        ...bossSustain,
+        repairBudget: bossSustain.repairBudget
+          ? { ...bossSustain.repairBudget }
+          : null,
+      },
+    };
+  }
 
   initialize(world: WorldState, random: RandomStreams): void {
     const firstAct = FINAL_EXPEDITION_ACTS[0]!;
@@ -112,6 +131,7 @@ export class ExpeditionController {
       random,
       config,
       baseEvents,
+      this.bossDefinition,
     );
     const events: GameEvent[] = [...bossEvents];
     if (world.state.hp <= 0 && world.state.status === "playing") {
@@ -259,7 +279,7 @@ export class ExpeditionController {
           cardId: card.id,
           elapsed: event.elapsed,
         }];
-        spawnFinalExpeditionBoss(world, bossEvents);
+        spawnFinalExpeditionBoss(world, bossEvents, this.bossDefinition);
         return bossEvents;
       }
       expedition.spawnOverride = {

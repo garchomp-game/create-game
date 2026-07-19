@@ -51,6 +51,9 @@ export type FinalCommandShipDefinition = {
   };
   sustain: {
     healDropMinimumIntervalSeconds: number;
+    repairBudget: {
+      initialSupply: number;
+    } | null;
   };
 };
 
@@ -103,5 +106,14 @@ export const FINAL_COMMAND_SHIP_DEFINITION: FinalCommandShipDefinition = {
   },
   sustain: {
     healDropMinimumIntervalSeconds: 1,
+    repairBudget: null,
+  },
+};
+
+export const FINAL_COMMAND_SHIP_REPAIR_BUDGET_CANDIDATE_A: FinalCommandShipDefinition = {
+  ...FINAL_COMMAND_SHIP_DEFINITION,
+  sustain: {
+    ...FINAL_COMMAND_SHIP_DEFINITION.sustain,
+    repairBudget: { initialSupply: 2_400 },
   },
 };

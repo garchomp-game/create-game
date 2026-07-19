@@ -56,7 +56,7 @@ Wave 2時点の同じ3 seed x 2武器probeは決定論を維持し、Pulse 1勝 
 
 対象Issue: `PH-V07-012`
 
-時計と記録の合格後に着手します。RC6基礎版をcontrolとし、有限回復候補を同じseed、武器、入力で比較します。候補値は実装Issueで固定し、結果を見てから有利なseedを選びません。
+状態: 比較完了、candidate Aは棄却。RC6基礎版をcontrolとし、2400 HP・補充なしの有限回復候補を同じseed、武器、入力で比較しました。controlは3/6勝利、candidate Aは0/6勝利でした。相殺率は下がりましたが、controlで勝利した3構成がすべて敗北へ反転したため、既定値は`repairBudget: null`を維持します。詳細は[RC6 有限回復予算 比較結果](../v07-rc6-repair-budget-report/)を参照してください。
 
 観測項目:
 

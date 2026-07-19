@@ -151,7 +151,7 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-V07-009` | [#63](https://github.com/garchomp-game/create-game/issues/63) | 最終遠征RC5ボス終盤調整 | P0 | 完了。RC6 #73から#75へ継承 |
 | `PH-V07-010` | [#73](https://github.com/garchomp-game/create-game/issues/73) | Encounter時計とCommanderライフサイクル | P0 | 完了。2秒再試行、10秒期限、spawn後120秒をfixtureで保証 |
 | `PH-V07-011` | [#74](https://github.com/garchomp-game/create-game/issues/74) | Expedition記録scopeとRC6 ruleset分離 | P0 | 完了。勝利時間、scope、fixed seed、RC6、メダルを保証 |
-| `PH-V07-012` | [#75](https://github.com/garchomp-game/create-game/issues/75) | 最終決戦の有限回復予算を比較検証 | P0 | Todo。RC6 Wave 3 |
+| `PH-V07-012` | [#75](https://github.com/garchomp-game/create-game/issues/75) | 最終決戦の有限回復予算を比較検証 | P0 | 完了。2400 HP候補を0/6勝利で棄却、control維持 |
 
 ## v0.8 Core Promise Validation
 

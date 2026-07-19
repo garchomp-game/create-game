@@ -68,6 +68,8 @@ export function spawnFinalExpeditionBoss(
       healDropMinimumIntervalSeconds:
         definition.sustain.healDropMinimumIntervalSeconds,
       nextHealDropAt: world.state.elapsed,
+      repairBudgetInitial: definition.sustain.repairBudget?.initialSupply ?? null,
+      repairBudgetRemaining: definition.sustain.repairBudget?.initialSupply ?? null,
     },
   };
   expedition.objective = "指揮艦と増援を同時に撃破する";
@@ -78,6 +80,7 @@ export function spawnFinalExpeditionBoss(
     enemyId: enemy.id,
     position: { ...enemy.position },
     maximumHp: definition.maximumHp,
+    repairBudgetInitial: definition.sustain.repairBudget?.initialSupply ?? null,
     elapsed: world.state.elapsed,
   });
   events.push(createTelegraphEvent(expedition.boss, enemy));

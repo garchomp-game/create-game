@@ -1,4 +1,5 @@
 import type {
+  BossHealDropSuppressionReason,
   EnemyTypeId,
   GameEvent,
   Pickup,
@@ -67,7 +68,10 @@ function spawnPickupsFromKills(
   const boss = world.expedition?.boss?.status === "active"
     ? world.expedition.boss
     : null;
-  let suppressedHealDrops = 0;
+  const suppressedHealDrops: Record<BossHealDropSuppressionReason, number> = {
+    cooldown: 0,
+    "repair-budget-exhausted": 0,
+  };
   for (const event of killEvents) {
     if (event.xpAwarded > 0) {
       const xpPickup = createXpPickup(world, config, event.position, event.xpAwarded);
@@ -83,8 +87,14 @@ function spawnPickupsFromKills(
       });
     }
 
+    if (boss && event.enemyId === boss.enemyId) continue;
+
+    if (boss?.sustain.repairBudgetRemaining === 0) {
+      suppressedHealDrops["repair-budget-exhausted"] += 1;
+      continue;
+    }
     if (boss && world.state.elapsed < boss.sustain.nextHealDropAt) {
-      suppressedHealDrops += 1;
+      suppressedHealDrops.cooldown += 1;
       continue;
     }
 
@@ -111,7 +121,18 @@ function spawnPickupsFromKills(
       boss.sustain.nextHealDropAt =
         world.state.elapsed + boss.sustain.healDropMinimumIntervalSeconds;
     }
-    const healPickup = createHealPickup(world, config, event.position);
+    const healPickup = createHealPickup(
+      world,
+      config,
+      event.position,
+      boss?.sustain.repairBudgetRemaining ?? undefined,
+    );
+    if (boss && boss.sustain.repairBudgetRemaining !== null) {
+      boss.sustain.repairBudgetRemaining = Math.max(
+        0,
+        boss.sustain.repairBudgetRemaining - healPickup.healValue,
+      );
+    }
     world.pickups.push(healPickup);
     events.push({
       type: "pickup.spawned",
@@ -123,14 +144,21 @@ function spawnPickupsFromKills(
       lifetime: config.pickup.healLifetime,
     });
   }
-  if (boss && suppressedHealDrops > 0) {
-    events.push({
-      type: "boss.heal-drop.suppressed",
-      bossId: boss.bossId,
-      count: suppressedHealDrops,
-      reason: "cooldown",
-      elapsed: world.state.elapsed,
-    });
+  if (boss) {
+    for (const reason of [
+      "cooldown",
+      "repair-budget-exhausted",
+    ] as const) {
+      const count = suppressedHealDrops[reason];
+      if (count <= 0) continue;
+      events.push({
+        type: "boss.heal-drop.suppressed",
+        bossId: boss.bossId,
+        count,
+        reason,
+        elapsed: world.state.elapsed,
+      });
+    }
   }
 }
 
@@ -155,6 +183,7 @@ function createHealPickup(
   world: WorldState,
   config: SimulationConfig,
   origin: Vec2,
+  maximumHealValue = Number.POSITIVE_INFINITY,
 ): Pickup {
   return {
     id: `pickup-${world.nextPickupId++}`,
@@ -162,9 +191,12 @@ function createHealPickup(
     position: findPickupPosition(world, config, origin, config.pickup.healRadius),
     radius: config.pickup.healRadius,
     xpValue: 0,
-    healValue: Math.max(
-      config.pickup.healMinimum,
-      Math.floor(getCurrentMaxHp(world, config) * config.pickup.healRatio),
+    healValue: Math.min(
+      maximumHealValue,
+      Math.max(
+        config.pickup.healMinimum,
+        Math.floor(getCurrentMaxHp(world, config) * config.pickup.healRatio),
+      ),
     ),
     lifetime: config.pickup.healLifetime,
   };

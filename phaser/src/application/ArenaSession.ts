@@ -6,6 +6,7 @@ import type {
   WeaponTypeId,
   WorldState,
 } from "../domain/types";
+import type { FinalCommandShipDefinition } from "../content/bossCatalog";
 import type {
   ModeDefinition,
   StageDefinition,
@@ -27,6 +28,10 @@ export type ArenaSessionStartInput = {
   stageId?: string;
 };
 
+export type ArenaSessionOptions = {
+  finalExpeditionBossSustain?: FinalCommandShipDefinition["sustain"];
+};
+
 type ActiveArenaSession = {
   seed: number;
   config: SimulationConfig;
@@ -44,6 +49,7 @@ export class ArenaSession {
     private readonly baseConfig: SimulationConfig,
     private readonly contentRegistry: GameContentRegistry =
       DEFAULT_GAME_CONTENT_REGISTRY,
+    private readonly options: ArenaSessionOptions = {},
   ) {}
 
   start(input: ArenaSessionStartInput): void {
@@ -58,7 +64,10 @@ export class ArenaSession {
     world.state.status = input.status ?? "playing";
     const expeditionController =
       mode.runtimeKind === "expedition"
-        ? new ExpeditionController(stage)
+        ? new ExpeditionController(
+            stage,
+            this.options.finalExpeditionBossSustain,
+          )
         : null;
     const randomStreams = createRandomStreams(seed);
     expeditionController?.initialize(world, randomStreams);
