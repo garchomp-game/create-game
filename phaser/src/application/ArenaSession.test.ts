@@ -27,17 +27,21 @@ describe("ArenaSession", () => {
     const directRandom = createRandomStreams(seed);
     const session = new ArenaSession(SIMULATION_CONFIG);
     session.start({ seed, weaponType: "spread" });
+    const eventDigest: string[] = [];
 
     for (let index = 0; index < 180; index += 1) {
       const directResult = stepWorld(directWorld, input, 1 / 60, directRandom, config);
       const sessionResult = session.step(input, 1 / 60);
       expect(sessionResult).toEqual(directResult);
+      eventDigest.push(...sessionResult.events.map((event) => JSON.stringify(event)));
     }
 
     expect(session.world).toEqual(directWorld);
     expect(session.randomStreams.seeds).toEqual(directRandom.seeds);
     expect(session.modeId).toBe("endless");
     expect(session.stageId).toBe("arena-default");
+    expect(stableHash(JSON.stringify(eventDigest))).toBe("0e5c664a");
+    expect(stableHash(JSON.stringify(session.world))).toBe("47a80192");
   });
 
   it("owns the active seed, config, weapon, and status without mirror state", () => {
@@ -153,3 +157,12 @@ describe("ArenaSession", () => {
     expect(() => session.world).toThrow("ArenaSession has not been started.");
   });
 });
+
+function stableHash(value: string): string {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}

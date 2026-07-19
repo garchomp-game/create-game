@@ -21,6 +21,8 @@ export const FINAL_EXPEDITION_ENCOUNTER_CARDS: EncounterCardDefinition[] = [
     titleKey: "encounter.vanguard-arc.title",
     tags: ["vanguard"],
     actIds: ["perimeter-watch"],
+    blocksActClock: false,
+    deployment: null,
     timing: { telegraphSeconds: 1.4, activeSeconds: 14, recoverySeconds: 4 },
     spawn: {
       intervalMultiplier: 0.92,
@@ -40,6 +42,8 @@ export const FINAL_EXPEDITION_ENCOUNTER_CARDS: EncounterCardDefinition[] = [
     titleKey: "encounter.crossfire-pincer.title",
     tags: ["crossfire"],
     actIds: ["first-assault"],
+    blocksActClock: false,
+    deployment: null,
     timing: { telegraphSeconds: 1.6, activeSeconds: 17, recoverySeconds: 4 },
     spawn: {
       intervalMultiplier: 0.88,
@@ -59,6 +63,8 @@ export const FINAL_EXPEDITION_ENCOUNTER_CARDS: EncounterCardDefinition[] = [
     titleKey: "encounter.heavy-escort.title",
     tags: ["heavy"],
     actIds: ["first-assault"],
+    blocksActClock: false,
+    deployment: null,
     timing: { telegraphSeconds: 1.8, activeSeconds: 18, recoverySeconds: 4.5 },
     spawn: {
       intervalMultiplier: 0.9,
@@ -78,6 +84,11 @@ export const FINAL_EXPEDITION_ENCOUNTER_CARDS: EncounterCardDefinition[] = [
     titleKey: "encounter.commander-counterattack.title",
     tags: ["commander"],
     actIds: ["counterattack"],
+    blocksActClock: true,
+    deployment: {
+      retryIntervalSeconds: 2,
+      timeoutSeconds: 10,
+    },
     timing: { telegraphSeconds: 2.2, activeSeconds: 120, recoverySeconds: 4.5 },
     spawn: {
       intervalMultiplier: 0.92,
@@ -86,7 +97,7 @@ export const FINAL_EXPEDITION_ENCOUNTER_CARDS: EncounterCardDefinition[] = [
       geometryId: "escort",
     },
     minimumThreatTier: 0,
-    cooldownSeconds: 150,
+    cooldownSeconds: 600,
     weight: 1,
     completionCondition: { type: "signal", signalId: "commander-defeated" },
     failureSignalIds: [],
@@ -97,6 +108,8 @@ export const FINAL_EXPEDITION_ENCOUNTER_CARDS: EncounterCardDefinition[] = [
     titleKey: "encounter.charger-breakthrough.title",
     tags: ["charger"],
     actIds: ["breakthrough"],
+    blocksActClock: false,
+    deployment: null,
     timing: { telegraphSeconds: 2, activeSeconds: 19, recoverySeconds: 4.5 },
     spawn: {
       intervalMultiplier: 0.84,
@@ -116,6 +129,8 @@ export const FINAL_EXPEDITION_ENCOUNTER_CARDS: EncounterCardDefinition[] = [
     titleKey: "encounter.command-ship-showdown.title",
     tags: ["boss"],
     actIds: ["command-ship"],
+    blocksActClock: false,
+    deployment: null,
     timing: { telegraphSeconds: 2.4, activeSeconds: 240, recoverySeconds: 2.5 },
     spawn: {
       intervalMultiplier: 1,

@@ -126,19 +126,7 @@ export function releaseCommanderPressure(
 ): void {
   const elite = commander.elite;
   if (!elite || elite.kind !== "commander") return;
-  if (world.eliteState) {
-    world.eliteState.commanderIds = world.eliteState.commanderIds.filter(
-      (enemyId) => enemyId !== commander.id,
-    );
-  }
-
-  const releasedEnemyIds: string[] = [];
-  for (const enemy of world.enemies) {
-    if (enemy.support?.sourceEnemyId !== commander.id) continue;
-    enemy.speed /= enemy.support.speedMultiplier;
-    delete enemy.support;
-    releasedEnemyIds.push(enemy.id);
-  }
+  const releasedEnemyIds = releaseSupportUnits(world, commander.id);
 
   events.push({
     type: "elite.commander.killed",
@@ -154,6 +142,48 @@ export function releaseCommanderPressure(
     releasedEnemyIds,
     position: { ...commander.position },
   });
+}
+
+export function retireCommanderElite(
+  world: WorldState,
+  commander: Enemy,
+  reason: string,
+  events: GameEvent[],
+): void {
+  const elite = commander.elite;
+  if (!elite || elite.kind !== "commander") return;
+  const releasedEnemyIds = releaseSupportUnits(world, commander.id);
+  world.enemies = world.enemies.filter((enemy) => enemy.id !== commander.id);
+  events.push({
+    type: "elite.commander.retired",
+    enemyId: commander.id,
+    reason,
+    elapsed: world.state.elapsed,
+    position: { ...commander.position },
+  });
+  events.push({
+    type: "elite.commander.pressure.lowered",
+    enemyId: commander.id,
+    releasedEnemyIds,
+    position: { ...commander.position },
+  });
+}
+
+function releaseSupportUnits(world: WorldState, commanderId: string): string[] {
+  if (world.eliteState) {
+    world.eliteState.commanderIds = world.eliteState.commanderIds.filter(
+      (enemyId) => enemyId !== commanderId,
+    );
+  }
+
+  const releasedEnemyIds: string[] = [];
+  for (const enemy of world.enemies) {
+    if (enemy.support?.sourceEnemyId !== commanderId) continue;
+    enemy.speed /= enemy.support.speedMultiplier;
+    delete enemy.support;
+    releasedEnemyIds.push(enemy.id);
+  }
+  return releasedEnemyIds;
 }
 
 function deployReinforcements(

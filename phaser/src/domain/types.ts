@@ -1,5 +1,6 @@
 import type {
   EncounterDirection,
+  EncounterDirectorHistoryEntry,
   EncounterDirectorState,
 } from "./encounterDirector";
 import type { SpawnGeometryId } from "./structuredSpawning";
@@ -745,6 +746,7 @@ export type ExpeditionEncounterRunStats = {
   clearScoreBonus: number;
   timeScoreBonus: number;
   bossFightDuration: number | null;
+  cardHistory: EncounterDirectorHistoryEntry[];
 };
 
 export type BossCommandPulseResult =
@@ -1032,6 +1034,13 @@ export type GameEvent =
       position: Vec2;
     }
   | {
+      type: "elite.commander.retired";
+      enemyId: string;
+      reason: string;
+      elapsed: number;
+      position: Vec2;
+    }
+  | {
       type: "enemy.charger.spawned";
       enemyId: string;
       position: Vec2;
@@ -1189,6 +1198,21 @@ export type GameEvent =
         | "expedition.encounter.recovery.started";
       cardId: string;
       elapsed: number;
+    }
+  | {
+      type: "expedition.encounter.deployment.requested";
+      cardId: string;
+      attempt: number;
+      elapsed: number;
+      deadlineAt: number;
+    }
+  | {
+      type: "expedition.encounter.deployment.deferred";
+      cardId: string;
+      attempt: number;
+      elapsed: number;
+      reason: string;
+      nextAttemptAt: number;
     }
   | {
       type:

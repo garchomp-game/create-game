@@ -783,3 +783,21 @@ RC3の固定事項:
 - 開発者本人と観戦AIだけでは、初心者の学習性と再挑戦意欲を判断できない。
 
 採否はIssue #76から#81で個別に行い、不採用要素をdataまたは表示境界から外せる状態を維持する。
+
+## 2026-07-19: Commander配置を2秒再試行・10秒期限で固定する
+
+決定: `PH-V07-010`ではCommander cardだけ`blocksActClock: true`とし、選択から撃破、`timeout`、`deployment-timeout`のいずれかまでAct時計を止める。構造化spawnは2秒間隔、10秒期限、初回を含む最大5回で固定する。120秒はspawn成功eventと同じ時刻から数え、未撃破時はCommanderを撤退させてランを継続する。
+
+実装契約:
+
+- Worldの`runElapsed`差分を、step開始時にblockされていない場合だけ`actElapsed`へ加える。
+- `activeElapsed`はspawn成功まで0のままとし、成功後だけ進める。
+- 期限と同時のstepではspawnを再試行せず、`deployment-timeout`を1回だけ記録する。
+- Commander cooldownは600秒とし、Act停止で滞在時間が延びても同じActで再出現させない。
+- Run exportへselected、deployment、spawn、終了時刻、試行回数、理由をDirector historyとして残す。
+
+根拠:
+
+- RC5実装はdefer前に`deployedCardKey`を確定しており、初回失敗後の再試行経路がなかった。
+- run、Act、activeを同じ時刻で判定すると、配置都合が120秒へ混ざり、Commander中に次Actが始まる。
+- 無制限再試行はsoft lock、即時失敗は一時的な敵上限を恒久失敗へ変えるため、短い有限再試行が必要である。

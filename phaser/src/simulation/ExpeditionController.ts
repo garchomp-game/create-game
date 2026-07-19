@@ -20,7 +20,10 @@ import { EncounterDirector } from "./EncounterDirector";
 import { estimatePointNavigationPath } from "./navigationField";
 import { planStructuredSpawn } from "./structuredSpawnPlanner";
 import { spawnTelegraphCharger } from "./systems/chargerEnemySystem";
-import { spawnCommanderElite } from "./systems/commanderEliteSystem";
+import {
+  retireCommanderElite,
+  spawnCommanderElite,
+} from "./systems/commanderEliteSystem";
 import {
   spawnFinalExpeditionBoss,
   updateFinalExpeditionBoss,
@@ -84,6 +87,7 @@ export class ExpeditionController {
       clearScoreBonus: 0,
       timeScoreBonus: 0,
       bossFightDuration: null,
+      cardHistory: [],
     };
   }
 
@@ -127,7 +131,7 @@ export class ExpeditionController {
     const directorEvents = this.director.update(
       expedition.director,
       {
-        elapsed: world.state.elapsed,
+        runElapsed: world.state.elapsed,
         threatTier: getThreatTier(config, world.state.elapsed),
         signals,
       },
@@ -196,6 +200,54 @@ export class ExpeditionController {
       }];
     }
     if (event.type === "encounter.card.telegraph.started") return [];
+    if (event.type === "encounter.card.deployment.requested") {
+      const card = this.director.getCard(event.cardId);
+      const deployment = this.deployStructuredSpawn(
+        world,
+        card.id,
+        card.tags,
+        card.spawn.geometryId,
+        expedition.currentDirection!,
+        card.spawn.budget,
+        card.spawn.enemyWeights,
+        random,
+        config,
+      );
+      const transitionEvents = this.director.reportDeployment(
+        expedition.director,
+        deployment.status === "deployed"
+          ? { status: "deployed", elapsed: world.state.elapsed }
+          : {
+              status: "deferred",
+              elapsed: world.state.elapsed,
+              reason: deployment.reason,
+            },
+        random.encounter,
+      );
+      return [
+        {
+          type: "expedition.encounter.deployment.requested",
+          cardId: event.cardId,
+          attempt: event.attempt,
+          elapsed: event.elapsed,
+          deadlineAt: event.deadlineAt,
+        },
+        ...deployment.events,
+        ...transitionEvents.flatMap((transitionEvent) =>
+          this.applyDirectorEvent(world, transitionEvent, random, config),
+        ),
+      ];
+    }
+    if (event.type === "encounter.card.deployment.deferred") {
+      return [{
+        type: "expedition.encounter.deployment.deferred",
+        cardId: event.cardId,
+        attempt: event.attempt,
+        elapsed: event.elapsed,
+        reason: event.reason,
+        nextAttemptAt: event.nextAttemptAt,
+      }];
+    }
     if (event.type === "encounter.card.active.started") {
       const card = this.director.getCard(event.cardId);
       if (card.tags.includes("boss")) {
@@ -218,17 +270,19 @@ export class ExpeditionController {
           cardId: card.id,
           elapsed: event.elapsed,
         },
-        ...this.deployStructuredSpawn(
-          world,
-          card.id,
-          card.tags,
-          card.spawn.geometryId,
-          expedition.currentDirection!,
-          card.spawn.budget,
-          card.spawn.enemyWeights,
-          random,
-          config,
-        ),
+        ...(card.deployment
+          ? []
+          : this.deployStructuredSpawn(
+              world,
+              card.id,
+              card.tags,
+              card.spawn.geometryId,
+              expedition.currentDirection!,
+              card.spawn.budget,
+              card.spawn.enemyWeights,
+              random,
+              config,
+            ).events),
       ];
     }
     if (event.type === "encounter.card.recovery.started") {
@@ -255,12 +309,24 @@ export class ExpeditionController {
       | "expedition.encounter.completed"
       | "expedition.encounter.failed"
       | "expedition.encounter.interrupted";
-    return [{
+    const terminalEvent: GameEvent = {
       type,
       cardId: event.cardId,
       elapsed: event.elapsed,
       reason: event.reason,
-    }];
+    };
+    if (event.type !== "encounter.card.failed") return [terminalEvent];
+
+    const card = this.director.getCard(event.cardId);
+    if (!card.tags.includes("commander")) return [terminalEvent];
+    const retirementEvents: GameEvent[] = [];
+    const commander = world.enemies.find(
+      (enemy) => enemy.elite?.kind === "commander",
+    );
+    if (commander) {
+      retireCommanderElite(world, commander, event.reason, retirementEvents);
+    }
+    return [terminalEvent, ...retirementEvents];
   }
 
   private deployStructuredSpawn(
@@ -273,11 +339,14 @@ export class ExpeditionController {
     enemyWeights: Partial<Record<EnemyTypeId, number>>,
     random: RandomStreams,
     config: SimulationConfig,
-  ): GameEvent[] {
+  ):
+    | { status: "deployed"; events: GameEvent[] }
+    | { status: "deferred"; reason: string; events: GameEvent[] } {
     const expedition = world.expedition!;
     const cardKey = `${cardId}:${expedition.director.selectedAt}`;
-    if (expedition.deployedCardKey === cardKey) return [];
-    expedition.deployedCardKey = cardKey;
+    if (expedition.deployedCardKey === cardKey) {
+      return { status: "deployed", events: [] };
+    }
 
     const enemyTypes = Object.keys(enemyWeights) as EnemyTypeId[];
     const enemyRadius = Math.max(
@@ -304,7 +373,10 @@ export class ExpeditionController {
         existingEnemyCount: world.enemies.length,
         maximumEnemies: wave.maxEnemies,
         telegraphStartedAt: expedition.director.selectedAt!,
-        spawnAt: expedition.director.activeStartedAt!,
+        spawnAt:
+          expedition.director.phase === "deploying"
+            ? world.state.elapsed
+            : expedition.director.activeStartedAt!,
         isReachable: (entryPoint, radius) =>
           estimatePointNavigationPath(
             world,
@@ -317,12 +389,17 @@ export class ExpeditionController {
       random.spawn,
     );
     if (plan.status === "deferred") {
-      return [{
-        type: "expedition.spawn.deferred",
-        cardId,
-        reason: plan.deferReason ?? "unknown",
-        elapsed: world.state.elapsed,
-      }];
+      const reason = plan.deferReason ?? "unknown";
+      return {
+        status: "deferred",
+        reason,
+        events: [{
+          type: "expedition.spawn.deferred",
+          cardId,
+          reason,
+          elapsed: world.state.elapsed,
+        }],
+      };
     }
 
     const enemyIds: string[] = [];
@@ -352,15 +429,32 @@ export class ExpeditionController {
       }
     });
 
-    return [
-      ...spawnEvents,
-      {
-        type: "expedition.spawn.deployed",
-        cardId,
-        enemyIds,
-        elapsed: world.state.elapsed,
-      },
-    ];
+    if (enemyIds.length === 0) {
+      return {
+        status: "deferred",
+        reason: "spawnRejected",
+        events: [{
+          type: "expedition.spawn.deferred",
+          cardId,
+          reason: "spawnRejected",
+          elapsed: world.state.elapsed,
+        }],
+      };
+    }
+
+    expedition.deployedCardKey = cardKey;
+    return {
+      status: "deployed",
+      events: [
+        ...spawnEvents,
+        {
+          type: "expedition.spawn.deployed",
+          cardId,
+          enemyIds,
+          elapsed: world.state.elapsed,
+        },
+      ],
+    };
   }
 
   private complete(

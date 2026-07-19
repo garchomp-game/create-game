@@ -25,6 +25,14 @@ const encounterCardDefinitionSchema = z
     titleKey: z.string().min(1),
     tags: z.array(stableId).min(1),
     actIds: z.array(stableId).min(1),
+    blocksActClock: z.boolean(),
+    deployment: z
+      .object({
+        retryIntervalSeconds: positiveNumber,
+        timeoutSeconds: positiveNumber,
+      })
+      .strict()
+      .nullable(),
     timing: z
       .object({
         telegraphSeconds: positiveNumber,

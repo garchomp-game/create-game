@@ -75,8 +75,8 @@ describe("v0.7 final Expedition release probe", () => {
       expect(result.bossAttacksExecuted["targeted-salvo"]).toBeGreaterThan(0);
       expect(result.bossAttacksExecuted["escort-pincer"]).toBeGreaterThan(0);
       expect(result.bossAttacksExecuted["command-pulse"]).toBeGreaterThan(0);
-      expect(result.commanderSpawned).toBeGreaterThan(0);
-      expect(result.commanderKilled).toBeGreaterThan(0);
+      expect(result.commanderSpawned).toBe(1);
+      expect(result.commanderKilled).toBe(1);
       expect(result.maximumEnemies).toBeLessThanOrEqual(96);
       expect(result.maximumProjectiles).toBeLessThanOrEqual(160);
       expect(result.maximumPickups).toBeLessThanOrEqual(2_000);

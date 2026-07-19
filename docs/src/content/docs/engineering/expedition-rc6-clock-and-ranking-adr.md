@@ -7,7 +7,7 @@ description: Encounter Directorの時計、Commanderの期限、Expedition記録
 
 ## 状態
 
-採用。実装は未着手です。v0.7 RC6の実装とQAはこのADRを正本とします。
+採用。`PH-V07-010`の時計とCommanderライフサイクルは2026-07-19に実装済みです。記録規則と有限回復比較は未実装で、v0.7 RC6の実装とQAは引き続きこのADRを正本とします。
 
 ## 文脈
 
@@ -52,6 +52,18 @@ Commander cardは少なくとも次の状態を持ちます。
 Commanderの120秒はspawn成功後の`activeElapsed`だけで数えます。120秒以内に撃破できなければ`timeout`としてcardを失敗させ、Commanderを撤退させてAct時計を再開します。RC6では失敗してもラン自体は継続し、ボス強化などの追加罰は入れません。
 
 spawn deferは無制限にしません。再試行間隔と配置期限はEncounter定義の設定値とし、`runElapsed`を基準に判定します。期限切れ時は`deployment-timeout`を記録し、cardを失敗させてAct時計を必ず解放します。初期値は実装Issueで固定し、fixtureで境界値を保証します。
+
+RC6の初期値は再試行間隔2秒、配置期限10秒です。初回を含めて最大5回試行し、期限と同時のstepでは新たなspawnを試さず`deployment-timeout`にします。Commander cardのcooldownは600秒とし、Act時計停止によって同じAct内で再選択されないようにします。
+
+simulation stepの更新順は次で固定します。
+
+1. Worldが進めた`runElapsed`をDirectorへ渡す。
+2. step開始時のcard状態がAct時計をblockしていなければ、前回との差分だけ`actElapsed`を進める。
+3. `actElapsed`からAct遷移を1回だけ判定し、その後にcard選択と状態遷移を処理する。
+4. `deploying`のspawn結果を同じstep内でDirectorへ返し、成功時刻を`activeStartedAt`、`activeElapsed = 0`として記録する。
+5. 撃破、`timeout`、`deployment-timeout`でcardを終了し、次stepからAct時計を再開する。
+
+実装上の予告phase名は既存eventとの互換性のため`telegraph`を維持しますが、ライフサイクル上の意味は本ADRの`telegraphing`です。HUDは`expedition.director.actId`とphaseを表示し、run時間からActを再計算しません。
 
 ### 3. Expeditionの主記録
 

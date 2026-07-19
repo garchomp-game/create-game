@@ -217,7 +217,7 @@ RC3で`赤 -> 大型黄 -> 小型黄緑 -> 紫`の順で敵を解禁し、大型
 
 自動回帰は完了し、commit `155d4986ffe1`、Cloudflare Version `ef6324fd-1cf6-450f-8026-fbcf0f579842`を`https://v07-final-expedition-arena-core.garchomp-game.workers.dev`へ公開しました。固定6ランは両武器とも全勝し、72件のE2Eと実URLsmokeも通過しています。
 
-RC5は基準証跡として保持し、productionへ直接昇格しません。UI変更前の基点`d16655a`からRC6を分け、Encounter時計、Commander 120秒とspawn defer、Expedition記録scope、`phaser-v0.7.0-final-expedition-rc6`、有限回復候補を順に検証します。v0.6.8 productionは維持します。
+RC5は基準証跡として保持し、productionへ直接昇格しません。UI変更前の基点`d16655a`からRC6を分け、Wave 1でEncounter時計、Commander 120秒とspawn deferを実装しました。2秒間隔、10秒期限、spawn後120秒、timeout撤退を決定論fixtureで保証しています。次にExpedition記録scope、`phaser-v0.7.0-final-expedition-rc6`、有限回復候補を順に検証します。v0.6.8 productionは維持します。
 
 ## 次の優先順
 
@@ -225,10 +225,10 @@ RC5は基準証跡として保持し、productionへ直接昇格しません。U
 
 1. 公開ベータの複数ランでPulse / Spreadのスコア、生存、EX巡回、崩壊段階を継続観測する。
 2. 600秒以降の崩壊体感は非停止条件として監視し、現行ルール値は先回りして変更しない。
-3. [#73](https://github.com/garchomp-game/create-game/issues/73)でAct時計、Commander期限、spawn deferを実装する。
+3. [#73](https://github.com/garchomp-game/create-game/issues/73)のAct時計、Commander期限、spawn deferは完了。既存probeでは決定論と最終Act到達を維持した。
 4. [#74](https://github.com/garchomp-game/create-game/issues/74)で総クリア時間、overall / weapon、fixed seed、rulesetを分ける。
 5. [#75](https://github.com/garchomp-game/create-game/issues/75)で有限回復候補をcontrol比較する。
-6. [#59](https://github.com/garchomp-game/create-game/issues/59)で6構成probe、全回帰、Pulse / Spread手動採否を行う。
+6. [#59](https://github.com/garchomp-game/create-game/issues/59)で6構成全勝assert、全回帰、Pulse / Spread手動採否を行う。
 7. RC6採否後にv0.8の面白さ検証、Stage 1 / 5 / 10の3作戦検証へ進む。
 
 直近の詳細は[直近フェーズ](../../project-management/next-phase-plan/)と[v0.7 実行計画](../../project-management/v07-execution-plan/)、技術契約は[RC6の時計と記録規則](../../engineering/expedition-rc6-clock-and-ranking-adr/)、3作戦系列は[エクスペディション3作戦検証](../../design/expedition-campaign/)、表示改善は[UI・グラフィック再設計計画](../../project-management/ui-visual-redesign-plan/)を参照してください。

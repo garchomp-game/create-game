@@ -245,6 +245,8 @@ export class PhaserHud {
       const phaseLabel =
         phase === "telegraph"
           ? `予告 ${direction} > ${card}`
+          : phase === "deploying"
+            ? `展開待機 ${direction} > ${card}`
           : phase === "active"
             ? `交戦中 ${card}`
             : phase === "recovery"

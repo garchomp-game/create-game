@@ -102,6 +102,7 @@ describe("createArenaScreenViewModel", () => {
       clearScoreBonus: 15_000,
       timeScoreBonus: 107_992,
       bossFightDuration: 0.016,
+      cardHistory: [],
     };
 
     const viewModel = createArenaScreenViewModel(
@@ -146,6 +147,7 @@ describe("createArenaScreenViewModel", () => {
       clearScoreBonus: 0,
       timeScoreBonus: 0,
       bossFightDuration: 30,
+      cardHistory: [],
     };
 
     const viewModel = createArenaScreenViewModel(

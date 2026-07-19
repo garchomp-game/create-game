@@ -319,6 +319,26 @@ const encounterMetricsSchema = z.object({
       clearScoreBonus: z.number().int().nonnegative().default(0),
       timeScoreBonus: z.number().int().nonnegative().default(0),
       bossFightDuration: z.number().nonnegative().nullable().default(null),
+      cardHistory: z
+        .array(
+          z.object({
+            cardId: z.string().min(1),
+            actId: z.string().min(1),
+            direction: z.enum(["north", "east", "south", "west"]),
+            selectedAt: z.number().nonnegative(),
+            selectedAtActElapsed: z.number().nonnegative(),
+            deploymentStartedAt: z.number().nonnegative().nullable(),
+            deploymentAttempts: z.number().int().nonnegative(),
+            deploymentLastReason: z.string().min(1).nullable(),
+            activeStartedAt: z.number().nonnegative().nullable(),
+            activeElapsed: z.number().nonnegative(),
+            recoveryStartedAt: z.number().nonnegative().nullable(),
+            finishedAt: z.number().nonnegative(),
+            outcome: z.enum(["completed", "failed", "interrupted"]),
+            reason: z.string().min(1),
+          }),
+        )
+        .default([]),
     })
     .optional(),
   boss: z

@@ -297,6 +297,7 @@ describe("run records", () => {
           clearScoreBonus: 0,
           timeScoreBonus: 0,
           bossFightDuration: null,
+          cardHistory: [],
         },
         boss: {
           attacksExecuted: { "command-pulse": 0 },

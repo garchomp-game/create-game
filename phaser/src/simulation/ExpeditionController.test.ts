@@ -6,6 +6,8 @@ import { createRandomStreams } from "../math/random";
 import { createWorld } from "./createWorld";
 import { ExpeditionController } from "./ExpeditionController";
 import { spawnFinalExpeditionBoss } from "./systems/bossSystem";
+import { getSpawnWave, spawnEnemyAtPosition } from "./systems/spawnSystem";
+import { updateRunStats } from "./systems/statsSystem";
 
 describe("ExpeditionController", () => {
   it("runs a telegraphed card into a safe structured deployment", () => {
@@ -73,6 +75,26 @@ describe("ExpeditionController", () => {
         cardId: "commander-counterattack",
       }),
     );
+    commander.world.state.elapsed =
+      commander.world.expedition!.director.recoveryStartedAt! + 4.5;
+    const commanderCompleted = commander.controller.update(
+      commander.world,
+      commander.random,
+      SIMULATION_CONFIG,
+      [],
+    );
+    updateRunStats(commander.world, commanderCompleted);
+    expect(
+      commander.world.stats.encounterMetrics.expedition!.cardHistory.at(-1),
+    ).toMatchObject({
+      cardId: "commander-counterattack",
+      selectedAt: 180,
+      deploymentStartedAt: 182.2,
+      activeStartedAt: 182.2,
+      activeElapsed: 0,
+      outcome: "completed",
+      reason: "signal:commander-defeated",
+    });
 
     const charger = selectActCard(300, 33);
     expect(charger.events).toContainEqual(
@@ -200,6 +222,154 @@ describe("ExpeditionController", () => {
     expect(second).toEqual(first);
   });
 
+  it("retries a deferred Commander spawn deterministically without consuming its active time", () => {
+    const first = captureCommanderRetry(78);
+    const second = captureCommanderRetry(78);
+
+    expect(second).toEqual(first);
+    expect(first.deferred).toContainEqual(
+      expect.objectContaining({
+        type: "expedition.encounter.deployment.deferred",
+        attempt: 1,
+        nextAttemptAt: 184.2,
+      }),
+    );
+    expect(first.deployed).toMatchObject({
+      attempt: 2,
+      activeStartedAt: 184.2,
+      activeElapsed: 0,
+      spawnElapsed: 184.2,
+    });
+    expect(first.deployed.enemyIds).toHaveLength(4);
+  });
+
+  it("fails a permanently blocked Commander deployment once and releases the Act clock", () => {
+    const fixture = selectActCard(180, 79);
+    fillToEnemyCap(fixture.world);
+    const selectedAt = fixture.world.expedition!.director.selectedAt!;
+    const firstAttemptAt = selectedAt + 2.2;
+    const events: GameEvent[] = [];
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      fixture.world.state.elapsed = firstAttemptAt + attempt * 2;
+      events.push(
+        ...fixture.controller.update(
+          fixture.world,
+          fixture.random,
+          SIMULATION_CONFIG,
+          [],
+        ),
+      );
+    }
+    fixture.world.state.elapsed = firstAttemptAt + 10;
+    events.push(
+      ...fixture.controller.update(
+        fixture.world,
+        fixture.random,
+        SIMULATION_CONFIG,
+        [],
+      ),
+    );
+
+    expect(
+      events.filter((event) => event.type === "expedition.encounter.failed"),
+    ).toEqual([{
+      type: "expedition.encounter.failed",
+      cardId: "commander-counterattack",
+      elapsed: 192.2,
+      reason: "deployment-timeout",
+    }]);
+    expect(fixture.world.expedition!.director).toMatchObject({
+      phase: "failed",
+      actClockBlocked: false,
+      actElapsed: 180,
+      activeStartedAt: null,
+      deploymentAttempts: 5,
+    });
+    expect(fixture.world.expedition!.director.history.at(-1)).toMatchObject({
+      deploymentStartedAt: 182.2,
+      deploymentAttempts: 5,
+      activeStartedAt: null,
+      reason: "deployment-timeout",
+    });
+
+    const repeated = fixture.controller.update(
+      fixture.world,
+      fixture.random,
+      SIMULATION_CONFIG,
+      [],
+    );
+    expect(
+      repeated.some((event) => event.type === "expedition.encounter.failed"),
+    ).toBe(false);
+
+    fixture.world.state.elapsed = firstAttemptAt + 130;
+    const released = fixture.controller.update(
+      fixture.world,
+      fixture.random,
+      SIMULATION_CONFIG,
+      [],
+    );
+    expect(released).toContainEqual(
+      expect.objectContaining({
+        type: "expedition.act.changed",
+        actId: "breakthrough",
+      }),
+    );
+  });
+
+  it("starts the Commander timeout at spawn and retires it without a duplicate outcome", () => {
+    const fixture = selectActCard(180, 80);
+    fixture.world.state.elapsed = fixture.world.expedition!.director.selectedAt! + 2.2;
+    fixture.controller.update(
+      fixture.world,
+      fixture.random,
+      SIMULATION_CONFIG,
+      [],
+    );
+    const activeStartedAt = fixture.world.expedition!.director.activeStartedAt!;
+    const commanderId = fixture.world.enemies.find(
+      (enemy) => enemy.elite?.kind === "commander",
+    )!.id;
+
+    fixture.world.state.elapsed = activeStartedAt + 120;
+    const timedOut = fixture.controller.update(
+      fixture.world,
+      fixture.random,
+      SIMULATION_CONFIG,
+      [],
+    );
+    expect(timedOut).toContainEqual({
+      type: "expedition.encounter.failed",
+      cardId: "commander-counterattack",
+      elapsed: activeStartedAt + 120,
+      reason: "timeout",
+    });
+    expect(timedOut).toContainEqual(
+      expect.objectContaining({
+        type: "elite.commander.retired",
+        enemyId: commanderId,
+        reason: "timeout",
+      }),
+    );
+    expect(fixture.world.enemies.some((enemy) => enemy.id === commanderId)).toBe(false);
+    expect(fixture.world.expedition!.director).toMatchObject({
+      phase: "failed",
+      actClockBlocked: false,
+      activeStartedAt,
+      activeElapsed: 120,
+    });
+
+    const repeated = fixture.controller.update(
+      fixture.world,
+      fixture.random,
+      SIMULATION_CONFIG,
+      [],
+    );
+    expect(
+      repeated.some((event) => event.type === "expedition.encounter.failed"),
+    ).toBe(false);
+  });
+
   it("crosses all five Acts without a meaningful gap over 120 seconds", () => {
     const fixture = createFixture(88);
     const events: GameEvent[] = [];
@@ -296,6 +466,58 @@ function captureOpening(seed: number) {
       position: enemy.position,
     })),
   };
+}
+
+function captureCommanderRetry(seed: number) {
+  const fixture = selectActCard(180, seed);
+  fillToEnemyCap(fixture.world);
+  fixture.world.state.elapsed = fixture.world.expedition!.director.selectedAt! + 2.2;
+  const deferred = fixture.controller.update(
+    fixture.world,
+    fixture.random,
+    SIMULATION_CONFIG,
+    [],
+  );
+  const retryAt = fixture.world.expedition!.director.nextDeploymentAttemptAt!;
+  fixture.world.enemies = [];
+  fixture.world.state.elapsed = retryAt;
+  const active = fixture.controller.update(
+    fixture.world,
+    fixture.random,
+    SIMULATION_CONFIG,
+    [],
+  );
+  const deployed = active.find(
+    (event): event is Extract<GameEvent, { type: "expedition.spawn.deployed" }> =>
+      event.type === "expedition.spawn.deployed",
+  )!;
+  return {
+    deferred,
+    deployed: {
+      attempt: fixture.world.expedition!.director.deploymentAttempts,
+      activeStartedAt: fixture.world.expedition!.director.activeStartedAt,
+      activeElapsed: fixture.world.expedition!.director.activeElapsed,
+      spawnElapsed: deployed.elapsed,
+      enemyIds: deployed.enemyIds,
+      placements: deployed.enemyIds.map((enemyId) => ({
+        enemyId,
+        position: fixture.world.enemies.find((enemy) => enemy.id === enemyId)!.position,
+      })),
+    },
+  };
+}
+
+function fillToEnemyCap(world: WorldState): void {
+  const wave = getSpawnWave(world, SIMULATION_CONFIG);
+  while (world.enemies.length < wave.maxEnemies) {
+    spawnEnemyAtPosition(
+      world,
+      "chaser",
+      wave,
+      { x: -32, y: -32 },
+      SIMULATION_CONFIG,
+    );
+  }
 }
 
 function createFixture(seed: number): {

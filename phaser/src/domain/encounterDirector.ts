@@ -14,6 +14,11 @@ export type EncounterCardDefinition = {
   titleKey: string;
   tags: string[];
   actIds: string[];
+  blocksActClock: boolean;
+  deployment: {
+    retryIntervalSeconds: number;
+    timeoutSeconds: number;
+  } | null;
   timing: {
     telegraphSeconds: number;
     activeSeconds: number;
@@ -53,6 +58,7 @@ export type EncounterDeckDefinition = {
 export type EncounterDirectorPhase =
   | "idle"
   | "telegraph"
+  | "deploying"
   | "active"
   | "recovery"
   | "completed"
@@ -64,7 +70,12 @@ export type EncounterDirectorHistoryEntry = {
   actId: string;
   direction: EncounterDirection;
   selectedAt: number;
+  selectedAtActElapsed: number;
+  deploymentStartedAt: number | null;
+  deploymentAttempts: number;
+  deploymentLastReason: string | null;
   activeStartedAt: number | null;
+  activeElapsed: number;
   recoveryStartedAt: number | null;
   finishedAt: number;
   outcome: "completed" | "failed" | "interrupted";
@@ -73,11 +84,21 @@ export type EncounterDirectorHistoryEntry = {
 
 export type EncounterDirectorState = {
   phase: EncounterDirectorPhase;
+  runElapsed: number;
+  actElapsed: number;
+  activeElapsed: number;
+  actClockBlocked: boolean;
   actId: string | null;
   selectedActId: string | null;
   cardId: string | null;
   direction: EncounterDirection | null;
   selectedAt: number | null;
+  selectedAtActElapsed: number | null;
+  deploymentStartedAt: number | null;
+  deploymentDeadlineAt: number | null;
+  nextDeploymentAttemptAt: number | null;
+  deploymentAttempts: number;
+  deploymentLastReason: string | null;
   activeStartedAt: number | null;
   recoveryStartedAt: number | null;
   finishedAt: number | null;
@@ -98,10 +119,14 @@ export type EncounterDirectorState = {
 };
 
 export type EncounterDirectorFrame = {
-  elapsed: number;
+  runElapsed: number;
   threatTier: number;
   signals?: readonly string[];
 };
+
+export type EncounterDeploymentResult =
+  | { status: "deployed"; elapsed: number }
+  | { status: "deferred"; elapsed: number; reason: string };
 
 export type EncounterDirectorEvent =
   | { type: "encounter.act.changed"; actId: string; elapsed: number }
@@ -117,6 +142,21 @@ export type EncounterDirectorEvent =
       cardId: string;
       direction: EncounterDirection;
       elapsed: number;
+    }
+  | {
+      type: "encounter.card.deployment.requested";
+      cardId: string;
+      attempt: number;
+      elapsed: number;
+      deadlineAt: number;
+    }
+  | {
+      type: "encounter.card.deployment.deferred";
+      cardId: string;
+      attempt: number;
+      elapsed: number;
+      reason: string;
+      nextAttemptAt: number;
     }
   | { type: "encounter.card.active.started"; cardId: string; elapsed: number }
   | { type: "encounter.card.recovery.started"; cardId: string; elapsed: number }

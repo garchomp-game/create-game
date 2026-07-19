@@ -149,7 +149,7 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-V07-007` | [#58](https://github.com/garchomp-game/create-game/issues/58) | 指揮艦ボス戦 | P0 | 完了後、RC3で最終ボスへ拡張 |
 | `PH-V07-008` | [#59](https://github.com/garchomp-game/create-game/issues/59) | RC6統合QAとproduction採否 | P0 | RC5を基準証跡として保持。#73から#75後の最終ゲート |
 | `PH-V07-009` | [#63](https://github.com/garchomp-game/create-game/issues/63) | 最終遠征RC5ボス終盤調整 | P0 | 完了。RC6 #73から#75へ継承 |
-| `PH-V07-010` | [#73](https://github.com/garchomp-game/create-game/issues/73) | Encounter時計とCommanderライフサイクル | P0 | Todo。RC6 Wave 1 |
+| `PH-V07-010` | [#73](https://github.com/garchomp-game/create-game/issues/73) | Encounter時計とCommanderライフサイクル | P0 | 完了。2秒再試行、10秒期限、spawn後120秒をfixtureで保証 |
 | `PH-V07-011` | [#74](https://github.com/garchomp-game/create-game/issues/74) | Expedition記録scopeとRC6 ruleset分離 | P0 | Todo。RC6 Wave 2 |
 | `PH-V07-012` | [#75](https://github.com/garchomp-game/create-game/issues/75) | 最終決戦の有限回復予算を比較検証 | P0 | Todo。RC6 Wave 3 |
 

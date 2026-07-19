@@ -7,6 +7,7 @@ import type {
   EncounterActDefinition,
   EncounterCardDefinition,
   EncounterDeckDefinition,
+  EncounterDeploymentResult,
   EncounterDirection,
   EncounterDirectorEvent,
   EncounterDirectorFrame,
@@ -50,11 +51,21 @@ export class EncounterDirector {
   ): EncounterDirectorState {
     return {
       phase: "idle",
+      runElapsed: startedAt,
+      actElapsed: startedAt,
+      activeElapsed: 0,
+      actClockBlocked: false,
       actId: null,
       selectedActId: null,
       cardId: null,
       direction: null,
       selectedAt: null,
+      selectedAtActElapsed: null,
+      deploymentStartedAt: null,
+      deploymentDeadlineAt: null,
+      nextDeploymentAttemptAt: null,
+      deploymentAttempts: 0,
+      deploymentLastReason: null,
       activeStartedAt: null,
       recoveryStartedAt: null,
       finishedAt: null,
@@ -82,22 +93,30 @@ export class EncounterDirector {
     frame: EncounterDirectorFrame,
     random: EncounterDirectorRandom,
   ): EncounterDirectorEvent[] {
-    if (!Number.isFinite(frame.elapsed) || frame.elapsed < 0) {
-      throw new Error("EncounterDirector elapsed time must be non-negative and finite.");
+    if (!Number.isFinite(frame.runElapsed) || frame.runElapsed < 0) {
+      throw new Error("EncounterDirector run time must be non-negative and finite.");
     }
+    if (frame.runElapsed < state.runElapsed) {
+      throw new Error("EncounterDirector run time must be monotonic.");
+    }
+
+    this.advanceClocks(state, frame.runElapsed);
     const events: EncounterDirectorEvent[] = [];
-    const act = this.resolveAct(frame.elapsed);
+    const act = this.resolveAct(state.actElapsed);
     if (state.actId !== act.id) {
       state.actId = act.id;
       state.cardBag = [];
       events.push({
         type: "encounter.act.changed",
         actId: act.id,
-        elapsed: frame.elapsed,
+        elapsed: frame.runElapsed,
       });
     }
 
-    if (isTerminalOrIdle(state.phase) && frame.elapsed >= state.nextSelectionAt) {
+    if (
+      isTerminalOrIdle(state.phase) &&
+      hasReached(state.actElapsed, state.nextSelectionAt)
+    ) {
       this.selectCard(state, frame, act, random, events);
     }
     if (!isRunning(state.phase) || state.cardId === null) return events;
@@ -110,7 +129,7 @@ export class EncounterDirector {
         state,
         "failed",
         `signal:${failureSignal}`,
-        frame.elapsed,
+        frame.runElapsed,
         random,
         events,
       );
@@ -124,10 +143,29 @@ export class EncounterDirector {
         state,
         "interrupted",
         `signal:${interruptSignal}`,
-        frame.elapsed,
+        frame.runElapsed,
         random,
         events,
       );
+      return events;
+    }
+
+    if (state.phase === "deploying") {
+      if (hasReached(frame.runElapsed, state.deploymentDeadlineAt!)) {
+        this.finish(
+          state,
+          "failed",
+          "deployment-timeout",
+          state.deploymentDeadlineAt!,
+          random,
+          events,
+        );
+      } else if (
+        state.nextDeploymentAttemptAt !== null &&
+        hasReached(frame.runElapsed, state.nextDeploymentAttemptAt)
+      ) {
+        this.requestDeployment(state, frame.runElapsed, events);
+      }
       return events;
     }
 
@@ -135,18 +173,25 @@ export class EncounterDirector {
       const activeAt = roundToMillis(
         state.selectedAt! + card.timing.telegraphSeconds,
       );
-      if (hasReached(frame.elapsed, activeAt)) {
-        state.phase = "active";
-        state.activeStartedAt = activeAt;
-        events.push({
-          type: "encounter.card.active.started",
-          cardId: card.id,
-          elapsed: state.activeStartedAt,
-        });
+      if (hasReached(frame.runElapsed, activeAt)) {
+        if (card.deployment) {
+          state.phase = "deploying";
+          state.deploymentStartedAt = activeAt;
+          state.deploymentDeadlineAt = roundToMillis(
+            activeAt + card.deployment.timeoutSeconds,
+          );
+          state.nextDeploymentAttemptAt = activeAt;
+          this.requestDeployment(state, frame.runElapsed, events);
+        } else {
+          this.startActive(state, card, activeAt, events);
+        }
       }
     }
 
     if (state.phase === "active") {
+      state.activeElapsed = roundToMillis(
+        Math.max(0, frame.runElapsed - state.activeStartedAt!),
+      );
       const completionSignal =
         card.completionCondition.type === "signal" &&
         signals.has(card.completionCondition.signalId)
@@ -155,15 +200,34 @@ export class EncounterDirector {
       const durationCompleted =
         card.completionCondition.type === "duration" &&
         hasReached(
-          frame.elapsed,
+          frame.runElapsed,
           roundToMillis(
             state.activeStartedAt! + card.timing.activeSeconds,
           ),
         );
+      const activeTimedOut =
+        card.completionCondition.type === "signal" &&
+        !completionSignal &&
+        hasReached(
+          frame.runElapsed,
+          roundToMillis(state.activeStartedAt! + card.timing.activeSeconds),
+        );
+      if (activeTimedOut) {
+        state.activeElapsed = card.timing.activeSeconds;
+        this.finish(
+          state,
+          "failed",
+          "timeout",
+          roundToMillis(state.activeStartedAt! + card.timing.activeSeconds),
+          random,
+          events,
+        );
+        return events;
+      }
       if (completionSignal || durationCompleted) {
         const recoveryAt = roundToMillis(
           completionSignal
-            ? frame.elapsed
+            ? frame.runElapsed
             : state.activeStartedAt! + card.timing.activeSeconds,
         );
         state.phase = "recovery";
@@ -183,7 +247,7 @@ export class EncounterDirector {
       const completedAt = roundToMillis(
         state.recoveryStartedAt! + card.timing.recoverySeconds,
       );
-      if (hasReached(frame.elapsed, completedAt)) {
+      if (hasReached(frame.runElapsed, completedAt)) {
         this.finish(
           state,
           "completed",
@@ -194,6 +258,55 @@ export class EncounterDirector {
         );
       }
     }
+    state.actClockBlocked = this.shouldBlockActClock(state);
+    return events;
+  }
+
+  reportDeployment(
+    state: EncounterDirectorState,
+    result: EncounterDeploymentResult,
+    random: EncounterDirectorRandom,
+  ): EncounterDirectorEvent[] {
+    if (state.phase !== "deploying" || state.cardId === null) {
+      throw new Error("Encounter deployment result requires a deploying card.");
+    }
+    if (!Number.isFinite(result.elapsed) || result.elapsed < 0) {
+      throw new Error("Encounter deployment time must be non-negative and finite.");
+    }
+
+    const card = this.cards.get(state.cardId)!;
+    const events: EncounterDirectorEvent[] = [];
+    if (result.status === "deployed") {
+      this.startActive(state, card, result.elapsed, events);
+      return events;
+    }
+
+    state.deploymentLastReason = result.reason;
+    if (hasReached(result.elapsed, state.deploymentDeadlineAt!)) {
+      this.finish(
+        state,
+        "failed",
+        "deployment-timeout",
+        state.deploymentDeadlineAt!,
+        random,
+        events,
+      );
+      return events;
+    }
+
+    const nextAttemptAt = roundToMillis(
+      state.deploymentStartedAt! +
+        state.deploymentAttempts * card.deployment!.retryIntervalSeconds,
+    );
+    state.nextDeploymentAttemptAt = nextAttemptAt;
+    events.push({
+      type: "encounter.card.deployment.deferred",
+      cardId: card.id,
+      attempt: state.deploymentAttempts,
+      elapsed: result.elapsed,
+      reason: result.reason,
+      nextAttemptAt,
+    });
     return events;
   }
 
@@ -203,6 +316,70 @@ export class EncounterDirector {
     return structuredClone(card);
   }
 
+  private advanceClocks(
+    state: EncounterDirectorState,
+    runElapsed: number,
+  ): void {
+    const delta = Math.max(0, runElapsed - state.runElapsed);
+    const wasBlocked = this.shouldBlockActClock(state);
+    if (!wasBlocked) {
+      state.actElapsed = roundToMillis(state.actElapsed + delta);
+    }
+    if (state.phase === "active" && state.activeStartedAt !== null) {
+      state.activeElapsed = roundToMillis(
+        Math.max(0, runElapsed - state.activeStartedAt),
+      );
+    }
+    state.runElapsed = runElapsed;
+    state.actClockBlocked = wasBlocked;
+  }
+
+  private requestDeployment(
+    state: EncounterDirectorState,
+    elapsed: number,
+    events: EncounterDirectorEvent[],
+  ): void {
+    state.deploymentAttempts += 1;
+    state.nextDeploymentAttemptAt = null;
+    state.actClockBlocked = this.shouldBlockActClock(state);
+    events.push({
+      type: "encounter.card.deployment.requested",
+      cardId: state.cardId!,
+      attempt: state.deploymentAttempts,
+      elapsed,
+      deadlineAt: state.deploymentDeadlineAt!,
+    });
+  }
+
+  private startActive(
+    state: EncounterDirectorState,
+    card: EncounterCardDefinition,
+    elapsed: number,
+    events: EncounterDirectorEvent[],
+  ): void {
+    state.phase = "active";
+    state.activeStartedAt = roundToMillis(elapsed);
+    state.activeElapsed = 0;
+    state.nextDeploymentAttemptAt = null;
+    state.actClockBlocked = card.blocksActClock;
+    events.push({
+      type: "encounter.card.active.started",
+      cardId: card.id,
+      elapsed: state.activeStartedAt,
+    });
+  }
+
+  private shouldBlockActClock(state: EncounterDirectorState): boolean {
+    if (state.cardId === null) return false;
+    const card = this.cards.get(state.cardId);
+    if (!card?.blocksActClock) return false;
+    return (
+      state.phase === "telegraph" ||
+      state.phase === "deploying" ||
+      state.phase === "active"
+    );
+  }
+
   private selectCard(
     state: EncounterDirectorState,
     frame: EncounterDirectorFrame,
@@ -210,7 +387,8 @@ export class EncounterDirector {
     random: EncounterDirectorRandom,
     events: EncounterDirectorEvent[],
   ): void {
-    const selectedAt = roundToMillis(state.nextSelectionAt);
+    const selectedAt = roundToMillis(frame.runElapsed);
+    const selectedAtActElapsed = roundToMillis(state.actElapsed);
     const candidates = this.deck.cardIds.filter((cardId) => {
       const card = this.cards.get(cardId)!;
       const lastSelectedAt = state.lastSelectedAt[cardId] ?? Number.NEGATIVE_INFINITY;
@@ -222,12 +400,12 @@ export class EncounterDirector {
     });
     if (candidates.length === 0) {
       state.nextSelectionAt = roundToMillis(
-        frame.elapsed + this.deck.retryDelaySeconds,
+        state.actElapsed + this.deck.retryDelaySeconds,
       );
       events.push({
         type: "encounter.card.deferred",
         actId: act.id,
-        elapsed: frame.elapsed,
+        elapsed: frame.runElapsed,
       });
       return;
     }
@@ -266,10 +444,18 @@ export class EncounterDirector {
     state.cardId = cardId;
     state.direction = direction;
     state.selectedAt = selectedAt;
+    state.selectedAtActElapsed = selectedAtActElapsed;
+    state.deploymentStartedAt = null;
+    state.deploymentDeadlineAt = null;
+    state.nextDeploymentAttemptAt = null;
+    state.deploymentAttempts = 0;
+    state.deploymentLastReason = null;
     state.activeStartedAt = null;
+    state.activeElapsed = 0;
     state.recoveryStartedAt = null;
     state.finishedAt = null;
     state.completionReason = null;
+    state.actClockBlocked = this.cards.get(cardId)!.blocksActClock;
     state.lastSelectedAt[cardId] = selectedAt;
     state.metrics.selections += 1;
     const gap = selectedAt - state.metrics.lastMeaningfulAt;
@@ -306,7 +492,12 @@ export class EncounterDirector {
       actId: state.selectedActId!,
       direction: state.direction!,
       selectedAt: state.selectedAt!,
+      selectedAtActElapsed: state.selectedAtActElapsed!,
+      deploymentStartedAt: state.deploymentStartedAt,
+      deploymentAttempts: state.deploymentAttempts,
+      deploymentLastReason: state.deploymentLastReason,
       activeStartedAt: state.activeStartedAt,
+      activeElapsed: state.activeElapsed,
       recoveryStartedAt: state.recoveryStartedAt,
       finishedAt,
       outcome,
@@ -314,12 +505,13 @@ export class EncounterDirector {
     };
     state.phase = outcome;
     state.finishedAt = finishedAt;
+    state.actClockBlocked = false;
     state.history.push(historyEntry);
     state.history = state.history.slice(-64);
     state.metrics[outcome] += 1;
     state.metrics.lastMeaningfulAt = finishedAt;
     state.nextSelectionAt = roundToMillis(
-      finishedAt + drawRange(random, this.deck.interval),
+      state.actElapsed + drawRange(random, this.deck.interval),
     );
     events.push({
       type: `encounter.card.${outcome}`,
@@ -368,7 +560,12 @@ export class EncounterDirector {
 }
 
 function isRunning(phase: EncounterDirectorState["phase"]): boolean {
-  return phase === "telegraph" || phase === "active" || phase === "recovery";
+  return (
+    phase === "telegraph" ||
+    phase === "deploying" ||
+    phase === "active" ||
+    phase === "recovery"
+  );
 }
 
 function isTerminalOrIdle(phase: EncounterDirectorState["phase"]): boolean {

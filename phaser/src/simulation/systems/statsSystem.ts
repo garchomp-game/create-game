@@ -259,11 +259,17 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
         world.expedition?.director.metrics.longestMeaningfulGap ??
         metrics.longestMeaningfulGap;
     } else if (event.type === "expedition.encounter.completed") {
-      getExpeditionMetrics(world).cardsCompleted += 1;
+      const metrics = getExpeditionMetrics(world);
+      metrics.cardsCompleted += 1;
+      syncExpeditionCardHistory(world, metrics);
     } else if (event.type === "expedition.encounter.failed") {
-      getExpeditionMetrics(world).cardsFailed += 1;
+      const metrics = getExpeditionMetrics(world);
+      metrics.cardsFailed += 1;
+      syncExpeditionCardHistory(world, metrics);
     } else if (event.type === "expedition.encounter.interrupted") {
-      getExpeditionMetrics(world).cardsInterrupted += 1;
+      const metrics = getExpeditionMetrics(world);
+      metrics.cardsInterrupted += 1;
+      syncExpeditionCardHistory(world, metrics);
     } else if (event.type === "expedition.encounter.deferred") {
       getExpeditionMetrics(world).cardsDeferred += 1;
     } else if (event.type === "expedition.spawn.deployed") {
@@ -392,7 +398,15 @@ function getExpeditionMetrics(world: WorldState) {
     clearScoreBonus: 0,
     timeScoreBonus: 0,
     bossFightDuration: null,
+    cardHistory: [],
   });
+}
+
+function syncExpeditionCardHistory(
+  world: WorldState,
+  metrics: NonNullable<WorldState["stats"]["encounterMetrics"]["expedition"]>,
+): void {
+  metrics.cardHistory = structuredClone(world.expedition?.director.history ?? []);
 }
 
 function getBossMetrics(world: WorldState) {

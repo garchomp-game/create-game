@@ -41,6 +41,8 @@ export function createEndlessEncounterCards(
       titleKey: `encounter.${encounterId}.title`,
       tags: [encounterId],
       actIds: ["endless"],
+      blocksActClock: false,
+      deployment: null,
       timing: {
         telegraphSeconds: definition.warningDuration,
         activeSeconds: definition.activeDuration,

@@ -158,7 +158,10 @@ export class PhaserArenaWorldView {
 
     const direction = expedition.currentDirection;
     const phase = expedition.director.phase;
-    if (!direction || (phase !== "telegraph" && phase !== "active")) return;
+    if (
+      !direction ||
+      (phase !== "telegraph" && phase !== "deploying" && phase !== "active")
+    ) return;
     const directions =
       expedition.currentGeometryId === "pincer"
         ? [direction, oppositeDirection(direction)]
