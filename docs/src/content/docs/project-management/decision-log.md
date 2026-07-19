@@ -834,8 +834,8 @@ Stage 10の時間メダルは金9分、銀10分、銅12分とする。完遂15,0
 
 根拠:
 
-- 2400 HPでcontrol勝利3本の相殺率は0.918から1.000に対して0.788から0.853へ下がったが、ボスHPを183から562残して敗北した。
-- 元から敗北する3本は供給量が2400へ届かず、controlとcandidateが同値だった。
+- control勝利3本の相殺率はPulse / 20260719が1.000、Spread / 20260718が0.937、Spread / 20260719が0.963だった。candidateは順に0.814、0.782、0.788で、ボスHPを288、925、824残して敗北した。
+- 完全同値だった敗北pairは供給253で終わったPulse / 20260718だけだった。ほかのcontrol敗北2本はcandidateが2400を使い切り、勝敗は同じでも戦闘値は同値ではない。
 - 外周・遮蔽物への移動と通常敵撃破は残り、単純に回収行動を消した結果ではない。
 - 自動中央周回近似は8.5秒で敗北し、手動で報告された誘導後の周回を再現しなかった。自動結果だけで欠陥解消済みとは判断できない。
 
@@ -864,3 +864,17 @@ RC6の6構成probeは、全6勝ではなく、全6のCommander撃破、Act 5、3
 決定: commit `f06c9b585cc4`をCloudflare Version `a9522576-e9ff-4fce-92df-35c9c732849c`としてuploadし、`https://v07-final-expedition-rc6-arena-core.garchomp-game.workers.dev`へ公開した。通常UIの実URLsmokeが完了するまで`wrangler versions deploy`は実行せず、productionはv0.6.8のVersion `e86f90b8-ea15-4d1d-b01b-59e4f9fea78e`を100%維持する。
 
 実URLでは版情報、WebGL、設定、ランキング、履歴、Pulse自然終了と保存、リトライ、一時停止、ベータ情報、最終遠征選択、Spread開始をdebug hookなしで確認した。console / page error、失敗request、HTTP 4xx / 5xxは0件だった。残るproduction採否ゲートはPulse / Spread各1本の通常UI欠陥特化ランだけとする。
+
+## 2026-07-19: RC6提出物再レビューのrelease contractを追補する
+
+決定: `revise before adoption`の再レビューを受け、ゲーム数値を変更せず、code commit `c908450a7101`でrelease assertion、Expedition時間表現、Commander objective、敗北履歴を追補した。productionはv0.6.8のまま維持し、RC6は自動ゲート完了・通常UI手動ゲート未完了として扱う。
+
+実装契約:
+
+- repair release matrixは`allVictories`、`repairOffsetControlled`、`regularEnemiesRequired`、`arenaMovementRequired`を個別にassertする。
+- Expeditionの保存、比較、時間メダル、精密表示、PB差分は整数centisecondを唯一のperformance表現にする。Endless v0.6.8の順位規則は変更しない。
+- Commander active中だけ固有objectiveを表示し、撃破、active timeout、deployment timeout後は現在Actの通常objectiveへ戻す。
+- Expedition敗北の履歴にも`PB対象外: 遠征未完遂`を表示する。
+- code SHAでは65 files・420 passed / 2 skipped、normal / repair probe各`1 passed / 1 skipped`、Playwright 73 passed / 1 skipped、production buildを通過した。
+
+production採否には、同じVersion PreviewでPulseの中央周回とSpreadの通常戦術を各1本、両武器ともboss phase 2と3攻撃種まで確認する手動ゲートを残す。debug時刻ジャンプと将来fallbackの共通API edge、厳密な永続LRU、GitHub Actions新設はRC6の直接blockerにせず、再現条件と着手条件を後続で管理する。

@@ -7,7 +7,7 @@ description: Encounter Directorの時計、Commanderの期限、Expedition記録
 
 ## 状態
 
-設計決定として採用。`PH-V07-010`の時計とCommanderライフサイクル、`PH-V07-011`の記録規則とRC6 rulesetは2026-07-19に実装しました。フォローアップ監査で見つかったボス遭遇終端、390秒境界、profile別PB、ランキング表示、probe分岐もRC6安定化差分へ取り込みました。`PH-V07-012`の2400 HP有限回復候補は棄却し、RC6 controlを維持します。RC6 build自体はまだproduction未採用で、再取得した自動証跡と通常UI欠陥特化ランを通過してから昇格を判断します。
+設計決定として採用。`PH-V07-010`の時計とCommanderライフサイクル、`PH-V07-011`の記録規則とRC6 rulesetは2026-07-19に実装しました。フォローアップ監査で見つかったボス遭遇終端、390秒境界、profile別PB、ランキング表示、probe分岐もRC6安定化差分へ取り込みました。提出物再レビューのrelease contract追補と自動証跡の再取得はcode commit `c908450a7101`で完了しています。`PH-V07-012`の2400 HP有限回復候補は棄却し、RC6 controlを維持します。RC6 build自体はまだproduction未採用で、通常UI欠陥特化ランを通過してから昇格を判断します。
 
 ## 文脈
 
@@ -44,7 +44,7 @@ Expeditionの戦闘難度は`runElapsed`から直接計算しません。Directo
 
 通常の時間制Encounterは`blocksActClock: false`、Actをまたいで存在させない構造化Encounterは`true`を明示します。RC6ではこの宣言がAct時計と難度時計の両方を止めます。将来、Actだけを止めて難度を進めるEncounterが必要になった場合は別フラグを追加し、`blocksActClock`の意味を暗黙に変更しません。RC6のCommander cardは`true`です。選択時にAct時計を止め、撃破または撤退signalでactiveを解決した時点に再開します。4.5秒のrecovery表示中は時計を進めます。これにより、Commanderが名目上のAct境界へ到達しても次Actは開始せず、解決後に決定論的に遷移します。
 
-HUDが参照する`expedition.actId`、`actTitleKey`、`objective`は、`ExpeditionController`がDirector eventから同一stepで更新するpresentation read modelです。時間からActを再計算する別の正本ではありません。phaseと時計の正本は`expedition.director`に置き、read modelとの同期をfixtureで保証します。
+HUDが参照する`expedition.actId`、`actTitleKey`、`objective`は、`ExpeditionController`がDirector eventから同一stepで更新するpresentation read modelです。時間からActを再計算する別の正本ではありません。Commander固有objectiveはcard active中だけ表示し、撃破、active timeout、deployment timeoutで現在Actの通常objectiveへ戻します。phaseと時計の正本は`expedition.director`に置き、read modelとの同期をfixtureで保証します。
 
 ### 2. Commanderの状態と120秒
 
@@ -80,7 +80,7 @@ signal完了条件とtimeoutは別契約です。Commanderだけが明示的な1
 
 ### 3. Expeditionの主記録
 
-Expeditionの主ランキングは**勝利ランの総クリア時間**です。0.01秒へ丸めた値を短い順に並べ、同時間では戦術点を使います。終了時刻とrun IDは表示順を安定させるだけで、PB更新判定には使いません。時間メダルと画面表示も同じ0.01秒精度に統一します。
+Expeditionの主ランキングは**勝利ランの総クリア時間**です。保存時に`Math.max(0, Math.round(elapsed * 100))`で非負の整数centisecondへ量子化し、その整数値を比較、時間メダル、精密表示、PB差分、PB同値判定の唯一のperformance表現として使います。同じcentisecondでは戦術点を使います。終了時刻とrun IDは表示順を安定させるだけで、PB更新判定には使いません。raw浮動小数同士の差分は画面へ表示しません。
 
 - 敗北は履歴と到達Actの比較へ残すが、勝利PBを上書きしない。
 - 戦術点は撃破、危険処理、被害など時間以外の成果を表す。クリア時間から導く速攻点は含めない。
@@ -110,7 +110,7 @@ seed区分は次のように扱います。
 
 最終遠征RC6のルール版は`phaser-v0.7.0-final-expedition-rc6`とします。RC5以前の履歴は削除しませんが、RC6のランキング、PB、メダルへ混在させません。戦闘ルールを変更していないEndlessは`phaser-v0.6.8-pulse-boundary-ricochet`を維持し、RC6採用だけを理由に既存PBを見かけ上リセットしません。
 
-保存schemaの変更が必要な場合だけschema versionを上げます。今回の`comparisonScope`は問い合わせ時に導出し、追加した戦術点とメダルは既存nested schemaのdefaultで旧記録を読めるため、RunRecordとstoreはversion 2を維持します。保存ランキングはprofileごとにoverall上位と各weapon上位の和集合を保持し、片方のPBが履歴上限とともに失われないようにします。任意fixed seedで永続領域が無制限に増えないよう、最近利用した比較groupを最大16件保持します。ランキング消去後に履歴を削除しても、消去済みboardを履歴から復元しません。
+保存schemaの変更が必要な場合だけschema versionを上げます。今回の`comparisonScope`は問い合わせ時に導出し、追加した戦術点とメダルは既存nested schemaのdefaultで旧記録を読めるため、RunRecordとstoreはversion 2を維持します。保存ランキングはprofileごとにoverall上位と各weapon上位の和集合を保持し、片方のPBが履歴上限とともに失われないようにします。任意fixed seedで永続領域が無制限に増えないよう、保存中のranked recordの最新時刻を基準に比較groupを最大16件保持します。非PB runによる再訪まで永続化する厳密なLRUではありません。ランキング消去後に履歴を削除しても、消去済みboardを履歴から復元しません。
 
 ### 6. ボス回復は独立実験にする
 

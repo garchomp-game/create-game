@@ -48,7 +48,7 @@ controlは3/6勝利、candidate Aは0/6勝利でした。controlの勝利はPuls
 
 候補側でもボス中に通常敵を114から1564体撃破し、全6構成で外周進入と遮蔽物付近への進入が残りました。回復相殺率90%未満、通常敵撃破、アリーナ移動の3条件は満たしましたが、勝利条件だけを満たしません。したがって回収経路を単純に消した結果ではなく、戦闘非劣性を失う候補として棄却します。
 
-再取得には`npm run probe:v07:repair`を使いました。結果は`1 passed / 1 skipped`で、通常probeがskip、repair比較だけが実行されています。6ペアの入力prefix一致に加え、最初のcandidateを再実行してinput / event / world hash一致も確認しました。
+code commit `c908450a7101`で`npm run probe:v07:repair`を再取得しました。結果は`1 passed / 1 skipped`で、通常probeがskip、repair比較だけが実行されています。release matrixでは`allVictories: false`、`repairOffsetControlled: true`、`regularEnemiesRequired: true`、`arenaMovementRequired: true`を個別にassertしています。6ペアの入力prefix一致に加え、最初のcandidateを再実行してinput / event / world hash一致も確認しました。
 
 ## 中央周回の扱い
 

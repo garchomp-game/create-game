@@ -71,7 +71,7 @@ Issue: [PH-V07-012 #75](https://github.com/garchomp-game/create-game/issues/75)
 
 Issue: [PH-V07-008 #59](https://github.com/garchomp-game/create-game/issues/59)
 
-状態: フォローアップ監査を受けてRC6安定化を再実行中です。Encounter終端、390秒境界、配置期限、profile別PB、ランキングboard、probe分岐は修正済みです。全入力replay、repair比較、ブラウザ回帰、更新版Version Preview、通常UI採否を再取得してから完了に戻します。
+状態: 自動ゲート完了、通常UI採否待ちです。提出物再レビューの追補はcode commit `c908450a7101`で完了し、65 files・420 passed / 2 skipped、normal / repair各`1 passed / 1 skipped`、Playwright 73 passed / 1 skipped、production buildと配布検査を通過しました。最終Version PreviewとDraft PRのSHA付き証跡は[#59](https://github.com/garchomp-game/create-game/issues/59)へ集約します。
 
 - 全6のCommander撃破、Act 5、全攻撃種と、専用fixtureのboss phase 2を機構到達性としてassertする。
 - 自然runはPulse / Spread各1本以上のboss phase 2到達を要求する。
@@ -132,7 +132,7 @@ UI境界[#68](https://github.com/garchomp-game/create-game/issues/68)、比較pr
 
 ## production昇格条件
 
-- #73、#74、採用する#75候補が完了している。
+- #73と#74が完了し、#75の比較とcandidate A棄却判断が完了している。新候補を採用する場合だけ全ゲートを再実行する。
 - RC6の全6構成が全ボス攻撃へ到達し、phase 2 fixture、3/6以上かつ各武器1勝以上の自然勝利と全入力replayが通る。
 - 敗北、fixed seed、overall / weapon PB、旧ruleset分離がfixtureで保証される。
 - Pulse / Spread各1本以上の通常UIランで中央周回を再試行している。
