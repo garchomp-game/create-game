@@ -12,9 +12,11 @@ const scoring: StageCompletionScoringDefinition = {
 
 describe("expedition scoring", () => {
   it("derives stage medals from total run time at inclusive boundaries", () => {
+    expect(resolveExpeditionTimeMedal(539.999, scoring.timeMedalSeconds)).toBe("gold");
     expect(resolveExpeditionTimeMedal(540, scoring.timeMedalSeconds)).toBe("gold");
     expect(resolveExpeditionTimeMedal(541, scoring.timeMedalSeconds)).toBe("silver");
     expect(resolveExpeditionTimeMedal(540.004, scoring.timeMedalSeconds)).toBe("gold");
+    expect(resolveExpeditionTimeMedal(540.005, scoring.timeMedalSeconds)).toBe("silver");
     expect(resolveExpeditionTimeMedal(540.006, scoring.timeMedalSeconds)).toBe("silver");
     expect(resolveExpeditionTimeMedal(600, scoring.timeMedalSeconds)).toBe("silver");
     expect(resolveExpeditionTimeMedal(720, scoring.timeMedalSeconds)).toBe("bronze");

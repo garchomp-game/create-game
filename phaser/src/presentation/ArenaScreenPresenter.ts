@@ -5,6 +5,7 @@ import {
   isRankableRun,
 } from "../application/runRecords";
 import { APP_VERSION, RELEASE_CHANNEL_LABEL } from "../config/version";
+import { toRunCentiseconds } from "../domain/runRecords";
 import type { RankIneligibilityReason, RunRecord } from "../domain/runRecords";
 import type {
   GameStatus,
@@ -12,7 +13,11 @@ import type {
   SimulationConfig,
   WorldState,
 } from "../domain/types";
-import { formatTime, formatTimePrecise } from "../format/time";
+import {
+  formatRunCentiseconds,
+  formatTime,
+  formatTimePrecise,
+} from "../format/time";
 import { TEXT } from "../lang";
 import { getUpgradeRequirementProgress } from "../simulation/buildComposer";
 import { createRunResultSummary } from "../simulation/resultSummary";
@@ -195,14 +200,22 @@ function formatBestComparison(
   if (previousBest === null) return `${label} 初回記録`;
   const comparison = compareRunPerformance(record, previousBest);
   if (record.modeId === "expedition") {
+    const elapsedDifference =
+      toRunCentiseconds(record.elapsed) - toRunCentiseconds(previousBest.elapsed);
     if (comparison < 0) {
-      const improvement = previousBest.elapsed - record.elapsed;
-      return improvement > 0
-        ? `${label}PB更新 -${formatTimePrecise(improvement)}`
+      return elapsedDifference < 0
+        ? `${label}PB更新 -${formatRunCentiseconds(-elapsedDifference)}`
         : `${label}PB更新`;
     }
     if (comparison === 0) return `${label}PBと同記録`;
-    return `${label}PBまで +${formatTimePrecise(record.elapsed - previousBest.elapsed)}`;
+    if (elapsedDifference > 0) {
+      return `${label}PBまで +${formatRunCentiseconds(elapsedDifference)}`;
+    }
+    const tacticalGap =
+      getExpeditionTacticalScore(previousBest) - getExpeditionTacticalScore(record);
+    return tacticalGap > 0
+      ? `${label}PBまで 戦術${tacticalGap.toLocaleString()}点`
+      : `${label}PB未更新`;
   }
 
   const scoreDifference = record.score - previousBest.score;

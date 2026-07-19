@@ -152,6 +152,46 @@ describe("createArenaScreenViewModel", () => {
     );
   });
 
+  it("formats Expedition PB deltas from integer centiseconds", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.state.status = "gameOver";
+    world.state.elapsed = 500.004;
+    world.state.score = 35_000;
+    world.stats.encounterMetrics.expedition = createExpeditionMetrics(
+      "victory",
+      500.004,
+    );
+    const current = createRecord(world, "expedition", "final-expedition");
+    current.elapsed = 500.004;
+    const previous = structuredClone(current);
+    previous.id = "run-previous";
+    previous.elapsed = 500.005;
+
+    const improved = createArenaScreenViewModel(
+      world,
+      SIMULATION_CONFIG,
+      createUiState({
+        latestRunRecord: current,
+        previousBest: previous,
+        previousWeaponBest: previous,
+      }),
+    );
+    expect(improved.statusText).toContain("総合PB更新 -00:00.01");
+    expect(improved.statusText).not.toContain("-00:00.00");
+
+    previous.elapsed = 500.003;
+    const tied = createArenaScreenViewModel(
+      world,
+      SIMULATION_CONFIG,
+      createUiState({
+        latestRunRecord: current,
+        previousBest: previous,
+        previousWeaponBest: previous,
+      }),
+    );
+    expect(tied.statusText).toContain("総合PBと同記録");
+  });
+
   it("names the boss attack that ended an Expedition", () => {
     const world = createWorld(SIMULATION_CONFIG);
     world.state.status = "gameOver";
@@ -248,6 +288,34 @@ function createRecord(
     buildCompletedAt: world.progression.buildCompletedAt,
     encounterMetrics: world.stats.encounterMetrics,
   });
+}
+
+function createExpeditionMetrics(
+  outcome: "victory" | "defeat",
+  completedAt: number,
+): NonNullable<WorldState["stats"]["encounterMetrics"]["expedition"]> {
+  return {
+    outcome,
+    reachedActId: "command-ship",
+    reachedActIds: ["command-ship"],
+    actChanges: 4,
+    cardsSelected: 5,
+    cardsCompleted: outcome === "victory" ? 5 : 4,
+    cardsFailed: 0,
+    cardsInterrupted: outcome === "defeat" ? 1 : 0,
+    cardsDeferred: 0,
+    structuredEnemiesSpawned: 20,
+    structuredSpawnsDeferred: 0,
+    longestMeaningfulGap: 0,
+    completedAt,
+    tacticalScore: 20_000,
+    scoreBeforeBonus: 20_000,
+    clearScoreBonus: outcome === "victory" ? 15_000 : 0,
+    timeScoreBonus: 0,
+    timeMedal: outcome === "victory" ? "gold" : null,
+    bossFightDuration: 120,
+    cardHistory: [],
+  };
 }
 
 function createUiState(

@@ -1,7 +1,9 @@
 import {
+  fromRunCentiseconds,
   RUN_RANKING_LIMIT,
   RUN_RECORD_SCHEMA_VERSION,
-  normalizeRunTime,
+  RUN_TIME_PRECISION_SECONDS,
+  toRunCentiseconds,
 } from "../domain/runRecords";
 import type {
   CreateRunRecordInput,
@@ -55,7 +57,9 @@ export function createRunRecord(input: CreateRunRecordInput): RunRecord {
       eligible: context.rankEligibility.eligible,
       reasons: [...context.rankEligibility.reasons],
     },
-    elapsed: summary.elapsed,
+    elapsed: context.modeId === "expedition"
+      ? fromRunCentiseconds(toRunCentiseconds(summary.elapsed))
+      : summary.elapsed,
     score: summary.score,
     level: summary.level,
     extraLevel: summary.extraLevel,
@@ -114,15 +118,21 @@ function createEmptyEncounterMetrics(): EncounterRunStats {
 export function compareRunPerformance(left: RunRecord, right: RunRecord): number {
   if (left.modeId === "expedition" && right.modeId === "expedition") {
     return (
-      normalizeRunTime(left.elapsed) - normalizeRunTime(right.elapsed) ||
+      toRunCentiseconds(left.elapsed) - toRunCentiseconds(right.elapsed) ||
       getExpeditionTacticalScore(right) - getExpeditionTacticalScore(left)
     );
   }
 
   return (
     right.score - left.score ||
-    normalizeRunTime(right.elapsed) - normalizeRunTime(left.elapsed)
+    normalizeEndlessTieBreakTime(right.elapsed) -
+      normalizeEndlessTieBreakTime(left.elapsed)
   );
+}
+
+function normalizeEndlessTieBreakTime(elapsed: number): number {
+  // Preserve the published v0.6.8 ranking boundary while Expedition uses integer units.
+  return Math.round(elapsed / RUN_TIME_PRECISION_SECONDS) * RUN_TIME_PRECISION_SECONDS;
 }
 
 export function compareRunRecords(left: RunRecord, right: RunRecord): number {

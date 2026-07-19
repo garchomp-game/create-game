@@ -24,10 +24,16 @@ export const RUN_HISTORY_LIMIT = 50;
 export const RUN_RANKING_LIMIT = 10;
 export const RUN_RANKING_GROUP_LIMIT = 16;
 export const RUN_TIME_PRECISION_SECONDS = 0.01;
+export const RUN_TIME_CENTISECONDS_PER_SECOND = 100;
 
-export function normalizeRunTime(elapsed: number): number {
+export function toRunCentiseconds(elapsed: number): number {
+  return Math.max(0, Math.round(elapsed * RUN_TIME_CENTISECONDS_PER_SECOND));
+}
+
+export function fromRunCentiseconds(centiseconds: number): number {
   return (
-    Math.round(elapsed / RUN_TIME_PRECISION_SECONDS) * RUN_TIME_PRECISION_SECONDS
+    Math.max(0, Math.round(centiseconds)) /
+    RUN_TIME_CENTISECONDS_PER_SECOND
   );
 }
 

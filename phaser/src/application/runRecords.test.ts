@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { RunResultSummary } from "../domain/types";
 import type { RunComparisonKey, RunContext, RunRecord } from "../domain/runRecords";
-import { runRecordSchema } from "../domain/runRecords";
+import {
+  fromRunCentiseconds,
+  runRecordSchema,
+  toRunCentiseconds,
+} from "../domain/runRecords";
 import {
   compareRunRecords,
   compareRunPerformance,
@@ -114,6 +118,27 @@ describe("run records", () => {
 
     expect(compareRunPerformance(later, earlier)).toBe(0);
     expect(compareRunRecords(later, earlier)).toBeGreaterThan(0);
+  });
+
+  it("uses one integer centisecond contract for Expedition storage and comparison", () => {
+    expect(toRunCentiseconds(0.295)).toBe(30);
+    expect(fromRunCentiseconds(30)).toBe(0.3);
+
+    const faster = makeExpeditionRecord({ id: "faster", elapsed: 500.004 });
+    const slower = makeExpeditionRecord({ id: "slower", elapsed: 500.005 });
+    expect(compareRunPerformance(faster, slower)).toBe(-1);
+
+    const context = makeContext();
+    context.modeId = "expedition";
+    const stored = createRunRecord({
+      context,
+      capturedAt: "2026-07-10T10:05:00.000Z",
+      summary: makeSummary({ elapsed: 0.295 }),
+      upgradeRanks: makeUpgradeRanks(),
+      upgradeSelections: [],
+      buildCompletedAt: null,
+    });
+    expect(stored.elapsed).toBe(0.3);
   });
 
   it("partitions personal bests by profile", () => {
