@@ -98,7 +98,11 @@ export class PhaserInputAdapter {
     const pointerPressed = this.pointerPressed;
     this.pointerPressed = false;
     this.syncCursor(status, upgradeChoiceCount, secondaryMenu);
-    if (status !== "playing") {
+    if (
+      status !== "playing" &&
+      status !== "upgradeSelect" &&
+      status !== "contractSelect"
+    ) {
       this.hasPointerAim = false;
     }
     const pointerAimsThisFrame =

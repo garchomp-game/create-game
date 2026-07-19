@@ -1,6 +1,7 @@
 import * as Phaser from "phaser";
 import type { SimulationConfig, WorldState } from "../../domain/types";
 import type { ArenaScreenViewModel } from "../../presentation/ArenaScreenPresenter";
+import { ARENA_PHASER_COLORS as COLOR, ARENA_THEME } from "../../presentation/ArenaTheme";
 import { getMenuButtons } from "./PhaserMenuLayout";
 
 export class PhaserArenaScreenView {
@@ -14,9 +15,9 @@ export class PhaserArenaScreenView {
   ) {
     this.statusText = scene.add
       .text(simulationConfig.arena.width / 2, simulationConfig.arena.height / 2, "", {
-        fontFamily: "Arial, sans-serif",
+        fontFamily: ARENA_THEME.typography.canvasFontFamily,
         fontSize: "42px",
-        color: "#f8fafc",
+        color: ARENA_THEME.colors.text,
         align: "center",
         lineSpacing: 10,
       })
@@ -26,9 +27,9 @@ export class PhaserArenaScreenView {
 
     this.detailText = scene.add
       .text(0, 0, "", {
-        fontFamily: "Arial, sans-serif",
+        fontFamily: ARENA_THEME.typography.canvasFontFamily,
         fontSize: "17px",
-        color: "#cbd5e1",
+        color: ARENA_THEME.colors.textMuted,
         align: "left",
         lineSpacing: 6,
       })
@@ -39,9 +40,9 @@ export class PhaserArenaScreenView {
     this.menuButtonTexts = Array.from({ length: 8 }, () =>
       scene.add
         .text(0, 0, "", {
-          fontFamily: "Arial, sans-serif",
+          fontFamily: ARENA_THEME.typography.canvasFontFamily,
           fontSize: "18px",
-          color: "#f8fafc",
+          color: ARENA_THEME.colors.text,
           align: "center",
         })
         .setOrigin(0.5)
@@ -69,7 +70,7 @@ export class PhaserArenaScreenView {
       return;
     }
     if (screen.kind === "gameOver") {
-      graphics.fillStyle(0x020617, 0.9);
+      graphics.fillStyle(COLOR.overlay, 0.9);
       graphics.fillRect(0, 0, width, height);
       this.statusText
         .setOrigin(0, 0)
@@ -93,17 +94,17 @@ export class PhaserArenaScreenView {
       return;
     }
     if (screen.kind === "upgradeSelect") {
-      graphics.fillStyle(0x020617, 0.9);
+      graphics.fillStyle(COLOR.overlay, 0.32);
       graphics.fillRect(0, 0, width, height);
       return;
     }
     if (screen.kind === "contractSelect") {
-      graphics.fillStyle(0x020617, 0.94);
+      graphics.fillStyle(COLOR.overlay, 0.38);
       graphics.fillRect(0, 0, width, height);
       return;
     }
     if (screen.kind === "paused") {
-      graphics.fillStyle(0x020617, 0.9);
+      graphics.fillStyle(COLOR.overlay, 0.9);
       graphics.fillRect(0, 0, width, height);
       this.statusText
         .setOrigin(0.5)
@@ -125,12 +126,12 @@ export class PhaserArenaScreenView {
       return;
     }
     if (screen.kind === "weaponSelect") {
-      graphics.fillStyle(0x05070d, 0.94);
+      graphics.fillStyle(COLOR.overlayStrong, 0.55);
       graphics.fillRect(0, 0, width, height);
       return;
     }
     if (screen.kind === "title") {
-      graphics.fillStyle(0x05070d, 0.86);
+      graphics.fillStyle(COLOR.overlayStrong, 0.86);
       graphics.fillRect(0, 0, width, height);
       this.statusText
         .setOrigin(0.5)
@@ -151,7 +152,7 @@ export class PhaserArenaScreenView {
     screen: ArenaScreenViewModel,
   ): void {
     const { width, height } = this.simulationConfig.arena;
-    graphics.fillStyle(0x05070d, 0.96);
+    graphics.fillStyle(COLOR.overlayStrong, 0.96);
     graphics.fillRect(0, 0, width, height);
 
     if (screen.kind === "history") {
@@ -227,10 +228,10 @@ export class PhaserArenaScreenView {
     height: number,
     focused = false,
   ): void {
-    graphics.fillStyle(focused ? 0x164e63 : 0x1f2937, 0.96);
-    graphics.fillRoundedRect(x, y, width, height, 6);
-    graphics.lineStyle(focused ? 3 : 2, focused ? 0xfacc15 : 0x38bdf8, 0.95);
-    graphics.strokeRoundedRect(x, y, width, height, 6);
+    graphics.fillStyle(focused ? COLOR.surfaceFocused : COLOR.surface, 0.96);
+    graphics.fillRoundedRect(x, y, width, height, ARENA_THEME.radii.control);
+    graphics.lineStyle(focused ? 3 : 2, focused ? COLOR.focus : COLOR.accent, 0.95);
+    graphics.strokeRoundedRect(x, y, width, height, ARENA_THEME.radii.control);
   }
 
   private hideButtonTexts(): void {
