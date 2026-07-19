@@ -71,7 +71,7 @@ Issue: [PH-V07-012 #75](https://github.com/garchomp-game/create-game/issues/75)
 
 Issue: [PH-V07-008 #59](https://github.com/garchomp-game/create-game/issues/59)
 
-状態: 実装とローカル自動検証は完了。Commander停止中も`runElapsed`で通常敵圧力が先行する不整合とAct時計のstep丸め依存を修正しました。候補は3/6勝（Pulse 1、Spread 2）、全6で全攻撃、5/6でphase 2へ到達し、全入力replayと全回帰を通過しました。Version Previewと通常UI採否を残しています。
+状態: 実装、ローカル自動検証、Version Previewの実URLsmokeは完了。Commander停止中も`runElapsed`で通常敵圧力が先行する不整合とAct時計のstep丸め依存を修正しました。候補は3/6勝（Pulse 1、Spread 2）、全6で全攻撃、5/6でphase 2へ到達し、全入力replayと全回帰を通過しました。通常UI採否だけを残しています。
 
 - 全6のCommander撃破、Act 5、全攻撃種と、専用fixtureのboss phase 2を機構到達性としてassertする。
 - 自然runはPulse / Spread各1本以上のboss phase 2到達を要求する。

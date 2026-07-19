@@ -858,3 +858,9 @@ RC6の6構成probeは、全6勝ではなく、全6のCommander撃破、Act 5、3
 - 人間向け難度、中央周回、回復循環は通常UIのPulse / Spread各1本で別に採否する。
 
 実値と残ゲートは[RC6 統合QAレポート](../../playtest/v07-rc6-integration-report/)を正本とする。
+
+## 2026-07-19: RC6をVersion Previewへ公開しproductionを維持する
+
+決定: commit `f06c9b585cc4`をCloudflare Version `a9522576-e9ff-4fce-92df-35c9c732849c`としてuploadし、`https://v07-final-expedition-rc6-arena-core.garchomp-game.workers.dev`へ公開した。通常UIの実URLsmokeが完了するまで`wrangler versions deploy`は実行せず、productionはv0.6.8のVersion `e86f90b8-ea15-4d1d-b01b-59e4f9fea78e`を100%維持する。
+
+実URLでは版情報、WebGL、設定、ランキング、履歴、Pulse自然終了と保存、リトライ、一時停止、ベータ情報、最終遠征選択、Spread開始をdebug hookなしで確認した。console / page error、失敗request、HTTP 4xx / 5xxは0件だった。残るproduction採否ゲートはPulse / Spread各1本の通常UI欠陥特化ランだけとする。

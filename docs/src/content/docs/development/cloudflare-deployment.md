@@ -30,6 +30,16 @@ arena-core Worker
 | Cloudflare Version ID | `e86f90b8-ea15-4d1d-b01b-59e4f9fea78e` |
 | 公開確認日 | 2026-07-17 |
 
+v0.7 RC6はproductionへ配分せず、次のVersion Previewで確認します。
+
+| 項目 | 値 |
+| --- | --- |
+| Preview URL | `https://v07-final-expedition-rc6-arena-core.garchomp-game.workers.dev` |
+| アプリ / ルール版 | `0.7.0` / `phaser-v0.7.0-final-expedition-rc6` |
+| Git commit | `f06c9b585cc4` |
+| Cloudflare Version ID | `a9522576-e9ff-4fce-92df-35c9c732849c` |
+| 実URL確認日 | 2026-07-19 |
+
 静的ファイルの取得ではWorkerスクリプトを実行しません。ランキング、共有履歴、アカウントAPIは公開ベータ後に`/api/*`として追加し、それまではプロフィール、履歴、ローカルランキングをブラウザの`localStorage`へ保存します。
 
 ## 初回認証
