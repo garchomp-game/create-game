@@ -44,6 +44,41 @@ describe("createArenaScreenViewModel", () => {
     expect(viewModel.statusText).toContain("履歴テスト");
   });
 
+  it("explains PB eligibility consistently in run history", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.state.status = "title";
+    world.state.elapsed = 430;
+    world.stats.encounterMetrics.expedition = createExpeditionMetrics("defeat", 430);
+    const defeat = createRecord(world, "expedition", "final-expedition");
+
+    const victory = structuredClone(defeat);
+    victory.id = "run-victory";
+    victory.encounterMetrics.expedition!.outcome = "victory";
+
+    const debug = structuredClone(victory);
+    debug.id = "run-debug";
+    debug.rankEligibility = { eligible: false, reasons: ["debugRun"] };
+
+    const endless = createRecord(world);
+    endless.id = "run-non-standard";
+    endless.rankEligibility = { eligible: false, reasons: ["nonStandardRuleset"] };
+
+    const viewModel = createArenaScreenViewModel(
+      world,
+      SIMULATION_CONFIG,
+      createUiState({
+        secondaryMenu: "history",
+        records: [defeat, victory, debug, endless],
+      }),
+    );
+
+    expect(viewModel.statusText).toContain("敗退 07:10.00");
+    expect(viewModel.statusText).toContain("PB対象外: 遠征未完遂");
+    expect(viewModel.statusText).toContain("PB対象外: デバッグ操作");
+    expect(viewModel.statusText).toContain("PB対象外: 標準外ルール");
+    expect(viewModel.statusText).toMatch(/完遂 07:10\.00.*PB対象(?:\n|$)/);
+  });
+
   it("shows the selected ranking scope, seed, and ruleset", () => {
     const world = createWorld(SIMULATION_CONFIG);
     world.state.status = "title";

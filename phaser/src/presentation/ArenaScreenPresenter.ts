@@ -365,7 +365,9 @@ function formatHistory(uiState: ArenaUiState): string {
     lines[0] =
       `${TEXT.ui.historyTitle}  ${filterLabel}  ${uiState.historyPage + 1}/${pageCount}`;
     uiState.records.slice(start, start + pageSize).forEach((record, index) => {
-      const eligibility = isRankableRun(record) ? "対象" : "対象外";
+      const eligibility = isRankableRun(record)
+        ? "PB対象"
+        : `PB対象外: ${formatRankIneligibility(record)}`;
       const recordResult = record.modeId === "expedition"
         ? `${record.encounterMetrics.expedition?.outcome === "victory" ? "完遂" : "敗退"} ${formatTimePrecise(record.elapsed)}  戦術${getExpeditionTacticalScore(record).toString().padStart(6)}点`
         : `${record.score.toString().padStart(6)}点  ${formatTime(record.elapsed)}`;

@@ -51,6 +51,7 @@ describe("ExpeditionController", () => {
       [],
     );
     expect(commanderActive.some((event) => event.type === "elite.commander.spawned")).toBe(true);
+    expect(commander.world.expedition!.objective).toBe("指揮個体を撃破する");
     const commanderEnemy = commander.world.enemies.find((enemy) => enemy.elite);
     expect(commanderEnemy).toMatchObject({
       hp: 500,
@@ -81,6 +82,9 @@ describe("ExpeditionController", () => {
         type: "expedition.encounter.recovery.started",
         cardId: "commander-counterattack",
       }),
+    );
+    expect(commander.world.expedition!.objective).toBe(
+      "反攻部隊を迎撃し、突破口を維持する",
     );
     commander.world.state.elapsed =
       commander.world.expedition!.director.recoveryStartedAt! + 4.5;
@@ -549,6 +553,9 @@ describe("ExpeditionController", () => {
       activeStartedAt: null,
       reason: "deployment-timeout",
     });
+    expect(fixture.world.expedition!.objective).toBe(
+      "反攻部隊を迎撃し、突破口を維持する",
+    );
 
     const repeated = fixture.controller.update(
       fixture.world,
@@ -620,6 +627,9 @@ describe("ExpeditionController", () => {
       activeStartedAt,
       activeElapsed: 120,
     });
+    expect(fixture.world.expedition!.objective).toBe(
+      "反攻部隊を迎撃し、突破口を維持する",
+    );
 
     const repeated = fixture.controller.update(
       fixture.world,

@@ -44,10 +44,11 @@ import {
 const ACT_OBJECTIVES: Record<string, string> = {
   "perimeter-watch": "四方から侵入する先遣隊を迎撃する",
   "first-assault": "重装体を分断し各個撃破する",
-  counterattack: "指揮個体を撃破する",
+  counterattack: "反攻部隊を迎撃し、突破口を維持する",
   breakthrough: "高速体と射撃体の包囲を突破する",
   "command-ship": "敵指揮艦と増援を同時に撃破する",
 };
+const COMMANDER_OBJECTIVE = "指揮個体を撃破する";
 
 export class ExpeditionController {
   private readonly director = new EncounterDirector({
@@ -299,6 +300,9 @@ export class ExpeditionController {
     }
     if (event.type === "encounter.card.active.started") {
       const card = this.director.getCard(event.cardId);
+      if (card.tags.includes("commander")) {
+        expedition.objective = COMMANDER_OBJECTIVE;
+      }
       if (card.tags.includes("boss")) {
         const bossEvents: GameEvent[] = [{
           type: "expedition.encounter.active.started",
@@ -336,6 +340,7 @@ export class ExpeditionController {
     }
     if (event.type === "encounter.card.recovery.started") {
       expedition.spawnOverride = null;
+      expedition.objective = ACT_OBJECTIVES[expedition.actId]!;
       return [{
         type: "expedition.encounter.recovery.started",
         cardId: event.cardId,
@@ -355,6 +360,7 @@ export class ExpeditionController {
     expedition.currentDirection = null;
     expedition.currentGeometryId = null;
     expedition.deployedCardKey = null;
+    expedition.objective = ACT_OBJECTIVES[expedition.actId]!;
     const type = event.type.replace(
       "encounter.card.",
       "expedition.encounter.",
