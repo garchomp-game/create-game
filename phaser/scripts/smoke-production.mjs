@@ -130,6 +130,20 @@ try {
   await page.waitForTimeout(300);
   await capture(page, "11-returned-title.png");
 
+  await clickCanvasLogical(page, 480, 339);
+  const spreadChoice = page.locator(
+    "[data-choice-kind='weapon'][data-choice-id='spread']",
+  );
+  await spreadChoice.waitFor({ state: "visible" });
+  await capture(page, "12-expedition-weapon-select.png");
+  await spreadChoice.click();
+  await spreadChoice.waitFor({ state: "hidden" });
+  await page.waitForTimeout(300);
+  await capture(page, "13-expedition-spread.png");
+  await pressGameKey(page, "Escape");
+  await clickCanvasLogical(page, 480, 409);
+  await page.waitForTimeout(300);
+
   await clickCanvasLogical(page, 480, 499);
   await page.waitForURL(/\/beta-info(?:\.html)?\/?$/);
   assert((await page.locator("#app-version").textContent()) === expected.appVersion, "beta app mismatch");
@@ -143,7 +157,7 @@ try {
   );
   const notices = await page.request.get(`${baseUrl}/third-party-notices.txt`);
   assert(notices.status() === 200, `third-party notices returned ${notices.status()}`);
-  await capture(page, "12-beta-info.png", true);
+  await capture(page, "14-beta-info.png", true);
 
   assert(consoleErrors.length === 0, `console errors: ${consoleErrors.join(" | ")}`);
   assert(pageErrors.length === 0, `page errors: ${pageErrors.join(" | ")}`);
