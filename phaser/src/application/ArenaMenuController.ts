@@ -9,6 +9,12 @@ import type {
   MenuAction,
   SecondaryMenu,
 } from "./ArenaMenuTypes";
+import {
+  DEFAULT_MODE_ID,
+  DEFAULT_STAGE_ID,
+  EXPEDITION_MODE_ID,
+  FINAL_EXPEDITION_STAGE_ID,
+} from "../config/version";
 
 export type ArenaMenuState = {
   secondaryMenu: SecondaryMenu | null;
@@ -16,6 +22,7 @@ export type ArenaMenuState = {
   rankingClearPending: boolean;
   historyPage: number;
   historyWeaponFilter: HistoryWeaponFilter;
+  rankingBoardIndex: number;
   notice: string | null;
 };
 
@@ -24,10 +31,11 @@ export type ArenaMenuActionContext = {
   profileId: string;
   settings: ProfileSettings;
   runHistory: readonly RunRecord[];
+  rankingBoardCount?: number;
 };
 
 export type ArenaMenuCommand =
-  | { type: "showWeaponSelect" }
+  | { type: "showWeaponSelect"; modeId: string; stageId: string }
   | { type: "startRun"; weaponType: WeaponTypeId }
   | { type: "showTitle" }
   | { type: "showBetaInfo" }
@@ -83,7 +91,20 @@ export class ArenaMenuController {
   ): ArenaMenuActionOutcome {
     if (action === "start" && context.status === "title") {
       this.setNotice(null);
-      return handled({ type: "showWeaponSelect" });
+      return handled({
+        type: "showWeaponSelect",
+        modeId: DEFAULT_MODE_ID,
+        stageId: DEFAULT_STAGE_ID,
+      });
+    }
+
+    if (action === "startExpedition" && context.status === "title") {
+      this.setNotice(null);
+      return handled({
+        type: "showWeaponSelect",
+        modeId: EXPEDITION_MODE_ID,
+        stageId: FINAL_EXPEDITION_STAGE_ID,
+      });
     }
 
     if (action === "selectPulse" || action === "selectSpread") {
@@ -168,6 +189,16 @@ export class ArenaMenuController {
       return handled();
     }
 
+    if (action === "rankingPrevious" || action === "rankingNext") {
+      const count = Math.max(1, context.rankingBoardCount ?? 1);
+      const direction = action === "rankingNext" ? 1 : -1;
+      this.menuState.rankingBoardIndex =
+        (this.menuState.rankingBoardIndex + direction + count) % count;
+      this.menuState.rankingClearPending = false;
+      this.menuState.notice = null;
+      return handled();
+    }
+
     if (action === "clearRankings") {
       if (!this.menuState.rankingClearPending) {
         this.menuState.rankingClearPending = true;
@@ -180,6 +211,7 @@ export class ArenaMenuController {
         ? "ランキングを消去しました"
         : "ランキングを消去できませんでした";
       this.menuState.rankingClearPending = false;
+      if (result.ok) this.menuState.rankingBoardIndex = 0;
       return result.ok
         ? handled(undefined, undefined, {
             history: result.history,
@@ -293,6 +325,7 @@ function createInitialMenuState(): ArenaMenuState {
     rankingClearPending: false,
     historyPage: 0,
     historyWeaponFilter: "all",
+    rankingBoardIndex: 0,
     notice: null,
   };
 }

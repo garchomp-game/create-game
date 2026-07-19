@@ -1,4 +1,5 @@
 import type {
+  BossHealDropSuppressionReason,
   EnemyTypeId,
   GameEvent,
   Pickup,
@@ -8,6 +9,7 @@ import type {
 } from "../../domain/types";
 import { circleCircle, circleRect } from "../../math/geometry";
 import { getThreatMultipliers } from "../threatDirector";
+import { getDifficultyElapsed } from "../difficultyClock";
 
 export function updatePickups(
   world: WorldState,
@@ -64,6 +66,13 @@ function spawnPickupsFromKills(
   events: GameEvent[],
 ): void {
   const killEvents = events.filter((event) => event.type === "enemy.killed");
+  const boss = world.expedition?.boss?.status === "active"
+    ? world.expedition.boss
+    : null;
+  const suppressedHealDrops: Record<BossHealDropSuppressionReason, number> = {
+    cooldown: 0,
+    "repair-budget-exhausted": 0,
+  };
   for (const event of killEvents) {
     if (event.xpAwarded > 0) {
       const xpPickup = createXpPickup(world, config, event.position, event.xpAwarded);
@@ -79,15 +88,28 @@ function spawnPickupsFromKills(
       });
     }
 
+    if (boss && event.enemyId === boss.enemyId) continue;
+
+    if (boss?.sustain.repairBudgetRemaining === 0) {
+      suppressedHealDrops["repair-budget-exhausted"] += 1;
+      continue;
+    }
+    if (boss && world.state.elapsed < boss.sustain.nextHealDropAt) {
+      suppressedHealDrops.cooldown += 1;
+      continue;
+    }
+
     const rollIndex = world.runtime.healDropRollIndex;
-    const shouldSpawnHeal = rollHealDrop(
-      config,
-      event.enemyId,
-      event.enemyType,
-      rollIndex,
-      world.runtime.healDropMissCount,
-      getThreatMultipliers(config, world.state.elapsed).healDrop,
-    );
+    const shouldSpawnHeal = boss
+      ? true
+      : rollHealDrop(
+          config,
+          event.enemyId,
+          event.enemyType,
+          rollIndex,
+          world.runtime.healDropMissCount,
+          getThreatMultipliers(config, getDifficultyElapsed(world)).healDrop,
+        );
     world.runtime.healDropRollIndex += 1;
 
     if (!shouldSpawnHeal) {
@@ -96,7 +118,22 @@ function spawnPickupsFromKills(
     }
 
     world.runtime.healDropMissCount = 0;
-    const healPickup = createHealPickup(world, config, event.position);
+    if (boss) {
+      boss.sustain.nextHealDropAt =
+        world.state.elapsed + boss.sustain.healDropMinimumIntervalSeconds;
+    }
+    const healPickup = createHealPickup(
+      world,
+      config,
+      event.position,
+      boss?.sustain.repairBudgetRemaining ?? undefined,
+    );
+    if (boss && boss.sustain.repairBudgetRemaining !== null) {
+      boss.sustain.repairBudgetRemaining = Math.max(
+        0,
+        boss.sustain.repairBudgetRemaining - healPickup.healValue,
+      );
+    }
     world.pickups.push(healPickup);
     events.push({
       type: "pickup.spawned",
@@ -107,6 +144,22 @@ function spawnPickupsFromKills(
       healValue: healPickup.healValue,
       lifetime: config.pickup.healLifetime,
     });
+  }
+  if (boss) {
+    for (const reason of [
+      "cooldown",
+      "repair-budget-exhausted",
+    ] as const) {
+      const count = suppressedHealDrops[reason];
+      if (count <= 0) continue;
+      events.push({
+        type: "boss.heal-drop.suppressed",
+        bossId: boss.bossId,
+        count,
+        reason,
+        elapsed: world.state.elapsed,
+      });
+    }
   }
 }
 
@@ -131,6 +184,7 @@ function createHealPickup(
   world: WorldState,
   config: SimulationConfig,
   origin: Vec2,
+  maximumHealValue = Number.POSITIVE_INFINITY,
 ): Pickup {
   return {
     id: `pickup-${world.nextPickupId++}`,
@@ -138,9 +192,12 @@ function createHealPickup(
     position: findPickupPosition(world, config, origin, config.pickup.healRadius),
     radius: config.pickup.healRadius,
     xpValue: 0,
-    healValue: Math.max(
-      config.pickup.healMinimum,
-      Math.floor(getCurrentMaxHp(world, config) * config.pickup.healRatio),
+    healValue: Math.min(
+      maximumHealValue,
+      Math.max(
+        config.pickup.healMinimum,
+        Math.floor(getCurrentMaxHp(world, config) * config.pickup.healRatio),
+      ),
     ),
     lifetime: config.pickup.healLifetime,
   };

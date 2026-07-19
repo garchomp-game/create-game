@@ -1,11 +1,18 @@
-import { selectRanking } from "../application/runRecords";
+import {
+  createRankingBoardQueries,
+  selectRanking,
+} from "../application/runRecords";
 import type {
   HistoryWeaponFilter,
   MenuAction,
   SecondaryMenu,
 } from "../application/ArenaMenuTypes";
 import type { LocalProfile, ProfileSettings } from "../domain/profile";
-import type { RunContext, RunRecord } from "../domain/runRecords";
+import type {
+  RunComparisonQuery,
+  RunContext,
+  RunRecord,
+} from "../domain/runRecords";
 
 export type { HistoryWeaponFilter } from "../application/ArenaMenuTypes";
 
@@ -19,10 +26,14 @@ export type ArenaUiState = {
   secondaryMenu: SecondaryMenu | null;
   records: RunRecord[];
   ranking: RunRecord[];
+  rankingQuery: RunComparisonQuery | null;
+  rankingBoardIndex: number;
+  rankingBoardCount: number;
   profile: LocalProfile;
   settings: ProfileSettings;
   latestRunRecord: RunRecord | null;
   previousBest: RunRecord | null;
+  previousWeaponBest: RunRecord | null;
   historyClearPending: boolean;
   rankingClearPending: boolean;
   historyPage: number;
@@ -30,6 +41,7 @@ export type ArenaUiState = {
   focusedMenuAction: MenuAction | null;
   notice: string | null;
   releaseIdentity: ReleaseIdentity;
+  runContext?: RunContext | null;
 };
 
 export type CreateArenaUiStateInput = {
@@ -41,8 +53,10 @@ export type CreateArenaUiStateInput = {
   settings: ProfileSettings;
   latestRunRecord: RunRecord | null;
   previousBest: RunRecord | null;
+  previousWeaponBest: RunRecord | null;
   historyClearPending: boolean;
   rankingClearPending: boolean;
+  rankingBoardIndex?: number;
   historyPage: number;
   historyWeaponFilter: HistoryWeaponFilter;
   focusedMenuAction: MenuAction | null;
@@ -56,21 +70,34 @@ export function createArenaUiState(input: CreateArenaUiStateInput): ArenaUiState
       record.profileId === input.profile.id &&
       (input.historyWeaponFilter === "all" || record.weaponId === input.historyWeaponFilter),
   );
-  const ranking = input.runContext
-    ? selectRanking(
-        input.runRankings.filter((record) => record.profileId === input.profile.id),
-        input.runContext,
-      )
+  const rankingBoards = createRankingBoardQueries(
+    input.runRankings,
+    input.profile.id,
+    input.runContext,
+  );
+  const rankingBoardIndex = Math.max(
+    0,
+    Math.min(input.rankingBoardIndex ?? 0, rankingBoards.length - 1),
+  );
+  const rankingQuery = rankingBoards[rankingBoardIndex] ?? null;
+  const ranking = rankingQuery
+    ? selectRanking(input.runRankings, rankingQuery)
     : [];
 
   return {
     secondaryMenu: input.secondaryMenu,
     records,
     ranking,
+    rankingQuery: rankingQuery ? { ...rankingQuery } : null,
+    rankingBoardIndex,
+    rankingBoardCount: rankingBoards.length,
     profile: { ...input.profile },
     settings: { ...input.settings },
     latestRunRecord: input.latestRunRecord ? { ...input.latestRunRecord } : null,
     previousBest: input.previousBest ? { ...input.previousBest } : null,
+    previousWeaponBest: input.previousWeaponBest
+      ? { ...input.previousWeaponBest }
+      : null,
     historyClearPending: input.historyClearPending,
     rankingClearPending: input.rankingClearPending,
     historyPage: input.historyPage,
@@ -78,5 +105,6 @@ export function createArenaUiState(input: CreateArenaUiStateInput): ArenaUiState
     focusedMenuAction: input.focusedMenuAction,
     notice: input.notice,
     releaseIdentity: { ...input.releaseIdentity },
+    runContext: input.runContext ? { ...input.runContext } : null,
   };
 }

@@ -8,7 +8,7 @@ import {
   DEFAULT_DIFFICULTY_ID,
   DEFAULT_MODE_ID,
   DEFAULT_STAGE_ID,
-  RULESET_VERSION,
+  resolveRunRulesetVersion,
 } from "../../config/version";
 import type { RunContext, RunOrigin } from "../../domain/runRecords";
 import type {
@@ -22,12 +22,14 @@ import { circleRect } from "../../math/geometry";
 import type { RandomStreams } from "../../math/random";
 import { createRunResultSummary } from "../../simulation/resultSummary";
 import { composeBuild } from "../../simulation/buildComposer";
+import { getDifficultyElapsed } from "../../simulation/difficultyClock";
 import { getWaveBand } from "../../simulation/waveDirector";
 import type {
   ArenaObstacleContactCounts,
   ArenaPerformanceSnapshot,
   ArenaRunExport,
 } from "../phaser/ArenaDebugBridge";
+import type { ArenaRenderPerformanceSnapshot } from "../phaser/PhaserArenaRenderer";
 
 export type CreateArenaRunExportInput = {
   capturedAt: string;
@@ -41,16 +43,20 @@ export type CreateArenaRunExportInput = {
   runConfig: SimulationConfig;
   world: WorldState;
   performance: ArenaPerformanceSnapshot;
+  renderPerformance: ArenaRenderPerformanceSnapshot;
   lastEvents: readonly GameEvent[];
 };
 
 export function createArenaRunExport(input: CreateArenaRunExportInput): ArenaRunExport {
   const { context, world } = input;
+  const difficultyElapsed = getDifficultyElapsed(world);
   return {
     capturedAt: input.capturedAt,
     game: "arena-core-phaser",
     appVersion: APP_VERSION,
-    rulesetVersion: RULESET_VERSION,
+    rulesetVersion:
+      context?.rulesetVersion ??
+      resolveRunRulesetVersion(DEFAULT_MODE_ID, DEFAULT_STAGE_ID),
     configVersion: SIMULATION_CONFIG_VERSION,
     buildCommit: input.buildCommit,
     runId: context?.id ?? "unknown",
@@ -69,8 +75,10 @@ export function createArenaRunExport(input: CreateArenaRunExportInput): ArenaRun
     },
     status: world.state.status,
     performance: { ...input.performance },
+    renderPerformance: structuredClone(input.renderPerformance),
     elapsed: world.state.elapsed,
-    wave: { ...getWaveBand(input.runConfig, world.state.elapsed) },
+    difficultyElapsed,
+    wave: { ...getWaveBand(input.runConfig, difficultyElapsed) },
     resultSummary: createRunResultSummary(world, input.runConfig),
     stats: copyRunStats(world),
     counts: {
@@ -99,6 +107,7 @@ export function createArenaRunExport(input: CreateArenaRunExportInput): ArenaRun
       world.progression.extraUpgradeRanks,
     ),
     encounter: structuredClone(world.encounter),
+    expedition: world.expedition ? structuredClone(world.expedition) : null,
     lastEvents: input.lastEvents.map((event) => structuredClone(event)),
   };
 }

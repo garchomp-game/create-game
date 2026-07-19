@@ -4,10 +4,12 @@ import type {
   GameEvent,
   RandomSource,
   SimulationConfig,
+  Vec2,
   WorldState,
 } from "../../domain/types";
 import { getWaveBand, selectEnemyTypeForWave } from "../waveDirector";
 import { getEnemyHpMultiplier, getThreatMultipliers } from "../threatDirector";
+import { getDifficultyElapsed } from "../difficultyClock";
 import { getActiveEncounterDefinition } from "./encounterSystem";
 
 export function updateSpawner(
@@ -53,8 +55,6 @@ function spawnEnemy(
   random: RandomSource,
   config: SimulationConfig,
 ): Enemy {
-  const definition = config.enemies[typeId];
-  const threat = getThreatMultipliers(config, world.state.elapsed);
   const margin = 32;
   const side = Math.floor(random() * 4);
   let x = 0;
@@ -74,12 +74,25 @@ function spawnEnemy(
     y = random() * config.arena.height;
   }
 
+  return spawnEnemyAtPosition(world, typeId, difficulty, { x, y }, config);
+}
+
+export function spawnEnemyAtPosition(
+  world: WorldState,
+  typeId: Enemy["typeId"],
+  difficulty: Difficulty,
+  position: Vec2,
+  config: SimulationConfig,
+): Enemy {
+  const definition = config.enemies[typeId];
+  const difficultyElapsed = getDifficultyElapsed(world);
+  const threat = getThreatMultipliers(config, difficultyElapsed);
   const enemy: Enemy = {
     id: `enemy-${world.nextEnemyId++}`,
     typeId,
-    position: { x, y },
+    position: { ...position },
     radius: definition.radius,
-    hp: Math.ceil(definition.hp * getEnemyHpMultiplier(config, world.state.elapsed, typeId)),
+    hp: Math.ceil(definition.hp * getEnemyHpMultiplier(config, difficultyElapsed, typeId)),
     damage: Math.ceil(definition.damage * threat.damage),
     speed:
       definition.speed *
@@ -96,7 +109,19 @@ function spawnEnemy(
 }
 
 export function getSpawnWave(world: WorldState, config: SimulationConfig) {
-  const wave = getWaveBand(config, world.state.elapsed);
+  const wave = getWaveBand(config, getDifficultyElapsed(world));
+  const expedition = world.expedition?.spawnOverride;
+  if (expedition) {
+    return {
+      ...wave,
+      spawnInterval: Math.max(
+        0.2,
+        wave.spawnInterval * expedition.intervalMultiplier,
+      ),
+      spawnBudget: Math.max(wave.spawnBudget, expedition.budget),
+      enemyWeights: { ...expedition.enemyWeights },
+    };
+  }
   const encounter = getActiveEncounterDefinition(world, config);
   if (!encounter) return wave;
   return {

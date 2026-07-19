@@ -169,3 +169,16 @@ Phaser 4.2.1移行後は、headless Chromeが実GPUではなくSwiftShaderを使
 同じIntel GPUのdev耐久は平均15.84ms、p95 34ms、最大76.4ms、50ms超過9件、終端外部FPS31.69でした。productionはp95と長フレームを改善しましたが、後半の終端FPSは同等です。build有無よりrenderer、GPU、画面読取設定の差が大きいため、比較時は起動条件を必ず記録します。
 
 性能計装は[Phaser TimeStep](https://docs.phaser.io/api-documentation/class/core-timestep)の`rawDelta`と`actualFps`を使います。[Web Vitals](https://github.com/GoogleChrome/web-vitals)はLCP / INP / CLS、[Long Tasks API](https://www.w3.org/TR/longtasks-1/)は50ms以上のメインスレッド占有を対象とするため、現段階では実行時依存を追加しません。
+
+## v0.7 Expedition統合QA
+
+通常ゲートに加え、明示実行の到達性probeを使います。
+
+```bash
+cd phaser
+npm run probe:v07
+```
+
+このprobeはPulse / Spreadへ同じ3 seedを与え、15分以内の終了、5 Act、Commander出現と撃破、ボス第2段階、3攻撃、最長展開空白、敵・弾・Pickup上限を検査します。両武器の全勝は要求せず、各武器に少なくとも1勝と1本以上の自然phase 2到達があることを確認します。同一seedを再実行し、入力、イベント列、終了worldのhashも比較します。通常の`npm test`へ含めず、統合QAとルール変更時に明示実行します。
+
+RC5は大型黄HP 8、Commander HP 500、追跡ボス、通常ウェーブ継続による技術基準です。Commander、Chargerの予告、構造化侵入、ボス3攻撃を専用ブラウザfixtureで固定します。RC6では通常probeとrepair比較probeを別コマンドとして扱い、未実行側は明示的にskipします。自動入力は人間採否を代替しないため、production昇格にはPulse / Spread各1本以上の通常UI欠陥特化ランを必要とします。RC5基準は[v0.7 RC5統合QAレポート](../../playtest/v07-qa-report/)、現行RC6は[RC6統合QAレポート](../../playtest/v07-rc6-integration-report/)を参照してください。

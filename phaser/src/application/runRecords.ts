@@ -1,11 +1,17 @@
 import {
+  fromRunCentiseconds,
   RUN_RANKING_LIMIT,
   RUN_RECORD_SCHEMA_VERSION,
+  RUN_TIME_PRECISION_SECONDS,
+  toRunCentiseconds,
 } from "../domain/runRecords";
 import type {
   CreateRunRecordInput,
   RankEligibility,
   RunComparisonKey,
+  RunComparisonQuery,
+  RunComparisonScope,
+  RunContext,
   RunOrigin,
   RunRecord,
 } from "../domain/runRecords";
@@ -51,7 +57,9 @@ export function createRunRecord(input: CreateRunRecordInput): RunRecord {
       eligible: context.rankEligibility.eligible,
       reasons: [...context.rankEligibility.reasons],
     },
-    elapsed: summary.elapsed,
+    elapsed: context.modeId === "expedition"
+      ? fromRunCentiseconds(toRunCentiseconds(summary.elapsed))
+      : summary.elapsed,
     score: summary.score,
     level: summary.level,
     extraLevel: summary.extraLevel,
@@ -107,13 +115,59 @@ function createEmptyEncounterMetrics(): EncounterRunStats {
   };
 }
 
-export function compareRunRecords(left: RunRecord, right: RunRecord): number {
+export function compareRunPerformance(left: RunRecord, right: RunRecord): number {
+  if (left.modeId === "expedition" && right.modeId === "expedition") {
+    return (
+      toRunCentiseconds(left.elapsed) - toRunCentiseconds(right.elapsed) ||
+      getExpeditionTacticalScore(right) - getExpeditionTacticalScore(left)
+    );
+  }
+
   return (
     right.score - left.score ||
-    right.elapsed - left.elapsed ||
+    normalizeEndlessTieBreakTime(right.elapsed) -
+      normalizeEndlessTieBreakTime(left.elapsed)
+  );
+}
+
+function normalizeEndlessTieBreakTime(elapsed: number): number {
+  // Preserve the published v0.6.8 ranking boundary while Expedition uses integer units.
+  return Math.round(elapsed / RUN_TIME_PRECISION_SECONDS) * RUN_TIME_PRECISION_SECONDS;
+}
+
+export function compareRunRecords(left: RunRecord, right: RunRecord): number {
+  return (
+    compareRunPerformance(left, right) ||
     left.capturedAt.localeCompare(right.capturedAt) ||
     left.id.localeCompare(right.id)
   );
+}
+
+export function createRunComparisonQuery(
+  source: Pick<
+    RunContext | RunRecord,
+    | "profileId"
+    | "modeId"
+    | "stageId"
+    | "difficultyId"
+    | "rulesetVersion"
+    | "seedCategory"
+    | "weaponId"
+    | "seed"
+  >,
+  comparisonScope: RunComparisonScope,
+): RunComparisonQuery {
+  return {
+    profileId: source.profileId,
+    modeId: source.modeId,
+    stageId: source.stageId,
+    difficultyId: source.difficultyId,
+    rulesetVersion: source.rulesetVersion,
+    seedCategory: source.seedCategory,
+    comparisonScope,
+    weaponId: comparisonScope === "weapon" ? source.weaponId : null,
+    seed: source.seedCategory === "fixed" ? source.seed : null,
+  };
 }
 
 export function matchesComparisonKey(
@@ -121,6 +175,7 @@ export function matchesComparisonKey(
   key: RunComparisonKey,
 ): boolean {
   return (
+    record.profileId === key.profileId &&
     record.modeId === key.modeId &&
     record.stageId === key.stageId &&
     record.difficultyId === key.difficultyId &&
@@ -129,20 +184,101 @@ export function matchesComparisonKey(
   );
 }
 
+export function matchesComparisonQuery(
+  record: RunRecord,
+  query: RunComparisonQuery,
+): boolean {
+  if (!matchesComparisonKey(record, query)) return false;
+  if (query.seedCategory === "fixed" && record.seed !== query.seed) return false;
+  if (query.comparisonScope === "weapon" && record.weaponId !== query.weaponId) {
+    return false;
+  }
+  return true;
+}
+
+export function isRankableRun(record: RunRecord): boolean {
+  if (!record.rankEligibility.eligible) return false;
+  return (
+    record.modeId !== "expedition" ||
+    record.encounterMetrics.expedition?.outcome === "victory"
+  );
+}
+
+export function getExpeditionTacticalScore(record: RunRecord): number {
+  const expedition = record.encounterMetrics.expedition;
+  if (!expedition) return record.score;
+  if (expedition.tacticalScore > 0) return expedition.tacticalScore;
+  if (expedition.scoreBeforeBonus > 0) return expedition.scoreBeforeBonus;
+  return Math.max(
+    0,
+    record.score - expedition.clearScoreBonus - expedition.timeScoreBonus,
+  );
+}
+
 export function selectRanking(
   records: readonly RunRecord[],
-  key: RunComparisonKey,
+  query: RunComparisonQuery,
   limit = RUN_RANKING_LIMIT,
 ): RunRecord[] {
   return records
-    .filter((record) => record.rankEligibility.eligible && matchesComparisonKey(record, key))
+    .filter((record) => isRankableRun(record) && matchesComparisonQuery(record, query))
     .sort(compareRunRecords)
     .slice(0, Math.max(0, limit));
 }
 
 export function selectPersonalBest(
   records: readonly RunRecord[],
-  key: RunComparisonKey,
+  query: RunComparisonQuery,
 ): RunRecord | null {
-  return selectRanking(records, key, 1)[0] ?? null;
+  return selectRanking(records, query, 1)[0] ?? null;
+}
+
+export function createRankingBoardQueries(
+  records: readonly RunRecord[],
+  profileId: string,
+  preferredContext: RunContext | null = null,
+): RunComparisonQuery[] {
+  const candidates: RunComparisonQuery[] = [];
+  if (preferredContext?.profileId === profileId) {
+    candidates.push(
+      createRunComparisonQuery(preferredContext, "overall"),
+      createRunComparisonQuery(preferredContext, "weapon"),
+    );
+  }
+
+  records
+    .filter((record) => record.profileId === profileId && isRankableRun(record))
+    .sort(
+      (left, right) =>
+        right.capturedAt.localeCompare(left.capturedAt) ||
+        right.id.localeCompare(left.id),
+    )
+    .forEach((record) => {
+      candidates.push(
+        createRunComparisonQuery(record, "overall"),
+        createRunComparisonQuery(record, "weapon"),
+      );
+    });
+
+  const seen = new Set<string>();
+  return candidates.filter((query) => {
+    const key = serializeRunComparisonQuery(query);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function serializeRunComparisonQuery(query: RunComparisonQuery): string {
+  return [
+    query.profileId,
+    query.modeId,
+    query.stageId,
+    query.difficultyId,
+    query.rulesetVersion,
+    query.seedCategory,
+    query.seedCategory === "fixed" ? query.seed : "random",
+    query.comparisonScope,
+    query.comparisonScope === "weapon" ? query.weaponId : "all",
+  ].join("\u001f");
 }

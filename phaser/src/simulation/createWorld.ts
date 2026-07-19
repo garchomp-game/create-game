@@ -145,6 +145,29 @@ export function createWorld(config: SimulationConfig): WorldState {
         collapseStartedAt: null,
         peakCollapseStage: 0,
         collapseDamageTaken: 0,
+        commander: {
+          spawned: 0,
+          killed: 0,
+          telegraphs: 0,
+          traitActivations: 0,
+          reinforcementsSpawned: 0,
+          pressureReleases: 0,
+          supportUnitsReleased: 0,
+          lifetimeTotal: 0,
+          killsByWeapon: { pulse: 0, spread: 0, pierce: 0 },
+        },
+        charger: {
+          spawned: 0,
+          telegraphs: 0,
+          charges: 0,
+          playerHits: 0,
+          avoided: 0,
+          obstacleInterruptions: 0,
+          boundaryInterruptions: 0,
+          recoveries: 0,
+          killed: 0,
+          killsByWeapon: { pulse: 0, spread: 0, pierce: 0 },
+        },
       },
       weaponMetrics: {
         pulse: createWeaponRunStats(),
@@ -162,6 +185,12 @@ export function createWorld(config: SimulationConfig): WorldState {
     },
     weaponIdentity: {
       spreadSweepCharge: false,
+    },
+    eliteState: {
+      commanderIds: [],
+    },
+    enemyActionState: {
+      chargerIds: [],
     },
     encounter: {
       director: {

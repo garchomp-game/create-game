@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { EXTRA_UPGRADE_IDS, UPGRADE_IDS, WEAPON_TYPE_IDS } from "./types";
+import {
+  BOSS_ATTACK_IDS,
+  EXPEDITION_TIME_MEDALS,
+  EXTRA_UPGRADE_IDS,
+  UPGRADE_IDS,
+  WEAPON_TYPE_IDS,
+} from "./types";
 import type {
   CapstoneRunStats,
   EncounterRunStats,
@@ -16,6 +22,20 @@ import type {
 export const RUN_RECORD_SCHEMA_VERSION = 2 as const;
 export const RUN_HISTORY_LIMIT = 50;
 export const RUN_RANKING_LIMIT = 10;
+export const RUN_RANKING_GROUP_LIMIT = 16;
+export const RUN_TIME_PRECISION_SECONDS = 0.01;
+export const RUN_TIME_CENTISECONDS_PER_SECOND = 100;
+
+export function toRunCentiseconds(elapsed: number): number {
+  return Math.max(0, Math.round(elapsed * RUN_TIME_CENTISECONDS_PER_SECOND));
+}
+
+export function fromRunCentiseconds(centiseconds: number): number {
+  return (
+    Math.max(0, Math.round(centiseconds)) /
+    RUN_TIME_CENTISECONDS_PER_SECOND
+  );
+}
 
 export const RUN_ORIGINS = ["manual", "debug", "test"] as const;
 export type RunOrigin = (typeof RUN_ORIGINS)[number];
@@ -36,6 +56,7 @@ export type RankEligibility = {
 };
 
 export type RunComparisonKey = {
+  profileId: string;
   modeId: string;
   stageId: string;
   difficultyId: string;
@@ -43,9 +64,17 @@ export type RunComparisonKey = {
   seedCategory: SeedCategory;
 };
 
+export const RUN_COMPARISON_SCOPES = ["overall", "weapon"] as const;
+export type RunComparisonScope = (typeof RUN_COMPARISON_SCOPES)[number];
+
+export type RunComparisonQuery = RunComparisonKey & {
+  comparisonScope: RunComparisonScope;
+  weaponId: WeaponTypeId | null;
+  seed: number | null;
+};
+
 export type RunContext = RunComparisonKey & {
   id: string;
-  profileId: string;
   startedAt: string;
   weaponId: WeaponTypeId;
   modifierIds: string[];
@@ -59,7 +88,6 @@ export type RunContext = RunComparisonKey & {
 export type RunRecord = RunComparisonKey & {
   schemaVersion: typeof RUN_RECORD_SCHEMA_VERSION;
   id: string;
-  profileId: string;
   capturedAt: string;
   weaponId: WeaponTypeId;
   modifierIds: string[];
@@ -109,10 +137,14 @@ const damageSourceSchema = z.discriminatedUnion("kind", [
     kind: z.literal("contact"),
     enemyId: z.string().min(1),
     enemyType: z.enum(["chaser", "brute", "fast", "ranged"]),
+    bossId: z.string().min(1).optional(),
+    bossAttackId: z.enum(BOSS_ATTACK_IDS).optional(),
   }),
   z.object({
     kind: z.literal("projectile"),
     projectileId: z.string().min(1),
+    bossId: z.string().min(1).optional(),
+    bossAttackId: z.enum(BOSS_ATTACK_IDS).optional(),
   }),
   z.object({
     kind: z.literal("collapse"),
@@ -256,6 +288,151 @@ const encounterMetricsSchema = z.object({
   collapseStartedAt: z.number().nonnegative().nullable().default(null),
   peakCollapseStage: z.number().int().nonnegative().default(0),
   collapseDamageTaken: z.number().nonnegative().default(0),
+  commander: z
+    .object({
+      spawned: z.number().int().nonnegative(),
+      killed: z.number().int().nonnegative(),
+      telegraphs: z.number().int().nonnegative(),
+      traitActivations: z.number().int().nonnegative(),
+      reinforcementsSpawned: z.number().int().nonnegative(),
+      pressureReleases: z.number().int().nonnegative(),
+      supportUnitsReleased: z.number().int().nonnegative(),
+      lifetimeTotal: z.number().nonnegative(),
+      killsByWeapon: z.object({
+        pulse: z.number().int().nonnegative(),
+        spread: z.number().int().nonnegative(),
+        pierce: z.number().int().nonnegative(),
+      }),
+    })
+    .optional(),
+  charger: z
+    .object({
+      spawned: z.number().int().nonnegative(),
+      telegraphs: z.number().int().nonnegative(),
+      charges: z.number().int().nonnegative(),
+      playerHits: z.number().int().nonnegative(),
+      avoided: z.number().int().nonnegative(),
+      obstacleInterruptions: z.number().int().nonnegative(),
+      boundaryInterruptions: z.number().int().nonnegative(),
+      recoveries: z.number().int().nonnegative(),
+      killed: z.number().int().nonnegative(),
+      killsByWeapon: z.object({
+        pulse: z.number().int().nonnegative(),
+        spread: z.number().int().nonnegative(),
+        pierce: z.number().int().nonnegative(),
+      }),
+    })
+    .optional(),
+  expedition: z
+    .object({
+      outcome: z.enum(["victory", "defeat"]).nullable(),
+      reachedActId: z.string().min(1).nullable(),
+      reachedActIds: z.array(z.string().min(1)),
+      actChanges: z.number().int().nonnegative(),
+      cardsSelected: z.number().int().nonnegative(),
+      cardsCompleted: z.number().int().nonnegative(),
+      cardsFailed: z.number().int().nonnegative(),
+      cardsInterrupted: z.number().int().nonnegative(),
+      cardsDeferred: z.number().int().nonnegative(),
+      structuredEnemiesSpawned: z.number().int().nonnegative(),
+      structuredSpawnsDeferred: z.number().int().nonnegative(),
+      longestMeaningfulGap: z.number().nonnegative(),
+      completedAt: z.number().nonnegative().nullable(),
+      tacticalScore: z.number().int().nonnegative().default(0),
+      scoreBeforeBonus: z.number().int().nonnegative().default(0),
+      clearScoreBonus: z.number().int().nonnegative().default(0),
+      timeScoreBonus: z.number().int().nonnegative().default(0),
+      timeMedal: z.enum(EXPEDITION_TIME_MEDALS).nullable().default(null),
+      bossFightDuration: z.number().nonnegative().nullable().default(null),
+      cardHistory: z
+        .array(
+          z.object({
+            cardId: z.string().min(1),
+            actId: z.string().min(1),
+            direction: z.enum(["north", "east", "south", "west"]),
+            selectedAt: z.number().nonnegative(),
+            selectedAtActElapsed: z.number().nonnegative(),
+            deploymentStartedAt: z.number().nonnegative().nullable(),
+            deploymentAttempts: z.number().int().nonnegative(),
+            deploymentLastReason: z.string().min(1).nullable(),
+            activeStartedAt: z.number().nonnegative().nullable(),
+            activeElapsed: z.number().nonnegative(),
+            recoveryStartedAt: z.number().nonnegative().nullable(),
+            finishedAt: z.number().nonnegative(),
+            outcome: z.enum(["completed", "failed", "interrupted"]),
+            reason: z.string().min(1),
+          }),
+        )
+        .default([]),
+    })
+    .optional(),
+  boss: z
+    .object({
+      bossId: z.string().min(1).nullable(),
+      spawnedAt: z.number().nonnegative().nullable(),
+      defeatedAt: z.number().nonnegative().nullable(),
+      remainingHp: z.number().nonnegative().nullable(),
+      maximumHp: z.number().positive().nullable(),
+      phaseReached: z.union([z.literal(0), z.literal(1), z.literal(2)]),
+      phaseChanges: z.number().int().nonnegative(),
+      lastAttackId: z.enum(BOSS_ATTACK_IDS).nullable(),
+      attacksTelegraphed: z.object({
+        "targeted-salvo": z.number().int().nonnegative(),
+        "escort-pincer": z.number().int().nonnegative(),
+        "command-pulse": z.number().int().nonnegative().default(0),
+      }),
+      attacksExecuted: z.object({
+        "targeted-salvo": z.number().int().nonnegative(),
+        "escort-pincer": z.number().int().nonnegative(),
+        "command-pulse": z.number().int().nonnegative().default(0),
+      }),
+      playerHitsByAttack: z.object({
+        "targeted-salvo": z.number().int().nonnegative(),
+        "escort-pincer": z.number().int().nonnegative(),
+        "command-pulse": z.number().int().nonnegative().default(0),
+      }),
+      damageTakenByAttack: z.object({
+        "targeted-salvo": z.number().nonnegative(),
+        "escort-pincer": z.number().nonnegative(),
+        "command-pulse": z.number().nonnegative().default(0),
+      }),
+      escortsSpawned: z.number().int().nonnegative(),
+      killsDuringBoss: z.number().int().nonnegative().default(0),
+      damageTakenDuringBoss: z.number().nonnegative().default(0),
+      healPickupsSpawned: z.number().int().nonnegative().default(0),
+      healValueSuppliedDuringBoss: z.number().nonnegative().default(0),
+      healDropsSuppressed: z.number().int().nonnegative().default(0),
+      healDropsSuppressedByReason: z
+        .object({
+          cooldown: z.number().int().nonnegative(),
+          "repair-budget-exhausted": z.number().int().nonnegative(),
+        })
+        .optional(),
+      healPickupsCollected: z.number().int().nonnegative().default(0),
+      healPickupsCollectedAtFullHp: z.number().int().nonnegative().default(0),
+      healPickupsExpired: z.number().int().nonnegative().default(0),
+      hpRecoveredDuringBoss: z.number().nonnegative().default(0),
+      repairBudgetInitial: z.number().nonnegative().nullable().default(null),
+      repairBudgetSpent: z.number().nonnegative().default(0),
+      repairBudgetRemaining: z.number().nonnegative().nullable().default(null),
+      commandPulseResults: z
+        .object({
+          hit: z.number().int().nonnegative(),
+          blocked: z.number().int().nonnegative(),
+          outside: z.number().int().nonnegative(),
+          invulnerable: z.number().int().nonnegative(),
+        })
+        .default({ hit: 0, blocked: 0, outside: 0, invulnerable: 0 }),
+      defeatedByWeapon: z.enum(WEAPON_TYPE_IDS).nullable(),
+    })
+    .transform((boss) => ({
+      ...boss,
+      healDropsSuppressedByReason: boss.healDropsSuppressedByReason ?? {
+        cooldown: boss.healDropsSuppressed,
+        "repair-budget-exhausted": 0,
+      },
+    }))
+    .optional(),
 });
 
 const runRecordV2Schema = z.object({

@@ -28,12 +28,14 @@ export default defineConfig({
           label: "ゲームデザイン",
           items: [
             { label: "拡張設計の全体像", slug: "design/gameplay-expansion-blueprint" },
+            { label: "v0.8 面白さの核", slug: "design/core-promise-validation" },
             { label: "操作設計", slug: "design/controls" },
             { label: "ビルドと成長", slug: "design/build-and-progression" },
             { label: "武器アイデンティティ", slug: "design/weapon-identities" },
             { label: "エンドレス後半", slug: "design/endless-escalation" },
             { label: "モードと戦闘展開", slug: "design/encounters-and-modes" },
             { label: "v0.7 最初のエクスペディション", slug: "design/v07-first-expedition" },
+            { label: "エクスペディション展開", slug: "design/expedition-campaign" },
             { label: "世界観と試合内ドラマ", slug: "design/narrative-and-match-drama" },
             { label: "UI/UXとフィードバック", slug: "design/ui-ux" },
             { label: "障害物・敵経路・弾", slug: "design/obstacles-and-projectiles" },
@@ -48,6 +50,8 @@ export default defineConfig({
           items: [
             { label: "アーキテクチャ", slug: "engineering/architecture" },
             { label: "Phaserプレゼンテーション再設計", slug: "engineering/phaser-presentation-architecture" },
+            { label: "UIライブラリと視覚方向", slug: "engineering/ui-library-and-visual-direction-adr" },
+            { label: "RC6の時計と記録規則", slug: "engineering/expedition-rc6-clock-and-ranking-adr" },
             { label: "観戦AIの設計判断", slug: "engineering/auto-pilot-architecture" },
             { label: "品質戦略", slug: "engineering/quality-strategy" }
           ]
@@ -62,6 +66,7 @@ export default defineConfig({
             { label: "観戦AIチケット詳細", slug: "project-management/auto-pilot-tickets" },
             { label: "Phaser 4移行計画", slug: "project-management/phaser4-migration-plan" },
             { label: "v0.7 実行計画", slug: "project-management/v07-execution-plan" },
+            { label: "UI・グラフィック再設計", slug: "project-management/ui-visual-redesign-plan" },
             { label: "中長期作業計画", slug: "project-management/gameplay-expansion-plan" },
             { label: "ロードマップ", slug: "project-management/roadmap" },
             { label: "チケット一覧", slug: "project-management/tickets" },
@@ -74,7 +79,9 @@ export default defineConfig({
           label: "プレイテスト",
           items: [
             { label: "手動プレイ記録", slug: "playtest/playtest-notes" },
-            { label: "バランス回帰テスト", slug: "playtest/balance-probe" }
+            { label: "バランス回帰テスト", slug: "playtest/balance-probe" },
+            { label: "v0.7 統合QA", slug: "playtest/v07-qa-report" },
+            { label: "v0.7 RC6 QA計画", slug: "playtest/v07-rc6-qa-plan" }
           ]
         },
         {

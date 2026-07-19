@@ -10,11 +10,13 @@ import { clamp } from "../../math/geometry";
 import { normalize } from "../../math/vector";
 import { moveCircleWithObstacles } from "./movement";
 import { getThreatMultipliers } from "../threatDirector";
+import { getDifficultyElapsed } from "../difficultyClock";
 import {
   getEnemyApproachNavigation,
   hasClearNavigationPath,
   type EnemyNavigationMode,
 } from "../navigationField";
+import { updateChargerEnemy } from "./chargerEnemySystem";
 
 type EnemyMovement = {
   direction: Vec2;
@@ -29,22 +31,35 @@ export function updateEnemies(
   config: SimulationConfig,
   events: GameEvent[],
 ): void {
+  const hasChargers = (world.enemyActionState?.chargerIds.length ?? 0) > 0;
   for (const enemy of world.enemies) {
+    const chargerNavigation =
+      hasChargers && enemy.action?.kind === "charger"
+        ? updateChargerEnemy(world, enemy, dt, config, events)
+        : null;
     const directionToPlayer = getDirectionToPlayer(world, enemy);
-    const movement = getEnemyMovement(enemy, directionToPlayer, world, config);
+    const movement: EnemyMovement = chargerNavigation
+      ? {
+          direction: chargerNavigation.direction,
+          navigationMode: chargerNavigation.mode,
+          fieldBuilt: chargerNavigation.fieldBuilt,
+        }
+      : getEnemyMovement(enemy, directionToPlayer, world, config);
     world.stats.navigationMetrics[`${movement.navigationMode}Frames`] += 1;
     if (movement.fieldBuilt) world.stats.navigationMetrics.fieldBuilds += 1;
-    moveCircleWithObstacles(world, enemy, movement.direction.x * enemy.speed * dt, 0);
-    moveCircleWithObstacles(world, enemy, 0, movement.direction.y * enemy.speed * dt);
-    updateRangedAttack(
-      world,
-      enemy,
-      directionToPlayer,
-      movement.hasLineOfSight,
-      dt,
-      config,
-      events,
-    );
+    if (!chargerNavigation) {
+      moveCircleWithObstacles(world, enemy, movement.direction.x * enemy.speed * dt, 0);
+      moveCircleWithObstacles(world, enemy, 0, movement.direction.y * enemy.speed * dt);
+      updateRangedAttack(
+        world,
+        enemy,
+        directionToPlayer,
+        movement.hasLineOfSight,
+        dt,
+        config,
+        events,
+      );
+    }
 
     if (
       enemy.position.x >= enemy.radius &&
@@ -145,7 +160,7 @@ function updateRangedAttack(
 
   const ranged = config.enemies[enemy.typeId].ranged;
   if (!ranged) return;
-  const threat = getThreatMultipliers(config, world.state.elapsed);
+  const threat = getThreatMultipliers(config, getDifficultyElapsed(world));
 
   const distanceToPlayer = Math.hypot(
     world.player.position.x - enemy.position.x,

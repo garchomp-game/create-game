@@ -60,6 +60,7 @@ description: 観戦用オートプレイの責務、危険評価、Utility、武
 
 | 境界 | 責務 |
 | --- | --- |
+| `AutoPilotController` | 有効状態、最終Decisionの表示スナップショット、手動コマンドとAI入力の合成を所有する |
 | `AutoPilotAgent` | 前回移動、照準対象、戦術コミットを保持し、最終Decisionを合成する |
 | `AutoPilotPolicy` | 回復、XP、短時間撃破、射線確保、巡回のUtilityを比較する |
 | `AutoPilotTargeting` | 標的、迎撃点、Spread扇形、射撃可否を決める |
@@ -68,7 +69,7 @@ description: 観戦用オートプレイの責務、危険評価、Utility、武
 | `AutoPilotNavigationPort` | 直線可視性、rot.js Dijkstra、経路長、waypointを隠蔽する |
 | `AutoPilotProbe` | 固定シード実行、行動比率、回収品質、武器成果、p95を集計する |
 
-依存方向は`Agent -> Policy / Targeting / Motion -> Threat / Navigation Port`です。Phaser Scene、DOM、描画、保存処理には依存しません。
+依存方向は`Controller -> Agent -> Policy / Targeting / Motion -> Threat / Navigation Port`です。Controllerを含めPhaser Scene、DOM、描画、保存処理には依存しません。Sceneは開始・停止に伴うラン再生成だけを調停します。
 
 ## 共通危険評価
 

@@ -5,6 +5,7 @@ describe("PhaserMenuLayout", () => {
   it("exposes public beta information from the title menu", () => {
     expect(getMenuButtons("title", 960, 540).map((button) => button.action)).toEqual([
       "start",
+      "startExpedition",
       "ranking",
       "history",
       "settings",
@@ -45,6 +46,19 @@ describe("PhaserMenuLayout", () => {
     expect(getMenuButtons("contractSelect", 960, 540).map((button) => button.action)).toEqual([
       "contractStandard",
       "contractOverdrive",
+    ]);
+  });
+
+  it("provides board navigation on rankings", () => {
+    expect(
+      getMenuButtons("title", 960, 540, undefined, "ranking").map(
+        (button) => button.action,
+      ),
+    ).toEqual([
+      "rankingPrevious",
+      "rankingNext",
+      "clearRankings",
+      "back",
     ]);
   });
 });

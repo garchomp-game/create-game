@@ -10,6 +10,8 @@ const expected = {
     "phaser-v0.6.8-pulse-boundary-ricochet",
   buildCommit: process.env.ARENA_EXPECTED_BUILD_COMMIT ?? "ff686f992a65",
 };
+const expectedRunRulesetVersion =
+  process.env.ARENA_EXPECTED_RUN_RULESET_VERSION ?? expected.rulesetVersion;
 const gameOverTimeoutMs = Number(process.env.ARENA_GAME_OVER_TIMEOUT_MS ?? 180_000);
 const outputDirectory = path.resolve("test-results", "production-smoke");
 const consoleErrors = [];
@@ -68,6 +70,7 @@ try {
   await page.waitForTimeout(250);
   await capture(page, "02-settings.png");
   await clickCanvasLogical(page, 480, 347);
+  await page.waitForTimeout(200);
   const autoFireEnabled = await page.evaluate(() => {
     const raw = localStorage.getItem("arena-core.settings.v1");
     return raw ? JSON.parse(raw).autoFireEnabled : null;
@@ -108,7 +111,7 @@ try {
   }
   assert(record, `natural game over did not finish within ${gameOverTimeoutMs}ms`);
   assert(record.appVersion === expected.appVersion, "saved appVersion mismatch");
-  assert(record.rulesetVersion === expected.rulesetVersion, "saved rulesetVersion mismatch");
+  assert(record.rulesetVersion === expectedRunRulesetVersion, "saved rulesetVersion mismatch");
   assert(record.buildCommit === expected.buildCommit, "saved buildCommit mismatch");
   await page.waitForTimeout(300);
   await capture(page, "07-result.png");
@@ -127,6 +130,20 @@ try {
   await page.waitForTimeout(300);
   await capture(page, "11-returned-title.png");
 
+  await clickCanvasLogical(page, 480, 339);
+  const spreadChoice = page.locator(
+    "[data-choice-kind='weapon'][data-choice-id='spread']",
+  );
+  await spreadChoice.waitFor({ state: "visible" });
+  await capture(page, "12-expedition-weapon-select.png");
+  await spreadChoice.click();
+  await spreadChoice.waitFor({ state: "hidden" });
+  await page.waitForTimeout(300);
+  await capture(page, "13-expedition-spread.png");
+  await pressGameKey(page, "Escape");
+  await clickCanvasLogical(page, 480, 409);
+  await page.waitForTimeout(300);
+
   await clickCanvasLogical(page, 480, 499);
   await page.waitForURL(/\/beta-info(?:\.html)?\/?$/);
   assert((await page.locator("#app-version").textContent()) === expected.appVersion, "beta app mismatch");
@@ -140,7 +157,7 @@ try {
   );
   const notices = await page.request.get(`${baseUrl}/third-party-notices.txt`);
   assert(notices.status() === 200, `third-party notices returned ${notices.status()}`);
-  await capture(page, "12-beta-info.png", true);
+  await capture(page, "14-beta-info.png", true);
 
   assert(consoleErrors.length === 0, `console errors: ${consoleErrors.join(" | ")}`);
   assert(pageErrors.length === 0, `page errors: ${pageErrors.join(" | ")}`);
@@ -153,6 +170,7 @@ try {
         ok: true,
         baseUrl,
         ...expected,
+        runRulesetVersion: expectedRunRulesetVersion,
         run: {
           score: record.score,
           elapsed: Number(record.elapsed.toFixed(2)),

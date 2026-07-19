@@ -1,7 +1,7 @@
 {
   "name": "arena-core-phaser",
   "private": true,
-  "version": "0.6.8",
+  "version": "0.7.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -13,7 +13,7 @@
     "deploy:cloudflare:dry-run": "npm run build:deploy && wrangler deploy --dry-run",
     "preview:cloudflare": "npm run build:deploy && wrangler dev",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run src",
+    "test": "vitest run src --maxWorkers=1",
     "test:watch": "vitest src",
     "test:e2e": "playwright test",
     "verify:deploy": "node scripts/verify-deployment.mjs",
@@ -21,7 +21,9 @@
     "test:e2e:release": "playwright test tests/e2e/release-smoke.spec.ts",
     "smoke:production": "node scripts/smoke-production.mjs",
     "prepreview:e2e": "npm run build:e2e",
-    "preview:e2e": "vite preview --host 0.0.0.0"
+    "preview:e2e": "vite preview --host 0.0.0.0",
+    "probe:v07": "vitest run scripts/v07-expedition-probe.test.ts --reporter=verbose",
+    "probe:v07:repair": "ARENA_PROBE_KIND=repair-budget vitest run scripts/v07-expedition-probe.test.ts --reporter=verbose"
   },
   "dependencies": {
     "@vitejs/plugin-basic-ssl": "^2.1.0",

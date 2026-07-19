@@ -72,6 +72,44 @@ export class PhaserFeedbackLayer {
       } else if (event.type === "encounter.started") {
         this.addImpact(world.player.position, world.player.radius + 22, 0xf97316);
         this.addBurst(world.player.position, 0xf97316);
+      } else if (event.type === "expedition.act.changed") {
+        this.addImpact(world.player.position, world.player.radius + 26, 0x5eead4);
+        this.addBurst(world.player.position, 0x5eead4);
+      } else if (event.type === "expedition.encounter.selected") {
+        this.addImpact(world.player.position, world.player.radius + 20, 0xfacc15);
+      } else if (event.type === "expedition.encounter.active.started") {
+        this.addImpact(world.player.position, world.player.radius + 24, 0xf97316);
+        this.addBurst(world.player.position, 0xf97316);
+      } else if (event.type === "boss.spawned") {
+        this.addImpact(event.position, 62, 0xfacc15);
+        this.addBurst(event.position, 0xfacc15);
+      } else if (event.type === "boss.attack.telegraphed") {
+        const enemy = world.enemies.find((item) => item.id === event.enemyId);
+        if (enemy) this.addImpact(enemy.position, enemy.radius + 16, 0xfacc15);
+      } else if (event.type === "boss.phase.changed") {
+        const enemy = world.enemies.find((item) => item.id === event.enemyId);
+        if (enemy) {
+          this.addImpact(enemy.position, enemy.radius + 24, 0xfb7185);
+          this.addBurst(enemy.position, 0xfb7185);
+        }
+      } else if (event.type === "boss.defeated") {
+        this.addImpact(event.position, 78, 0x67e8f9);
+        this.addBurst(event.position, 0xfacc15);
+      } else if (event.type === "elite.commander.reinforcement.telegraphed") {
+        this.addImpact(event.position, 28, 0xfacc15);
+      } else if (event.type === "elite.commander.reinforcement.deployed") {
+        this.addImpact(event.position, 34, 0xf97316);
+        this.addBurst(event.position, 0xf97316);
+      } else if (event.type === "elite.commander.pressure.lowered") {
+        this.addImpact(event.position, 38, 0x22d3ee);
+        this.addBurst(event.position, 0x22d3ee);
+      } else if (event.type === "enemy.charger.telegraph.started") {
+        this.addImpact(event.position, 24, 0xfb7185);
+      } else if (event.type === "enemy.charger.charge.started") {
+        this.addImpact(event.position, 28, 0xfacc15);
+        this.addBurst(event.position, 0xfacc15);
+      } else if (event.type === "enemy.charger.charge.ended") {
+        this.addImpact(event.position, 30, event.hitPlayer ? 0xef4444 : 0x22d3ee);
       } else if (event.type === "contract.offered") {
         this.addImpact(world.player.position, world.player.radius + 18, 0x22d3ee);
       } else if (event.type === "spread.sweep.triggered") {

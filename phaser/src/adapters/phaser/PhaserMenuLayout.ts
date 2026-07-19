@@ -22,6 +22,7 @@ export type UpgradeChoiceButton = {
 
 const DEFAULT_MENU_LABELS: Record<MenuAction, string> = {
   start: "エンドレス開始",
+  startExpedition: "最終遠征に挑む",
   selectPulse: "パルスを選ぶ",
   selectSpread: "拡散を選ぶ",
   contractStandard: "標準を維持",
@@ -32,13 +33,15 @@ const DEFAULT_MENU_LABELS: Record<MenuAction, string> = {
   history: "ラン履歴",
   ranking: "ランキング",
   settings: "設定",
-  betaInfo: "ベータ情報",
+  betaInfo: "プレビュー情報",
   back: "戻る",
   historyPrevious: "前のページ",
   historyNext: "次のページ",
   historyFilterAll: "すべて",
   historyFilterPulse: "パルス",
   historyFilterSpread: "拡散",
+  rankingPrevious: "前のボード",
+  rankingNext: "次のボード",
   clearHistory: "履歴を消去",
   clearRankings: "ランキングを消去",
   resetSettings: "設定を初期化",
@@ -197,6 +200,22 @@ export function getMenuButtons(
   if (secondaryMenu === "ranking") {
     return [
       {
+        action: "rankingPrevious",
+        label: label("rankingPrevious"),
+        x: arenaWidth / 2 - 270,
+        y: arenaHeight - 146,
+        width: 250,
+        height: buttonHeight,
+      },
+      {
+        action: "rankingNext",
+        label: label("rankingNext"),
+        x: arenaWidth / 2 + 20,
+        y: arenaHeight - 146,
+        width: 250,
+        height: buttonHeight,
+      },
+      {
         action: "clearRankings",
         label: label("clearRankings"),
         x,
@@ -216,12 +235,19 @@ export function getMenuButtons(
   }
 
   if (status === "title") {
-    const actions: MenuAction[] = ["start", "ranking", "history", "settings", "betaInfo"];
+    const actions: MenuAction[] = [
+      "start",
+      "startExpedition",
+      "ranking",
+      "history",
+      "settings",
+      "betaInfo",
+    ];
     return actions.map((action, index) => ({
       action,
       label: label(action),
       x,
-      y: 286 + index * 48,
+      y: 276 + index * 42,
       width: buttonWidth,
       height: buttonHeight,
     }));
@@ -237,9 +263,10 @@ export function getMenuButtons(
 
   if (status === "gameOver") {
     return [
-      { action: "restart", label: label("restart"), x, y: 366, width: buttonWidth, height: buttonHeight },
-      { action: "history", label: label("history"), x, y: 418, width: buttonWidth, height: buttonHeight },
-      { action: "title", label: label("title"), x, y: 470, width: buttonWidth, height: buttonHeight },
+      { action: "restart", label: label("restart"), x, y: 346, width: buttonWidth, height: buttonHeight },
+      { action: "ranking", label: label("ranking"), x, y: 394, width: buttonWidth, height: buttonHeight },
+      { action: "history", label: label("history"), x, y: 442, width: buttonWidth, height: buttonHeight },
+      { action: "title", label: label("title"), x, y: 490, width: buttonWidth, height: buttonHeight },
     ];
   }
 

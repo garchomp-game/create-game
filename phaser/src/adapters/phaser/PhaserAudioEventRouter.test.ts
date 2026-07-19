@@ -89,4 +89,33 @@ describe("PhaserAudioEventRouter", () => {
     expect(played).toEqual([{ key: "upgrade", volume: 0.26, detune: 120 }]);
     expect(router.getLastCues()).toEqual(["sweep"]);
   });
+
+  it("uses the victory cue path without layering the defeat sound", () => {
+    const played: string[] = [];
+    const scene = {
+      time: { now: 100 },
+      cache: { audio: { exists: () => true } },
+      sound: { play: (key: string) => played.push(key) },
+    } as unknown as Phaser.Scene;
+    const router = new PhaserAudioEventRouter(scene);
+
+    router.handleEvents([
+      {
+        type: "expedition.completed",
+        actId: "command-ship",
+        elapsed: 420,
+        score: 40_000,
+        tacticalScore: 25_000,
+        scoreBeforeBonus: 25_000,
+        clearScoreBonus: 15_000,
+        timeScoreBonus: 0,
+        timeMedal: "gold",
+        bossFightDuration: 120,
+      },
+      { type: "game.over", score: 40_000, elapsed: 420 },
+    ]);
+
+    expect(played).toEqual(["upgrade"]);
+    expect(router.getLastCues()).toEqual(["sweep"]);
+  });
 });

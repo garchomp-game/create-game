@@ -1,5 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import { SIMULATION_CONFIG } from "../../src/config/gameConfig";
+import type { BossAttackId } from "../../src/domain/types";
 import { probeWebglCanvas } from "./webglCanvasProbe";
 
 async function gotoArena(page: Page): Promise<void> {
@@ -21,6 +22,82 @@ async function moveMouseToCanvasLogical(page: Page, logicalX: number, logicalY: 
     box.x + (logicalX / size.width) * box.width,
     box.y + (logicalY / size.height) * box.height,
   );
+}
+
+async function showExpeditionCommanderPresentation(page: Page): Promise<void> {
+  await moveMouseToCanvasLogical(page, 480, 339);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']").click();
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+    .toBe("playing");
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
+    if (!debug) throw new Error("Debug API is not available.");
+    debug.setPaused(true);
+    debug.setExpeditionCommanderFixture();
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          window.__ARENA_DEBUG__?.getSnapshot().stats.encounterMetrics.commander
+            ?.spawned,
+      ),
+    )
+    .toBeGreaterThan(0);
+}
+
+async function showExpeditionChargerPresentation(page: Page): Promise<void> {
+  await moveMouseToCanvasLogical(page, 480, 339);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']").click();
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+    .toBe("playing");
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
+    if (!debug) throw new Error("Debug API is not available.");
+    debug.setPaused(true);
+    debug.setExpeditionChargerFixture();
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          window.__ARENA_DEBUG__?.getSnapshot().stats.encounterMetrics.charger
+            ?.telegraphs,
+      ),
+    )
+    .toBeGreaterThan(0);
+}
+
+async function showExpeditionBossPresentation(
+  page: Page,
+  attackId: BossAttackId,
+  phase: 1 | 2,
+): Promise<void> {
+  await moveMouseToCanvasLogical(page, 480, 339);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']").click();
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "playing",
+  );
+  await page.evaluate(
+    ({ selectedAttackId, selectedPhase }) => {
+      const debug = window.__ARENA_DEBUG__;
+      if (!debug) throw new Error("Debug API is not available.");
+      debug.setPaused(true);
+      debug.setExpeditionBossFixture(selectedAttackId, selectedPhase);
+    },
+    { selectedAttackId: attackId, selectedPhase: phase },
+  );
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().expedition?.boss?.status))
+    .toBe("active");
 }
 
 async function seedVisualRunRecords(page: Page): Promise<void> {
@@ -130,6 +207,127 @@ test("matches the starting weapon selection frame", async ({ page }) => {
   );
 
   await expect(game).toHaveScreenshot("arena-weapon-select.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("shows the Expedition Act, ingress, and Commander visual slice", async ({ page }) => {
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+  await showExpeditionCommanderPresentation(page);
+
+  const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+  expect(snapshot?.expedition).toMatchObject({
+    actId: "counterattack",
+    currentGeometryId: "escort",
+    director: { phase: "active" },
+  });
+  expect(snapshot?.renderPerformance.staticBackground.drawCount).toBe(1);
+  expect(snapshot?.renderPerformance.renderedFrames).toBeGreaterThan(0);
+  expect(snapshot?.renderPerformance.dynamicWorld.averageMs).toBeLessThan(8);
+  expect(snapshot?.renderPerformance.screenHud.averageMs).toBeLessThan(5);
+  expect(snapshot?.renderPerformance.feedback.averageMs).toBeLessThan(3);
+
+  await expect(canvas).toHaveScreenshot("arena-expedition-commander.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("keeps the Expedition visual slice readable in a portrait viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await gotoArena(page);
+  const game = page.locator("#game");
+  await showExpeditionCommanderPresentation(page);
+
+  await expect(game).toHaveScreenshot("arena-expedition-commander-portrait.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("shows the Act 4 charger telegraph and structured ingress", async ({ page }) => {
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+  await showExpeditionChargerPresentation(page);
+
+  const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+  expect(snapshot?.expedition).toMatchObject({
+    actId: "breakthrough",
+    currentGeometryId: "arc",
+    director: { phase: "active", cardId: "charger-breakthrough" },
+  });
+  expect(snapshot?.enemyTypeCounts.fast).toBeGreaterThan(0);
+  expect(snapshot?.renderPerformance.staticBackground.drawCount).toBe(1);
+  expect(snapshot?.renderPerformance.dynamicWorld.averageMs).toBeLessThan(8);
+  expect(snapshot?.renderPerformance.screenHud.averageMs).toBeLessThan(5);
+  expect(snapshot?.renderPerformance.feedback.averageMs).toBeLessThan(3);
+  await expect(canvas).toHaveScreenshot("arena-expedition-charger.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("shows the phase-two command ship and targeted salvo", async ({ page }) => {
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+  await showExpeditionBossPresentation(page, "targeted-salvo", 2);
+
+  const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+  expect(snapshot?.expedition?.boss).toMatchObject({
+    bossId: "final-command-ship",
+    phase: 2,
+    action: { attackId: "targeted-salvo", phase: "telegraph" },
+  });
+  expect(snapshot?.renderPerformance.staticBackground.drawCount).toBe(1);
+  expect(snapshot?.renderPerformance.renderedFrames).toBeGreaterThan(0);
+  expect(snapshot?.renderPerformance.dynamicWorld.averageMs).toBeLessThan(8);
+  expect(snapshot?.renderPerformance.screenHud.averageMs).toBeLessThan(5);
+  expect(snapshot?.renderPerformance.feedback.averageMs).toBeLessThan(3);
+  await expect(canvas).toHaveScreenshot("arena-expedition-boss-salvo.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("shows the phase-two command pulse safety boundary", async ({ page }) => {
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+  await showExpeditionBossPresentation(page, "command-pulse", 2);
+
+  const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+  expect(snapshot?.expedition?.boss).toMatchObject({
+    bossId: "final-command-ship",
+    phase: 2,
+    action: { attackId: "command-pulse", phase: "telegraph" },
+  });
+  await expect(canvas).toHaveScreenshot("arena-expedition-boss-command-pulse.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("keeps the expedition score breakdown readable on results", async ({ page }) => {
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+  await showExpeditionBossPresentation(page, "targeted-salvo", 2);
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
+    if (!debug) throw new Error("Debug API is not available.");
+    debug.armExpeditionBossDefeat();
+    debug.step({}, 1 / 60);
+  });
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+    .toBe("gameOver");
+
+  await expect(canvas).toHaveScreenshot("arena-expedition-result.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("keeps the escort pincer and boss HUD readable in portrait", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await gotoArena(page);
+  const game = page.locator("#game");
+  await showExpeditionBossPresentation(page, "escort-pincer", 1);
+
+  await expect(game).toHaveScreenshot("arena-expedition-boss-portrait.png", {
     maxDiffPixelRatio: 0.01,
   });
 });

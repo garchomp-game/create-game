@@ -4,6 +4,7 @@ export type HistoryWeaponFilter = "all" | "pulse" | "spread";
 
 export type MenuAction =
   | "start"
+  | "startExpedition"
   | "selectPulse"
   | "selectSpread"
   | "contractStandard"
@@ -21,6 +22,8 @@ export type MenuAction =
   | "historyFilterAll"
   | "historyFilterPulse"
   | "historyFilterSpread"
+  | "rankingPrevious"
+  | "rankingNext"
   | "clearHistory"
   | "clearRankings"
   | "resetSettings"

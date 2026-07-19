@@ -1,5 +1,6 @@
 import type { RunResultSummary, WorldState } from "../domain/types";
 import { getThreatTier } from "./threatDirector";
+import { getDifficultyElapsed } from "./difficultyClock";
 import { SIMULATION_CONFIG } from "../config/gameConfig";
 
 export function createRunResultSummary(
@@ -14,7 +15,7 @@ export function createRunResultSummary(
     extraLevel: world.progression.extraLevel,
     extraCycle: world.progression.extraCycle,
     xp: world.progression.xp,
-    threatTier: getThreatTier(config, world.state.elapsed),
+    threatTier: getThreatTier(config, getDifficultyElapsed(world)),
     collapseStage: world.encounter.collapse.stage,
     shotsFired: world.stats.shotsFired,
     enemiesKilled: world.stats.enemiesKilled,

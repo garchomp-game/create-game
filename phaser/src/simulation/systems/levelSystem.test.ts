@@ -210,4 +210,29 @@ describe("level progression cadence", () => {
     expect(world.progression.extraCycle).toBe(2);
     expect(world.progression.pendingUpgradeChoices).toContain("limitPower");
   });
+
+  it("makes Endless cycle five reachable within the tuned EX budget", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    for (const upgradeId of Object.keys(world.progression.upgradeRanks) as Array<
+      keyof typeof world.progression.upgradeRanks
+    >) {
+      world.progression.upgradeRanks[upgradeId] = SIMULATION_CONFIG.upgrades[upgradeId].maxRank;
+    }
+    world.progression.buildCompletedAt = 300;
+    world.progression.xpToNext = SIMULATION_CONFIG.leveling.extra.baseXp;
+    let xpSpent = 0;
+
+    for (let extraLevel = 1; extraLevel <= 17; extraLevel += 1) {
+      xpSpent += world.progression.xpToNext;
+      world.progression.xp = world.progression.xpToNext;
+      updateLevelProgression(world, () => 0, SIMULATION_CONFIG, []);
+      if (world.state.status === "upgradeSelect") {
+        chooseUpgrade(world, 0, SIMULATION_CONFIG, []);
+      }
+    }
+
+    expect(world.progression.extraLevel).toBe(17);
+    expect(world.progression.extraCycle).toBe(5);
+    expect(xpSpent).toBe(4_258);
+  });
 });

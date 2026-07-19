@@ -19,6 +19,7 @@ import { updateShooting } from "./systems/shootingSystem";
 import { updateSpawner } from "./systems/spawnSystem";
 import { updateRunStats } from "./systems/statsSystem";
 import { updateArenaCollapse } from "./systems/collapseSystem";
+import { updateCommanderElites } from "./systems/commanderEliteSystem";
 import { chooseUpgrade } from "./systems/upgradeSystem";
 import {
   chooseEndlessContract,
@@ -27,6 +28,7 @@ import {
 } from "./systems/encounterSystem";
 import { getWaveBand } from "./waveDirector";
 import { getThreatTier } from "./threatDirector";
+import { getDifficultyElapsed } from "./difficultyClock";
 
 export function stepWorld(
   world: WorldState,
@@ -124,6 +126,9 @@ export function stepWorld(
   updateShooting(world, input.shootHeld, config, events);
   const bulletMotions = updateBullets(world, dt, config);
   updateSpawner(world, dt, random.spawn, config, events);
+  if ((world.eliteState?.commanderIds.length ?? 0) > 0) {
+    updateCommanderElites(world, random.spawn, config, events);
+  }
   updateEnemies(world, dt, config, events);
   updateEnemyProjectiles(world, dt, config);
   resolveCombat(world, config, events, bulletMotions);
@@ -142,7 +147,8 @@ function collectResult(
   config: SimulationConfig,
   events: GameEvent[],
 ): StepWorldResult {
-  const wave = getWaveBand(config, world.state.elapsed);
+  const difficultyElapsed = getDifficultyElapsed(world);
+  const wave = getWaveBand(config, difficultyElapsed);
   return {
     events,
     metrics: [
@@ -156,13 +162,14 @@ function collectResult(
         value: world.enemyProjectiles.length,
       },
       { type: "gauge", name: "world.pickups", value: world.pickups.length },
+      { type: "gauge", name: "world.difficulty_elapsed", value: difficultyElapsed },
       { type: "gauge", name: "wave.start", value: wave.start },
       { type: "gauge", name: "wave.spawn_budget", value: wave.spawnBudget },
       { type: "gauge", name: "wave.max_enemies", value: wave.maxEnemies },
       {
         type: "gauge",
         name: "endless.threat_tier",
-        value: getThreatTier(config, world.state.elapsed),
+        value: getThreatTier(config, difficultyElapsed),
       },
       {
         type: "gauge",

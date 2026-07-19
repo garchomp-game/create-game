@@ -6,7 +6,7 @@ import {
 } from "./autoPilotProbe";
 
 describe("runAutoPilotProbe", () => {
-  it("compares both observer weapons deterministically", () => {
+  it("compares both observer weapons deterministically", { timeout: 15_000 }, () => {
     const options = {
       config: SIMULATION_CONFIG,
       seeds: [20260715],
@@ -108,6 +108,11 @@ describe("runAutoPilotProbe", () => {
             kills: run.kills,
             killsPerMinute: Number(run.killsPerMinute.toFixed(1)),
             xp: run.xpCollected,
+            extraLevel: run.extraLevel,
+            extraCycle: run.extraCycle,
+            buildCompletedAt: run.buildCompletedAt === null
+              ? null
+              : Number(run.buildCompletedAt.toFixed(1)),
             pickups: run.pickupsCollected,
             contact: run.damageTakenBySource.contact,
             projectile: run.damageTakenBySource.projectile,
@@ -359,6 +364,9 @@ function summarizeProbeRuns(runs: readonly AutoPilotProbeRun[]) {
     totalWarningFrames,
     totalActiveFrames,
     totalCommittedPickups,
+    maximumExtraLevel: Math.max(0, ...runs.map((run) => run.extraLevel)),
+    maximumExtraCycle: Math.max(0, ...runs.map((run) => run.extraCycle)),
+    cycleFiveRuns: runs.filter((run) => run.extraCycle >= 5).length,
     patrolStrategy: runs[0]?.patrolStrategy ?? null,
     runsWithPatrolAtLeastOneSecond: runs.filter(
       (run) => run.longestPatrolIntentSeconds >= 1,

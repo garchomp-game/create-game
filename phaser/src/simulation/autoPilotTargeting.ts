@@ -19,6 +19,7 @@ import {
   lengthSquared,
 } from "./autoPilotMath";
 import {
+  getAutoPilotPreferredRange,
   getAutoPilotReachableLaneHits,
   getAutoPilotWeaponStrategy,
 } from "./autoPilotWeaponStrategy";
@@ -297,11 +298,13 @@ export function selectAimTarget(
   let emergency: { target: AutoPilotEnemyTarget; secondsToContact: number } | null = null;
   const projectileRadius = config.weapons[world.state.weaponType].radius;
   const effectiveRange = getEffectiveWeaponRange(frame);
-  const emergencyWindow = world.state.weaponType === "pulse"
-    ? 1.4
-    : world.state.weaponType === "pierce"
-      ? 1.1
-      : 0.75;
+  const emergencyWindow = world.expedition?.boss?.status === "active"
+    ? 0.3
+    : world.state.weaponType === "pulse"
+      ? 1.4
+      : world.state.weaponType === "pierce"
+        ? 1.1
+        : 0.75;
 
   for (const enemy of world.enemies) {
     const distance = distanceBetween(world.player.position, enemy.position);
@@ -805,7 +808,7 @@ export function findFiringPosition(
     Math.PI,
   ];
   const projectileRadius = config.weapons[world.state.weaponType].radius;
-  const preferredRange = getAutoPilotWeaponStrategy(frame).preferredRange;
+  const preferredRange = getAutoPilotPreferredRange(frame, enemy);
   let best: { position: Vec2; score: number } | null = null;
 
   for (const radius of [preferredRange, preferredRange - 55, preferredRange + 45]) {
@@ -903,11 +906,18 @@ function getEnemyTargetScore(
     ? Number.POSITIVE_INFINITY
     : contactDistance / Math.max(1, enemy.speed);
   const contactPriority = Number.isFinite(secondsToContact)
-    ? -Math.max(0, 4 - secondsToContact) * 95
+    ? secondsToContact <= 0.3
+      ? -5_500
+      : -Math.max(0, 4 - secondsToContact) * 95
     : 0;
   const retainedTargetPriority =
     enemy.id === frame.previousAimTargetId && world.state.weaponType !== "pulse" ? -35 : 0;
   const lowHpPriority = Math.min(14, enemy.hp) * 7;
+  const strategicTargetPriority = enemy.elite
+    ? -2_200
+    : enemy.boss
+      ? -4_200
+      : 0;
 
   return (
     (insideArena ? 0 : 100_000) +
@@ -918,6 +928,7 @@ function getEnemyTargetScore(
     typePriority[enemy.typeId] +
     contactPriority +
     retainedTargetPriority +
+    strategicTargetPriority +
     lowHpPriority +
     getAutoPilotWeaponStrategy(frame).targetScoreAdjustment(frame, target)
   );

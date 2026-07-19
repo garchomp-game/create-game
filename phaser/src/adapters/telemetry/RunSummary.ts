@@ -16,6 +16,8 @@ export const RUN_SUMMARY_COLUMNS = [
   "rank_ineligible_reasons",
   "status",
   "elapsed_seconds",
+  "difficulty_elapsed_seconds",
+  "difficulty_delay_seconds",
   "score",
   "score_per_minute",
   "level",
@@ -94,6 +96,69 @@ export const RUN_SUMMARY_COLUMNS = [
   "ranged_surges",
   "swarm_rushes",
   "brute_sieges",
+  "expedition_outcome",
+  "expedition_reached_act",
+  "expedition_reached_acts",
+  "expedition_completed_seconds",
+  "expedition_cards_selected",
+  "expedition_cards_completed",
+  "expedition_cards_failed",
+  "expedition_cards_interrupted",
+  "expedition_cards_deferred",
+  "expedition_structured_enemies_spawned",
+  "expedition_structured_spawns_deferred",
+  "expedition_longest_meaningful_gap_seconds",
+  "expedition_tactical_score",
+  "expedition_score_before_bonus",
+  "expedition_clear_score_bonus",
+  "expedition_time_score_bonus",
+  "expedition_time_medal",
+  "expedition_boss_fight_seconds",
+  "commander_spawned",
+  "commander_killed",
+  "commander_trait_activations",
+  "commander_reinforcements_spawned",
+  "commander_average_lifetime_seconds",
+  "charger_spawned",
+  "charger_killed",
+  "charger_charges",
+  "charger_player_hits",
+  "charger_avoided",
+  "boss_id",
+  "boss_spawned_seconds",
+  "boss_defeated_seconds",
+  "boss_remaining_hp",
+  "boss_maximum_hp",
+  "boss_phase_reached",
+  "boss_targeted_salvos",
+  "boss_escort_pincers",
+  "boss_command_pulses",
+  "boss_targeted_salvo_player_hits",
+  "boss_escort_pincer_player_hits",
+  "boss_command_pulse_player_hits",
+  "boss_targeted_salvo_damage",
+  "boss_escort_pincer_damage",
+  "boss_command_pulse_damage",
+  "boss_escorts_spawned",
+  "boss_kills_during_fight",
+  "boss_damage_taken_during_fight",
+  "boss_heal_pickups_spawned",
+  "boss_heal_value_supplied",
+  "boss_heal_drops_suppressed",
+  "boss_heal_drops_suppressed_cooldown",
+  "boss_heal_drops_suppressed_budget",
+  "boss_heal_pickups_collected",
+  "boss_heal_pickups_full_hp",
+  "boss_heal_pickups_expired",
+  "boss_hp_recovered",
+  "boss_repair_offset_ratio",
+  "boss_repair_budget_initial",
+  "boss_repair_budget_spent",
+  "boss_repair_budget_remaining",
+  "boss_command_pulse_blocked",
+  "boss_command_pulse_outside",
+  "boss_command_pulse_invulnerable",
+  "boss_defeated_by_weapon",
   "navigation_direct_frames",
   "navigation_path_frames",
   "navigation_fallback_frames",
@@ -114,6 +179,7 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
   const elapsed = numberAt(result, "elapsed") ?? numberAt(value, "elapsed");
   const score = numberAt(result, "score");
   if (elapsed === null || score === null) return null;
+  const difficultyElapsed = numberAt(value, "difficultyElapsed") ?? elapsed;
 
   const weaponMetrics = recordAt(result, "weaponMetrics");
   const buildComposition = recordAt(value, "buildComposition");
@@ -136,6 +202,18 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
   const progressionMetrics = recordAt(stats, "progressionMetrics");
   const navigationMetrics = recordAt(stats, "navigationMetrics");
   const eventCounts = recordAt(encounterMetrics, "eventCounts");
+  const expeditionMetrics = recordAt(encounterMetrics, "expedition");
+  const commanderMetrics = recordAt(encounterMetrics, "commander");
+  const chargerMetrics = recordAt(encounterMetrics, "charger");
+  const bossMetrics = recordAt(encounterMetrics, "boss");
+  const bossAttacksExecuted = recordAt(bossMetrics, "attacksExecuted");
+  const bossPlayerHitsByAttack = recordAt(bossMetrics, "playerHitsByAttack");
+  const bossDamageTakenByAttack = recordAt(bossMetrics, "damageTakenByAttack");
+  const bossHealDropsSuppressedByReason = recordAt(
+    bossMetrics,
+    "healDropsSuppressedByReason",
+  );
+  const bossCommandPulseResults = recordAt(bossMetrics, "commandPulseResults");
   const extraSelections = unknownArrayAt(progressionMetrics, "extraSelections");
   const automaticExtraSelections = extraSelections.filter(
     (selection) => isRecord(selection) && selection.automatic === true,
@@ -144,6 +222,10 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
   const navigationPath = numberAt(navigationMetrics, "pathFrames") ?? 0;
   const navigationFallback = numberAt(navigationMetrics, "fallbackFrames") ?? 0;
   const navigationFrames = navigationDirect + navigationPath + navigationFallback;
+  const bossDamageTaken = numberAt(bossMetrics, "damageTakenDuringBoss") ?? 0;
+  const bossHpRecovered = numberAt(bossMetrics, "hpRecoveredDuringBoss") ?? 0;
+  const commandersKilled = numberAt(commanderMetrics, "killed") ?? 0;
+  const commanderLifetimeTotal = numberAt(commanderMetrics, "lifetimeTotal") ?? 0;
   const projectilesFired = sumWeaponMetric(weaponMetrics, "projectilesFired");
   const projectileHits = sumWeaponMetric(weaponMetrics, "hits");
   const kills = numberAt(result, "enemiesKilled") ?? 0;
@@ -168,6 +250,8 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
     rank_ineligible_reasons: stringArrayAt(rankEligibility, "reasons").join("|"),
     status: stringAt(value, "status") ?? "",
     elapsed_seconds: round(elapsed, 3),
+    difficulty_elapsed_seconds: round(difficultyElapsed, 3),
+    difficulty_delay_seconds: round(elapsed - difficultyElapsed, 3),
     score,
     score_per_minute: elapsed > 0 ? round((score * 60) / elapsed, 3) : null,
     level: numberAt(result, "level"),
@@ -255,6 +339,91 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
     ranged_surges: numberAt(eventCounts, "rangedSurge") ?? 0,
     swarm_rushes: numberAt(eventCounts, "swarmRush") ?? 0,
     brute_sieges: numberAt(eventCounts, "bruteSiege") ?? 0,
+    expedition_outcome: stringAt(expeditionMetrics, "outcome") ?? "",
+    expedition_reached_act: stringAt(expeditionMetrics, "reachedActId") ?? "",
+    expedition_reached_acts: stringArrayAt(expeditionMetrics, "reachedActIds").join("|"),
+    expedition_completed_seconds: nullableRoundedNumber(expeditionMetrics, "completedAt"),
+    expedition_cards_selected: numberAt(expeditionMetrics, "cardsSelected") ?? 0,
+    expedition_cards_completed: numberAt(expeditionMetrics, "cardsCompleted") ?? 0,
+    expedition_cards_failed: numberAt(expeditionMetrics, "cardsFailed") ?? 0,
+    expedition_cards_interrupted: numberAt(expeditionMetrics, "cardsInterrupted") ?? 0,
+    expedition_cards_deferred: numberAt(expeditionMetrics, "cardsDeferred") ?? 0,
+    expedition_structured_enemies_spawned:
+      numberAt(expeditionMetrics, "structuredEnemiesSpawned") ?? 0,
+    expedition_structured_spawns_deferred:
+      numberAt(expeditionMetrics, "structuredSpawnsDeferred") ?? 0,
+    expedition_longest_meaningful_gap_seconds:
+      roundedNumber(expeditionMetrics, "longestMeaningfulGap"),
+    expedition_tactical_score: numberAt(expeditionMetrics, "tacticalScore") ?? 0,
+    expedition_score_before_bonus: numberAt(expeditionMetrics, "scoreBeforeBonus") ?? 0,
+    expedition_clear_score_bonus: numberAt(expeditionMetrics, "clearScoreBonus") ?? 0,
+    expedition_time_score_bonus: numberAt(expeditionMetrics, "timeScoreBonus") ?? 0,
+    expedition_time_medal: stringAt(expeditionMetrics, "timeMedal") ?? "",
+    expedition_boss_fight_seconds:
+      nullableRoundedNumber(expeditionMetrics, "bossFightDuration"),
+    commander_spawned: numberAt(commanderMetrics, "spawned") ?? 0,
+    commander_killed: commandersKilled,
+    commander_trait_activations: numberAt(commanderMetrics, "traitActivations") ?? 0,
+    commander_reinforcements_spawned:
+      numberAt(commanderMetrics, "reinforcementsSpawned") ?? 0,
+    commander_average_lifetime_seconds:
+      commandersKilled > 0 ? round(commanderLifetimeTotal / commandersKilled, 3) : null,
+    charger_spawned: numberAt(chargerMetrics, "spawned") ?? 0,
+    charger_killed: numberAt(chargerMetrics, "killed") ?? 0,
+    charger_charges: numberAt(chargerMetrics, "charges") ?? 0,
+    charger_player_hits: numberAt(chargerMetrics, "playerHits") ?? 0,
+    charger_avoided: numberAt(chargerMetrics, "avoided") ?? 0,
+    boss_id: stringAt(bossMetrics, "bossId") ?? "",
+    boss_spawned_seconds: nullableRoundedNumber(bossMetrics, "spawnedAt"),
+    boss_defeated_seconds: nullableRoundedNumber(bossMetrics, "defeatedAt"),
+    boss_remaining_hp: nullableRoundedNumber(bossMetrics, "remainingHp"),
+    boss_maximum_hp: nullableRoundedNumber(bossMetrics, "maximumHp"),
+    boss_phase_reached: numberAt(bossMetrics, "phaseReached") ?? 0,
+    boss_targeted_salvos: numberAt(bossAttacksExecuted, "targeted-salvo") ?? 0,
+    boss_escort_pincers: numberAt(bossAttacksExecuted, "escort-pincer") ?? 0,
+    boss_command_pulses: numberAt(bossAttacksExecuted, "command-pulse") ?? 0,
+    boss_targeted_salvo_player_hits:
+      numberAt(bossPlayerHitsByAttack, "targeted-salvo") ?? 0,
+    boss_escort_pincer_player_hits:
+      numberAt(bossPlayerHitsByAttack, "escort-pincer") ?? 0,
+    boss_command_pulse_player_hits:
+      numberAt(bossPlayerHitsByAttack, "command-pulse") ?? 0,
+    boss_targeted_salvo_damage:
+      numberAt(bossDamageTakenByAttack, "targeted-salvo") ?? 0,
+    boss_escort_pincer_damage:
+      numberAt(bossDamageTakenByAttack, "escort-pincer") ?? 0,
+    boss_command_pulse_damage:
+      numberAt(bossDamageTakenByAttack, "command-pulse") ?? 0,
+    boss_escorts_spawned: numberAt(bossMetrics, "escortsSpawned") ?? 0,
+    boss_kills_during_fight: numberAt(bossMetrics, "killsDuringBoss") ?? 0,
+    boss_damage_taken_during_fight: bossDamageTaken,
+    boss_heal_pickups_spawned: numberAt(bossMetrics, "healPickupsSpawned") ?? 0,
+    boss_heal_value_supplied:
+      numberAt(bossMetrics, "healValueSuppliedDuringBoss") ?? 0,
+    boss_heal_drops_suppressed: numberAt(bossMetrics, "healDropsSuppressed") ?? 0,
+    boss_heal_drops_suppressed_cooldown:
+      numberAt(bossHealDropsSuppressedByReason, "cooldown") ?? 0,
+    boss_heal_drops_suppressed_budget:
+      numberAt(bossHealDropsSuppressedByReason, "repair-budget-exhausted") ?? 0,
+    boss_heal_pickups_collected: numberAt(bossMetrics, "healPickupsCollected") ?? 0,
+    boss_heal_pickups_full_hp:
+      numberAt(bossMetrics, "healPickupsCollectedAtFullHp") ?? 0,
+    boss_heal_pickups_expired: numberAt(bossMetrics, "healPickupsExpired") ?? 0,
+    boss_hp_recovered: bossHpRecovered,
+    boss_repair_offset_ratio:
+      bossDamageTaken > 0 ? round(bossHpRecovered / bossDamageTaken, 4) : null,
+    boss_repair_budget_initial:
+      nullableRoundedNumber(bossMetrics, "repairBudgetInitial"),
+    boss_repair_budget_spent: numberAt(bossMetrics, "repairBudgetSpent") ?? 0,
+    boss_repair_budget_remaining:
+      nullableRoundedNumber(bossMetrics, "repairBudgetRemaining"),
+    boss_command_pulse_blocked:
+      numberAt(bossCommandPulseResults, "blocked") ?? 0,
+    boss_command_pulse_outside:
+      numberAt(bossCommandPulseResults, "outside") ?? 0,
+    boss_command_pulse_invulnerable:
+      numberAt(bossCommandPulseResults, "invulnerable") ?? 0,
+    boss_defeated_by_weapon: stringAt(bossMetrics, "defeatedByWeapon") ?? "",
     navigation_direct_frames: navigationDirect,
     navigation_path_frames: navigationPath,
     navigation_fallback_frames: navigationFallback,

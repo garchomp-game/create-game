@@ -13,6 +13,13 @@ describe("ArenaMenuController", () => {
 
     expect(controller.handle("start", createContext()).command).toEqual({
       type: "showWeaponSelect",
+      modeId: "endless",
+      stageId: "arena-default",
+    });
+    expect(controller.handle("startExpedition", createContext()).command).toEqual({
+      type: "showWeaponSelect",
+      modeId: "expedition",
+      stageId: "final-expedition",
     });
     expect(
       controller.handle("selectSpread", createContext({ status: "weaponSelect" })).command,
@@ -67,6 +74,18 @@ describe("ArenaMenuController", () => {
       historyClearPending: false,
       notice: "ラン履歴を消去しました",
     });
+  });
+
+  it("cycles ranking boards with wraparound", () => {
+    const { controller } = createController();
+    const context = createContext({ rankingBoardCount: 3 });
+
+    controller.handle("ranking", context);
+    controller.handle("rankingPrevious", context);
+    expect(controller.state.rankingBoardIndex).toBe(2);
+
+    controller.handle("rankingNext", context);
+    expect(controller.state.rankingBoardIndex).toBe(0);
   });
 
   it("updates settings through the profile port and reports persistence failures", () => {

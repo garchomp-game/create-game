@@ -30,7 +30,10 @@ import {
   selectPickupTarget,
   type PickupTarget,
 } from "./autoPilotTargeting";
-import { getAutoPilotWeaponStrategy } from "./autoPilotWeaponStrategy";
+import {
+  getAutoPilotPreferredRange,
+  getAutoPilotWeaponStrategy,
+} from "./autoPilotWeaponStrategy";
 
 const SWITCH_UTILITY_RATIO = 0.12;
 const CROSS_MODE_SWITCH_UTILITY_RATIO = 0.18;
@@ -457,7 +460,7 @@ function createCombatIntent(
   navigation: AutoPilotNavigationPort,
   posture: AutoPilotPosture,
 ): AutoPilotIntent {
-  const preferredRange = getAutoPilotWeaponStrategy(frame).preferredRange;
+  const preferredRange = getAutoPilotPreferredRange(frame, target.enemy);
   const utility = getKillUtility(frame, target);
   if (!target.visible || !target.inRange) {
     const firingPosition = findFiringPosition(frame, target.enemy, navigation);

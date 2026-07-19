@@ -22,6 +22,23 @@ const EVENT_CUES: Partial<Record<GameEvent["type"], AudioCueId>> = {
   "extra.level_up": "levelUp",
   "encounter.warning.started": "levelUp",
   "encounter.started": "damage",
+  "expedition.act.changed": "upgrade",
+  "expedition.encounter.selected": "levelUp",
+  "expedition.encounter.active.started": "damage",
+  "expedition.completed": "sweep",
+  "boss.spawned": "upgrade",
+  "boss.attack.telegraphed": "levelUp",
+  "boss.attack.executed": "damage",
+  "boss.phase.changed": "damage",
+  "boss.defeated": "sweep",
+  "elite.commander.spawned": "upgrade",
+  "elite.commander.reinforcement.telegraphed": "levelUp",
+  "elite.commander.reinforcement.deployed": "damage",
+  "elite.commander.pressure.lowered": "sweep",
+  "enemy.charger.telegraph.started": "levelUp",
+  "enemy.charger.prepare.started": "upgrade",
+  "enemy.charger.charge.started": "damage",
+  "enemy.charger.charge.ended": "sweep",
   "contract.offered": "upgrade",
   "upgrade.selected": "upgrade",
   "extra.upgrade.selected": "upgrade",
@@ -93,7 +110,11 @@ export class PhaserAudioEventRouter {
   }
 
   handleEvents(events: GameEvent[]): void {
+    const expeditionVictory = events.some(
+      (event) => event.type === "expedition.completed",
+    );
     for (const event of events) {
+      if (expeditionVictory && event.type === "game.over") continue;
       const cue = EVENT_CUES[event.type];
       if (!cue) continue;
 

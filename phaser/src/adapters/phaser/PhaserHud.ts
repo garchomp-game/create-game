@@ -4,6 +4,7 @@ import { formatTime } from "../../format/time";
 import { TEXT } from "../../lang";
 import { getWaveBand } from "../../simulation/waveDirector";
 import { getThreatTier } from "../../simulation/threatDirector";
+import { getDifficultyElapsed } from "../../simulation/difficultyClock";
 import { getNextCollapseAt } from "../../simulation/systems/collapseSystem";
 import type { AutoPilotMode } from "../../simulation/autoPilot";
 
@@ -23,6 +24,7 @@ export class PhaserHud {
   private readonly metaText: Phaser.GameObjects.Text;
   private readonly weaponText: Phaser.GameObjects.Text;
   private readonly encounterText: Phaser.GameObjects.Text;
+  private readonly bossText: Phaser.GameObjects.Text;
   private readonly autoPilotText: Phaser.GameObjects.Text;
 
   constructor(scene: Phaser.Scene, private readonly simulationConfig: SimulationConfig) {
@@ -36,6 +38,9 @@ export class PhaserHud {
     this.encounterText = this.createText(scene, simulationConfig.arena.width / 2, 112)
       .setOrigin(0.5, 0)
       .setFontSize(15);
+    this.bossText = this.createText(scene, simulationConfig.arena.width / 2, 108)
+      .setOrigin(0.5, 0)
+      .setFontSize(14);
     this.autoPilotText = this.createText(scene, simulationConfig.arena.width / 2, 29)
       .setOrigin(0.5)
       .setColor("#67e8f9")
@@ -68,8 +73,9 @@ export class PhaserHud {
       world.progression.xpToNext > 0
         ? world.progression.xp / world.progression.xpToNext
         : 0;
-    const wave = getWaveBand(this.simulationConfig, world.state.elapsed);
-    const threatTier = getThreatTier(this.simulationConfig, world.state.elapsed);
+    const difficultyElapsed = getDifficultyElapsed(world);
+    const wave = getWaveBand(this.simulationConfig, difficultyElapsed);
+    const threatTier = getThreatTier(this.simulationConfig, difficultyElapsed);
     this.graphics.fillStyle(0x020617, 0.76);
     this.graphics.fillRoundedRect(leftPanel.x, leftPanel.y, leftPanel.width, leftPanel.height, 6);
     this.graphics.fillRoundedRect(rightPanel.x, rightPanel.y, rightPanel.width, rightPanel.height, 6);
@@ -135,25 +141,58 @@ export class PhaserHud {
         ? `${weaponStatus}\n掃射循環 READY`
         : weaponStatus,
     );
-    const encounterLabel = this.getEncounterLabel(world);
-    this.encounterText.setText(encounterLabel).setVisible(Boolean(encounterLabel));
-    if (encounterLabel) {
-      const banner = {
-        x: this.simulationConfig.arena.width / 2 - 350,
-        y: 104,
-        width: 700,
-        height: 34,
+    const bossEnemy = world.expedition?.boss?.status === "active"
+      ? world.enemies.find((enemy) => enemy.id === world.expedition!.boss!.enemyId)
+      : null;
+    if (bossEnemy && world.expedition?.boss) {
+      const boss = world.expedition.boss;
+      const hpRatio = boss.maxHp > 0 ? bossEnemy.hp / boss.maxHp : 0;
+      const seconds = Math.max(0, boss.action.endsAt - world.state.elapsed);
+      this.encounterText.setVisible(false);
+      const panel = {
+        x: this.simulationConfig.arena.width / 2 - 250,
+        y: this.simulationConfig.arena.height - 76,
+        width: 500,
+        height: 62,
       };
-      this.graphics.fillStyle(0x020617, 0.88);
-      this.graphics.fillRoundedRect(banner.x, banner.y, banner.width, banner.height, 6);
-      this.graphics.lineStyle(
-        2,
-        world.encounter.director.phase === "active" || world.encounter.collapse.stage > 0
-          ? 0xf97316
-          : 0xfacc15,
-        0.95,
-      );
-      this.graphics.strokeRoundedRect(banner.x, banner.y, banner.width, banner.height, 6);
+      this.bossText
+        .setPosition(this.simulationConfig.arena.width / 2, panel.y + 6)
+        .setText(
+          `敵指揮艦  PHASE ${boss.phase}  ${Math.ceil(bossEnemy.hp)} / ${boss.maxHp}\n${formatBossAttack(boss.action.attackId)} ${formatBossActionPhase(boss.action.phase)} ${seconds.toFixed(1)}s`,
+        )
+        .setVisible(true);
+      this.graphics.fillStyle(0x020617, 0.9);
+      this.graphics.fillRoundedRect(panel.x, panel.y, panel.width, panel.height, 6);
+      this.graphics.lineStyle(2, boss.phase === 2 ? 0xfb7185 : 0xfacc15, 0.98);
+      this.graphics.strokeRoundedRect(panel.x, panel.y, panel.width, panel.height, 6);
+      this.drawBar(panel.x + 28, panel.y + 48, panel.width - 56, 8, hpRatio, 0xef4444);
+    } else {
+      this.bossText.setVisible(false);
+      const encounterLabel = this.getEncounterLabel(world);
+      this.encounterText.setText(encounterLabel).setVisible(Boolean(encounterLabel));
+      if (encounterLabel) {
+        const commanderActive = world.enemies.some(
+          (enemy) => enemy.elite?.kind === "commander",
+        );
+        const banner = {
+          x: this.simulationConfig.arena.width / 2 - 350,
+          y: 104,
+          width: 700,
+          height: world.expedition ? (commanderActive ? 62 : 44) : 34,
+        };
+        this.graphics.fillStyle(0x020617, 0.88);
+        this.graphics.fillRoundedRect(banner.x, banner.y, banner.width, banner.height, 6);
+        this.graphics.lineStyle(
+          2,
+          world.encounter.director.phase === "active" ||
+              world.expedition?.director.phase === "active" ||
+              world.encounter.collapse.stage > 0
+            ? 0xf97316
+            : 0xfacc15,
+          0.95,
+        );
+        this.graphics.strokeRoundedRect(banner.x, banner.y, banner.width, banner.height, 6);
+      }
     }
   }
 
@@ -194,11 +233,38 @@ export class PhaserHud {
     this.metaText.setVisible(visible);
     this.weaponText.setVisible(visible);
     this.encounterText.setVisible(visible && Boolean(this.encounterText.text));
+    this.bossText.setVisible(false);
     this.autoPilotText.setVisible(false);
   }
 
   private getEncounterLabel(world: WorldState): string {
     const labels: string[] = [];
+    if (world.expedition) {
+      const expedition = world.expedition;
+      const phase = expedition.director.phase;
+      const card = formatExpeditionCard(expedition.currentCardTitleKey);
+      const direction = formatExpeditionDirection(expedition.currentDirection);
+      const phaseLabel =
+        phase === "telegraph"
+          ? `予告 ${direction} > ${card}`
+          : phase === "deploying"
+            ? `展開待機 ${direction} > ${card}`
+          : phase === "active"
+            ? `交戦中 ${card}`
+            : phase === "recovery"
+              ? `制圧確認 ${card}`
+              : null;
+      const commander = world.enemies.find(
+        (enemy) => enemy.elite?.kind === "commander",
+      );
+      const commanderLabel = commander?.elite
+        ? `\n指揮個体 HP ${Math.ceil(commander.hp)} / ${commander.elite.maximumHp}`
+        : "";
+      labels.push(
+        `${formatExpeditionAct(expedition.actId)}: ${expedition.objective}${phaseLabel ? `\n${phaseLabel}` : ""}${commanderLabel}`,
+      );
+      return labels.join(" / ");
+    }
     const director = world.encounter.director;
     const scheduledAt = director.scheduledAt;
     const encounterId = director.currentId;
@@ -252,6 +318,55 @@ export class PhaserHud {
     if (world.encounter.contract.choice === "overdrive") labels.push(TEXT.hud.overdriveContract);
     return labels.join(" / ");
   }
+}
+
+function formatExpeditionAct(actId: string): string {
+  const labels: Record<string, string> = {
+    "perimeter-watch": "ACT 1 四方警戒",
+    "first-assault": "ACT 2 重装襲来",
+    counterattack: "ACT 3 反撃",
+    breakthrough: "ACT 4 包囲突破",
+    "command-ship": "ACT 5 最終決戦",
+  };
+  return labels[actId] ?? actId;
+}
+
+function formatExpeditionCard(titleKey: string | null): string {
+  if (!titleKey) return "次の遭遇";
+  const labels: Record<string, string> = {
+    "encounter.vanguard-arc.title": "前衛弧状波",
+    "encounter.crossfire-pincer.title": "十字挟撃",
+    "encounter.heavy-escort.title": "重装護衛隊",
+    "encounter.commander-counterattack.title": "指揮個体反撃",
+    "encounter.charger-breakthrough.title": "突撃突破隊",
+    "encounter.command-ship-showdown.title": "敵指揮艦決戦",
+  };
+  return labels[titleKey] ?? titleKey;
+}
+
+function formatBossAttack(
+  attackId: "targeted-salvo" | "escort-pincer" | "command-pulse",
+): string {
+  if (attackId === "targeted-salvo") return "照準斉射";
+  if (attackId === "escort-pincer") return "挟撃護衛";
+  return "制圧衝撃波";
+}
+
+function formatBossActionPhase(phase: "telegraph" | "execute" | "recovery"): string {
+  if (phase === "telegraph") return "予告";
+  if (phase === "execute") return "攻撃";
+  return "反撃機会";
+}
+
+function formatExpeditionDirection(
+  direction: WorldState["expedition"] extends infer T
+    ? T extends { currentDirection: infer D }
+      ? D
+      : never
+    : never,
+): string {
+  const labels = { north: "北", east: "東", south: "南", west: "西" } as const;
+  return direction ? labels[direction] : "外周";
 }
 
 function getHpBarColor(ratio: number): number {

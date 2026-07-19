@@ -58,7 +58,7 @@ export class ArenaChoiceOverlay {
     this.signature = signature;
     this.root.replaceChildren();
 
-    if (world.state.status === "weaponSelect") this.renderWeaponChoices();
+    if (world.state.status === "weaponSelect") this.renderWeaponChoices(world);
     else if (world.state.status === "upgradeSelect") this.renderUpgradeChoices(world);
     else this.renderContractChoices();
   }
@@ -77,9 +77,15 @@ export class ArenaChoiceOverlay {
     this.root.remove();
   }
 
-  private renderWeaponChoices(): void {
+  private renderWeaponChoices(world: WorldState): void {
     this.visibleChoiceCount = 2;
-    const shell = this.createShell(TEXT.ui.weaponSelectTitle, "開始ビルドの戦い方を決めます");
+    const expedition = Boolean(world.expedition);
+    const shell = this.createShell(
+      expedition ? `最終遠征 / ${TEXT.ui.weaponSelectTitle}` : TEXT.ui.weaponSelectTitle,
+      expedition
+        ? "5つのActを突破する開始ビルドを選択"
+        : "開始ビルドの戦い方を決めます",
+    );
     const choices = element("div", "arena-choice-grid arena-choice-grid--two");
     choices.append(
       this.createWeaponButton(

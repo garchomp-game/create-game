@@ -10,6 +10,7 @@ import type { UpgradePreviewStat } from "../simulation/upgradePreview";
 
 export type MenuActionLabel =
   | "start"
+  | "startExpedition"
   | "selectPulse"
   | "selectSpread"
   | "contractStandard"
@@ -41,6 +42,7 @@ export type UiText = {
   libraryLabel: string;
   titleScreen: string;
   endlessMode: string;
+  expeditionMode: string;
   weaponSelectTitle: string;
   weaponSelectDescription: string;
   contractTitle: string;

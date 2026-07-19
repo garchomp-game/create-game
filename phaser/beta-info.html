@@ -6,24 +6,24 @@
     <meta name="theme-color" content="#081117" />
     <meta
       name="description"
-      content="Arena Core公開ベータの版情報、保存データ、既知制約、フィードバック方法。"
+      content="Arena Core技術プレビューの版情報、保存データ、既知制約、フィードバック方法。"
     />
     <link rel="icon" href="data:," />
-    <title>ベータ情報 | Arena Core</title>
+    <title>プレビュー情報 | Arena Core</title>
   </head>
   <body>
     <header class="beta-header">
       <div class="beta-header__inner">
-        <p class="beta-kicker">PUBLIC BETA</p>
+        <p class="beta-kicker">TECHNICAL PREVIEW</p>
         <h1>ARENA CORE</h1>
-        <p class="beta-summary">公開版の識別情報と、端末内データの扱い</p>
+        <p class="beta-summary">候補版の識別情報と、端末内データの扱い</p>
         <a class="beta-return" href="/">ゲームに戻る</a>
       </div>
     </header>
 
     <main>
       <section aria-labelledby="release-heading">
-        <h2 id="release-heading">公開版</h2>
+        <h2 id="release-heading">候補版</h2>
         <dl class="release-grid">
           <div><dt>アプリ</dt><dd id="app-version">確認中</dd></div>
           <div><dt>ルール</dt><dd id="ruleset-version">確認中</dd></div>
@@ -39,7 +39,7 @@
         <h2 id="privacy-heading">保存とプライバシー</h2>
         <p>
           ゲストID、設定、ラン履歴、ローカルランキングは、このブラウザの
-          <code>localStorage</code>だけへ保存します。公開版は解析サービス、広告、アカウント、
+          <code>localStorage</code>だけへ保存します。候補版は解析サービス、広告、アカウント、
           クラウド同期を使わず、ランJSONや操作情報を外部へ自動送信しません。
         </p>
         <p>
@@ -57,7 +57,7 @@
       <section aria-labelledby="limits-heading">
         <h2 id="limits-heading">既知の制約</h2>
         <ul>
-          <li>公開ベータはデスクトップのキーボードとマウス操作を主対象とします。</li>
+          <li>技術プレビューはデスクトップのキーボードとマウス操作を主対象とします。</li>
           <li>縦長画面でも表示は確認しますが、タッチ専用操作はまだありません。</li>
           <li>ランキングと履歴は端末内だけです。ブラウザや端末をまたいで同期しません。</li>
           <li>途中保存はありません。ページ再読み込みやタブ終了で進行中のランは終了します。</li>
@@ -91,7 +91,7 @@
 
     <footer>
       <a href="https://github.com/garchomp-game/create-game">ソースリポジトリ</a>
-      <span>公開ベータ</span>
+      <span>技術プレビュー</span>
     </footer>
     <script type="module" src="/src/betaInfo.ts"></script>
   </body>

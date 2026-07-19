@@ -9,6 +9,7 @@ import type {
 } from "../../domain/profile";
 import type {
   RankEligibility,
+  RunComparisonQuery,
   RunContext,
   RunOrigin,
   RunRecord,
@@ -21,7 +22,9 @@ import type {
 } from "../../math/random";
 import type {
   EnemyTypeId,
+  BossAttackId,
   EncounterState,
+  ExpeditionState,
   ExtraUpgradeId,
   GameEvent,
   GameStatus,
@@ -40,6 +43,9 @@ import type {
   AutoPilotOverrideReason,
 } from "../../simulation/autoPilot";
 import type { BuildComposition } from "../../simulation/buildComposer";
+import type { ArenaPerformanceSnapshot } from "../../application/PerformanceMonitor";
+import type { ArenaRenderPerformanceSnapshot } from "./PhaserArenaRenderer";
+export type { ArenaPerformanceSnapshot } from "../../application/PerformanceMonitor";
 
 export type ArenaObstacleContactCounts = {
   player: number;
@@ -53,22 +59,15 @@ export type ArenaRandomStreamSnapshot = Pick<RandomStreams, "version" | "rootSee
   seeds: Record<RandomStreamId, number>;
 };
 
-export type ArenaPerformanceSnapshot = {
-  frameSamples: number;
-  averageRawDtMs: number;
-  p95RawDtMs: number;
-  maxRawDtMs: number;
-  framesOver50Ms: number;
-  estimatedFps: number;
-  actualFps: number;
-};
-
 export type ArenaDebugSnapshot = {
   configVersion: string;
   buildCommit: string;
   runContext: RunContext | null;
   latestRunRecord: RunRecord | null;
   secondaryMenu: SecondaryMenu | null;
+  rankingQuery: RunComparisonQuery | null;
+  rankingBoardIndex: number;
+  rankingBoardCount: number;
   seed: number;
   randomStreams: ArenaRandomStreamSnapshot;
   status: GameStatus;
@@ -79,7 +78,9 @@ export type ArenaDebugSnapshot = {
   autoPilotRiskScore: number;
   autoPilotTargetId: string | null;
   performance: ArenaPerformanceSnapshot;
+  renderPerformance: ArenaRenderPerformanceSnapshot;
   elapsed: number;
+  difficultyElapsed: number;
   hp: number;
   score: number;
   weaponType: WeaponTypeId;
@@ -96,6 +97,7 @@ export type ArenaDebugSnapshot = {
   runtime: RuntimeModifiers;
   buildComposition: BuildComposition;
   encounter: EncounterState;
+  expedition: ExpeditionState | null;
   wave: WaveBand;
   stats: RunStats;
   resultSummary: RunResultSummary;
@@ -132,7 +134,9 @@ export type ArenaRunExport = {
   randomStreams: ArenaRandomStreamSnapshot;
   status: GameStatus;
   performance: ArenaPerformanceSnapshot;
+  renderPerformance: ArenaRenderPerformanceSnapshot;
   elapsed: number;
+  difficultyElapsed: number;
   wave: WaveBand;
   resultSummary: RunResultSummary;
   stats: RunStats;
@@ -156,6 +160,7 @@ export type ArenaRunExport = {
   runtime: RuntimeModifiers;
   buildComposition: BuildComposition;
   encounter: EncounterState;
+  expedition: ExpeditionState | null;
   lastEvents: GameEvent[];
 };
 
@@ -188,6 +193,10 @@ export type ArenaDebugApi = {
   setObstacleFrictionFixture(): void;
   setHealPickupFixture(mode?: "damaged" | "full" | "fatal" | "visual"): void;
   setOffscreenEnemyIndicatorFixture(): void;
+  setExpeditionCommanderFixture(): void;
+  setExpeditionChargerFixture(): void;
+  setExpeditionBossFixture(attackId?: BossAttackId, phase?: 1 | 2): void;
+  armExpeditionBossDefeat(): void;
   step(input?: Partial<InputSnapshot>, deltaSeconds?: number): void;
 };
 

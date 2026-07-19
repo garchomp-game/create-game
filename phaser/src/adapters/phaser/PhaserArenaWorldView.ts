@@ -1,4 +1,6 @@
 import * as Phaser from "phaser";
+import { FINAL_COMMAND_SHIP_DEFINITION } from "../../content/bossCatalog";
+import type { EncounterDirection } from "../../domain/encounterDirector";
 import type {
   EnemyViewConfig,
   SimulationConfig,
@@ -20,16 +22,12 @@ export class PhaserArenaWorldView {
     world: WorldState,
     pointerWorld: Vec2 | null,
   ): void {
-    const { arena } = this.simulationConfig;
     const { bullet, pickup, player } = this.viewConfig;
 
     graphics.clear();
-    graphics.fillStyle(this.viewConfig.arena.background, 1);
-    graphics.fillRect(0, 0, arena.width, arena.height);
     this.drawCollapse(graphics, world);
     this.drawPulseBoundaryField(graphics, world);
-    graphics.lineStyle(3, this.viewConfig.arena.border, 1);
-    graphics.strokeRect(1.5, 1.5, arena.width - 3, arena.height - 3);
+    this.drawExpeditionSituation(graphics, world);
 
     for (const obstacle of world.obstacles) {
       graphics.fillStyle(this.viewConfig.obstacle.fill, 1);
@@ -76,7 +74,14 @@ export class PhaserArenaWorldView {
     }
 
     for (const item of world.enemies) {
-      this.drawEnemy(graphics, item, world.state.elapsed);
+      this.drawEnemy(
+        graphics,
+        item,
+        world.state.elapsed,
+        world.expedition?.boss?.enemyId === item.id
+          ? world.expedition.boss.phase
+          : null,
+      );
     }
     this.drawOffscreenEnemyIndicators(graphics, world);
 
@@ -121,6 +126,171 @@ export class PhaserArenaWorldView {
     graphics.strokeRect(4, 4, width - 8, height - 8);
     graphics.lineStyle(1, 0xa5f3fc, 0.8);
     graphics.strokeRect(8, 8, width - 16, height - 16);
+  }
+
+  private drawExpeditionSituation(
+    graphics: Phaser.GameObjects.Graphics,
+    world: WorldState,
+  ): void {
+    const expedition = world.expedition;
+    if (!expedition) return;
+
+    const actAge = Math.max(0, world.state.elapsed - expedition.actStartedAt);
+    if (actAge <= 2.6) {
+      const alpha = Math.max(0, 1 - actAge / 2.6);
+      const { width, height } = this.simulationConfig.arena;
+      const inset = 28 + actAge * 7;
+      graphics.lineStyle(2, 0x5eead4, alpha * 0.55);
+      graphics.strokeRect(
+        inset,
+        inset,
+        Math.max(0, width - inset * 2),
+        Math.max(0, height - inset * 2),
+      );
+      graphics.lineStyle(1, 0xfacc15, alpha * 0.42);
+      graphics.strokeCircle(width / 2, height / 2, 66 + actAge * 22);
+    }
+
+    if (expedition.boss?.status === "active") {
+      this.drawBossSituation(graphics, world);
+      return;
+    }
+
+    const direction = expedition.currentDirection;
+    const phase = expedition.director.phase;
+    if (
+      !direction ||
+      (phase !== "telegraph" && phase !== "deploying" && phase !== "active")
+    ) return;
+    const directions =
+      expedition.currentGeometryId === "pincer"
+        ? [direction, oppositeDirection(direction)]
+        : [direction];
+    for (const ingressDirection of directions) {
+      this.drawIngressDirection(
+        graphics,
+        ingressDirection,
+        phase === "active",
+      );
+    }
+  }
+
+  private drawBossSituation(
+    graphics: Phaser.GameObjects.Graphics,
+    world: WorldState,
+  ): void {
+    const boss = world.expedition!.boss!;
+    const enemy = world.enemies.find((candidate) => candidate.id === boss.enemyId);
+    if (!enemy) return;
+
+    if (boss.phaseChangedAt !== null) {
+      const age = world.state.elapsed - boss.phaseChangedAt;
+      if (age >= 0 && age <= 1.4) {
+        const alpha = 1 - age / 1.4;
+        graphics.lineStyle(4, 0xfb7185, alpha * 0.8);
+        graphics.strokeCircle(
+          enemy.position.x,
+          enemy.position.y,
+          enemy.radius + 16 + age * 38,
+        );
+      }
+    }
+
+    const action = boss.action;
+    if (action.phase === "recovery") return;
+    if (action.attackId === "escort-pincer" && action.ingressDirection) {
+      this.drawIngressDirection(
+        graphics,
+        action.ingressDirection,
+        action.phase === "execute",
+      );
+      this.drawIngressDirection(
+        graphics,
+        oppositeDirection(action.ingressDirection),
+        action.phase === "execute",
+      );
+    }
+    if (action.attackId === "command-pulse") {
+      const radius = FINAL_COMMAND_SHIP_DEFINITION.commandPulse.radius[boss.phase - 1];
+      const telegraph = action.phase === "telegraph";
+      const color = telegraph ? 0xfacc15 : 0xfb7185;
+      graphics.fillStyle(color, telegraph ? 0.08 : 0.16);
+      graphics.fillCircle(enemy.position.x, enemy.position.y, radius);
+      graphics.lineStyle(telegraph ? 4 : 6, color, telegraph ? 0.9 : 0.72);
+      graphics.strokeCircle(enemy.position.x, enemy.position.y, radius);
+      graphics.lineStyle(2, color, telegraph ? 0.56 : 0.4);
+      graphics.strokeCircle(
+        enemy.position.x,
+        enemy.position.y,
+        Math.max(enemy.radius + 8, radius - 18),
+      );
+      return;
+    }
+    if (!action.aimDirection) return;
+
+    const color = action.phase === "telegraph" ? 0xfacc15 : 0xf97316;
+    const alpha = action.phase === "telegraph" ? 0.68 : 0.42;
+    const spread =
+      (action.attackId === "targeted-salvo"
+        ? FINAL_COMMAND_SHIP_DEFINITION.targetedSalvo.spreadRadians[boss.phase - 1]
+        : FINAL_COMMAND_SHIP_DEFINITION.escortPincer.suppressiveSalvo
+            .spreadRadians[boss.phase - 1]) / 2;
+    const directions = [
+      rotateDirection(action.aimDirection, -spread),
+      action.aimDirection,
+      rotateDirection(action.aimDirection, spread),
+    ];
+    directions.forEach((direction, index) => {
+      const start = {
+        x: enemy.position.x + direction.x * (enemy.radius + 4),
+        y: enemy.position.y + direction.y * (enemy.radius + 4),
+      };
+      graphics.lineStyle(index === 1 ? 3 : 2, color, index === 1 ? alpha : alpha * 0.72);
+      graphics.lineBetween(
+        start.x,
+        start.y,
+        start.x + direction.x * 720,
+        start.y + direction.y * 720,
+      );
+    });
+  }
+
+  private drawIngressDirection(
+    graphics: Phaser.GameObjects.Graphics,
+    direction: EncounterDirection,
+    active: boolean,
+  ): void {
+    const { width, height } = this.simulationConfig.arena;
+    const color = active ? 0xf97316 : 0xfacc15;
+    const band = 22;
+    graphics.fillStyle(color, active ? 0.055 : 0.085);
+    if (direction === "north") graphics.fillRect(0, 0, width, band);
+    else if (direction === "south") graphics.fillRect(0, height - band, width, band);
+    else if (direction === "west") graphics.fillRect(0, 0, band, height);
+    else graphics.fillRect(width - band, 0, band, height);
+
+    graphics.lineStyle(active ? 2 : 3, color, active ? 0.42 : 0.78);
+    const count = direction === "north" || direction === "south" ? 9 : 5;
+    for (let index = 1; index <= count; index += 1) {
+      const along =
+        (index / (count + 1)) *
+        (direction === "north" || direction === "south" ? width : height);
+      const depth = active ? 13 : 18;
+      const half = active ? 6 : 8;
+      if (direction === "north") {
+        graphics.lineBetween(along - half, 6, along, depth);
+        graphics.lineBetween(along + half, 6, along, depth);
+      } else if (direction === "south") {
+        graphics.lineBetween(along - half, height - 6, along, height - depth);
+        graphics.lineBetween(along + half, height - 6, along, height - depth);
+      } else if (direction === "west") {
+        graphics.lineBetween(6, along - half, depth, along);
+        graphics.lineBetween(6, along + half, depth, along);
+      } else {
+        graphics.lineBetween(width - 6, along - half, width - depth, along);
+        graphics.lineBetween(width - 6, along + half, width - depth, along);
+      }
+    }
   }
 
   private drawCollapse(
@@ -192,10 +362,22 @@ export class PhaserArenaWorldView {
     graphics: Phaser.GameObjects.Graphics,
     enemy: WorldState["enemies"][number],
     elapsed: number,
+    bossPhase: 1 | 2 | null,
   ): void {
     const view = this.viewConfig.enemy[enemy.typeId];
     const { x, y } = enemy.position;
     const r = enemy.radius;
+
+    if (enemy.boss) {
+      this.drawCommandShip(graphics, enemy, elapsed, bossPhase ?? 1);
+      if (
+        (enemy.pulseFocusStacks ?? 0) > 0 &&
+        (enemy.pulseFocusExpiresAt ?? 0) >= elapsed
+      ) {
+        this.drawPulseFocusPips(graphics, x, y - r - 14, enemy.pulseFocusStacks ?? 0);
+      }
+      return;
+    }
 
     if (view.shape === "circle") {
       graphics.fillStyle(view.color, 1);
@@ -236,12 +418,62 @@ export class PhaserArenaWorldView {
     }
 
     this.drawEnemyMark(graphics, enemy, view);
+    if (enemy.elite?.kind === "commander") {
+      this.drawCommanderEliteMark(graphics, enemy, elapsed);
+    }
+    if (enemy.action?.kind === "charger") {
+      this.drawChargerAction(graphics, enemy, elapsed);
+    }
     if (
       (enemy.pulseFocusStacks ?? 0) > 0 &&
       (enemy.pulseFocusExpiresAt ?? 0) >= elapsed
     ) {
       this.drawPulseFocusPips(graphics, x, y - r - 7, enemy.pulseFocusStacks ?? 0);
     }
+  }
+
+  private drawCommandShip(
+    graphics: Phaser.GameObjects.Graphics,
+    enemy: WorldState["enemies"][number],
+    elapsed: number,
+    phase: 1 | 2,
+  ): void {
+    const { x, y } = enemy.position;
+    const radius = enemy.radius;
+    const accent = phase === 2 ? 0xfb7185 : 0xfacc15;
+    const wing = [
+      { x: x - radius * 1.65, y: y - radius * 0.25 },
+      { x: x - radius * 0.55, y: y - radius * 0.72 },
+      { x: x + radius * 0.55, y: y - radius * 0.72 },
+      { x: x + radius * 1.65, y: y - radius * 0.25 },
+      { x: x + radius * 1.25, y: y + radius * 0.62 },
+      { x: x, y: y + radius * 0.9 },
+      { x: x - radius * 1.25, y: y + radius * 0.62 },
+    ];
+    this.drawPolygon(graphics, wing, 0x3f1d4b, accent);
+    this.drawPolygon(
+      graphics,
+      this.getRegularPolygonPoints(x, y, radius, 6, Math.PI / 6),
+      0x172554,
+      0xf8fafc,
+    );
+    graphics.lineStyle(3, accent, 0.92);
+    graphics.strokeCircle(x, y, radius * 0.55);
+    graphics.fillStyle(phase === 2 ? 0xfda4af : 0xfef3c7, 1);
+    graphics.fillCircle(x, y, radius * 0.24);
+    graphics.lineStyle(2, 0x67e8f9, 0.8);
+    const ring = this.getRegularPolygonPoints(
+      x,
+      y,
+      radius + 10,
+      8,
+      elapsed * 0.22,
+    );
+    this.tracePolygon(graphics, ring);
+    graphics.strokePath();
+    graphics.lineStyle(3, accent, 0.95);
+    graphics.lineBetween(x - radius * 1.5, y, x - radius * 0.72, y);
+    graphics.lineBetween(x + radius * 0.72, y, x + radius * 1.5, y);
   }
 
   private drawPulseFocusPips(
@@ -335,6 +567,10 @@ export class PhaserArenaWorldView {
     this.drawPolygon(graphics, points, view.color, 0xf8fafc);
     graphics.lineStyle(1, view.stroke, 0.95);
     graphics.strokeCircle(center.x, center.y, 15);
+    if (enemy.elite?.kind === "commander") {
+      graphics.lineStyle(2, 0xfacc15, 1);
+      graphics.strokeCircle(center.x, center.y, 18);
+    }
   }
 
   private getOffscreenIndicatorCenter(enemy: WorldState["enemies"][number]): Vec2 {
@@ -418,6 +654,126 @@ export class PhaserArenaWorldView {
     }
   }
 
+  private drawCommanderEliteMark(
+    graphics: Phaser.GameObjects.Graphics,
+    enemy: WorldState["enemies"][number],
+    elapsed: number,
+  ): void {
+    const { x, y } = enemy.position;
+    const radius = enemy.radius + 6;
+    const telegraphing = enemy.elite?.phase === "telegraph";
+    const pulse = 0.72 + Math.sin(elapsed * 8) * 0.18;
+    graphics.lineStyle(telegraphing ? 4 : 3, 0xfacc15, telegraphing ? pulse : 0.95);
+    graphics.strokeCircle(x, y, radius);
+    this.drawPolygon(
+      graphics,
+      this.getRegularPolygonPoints(x, y, radius + 4, 6, Math.PI / 6),
+      0x4c1d57,
+      0xfacc15,
+    );
+    graphics.fillStyle(0xfef3c7, 1);
+    graphics.fillCircle(x, y, Math.max(4, enemy.radius * 0.3));
+    graphics.lineStyle(2, 0xfb7185, 0.95);
+    graphics.strokeCircle(x, y, Math.max(7, enemy.radius * 0.48));
+    graphics.lineStyle(3, 0xfacc15, 0.9);
+    graphics.lineBetween(x - radius - 10, y, x - radius + 1, y);
+    graphics.lineBetween(x + radius - 1, y, x + radius + 10, y);
+    graphics.lineStyle(2, 0xfffbeb, 0.95);
+    graphics.lineBetween(x - 8, y - radius - 5, x, y - radius - 12);
+    graphics.lineBetween(x, y - radius - 12, x + 8, y - radius - 5);
+    graphics.lineBetween(x - 8, y - radius - 5, x + 8, y - radius - 5);
+    if (telegraphing) {
+      for (let index = 0; index < 4; index += 1) {
+        const angle = (Math.PI * 2 * index) / 4 + elapsed * 0.8;
+        graphics.lineBetween(
+          x + Math.cos(angle) * (radius + 2),
+          y + Math.sin(angle) * (radius + 2),
+          x + Math.cos(angle) * (radius + 10),
+          y + Math.sin(angle) * (radius + 10),
+        );
+      }
+    }
+  }
+
+  private drawChargerAction(
+    graphics: Phaser.GameObjects.Graphics,
+    enemy: WorldState["enemies"][number],
+    elapsed: number,
+  ): void {
+    const action = enemy.action!;
+    const { x, y } = enemy.position;
+    const radius = enemy.radius + 5;
+    graphics.lineStyle(2, 0xfef08a, 0.95);
+    graphics.strokeCircle(x, y, radius);
+    const facing = action.chargeDirection ?? { x: 1, y: 0 };
+    const perpendicular = { x: -facing.y, y: facing.x };
+    const rear = {
+      x: x - facing.x * (radius - 1),
+      y: y - facing.y * (radius - 1),
+    };
+    graphics.lineStyle(2, 0xfb7185, 0.9);
+    graphics.lineBetween(
+      rear.x - facing.x * 8 + perpendicular.x * 6,
+      rear.y - facing.y * 8 + perpendicular.y * 6,
+      rear.x,
+      rear.y,
+    );
+    graphics.lineBetween(
+      rear.x - facing.x * 8 - perpendicular.x * 6,
+      rear.y - facing.y * 8 - perpendicular.y * 6,
+      rear.x,
+      rear.y,
+    );
+
+    const direction = action.chargeDirection;
+    if (!direction) return;
+    const warning = action.phase === "telegraph" || action.phase === "prepare";
+    if (warning) {
+      const segmentLength = 28;
+      const gap = 11;
+      const alpha = action.phase === "prepare"
+        ? 0.95
+        : 0.55 + Math.sin(elapsed * 12) * 0.2;
+      graphics.lineStyle(action.phase === "prepare" ? 4 : 3, 0xfb7185, alpha);
+      for (let index = 0; index < 7; index += 1) {
+        const startDistance = radius + 4 + index * (segmentLength + gap);
+        const endDistance = startDistance + segmentLength;
+        graphics.lineBetween(
+          x + direction.x * startDistance,
+          y + direction.y * startDistance,
+          x + direction.x * endDistance,
+          y + direction.y * endDistance,
+        );
+      }
+      const tipDistance = radius + 7 * (segmentLength + gap);
+      const perpendicular = { x: -direction.y, y: direction.x };
+      graphics.lineBetween(
+        x + direction.x * tipDistance,
+        y + direction.y * tipDistance,
+        x + direction.x * (tipDistance - 14) + perpendicular.x * 8,
+        y + direction.y * (tipDistance - 14) + perpendicular.y * 8,
+      );
+      graphics.lineBetween(
+        x + direction.x * tipDistance,
+        y + direction.y * tipDistance,
+        x + direction.x * (tipDistance - 14) - perpendicular.x * 8,
+        y + direction.y * (tipDistance - 14) - perpendicular.y * 8,
+      );
+    } else if (action.phase === "charge") {
+      graphics.lineStyle(5, 0xfacc15, 0.72);
+      graphics.lineBetween(
+        x - direction.x * (radius + 34),
+        y - direction.y * (radius + 34),
+        x - direction.x * radius,
+        y - direction.y * radius,
+      );
+    } else if (action.phase === "recovery") {
+      graphics.lineStyle(3, 0x94a3b8, 0.85);
+      graphics.lineBetween(x - radius, y - radius, x + radius, y + radius);
+      graphics.lineBetween(x + radius, y - radius, x - radius, y + radius);
+    }
+  }
+
   private drawEnemyProjectile(
     graphics: Phaser.GameObjects.Graphics,
     projectile: WorldState["enemyProjectiles"][number],
@@ -425,6 +781,7 @@ export class PhaserArenaWorldView {
     const { x, y } = projectile.position;
     const r = projectile.radius + 3;
     const view = this.viewConfig.enemyProjectile;
+    const bossProjectile = Boolean(projectile.source?.bossAttackId);
     this.drawPolygon(
       graphics,
       [
@@ -433,14 +790,18 @@ export class PhaserArenaWorldView {
         { x, y: y + r },
         { x: x - r, y },
       ],
-      view.color,
-      view.stroke,
+      bossProjectile ? 0x9f1239 : view.color,
+      bossProjectile ? 0xfef08a : view.stroke,
     );
     graphics.lineStyle(1, view.core, 0.95);
     graphics.lineBetween(x - r * 0.45, y, x + r * 0.45, y);
     graphics.lineBetween(x, y - r * 0.45, x, y + r * 0.45);
     graphics.fillStyle(view.core, 1);
     graphics.fillCircle(x, y, Math.max(2, projectile.radius * 0.35));
+    if (bossProjectile) {
+      graphics.lineStyle(2, 0xfb7185, 0.9);
+      graphics.strokeCircle(x, y, r + 3);
+    }
   }
 
   private drawPolygon(
@@ -488,4 +849,18 @@ export class PhaserArenaWorldView {
       };
     });
   }
+}
+
+function oppositeDirection(direction: EncounterDirection): EncounterDirection {
+  const directions: EncounterDirection[] = ["north", "east", "south", "west"];
+  return directions[(directions.indexOf(direction) + 2) % directions.length]!;
+}
+
+function rotateDirection(direction: Vec2, radians: number): Vec2 {
+  const cosine = Math.cos(radians);
+  const sine = Math.sin(radians);
+  return {
+    x: direction.x * cosine - direction.y * sine,
+    y: direction.x * sine + direction.y * cosine,
+  };
 }

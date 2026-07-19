@@ -74,18 +74,19 @@ export class PhaserArenaScreenView {
       this.statusText
         .setOrigin(0, 0)
         .setAlign("left")
-        .setFontSize(20)
-        .setLineSpacing(7)
-        .setWordWrapWidth(400)
-        .setPosition(72, 34)
+        .setFontSize(18)
+        .setLineSpacing(5)
+        .setWordWrapWidth(280)
+        .setPosition(40, 34)
         .setText(screen.statusText ?? "")
         .setVisible(true);
       this.detailText
         .setOrigin(0, 0)
         .setAlign("left")
-        .setFontSize(17)
-        .setPosition(520, 42)
-        .setWordWrapWidth(366)
+        .setFontSize(14)
+        .setLineSpacing(3)
+        .setPosition(640, 42)
+        .setWordWrapWidth(280)
         .setText(screen.detailText ?? "")
         .setVisible(true);
       this.drawMenuButtons(graphics, world, screen);
@@ -134,10 +135,10 @@ export class PhaserArenaScreenView {
       this.statusText
         .setOrigin(0.5)
         .setAlign("center")
-        .setFontSize(36)
-        .setLineSpacing(8)
+        .setFontSize(32)
+        .setLineSpacing(4)
         .setWordWrapWidth(width - 160)
-        .setPosition(width / 2, 164)
+        .setPosition(width / 2, 116)
         .setText(screen.statusText ?? "")
         .setVisible(true);
       this.drawMenuButtons(graphics, world, screen);
