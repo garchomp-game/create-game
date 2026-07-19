@@ -3,11 +3,13 @@ title: 現在地
 description: Arena Core Phaser版の実装状況、確認済み課題、次の作業。
 ---
 
-最終整理日: 2026-07-18
+最終整理日: 2026-07-19
 
 ## 現在の状態
 
 Phaser版v0.6.8は、Phaser 4.2.1 WebGL、可変桁HUD、ゲスト・ローカル保存を公開ベータとして固定した版です。[Cloudflare公開URL](https://arena-core.garchomp-game.workers.dev/)は基準commit `ff686f992a65`、Version ID `e86f90b8-ea15-4d1d-b01b-59e4f9fea78e`を配信しています。タイトルとリザルト、HTML meta、ベータ情報ページからアプリ版、ルール版、ビルドを識別できます。保存データ、削除、既知制約、フィードバック、第三者ライセンスも同一オリジンで公開します。
+
+v0.7 RC6は別branchで統合QA中です。Encounterのrun / Act / active時計、勝利時間ランキング、overall / weapon PB、fixed seed、RC6 rulesetを分離し、2400 HP有限回復候補は棄却しました。Wave 4ではCommander中に通常敵圧力だけが先行する不整合とAct時計のstep丸め依存を修正しました。3 fixed seed x 2武器は3/6勝（Pulse 1、Spread 2）で、全6がAct 5と全ボス攻撃、5/6がboss phase 2へ到達しています。productionはv0.6.8のまま変更していません。
 
 ゲーム数値はv0.6.6のままです。672.20秒 / 92728点でアリーナ崩壊2段階へ到達したPulse手動ランにより、精密射撃調整の採用を完了しました。Pulseは照準・貫通・反射角で成果上限を伸ばす単線武器、Spreadは広角の複数標的処理を安定させる武器として分かれています。
 
@@ -228,7 +230,7 @@ RC5は基準証跡として保持し、productionへ直接昇格しません。U
 3. [#73](https://github.com/garchomp-game/create-game/issues/73)のAct時計、Commander期限、spawn deferは完了。既存probeでは決定論と最終Act到達を維持した。
 4. [#74](https://github.com/garchomp-game/create-game/issues/74)の総クリア時間、overall / weapon、fixed seed、ruleset分離は完了。
 5. [#75](https://github.com/garchomp-game/create-game/issues/75)の有限回復候補棄却を基準化する。
-6. [#59](https://github.com/garchomp-game/create-game/issues/59)でcontrolが3/6勝利に留まる理由を切り分け、6構成全勝assert、全回帰、Pulse / Spread手動採否を行う。
+6. [#59](https://github.com/garchomp-game/create-game/issues/59)で難度時計と機構fixtureを確定し、全入力replay、全回帰、Version Preview、Pulse / Spread手動採否を行う。
 7. RC6採否後にv0.8の面白さ検証、Stage 1 / 5 / 10の3作戦検証へ進む。
 
 直近の詳細は[直近フェーズ](../../project-management/next-phase-plan/)と[v0.7 実行計画](../../project-management/v07-execution-plan/)、技術契約は[RC6の時計と記録規則](../../engineering/expedition-rc6-clock-and-ranking-adr/)、3作戦系列は[エクスペディション3作戦検証](../../design/expedition-campaign/)、表示改善は[UI・グラフィック再設計計画](../../project-management/ui-visual-redesign-plan/)を参照してください。

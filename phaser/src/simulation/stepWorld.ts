@@ -28,6 +28,7 @@ import {
 } from "./systems/encounterSystem";
 import { getWaveBand } from "./waveDirector";
 import { getThreatTier } from "./threatDirector";
+import { getDifficultyElapsed } from "./difficultyClock";
 
 export function stepWorld(
   world: WorldState,
@@ -146,7 +147,8 @@ function collectResult(
   config: SimulationConfig,
   events: GameEvent[],
 ): StepWorldResult {
-  const wave = getWaveBand(config, world.state.elapsed);
+  const difficultyElapsed = getDifficultyElapsed(world);
+  const wave = getWaveBand(config, difficultyElapsed);
   return {
     events,
     metrics: [
@@ -160,13 +162,14 @@ function collectResult(
         value: world.enemyProjectiles.length,
       },
       { type: "gauge", name: "world.pickups", value: world.pickups.length },
+      { type: "gauge", name: "world.difficulty_elapsed", value: difficultyElapsed },
       { type: "gauge", name: "wave.start", value: wave.start },
       { type: "gauge", name: "wave.spawn_budget", value: wave.spawnBudget },
       { type: "gauge", name: "wave.max_enemies", value: wave.maxEnemies },
       {
         type: "gauge",
         name: "endless.threat_tier",
-        value: getThreatTier(config, world.state.elapsed),
+        value: getThreatTier(config, difficultyElapsed),
       },
       {
         type: "gauge",

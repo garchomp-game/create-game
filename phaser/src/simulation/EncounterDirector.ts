@@ -323,7 +323,7 @@ export class EncounterDirector {
     const delta = Math.max(0, runElapsed - state.runElapsed);
     const wasBlocked = this.shouldBlockActClock(state);
     if (!wasBlocked) {
-      state.actElapsed = roundToMillis(state.actElapsed + delta);
+      state.actElapsed += delta;
     }
     if (state.phase === "active" && state.activeStartedAt !== null) {
       state.activeElapsed = roundToMillis(

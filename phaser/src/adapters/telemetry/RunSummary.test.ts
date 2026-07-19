@@ -20,6 +20,7 @@ describe("run summary", () => {
       seed: 42,
       seedCategory: "random",
       status: "gameOver",
+      difficultyElapsed: 75.25,
       performance: {
         frameSamples: 5_400,
         actualFps: 60.1234,
@@ -197,6 +198,8 @@ describe("run summary", () => {
       weapon: "pulse",
       contract: "overdrive",
       elapsed_seconds: 90,
+      difficulty_elapsed_seconds: 75.25,
+      difficulty_delay_seconds: 14.75,
       score_per_minute: 4000,
       kills_per_minute: 200,
       projectiles_fired: 2000,
@@ -340,6 +343,16 @@ describe("run summary", () => {
     expect(tsv.split("\n")[0]!.split("\t")).toHaveLength(RUN_SUMMARY_COLUMNS.length);
     expect(tsv.split("\n")[1]!.split("\t")).toHaveLength(RUN_SUMMARY_COLUMNS.length);
     expect(tsv).toContain("line one line two");
+  });
+
+  it("preserves a negative clock delta so invalid lead time remains visible", () => {
+    expect(createRunSummaryRow({
+      difficultyElapsed: 61,
+      resultSummary: { elapsed: 60, score: 10 },
+    })).toMatchObject({
+      difficulty_elapsed_seconds: 61,
+      difficulty_delay_seconds: -1,
+    });
   });
 
   it("rejects values without finite result metrics", () => {

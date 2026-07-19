@@ -10,6 +10,7 @@ import { clamp } from "../../math/geometry";
 import { normalize } from "../../math/vector";
 import { moveCircleWithObstacles } from "./movement";
 import { getThreatMultipliers } from "../threatDirector";
+import { getDifficultyElapsed } from "../difficultyClock";
 import {
   getEnemyApproachNavigation,
   hasClearNavigationPath,
@@ -159,7 +160,7 @@ function updateRangedAttack(
 
   const ranged = config.enemies[enemy.typeId].ranged;
   if (!ranged) return;
-  const threat = getThreatMultipliers(config, world.state.elapsed);
+  const threat = getThreatMultipliers(config, getDifficultyElapsed(world));
 
   const distanceToPlayer = Math.hypot(
     world.player.position.x - enemy.position.x,

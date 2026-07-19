@@ -1391,6 +1391,7 @@ export type GameMetric =
         | "world.enemies"
         | "world.enemy_projectiles"
         | "world.pickups"
+        | "world.difficulty_elapsed"
         | "wave.start"
         | "wave.spawn_budget"
         | "wave.max_enemies"

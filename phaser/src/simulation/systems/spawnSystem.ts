@@ -9,6 +9,7 @@ import type {
 } from "../../domain/types";
 import { getWaveBand, selectEnemyTypeForWave } from "../waveDirector";
 import { getEnemyHpMultiplier, getThreatMultipliers } from "../threatDirector";
+import { getDifficultyElapsed } from "../difficultyClock";
 import { getActiveEncounterDefinition } from "./encounterSystem";
 
 export function updateSpawner(
@@ -84,13 +85,14 @@ export function spawnEnemyAtPosition(
   config: SimulationConfig,
 ): Enemy {
   const definition = config.enemies[typeId];
-  const threat = getThreatMultipliers(config, world.state.elapsed);
+  const difficultyElapsed = getDifficultyElapsed(world);
+  const threat = getThreatMultipliers(config, difficultyElapsed);
   const enemy: Enemy = {
     id: `enemy-${world.nextEnemyId++}`,
     typeId,
     position: { ...position },
     radius: definition.radius,
-    hp: Math.ceil(definition.hp * getEnemyHpMultiplier(config, world.state.elapsed, typeId)),
+    hp: Math.ceil(definition.hp * getEnemyHpMultiplier(config, difficultyElapsed, typeId)),
     damage: Math.ceil(definition.damage * threat.damage),
     speed:
       definition.speed *
@@ -107,7 +109,7 @@ export function spawnEnemyAtPosition(
 }
 
 export function getSpawnWave(world: WorldState, config: SimulationConfig) {
-  const wave = getWaveBand(config, world.state.elapsed);
+  const wave = getWaveBand(config, getDifficultyElapsed(world));
   const expedition = world.expedition?.spawnOverride;
   if (expedition) {
     return {

@@ -47,6 +47,7 @@ describe("ArenaDebugController", () => {
     expect(api.getSnapshot()).toMatchObject({
       seed: 42,
       status: "playing",
+      difficultyElapsed: 0,
       hp: SIMULATION_CONFIG.player.maxHp,
       autoPilotEnabled: false,
     });
@@ -69,11 +70,36 @@ describe("ArenaDebugController", () => {
     expect(dependencies.resetGame).toHaveBeenCalledWith("playing", "test");
     expect(dependencies.startAutoPilot).toHaveBeenCalledWith("spread");
   });
+
+  it("moves the Expedition run clock without inventing Act progress", () => {
+    const { controller, session } = createFixture({
+      modeId: "expedition",
+      stageId: "final-expedition",
+    });
+    const api = controller.createApi();
+
+    api.setElapsed(420);
+
+    expect(session.world).toMatchObject({
+      state: { elapsed: 420 },
+      expedition: {
+        director: {
+          runElapsed: 420,
+          actElapsed: 0,
+          activeElapsed: 0,
+        },
+      },
+    });
+    expect(api.getSnapshot()).toMatchObject({
+      elapsed: 420,
+      difficultyElapsed: 0,
+    });
+  });
 });
 
-function createFixture() {
+function createFixture(run: { modeId?: string; stageId?: string } = {}) {
   const session = new ArenaSession(SIMULATION_CONFIG);
-  session.start({ seed: 42, weaponType: "pulse" });
+  session.start({ seed: 42, weaponType: "pulse", ...run });
   const store = new MemoryRunRecordStore();
   const runLifecycle = new RunLifecycleController(store);
   runLifecycle.begin(makeContext(), true);

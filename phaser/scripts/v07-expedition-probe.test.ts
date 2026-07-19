@@ -12,6 +12,8 @@ import type {
   WeaponTypeId,
 } from "../src/domain/types";
 import { createAutoPilotAgent } from "../src/simulation/autoPilot";
+import { getDifficultyElapsed } from "../src/simulation/difficultyClock";
+import { getPressureStep, getThreatTier } from "../src/simulation/threatDirector";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -20,6 +22,13 @@ const SEEDS = readNumberList("ARENA_PROBE_SEEDS", DEFAULT_SEEDS);
 const WEAPONS = readWeaponList();
 const FRAME_RATE = 30;
 const MAX_SECONDS = 15 * 60;
+const MINIMUM_NATURAL_WINS = 3;
+const IS_RELEASE_MATRIX =
+  SEEDS.length === DEFAULT_SEEDS.length &&
+  DEFAULT_SEEDS.every((seed, index) => SEEDS[index] === seed) &&
+  WEAPONS.length === 2 &&
+  WEAPONS.includes("pulse") &&
+  WEAPONS.includes("spread");
 
 export type ProbeResult = {
   sustainProfile: string;
@@ -35,6 +44,13 @@ export type ProbeResult = {
   reachedActId: string | null;
   longestMeaningfulGap: number;
   bossSpawnedAt: number | null;
+  bossSpawnDifficultyElapsed: number | null;
+  bossSpawnThreatTier: number | null;
+  bossSpawnPressureStep: number | null;
+  bossSpawnPlayerHp: number | null;
+  bossSpawnPlayerMaxHp: number | null;
+  bossSpawnLevel: number | null;
+  bossSpawnExtraLevel: number | null;
   bossPhaseReached: number;
   bossAttacksExecuted: Record<string, number>;
   bossCommandPulseResults: Record<string, number>;
@@ -70,6 +86,9 @@ export type ProbeResult = {
   bossRegularEnemiesKilled: number;
   commanderSpawned: number;
   commanderKilled: number;
+  commanderActId: string | null;
+  commanderSelectedAtActElapsed: number | null;
+  commanderFinishedAt: number | null;
   lastDamageSource: PlayerDamageSource | null;
   maximumEnemies: number;
   maximumProjectiles: number;
@@ -96,12 +115,15 @@ export type ProbeExecution = {
 describe("v0.7 final Expedition release probe", () => {
   it("reaches the final phase, preserves weapon clears, and remains deterministic", () => {
     if (process.env.ARENA_PROBE_KIND === "repair-budget") return;
-    const results = WEAPONS.flatMap((weaponType) =>
-      SEEDS.map((seed) => runExpedition(weaponType, seed)),
+    const executions = WEAPONS.flatMap((weaponType) =>
+      SEEDS.map((seed) => executeExpedition(weaponType, seed)),
     );
-    const replay = process.env.ARENA_PROBE_SKIP_REPLAY === "1"
-      ? null
-      : runExpedition("pulse", SEEDS[0]!);
+    const results = executions.map(({ result }) => result);
+    const replays = process.env.ARENA_PROBE_SKIP_REPLAY === "1"
+      ? []
+      : executions.map(({ result, inputTape }) =>
+          executeExpedition(result.weaponType, result.seed, { inputTape }).result
+        );
 
     console.log(JSON.stringify(results, null, 2));
 
@@ -112,12 +134,23 @@ describe("v0.7 final Expedition release probe", () => {
       expect(result.elapsed).toBeLessThanOrEqual(MAX_SECONDS);
       expect(result.longestMeaningfulGap).toBeLessThan(120);
       expect(result.bossSpawnedAt).not.toBeNull();
-      expect(result.bossPhaseReached).toBe(2);
+      expect(result.bossSpawnDifficultyElapsed).toBeGreaterThanOrEqual(390);
+      expect(result.bossSpawnDifficultyElapsed).toBeLessThan(400);
+      expect(result.bossSpawnThreatTier).toBe(0);
+      expect(result.bossSpawnPressureStep).toBe(0);
+      expect(result.bossSpawnPlayerHp).toBeGreaterThan(0);
+      expect(result.bossSpawnPlayerMaxHp).toBeGreaterThanOrEqual(
+        result.bossSpawnPlayerHp!,
+      );
+      expect(result.bossPhaseReached).toBeGreaterThanOrEqual(1);
       expect(result.bossAttacksExecuted["targeted-salvo"]).toBeGreaterThan(0);
       expect(result.bossAttacksExecuted["escort-pincer"]).toBeGreaterThan(0);
       expect(result.bossAttacksExecuted["command-pulse"]).toBeGreaterThan(0);
       expect(result.commanderSpawned).toBe(1);
       expect(result.commanderKilled).toBe(1);
+      expect(result.commanderActId).toBe("counterattack");
+      expect(result.commanderSelectedAtActElapsed).toBeLessThan(300);
+      expect(result.commanderFinishedAt).not.toBeNull();
       expect(result.timeScoreBonus).toBe(0);
       if (result.outcome === "victory") {
         expect(result.score).toBe(result.tacticalScore + result.clearScoreBonus);
@@ -131,19 +164,26 @@ describe("v0.7 final Expedition release probe", () => {
       expect(result.maximumPickups).toBeLessThanOrEqual(2_000);
     }
 
-    for (const weaponType of WEAPONS) {
+    if (IS_RELEASE_MATRIX) {
       expect(
-        results.some(
+        results.filter((result) => result.outcome === "victory").length,
+      ).toBeGreaterThanOrEqual(MINIMUM_NATURAL_WINS);
+      for (const weaponType of WEAPONS) {
+        expect(results.some(
           (result) => result.weaponType === weaponType && result.outcome === "victory",
-        ),
-      ).toBe(true);
+        )).toBe(true);
+        expect(results.some(
+          (result) => result.weaponType === weaponType && result.bossPhaseReached === 2,
+        )).toBe(true);
+      }
     }
 
-    if (replay) {
-      expect(replay.eventHash).toBe(results[0]!.eventHash);
-      expect(replay.worldHash).toBe(results[0]!.worldHash);
+    for (const [index, replay] of replays.entries()) {
+      expect(replay.inputHash).toBe(results[index]!.inputHash);
+      expect(replay.eventHash).toBe(results[index]!.eventHash);
+      expect(replay.worldHash).toBe(results[index]!.worldHash);
     }
-  }, 480_000);
+  }, 900_000);
 
   it("pairs RC6 control with finite repair candidate A using the same inputs", () => {
     if (process.env.ARENA_PROBE_KIND !== "repair-budget") return;
@@ -277,6 +317,15 @@ export function executeExpedition(
   let wasOuter = false;
   let wasNearCover = false;
   let previousBossPosition: { x: number; y: number } | null = null;
+  let bossSpawnSnapshot: {
+    difficultyElapsed: number;
+    threatTier: number;
+    pressureStep: number;
+    playerHp: number;
+    playerMaxHp: number;
+    level: number;
+    extraLevel: number;
+  } | null = null;
   let inputTapeExhausted = false;
   for (let frame = 0; frame < MAX_SECONDS * FRAME_RATE; frame += 1) {
     if (options.inputTape && frame >= options.inputTape.length) {
@@ -323,6 +372,22 @@ export function executeExpedition(
       previousBossPosition = { ...session.world.player.position };
     }
     const result = session.step(input, 1 / FRAME_RATE);
+    if (
+      bossSpawnSnapshot === null &&
+      result.events.some((event) => event.type === "boss.spawned")
+    ) {
+      const difficultyElapsed = getDifficultyElapsed(session.world);
+      bossSpawnSnapshot = {
+        difficultyElapsed,
+        threatTier: getThreatTier(session.config, difficultyElapsed),
+        pressureStep: getPressureStep(session.config, difficultyElapsed),
+        playerHp: session.world.state.hp,
+        playerMaxHp:
+          session.config.player.maxHp + session.world.runtime.maxHpBonus,
+        level: session.world.progression.level,
+        extraLevel: session.world.progression.extraLevel,
+      };
+    }
     if (activeBossId) {
       bossRegularEnemiesKilled += result.events.filter(
         (event) => event.type === "enemy.killed" && event.enemyId !== activeBossId,
@@ -341,6 +406,9 @@ export function executeExpedition(
   const expedition = session.world.stats.encounterMetrics.expedition;
   const boss = session.world.stats.encounterMetrics.boss;
   const commander = session.world.stats.encounterMetrics.commander;
+  const commanderHistory = session.world.expedition?.director.history.find(
+    (entry) => entry.cardId === "commander-counterattack",
+  );
   const activeBoss = session.world.enemies.find((enemy) => enemy.boss);
   const bossDamageTaken = boss?.damageTakenDuringBoss ?? 0;
   const bossHpRecovered = boss?.hpRecoveredDuringBoss ?? 0;
@@ -358,6 +426,13 @@ export function executeExpedition(
     reachedActId: expedition?.reachedActId ?? null,
     longestMeaningfulGap: expedition?.longestMeaningfulGap ?? Number.POSITIVE_INFINITY,
     bossSpawnedAt: boss?.spawnedAt ?? null,
+    bossSpawnDifficultyElapsed: bossSpawnSnapshot?.difficultyElapsed ?? null,
+    bossSpawnThreatTier: bossSpawnSnapshot?.threatTier ?? null,
+    bossSpawnPressureStep: bossSpawnSnapshot?.pressureStep ?? null,
+    bossSpawnPlayerHp: bossSpawnSnapshot?.playerHp ?? null,
+    bossSpawnPlayerMaxHp: bossSpawnSnapshot?.playerMaxHp ?? null,
+    bossSpawnLevel: bossSpawnSnapshot?.level ?? null,
+    bossSpawnExtraLevel: bossSpawnSnapshot?.extraLevel ?? null,
     bossPhaseReached: boss?.phaseReached ?? 0,
     bossAttacksExecuted: { ...(boss?.attacksExecuted ?? {}) },
     bossCommandPulseResults: { ...(boss?.commandPulseResults ?? {}) },
@@ -397,6 +472,10 @@ export function executeExpedition(
     bossRegularEnemiesKilled,
     commanderSpawned: commander?.spawned ?? 0,
     commanderKilled: commander?.killed ?? 0,
+    commanderActId: commanderHistory?.actId ?? null,
+    commanderSelectedAtActElapsed:
+      commanderHistory?.selectedAtActElapsed ?? null,
+    commanderFinishedAt: commanderHistory?.finishedAt ?? null,
     lastDamageSource: session.world.stats.lastDamageSource,
     maximumEnemies,
     maximumProjectiles,

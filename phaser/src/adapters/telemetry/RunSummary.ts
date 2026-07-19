@@ -16,6 +16,8 @@ export const RUN_SUMMARY_COLUMNS = [
   "rank_ineligible_reasons",
   "status",
   "elapsed_seconds",
+  "difficulty_elapsed_seconds",
+  "difficulty_delay_seconds",
   "score",
   "score_per_minute",
   "level",
@@ -177,6 +179,7 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
   const elapsed = numberAt(result, "elapsed") ?? numberAt(value, "elapsed");
   const score = numberAt(result, "score");
   if (elapsed === null || score === null) return null;
+  const difficultyElapsed = numberAt(value, "difficultyElapsed") ?? elapsed;
 
   const weaponMetrics = recordAt(result, "weaponMetrics");
   const buildComposition = recordAt(value, "buildComposition");
@@ -247,6 +250,8 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
     rank_ineligible_reasons: stringArrayAt(rankEligibility, "reasons").join("|"),
     status: stringAt(value, "status") ?? "",
     elapsed_seconds: round(elapsed, 3),
+    difficulty_elapsed_seconds: round(difficultyElapsed, 3),
+    difficulty_delay_seconds: round(elapsed - difficultyElapsed, 3),
     score,
     score_per_minute: elapsed > 0 ? round((score * 60) / elapsed, 3) : null,
     level: numberAt(result, "level"),

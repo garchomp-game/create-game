@@ -336,6 +336,10 @@ describe("ExpeditionController", () => {
         actId: "breakthrough",
       }),
     );
+    expect(fixture.world.expedition).toMatchObject({
+      actId: "breakthrough",
+      director: { actId: "breakthrough" },
+    });
   });
 
   it("starts the Commander timeout at spawn and retires it without a duplicate outcome", () => {

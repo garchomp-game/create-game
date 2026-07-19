@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SIMULATION_CONFIG } from "../../config/gameConfig";
-import type { Enemy, GameEvent } from "../../domain/types";
+import type { Enemy, GameEvent, WorldState } from "../../domain/types";
 import { createWorld } from "../createWorld";
 import { updateEnemies } from "./enemySystem";
 import { updateSpawner } from "./spawnSystem";
@@ -58,6 +58,37 @@ describe("threat scaling integration", () => {
     );
   });
 
+  it("uses Expedition difficulty time instead of blocked run time", () => {
+    const runElapsed =
+      SIMULATION_CONFIG.threat.statStartAt + SIMULATION_CONFIG.threat.statStepSeconds;
+    const difficultyElapsed = SIMULATION_CONFIG.threat.statStartAt;
+    const spawned = createWorld(SIMULATION_CONFIG);
+    attachBlockedExpeditionClock(spawned, runElapsed, difficultyElapsed);
+    spawned.state.spawnTimer = 0;
+    updateSpawner(spawned, 1 / 60, () => 0, SIMULATION_CONFIG, []);
+
+    const baseChaser = SIMULATION_CONFIG.enemies.chaser;
+    expect(spawned.enemies[0]).toMatchObject({
+      typeId: "chaser",
+      hp: baseChaser.hp,
+      damage: baseChaser.damage,
+      score: baseChaser.score,
+    });
+
+    const rangedWorld = createWorld(SIMULATION_CONFIG);
+    attachBlockedExpeditionClock(rangedWorld, runElapsed, difficultyElapsed);
+    rangedWorld.enemies.push(createRangedEnemy(rangedWorld));
+    updateEnemies(rangedWorld, 0, SIMULATION_CONFIG, []);
+
+    const ranged = SIMULATION_CONFIG.enemies.ranged.ranged!;
+    expect(Math.hypot(
+      rangedWorld.enemyProjectiles[0]!.velocity.x,
+      rangedWorld.enemyProjectiles[0]!.velocity.y,
+    )).toBeCloseTo(ranged.projectileSpeed);
+    expect(rangedWorld.enemyProjectiles[0]!.damage).toBe(ranged.projectileDamage);
+    expect(rangedWorld.enemies[0]!.attackTimer).toBeCloseTo(ranged.attackInterval);
+  });
+
   it("caps late-game enemy projectile density without banking a burst", () => {
     const world = createWorld(SIMULATION_CONFIG);
     const ranged = SIMULATION_CONFIG.enemies.ranged.ranged!;
@@ -101,4 +132,19 @@ function createRangedEnemy(world: ReturnType<typeof createWorld>): Enemy {
     attackTimer: 0,
     enteredArena: true,
   };
+}
+
+function attachBlockedExpeditionClock(
+  world: WorldState,
+  runElapsed: number,
+  actElapsed: number,
+): void {
+  world.state.elapsed = runElapsed;
+  world.expedition = {
+    director: {
+      runElapsed,
+      actElapsed,
+      actClockBlocked: true,
+    },
+  } as WorldState["expedition"];
 }

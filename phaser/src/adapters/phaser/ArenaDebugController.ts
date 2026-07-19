@@ -16,6 +16,7 @@ import type {
 import { UPGRADE_IDS } from "../../domain/types";
 import type { RunRecordStorePort } from "../../ports/RunRecordStorePort";
 import { composeBuild } from "../../simulation/buildComposer";
+import { getDifficultyElapsed } from "../../simulation/difficultyClock";
 import { createRunResultSummary } from "../../simulation/resultSummary";
 import {
   completeBuild,
@@ -255,6 +256,7 @@ export class ArenaDebugController {
       ),
       renderPerformance: this.dependencies.getRenderPerformance(),
       elapsed: world.state.elapsed,
+      difficultyElapsed: getDifficultyElapsed(world),
       hp: world.state.hp,
       score: world.state.score,
       weaponType: world.state.weaponType,
@@ -278,7 +280,7 @@ export class ArenaDebugController {
       ),
       encounter: structuredClone(world.encounter),
       expedition: world.expedition ? structuredClone(world.expedition) : null,
-      wave: { ...getWaveBand(config, world.state.elapsed) },
+      wave: { ...getWaveBand(config, getDifficultyElapsed(world)) },
       stats: copyRunStats(world),
       resultSummary: createRunResultSummary(world, config),
       player: { ...world.player.position },
@@ -472,7 +474,15 @@ export class ArenaDebugController {
   private setElapsed(elapsed: number): void {
     if (!Number.isFinite(elapsed)) return;
     this.markMutation(false);
-    this.world.state.elapsed = Math.max(0, elapsed);
+    const target = Math.max(0, elapsed);
+    this.world.state.elapsed = target;
+    const director = this.world.expedition?.director;
+    if (director) {
+      director.runElapsed = target;
+      director.activeElapsed = director.activeStartedAt === null
+        ? 0
+        : Math.round(Math.max(0, target - director.activeStartedAt) * 1_000) / 1_000;
+    }
     this.dependencies.render();
   }
 

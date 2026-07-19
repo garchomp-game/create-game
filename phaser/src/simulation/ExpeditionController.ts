@@ -20,6 +20,7 @@ import type {
 } from "../domain/types";
 import type { RandomStreams } from "../math/random";
 import { getThreatTier } from "./threatDirector";
+import { getDifficultyElapsed } from "./difficultyClock";
 import { EncounterDirector } from "./EncounterDirector";
 import { estimatePointNavigationPath } from "./navigationField";
 import { planStructuredSpawn } from "./structuredSpawnPlanner";
@@ -155,7 +156,7 @@ export class ExpeditionController {
       expedition.director,
       {
         runElapsed: world.state.elapsed,
-        threatTier: getThreatTier(config, world.state.elapsed),
+        threatTier: getThreatTier(config, getDifficultyElapsed(world)),
         signals,
       },
       random.encounter,

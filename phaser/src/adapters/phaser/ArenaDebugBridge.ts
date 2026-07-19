@@ -76,6 +76,7 @@ export type ArenaDebugSnapshot = {
   performance: ArenaPerformanceSnapshot;
   renderPerformance: ArenaRenderPerformanceSnapshot;
   elapsed: number;
+  difficultyElapsed: number;
   hp: number;
   score: number;
   weaponType: WeaponTypeId;
@@ -131,6 +132,7 @@ export type ArenaRunExport = {
   performance: ArenaPerformanceSnapshot;
   renderPerformance: ArenaRenderPerformanceSnapshot;
   elapsed: number;
+  difficultyElapsed: number;
   wave: WaveBand;
   resultSummary: RunResultSummary;
   stats: RunStats;

@@ -71,8 +71,13 @@ Issue: [PH-V07-012 #75](https://github.com/garchomp-game/create-game/issues/75)
 
 Issue: [PH-V07-008 #59](https://github.com/garchomp-game/create-game/issues/59)
 
-- 6構成すべての勝利を機構到達性としてassertする。
-- CommanderのAct境界越え、spawn defer replay、PB分離を明示assertする。
+状態: 実装とローカル自動検証は完了。Commander停止中も`runElapsed`で通常敵圧力が先行する不整合とAct時計のstep丸め依存を修正しました。候補は3/6勝（Pulse 1、Spread 2）、全6で全攻撃、5/6でphase 2へ到達し、全入力replayと全回帰を通過しました。Version Previewと通常UI採否を残しています。
+
+- 全6のCommander撃破、Act 5、全攻撃種と、専用fixtureのboss phase 2を機構到達性としてassertする。
+- 自然runはPulse / Spread各1本以上のboss phase 2到達を要求する。
+- 自然勝利3/6以上、Pulse / Spread各1勝以上を戦闘退行ゲートにする。
+- CommanderのAct境界越えは専用fixture、spawn deferと終了状態は全入力replayでassertする。
+- run exportへ総時間と`difficultyElapsed`を別々に残す。
 - 全回帰後、Pulse / Spread各1本以上で中央周回を手動再試行する。
 - 新しいVersion Previewで実URLsmoke後にproduction判断を記録する。
 
@@ -125,7 +130,7 @@ UI境界[#68](https://github.com/garchomp-game/create-game/issues/68)、比較pr
 ## production昇格条件
 
 - #73、#74、採用する#75候補が完了している。
-- RC6の6構成probeと決定論replayが通る。
+- RC6の全6構成が全ボス攻撃へ到達し、phase 2 fixture、3/6以上かつ各武器1勝以上の自然勝利と全入力replayが通る。
 - 敗北、fixed seed、overall / weapon PB、旧ruleset分離がfixtureで保証される。
 - Pulse / Spread各1本以上の通常UIランで中央周回を再試行している。
 - 不可視攻撃、予告なし即死、操作不能、データ損失、重大性能劣化がない。

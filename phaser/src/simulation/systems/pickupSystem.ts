@@ -9,6 +9,7 @@ import type {
 } from "../../domain/types";
 import { circleCircle, circleRect } from "../../math/geometry";
 import { getThreatMultipliers } from "../threatDirector";
+import { getDifficultyElapsed } from "../difficultyClock";
 
 export function updatePickups(
   world: WorldState,
@@ -107,7 +108,7 @@ function spawnPickupsFromKills(
           event.enemyType,
           rollIndex,
           world.runtime.healDropMissCount,
-          getThreatMultipliers(config, world.state.elapsed).healDrop,
+          getThreatMultipliers(config, getDifficultyElapsed(world)).healDrop,
         );
     world.runtime.healDropRollIndex += 1;
 

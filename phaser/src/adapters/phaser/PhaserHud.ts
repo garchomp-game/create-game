@@ -4,6 +4,7 @@ import { formatTime } from "../../format/time";
 import { TEXT } from "../../lang";
 import { getWaveBand } from "../../simulation/waveDirector";
 import { getThreatTier } from "../../simulation/threatDirector";
+import { getDifficultyElapsed } from "../../simulation/difficultyClock";
 import { getNextCollapseAt } from "../../simulation/systems/collapseSystem";
 import type { AutoPilotMode } from "../../simulation/autoPilot";
 
@@ -72,8 +73,9 @@ export class PhaserHud {
       world.progression.xpToNext > 0
         ? world.progression.xp / world.progression.xpToNext
         : 0;
-    const wave = getWaveBand(this.simulationConfig, world.state.elapsed);
-    const threatTier = getThreatTier(this.simulationConfig, world.state.elapsed);
+    const difficultyElapsed = getDifficultyElapsed(world);
+    const wave = getWaveBand(this.simulationConfig, difficultyElapsed);
+    const threatTier = getThreatTier(this.simulationConfig, difficultyElapsed);
     this.graphics.fillStyle(0x020617, 0.76);
     this.graphics.fillRoundedRect(leftPanel.x, leftPanel.y, leftPanel.width, leftPanel.height, 6);
     this.graphics.fillRoundedRect(rightPanel.x, rightPanel.y, rightPanel.width, rightPanel.height, 6);

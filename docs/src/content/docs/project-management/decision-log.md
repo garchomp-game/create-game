@@ -840,3 +840,21 @@ Stage 10の時間メダルは金9分、銀10分、銅12分とする。完遂15,0
 - 自動中央周回近似は8.5秒で敗北し、手動で報告された誘導後の周回を再現しなかった。自動結果だけで欠陥解消済みとは判断できない。
 
 詳細は[RC6 有限回復予算 比較結果](../../playtest/v07-rc6-repair-budget-report/)を正本とする。
+
+## 2026-07-19: Expedition難度をAct進行へ同期し、自然勝敗と機構fixtureを分離する
+
+決定: `PH-V07-008`で、Expeditionの通常wave、通常敵成長、遠距離攻撃、heal drop減衰を`runElapsed`ではなくDirectorのAct進行から導く`difficultyElapsed`へ統一する。総クリア時間、Commander期限、ボス固有攻撃は`runElapsed`を維持する。
+
+RC6の6構成probeは、全6勝ではなく、全6のCommander撃破、Act 5、3攻撃種を機構到達性として要求する。boss phase 2の遷移と固有挙動は専用fixtureで保証し、自然runでは各武器1本以上のphase 2到達を要求する。自然勝利は修正前controlの3/6以上かつPulse / Spread各1勝以上を戦闘退行ゲートとする。CommanderのAct境界越えは専用fixtureで強制し、自然ランへ手加減入力を加えない。
+
+根拠:
+
+- #73後はCommander中に`actElapsed`だけが止まり、通常敵圧力がrun時間で先行していた。
+- `actElapsed`をstepごとに丸める実装は30 / 60 / 120 / 144fpsで390秒境界を変えていたため、累積丸めを廃止した。
+- 最終候補は修正前と同じ3/6勝で、Pulse 1勝、Spread 2勝。全6が全攻撃、5/6がphase 2へ到達した。
+- ボス出現run時間は424.37秒から469.47秒だが、難度時計は392.533秒から394.167秒へ収まった。
+- Pulse / seed 20260718は全攻撃を実行後、phase 1の開始12.83秒で接触死した。これを隠す難易度緩和は行わず、phase 2機構を専用fixtureへ分離した。
+- Stage 10は高難度最終面であり、観戦AIの6/6勝へゲーム数値やAIを合わせると、人間難度と機構到達性を混同する。
+- 人間向け難度、中央周回、回復循環は通常UIのPulse / Spread各1本で別に採否する。
+
+実値と残ゲートは[RC6 統合QAレポート](../../playtest/v07-rc6-integration-report/)を正本とする。

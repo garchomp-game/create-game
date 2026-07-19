@@ -150,6 +150,8 @@ RC5の過去5ランと自動6勝から、道中、両武器、制圧衝撃波、
 5. 敗北、overall / weapon、fixed seed実値、RC5 / RC6を別scopeで扱う。
 6. RC5の毎秒drop上限をcontrolにし、必要なら有限repair budgetを比較する。
 
-RC6では3 fixed seed x 2武器の6構成すべての勝利を機構到達性としてassertします。その後、debug hookと観戦AIなしでPulse / Spread各1本以上をプレイし、中央周回、制圧衝撃波、回復経路、記録表示を確認します。高難度最終面なので手動全勝は要求しません。
+RC6の初回control probeは3/6勝でしたが、全6がCommander、Act 5、boss phase 2へ到達しました。調査により、Commander中にAct時計を止めても通常敵のwaveと成長だけがrun時間で先行する不整合と、Act累積値のstep丸めでフレームレートごとに境界がずれる問題を確認しました。両方を修正したWave 4候補は3/6勝（Pulse 1、Spread 2）です。全6が3攻撃種、5/6がboss phase 2へ到達し、ボス出現時の難度時計は392.533秒から394.167秒へ収まりました。
+
+全6勝や全6自然runのphase 2到達を要求すると観戦AIの戦闘性能を機構到達性へ混ぜるため、RC6では全6のボス出現と3攻撃種、専用fixtureのphase 2、3/6以上かつ各武器1勝以上を分離して保証します。その後、debug hookと観戦AIなしでPulse / Spread各1本以上をプレイし、中央周回、制圧衝撃波、回復経路、記録表示を確認します。高難度最終面なので手動全勝は要求しません。
 
 実行Issueは[#73](https://github.com/garchomp-game/create-game/issues/73)、[#74](https://github.com/garchomp-game/create-game/issues/74)、[#75](https://github.com/garchomp-game/create-game/issues/75)、最終採否は[#59](https://github.com/garchomp-game/create-game/issues/59)です。

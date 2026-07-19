@@ -206,6 +206,33 @@ describe("EncounterDirector", () => {
     expect(state.cardId).toBe("card-two");
   });
 
+  it("does not accumulate frame-rate-dependent rounding in the Act clock", () => {
+    const director = new EncounterDirector({
+      cards: [createCard("unused-card", ["act-one", "act-two"])],
+      acts: [
+        { id: "act-one", titleKey: "act.one", startsAt: 0 },
+        { id: "act-two", titleKey: "act.two", startsAt: 390 },
+      ],
+      deck: createDeck(["unused-card"]),
+    });
+
+    for (const frameRate of [30, 60, 120, 144]) {
+      const random = createRandomStreams(frameRate).encounter;
+      const state = director.createState(random);
+      state.nextSelectionAt = 1_000;
+      for (let frame = 1; frame <= frameRate * 390; frame += 1) {
+        director.update(
+          state,
+          { runElapsed: frame / frameRate, threatTier: 0 },
+          random,
+        );
+      }
+
+      expect(state.actElapsed).toBeCloseTo(390, 9);
+      expect(state.actId).toBe("act-two");
+    }
+  });
+
   it("blocks the Act clock from selection until a deployment encounter resolves", () => {
     const blocker = {
       ...createCard(

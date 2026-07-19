@@ -22,6 +22,7 @@ import { circleRect } from "../../math/geometry";
 import type { RandomStreams } from "../../math/random";
 import { createRunResultSummary } from "../../simulation/resultSummary";
 import { composeBuild } from "../../simulation/buildComposer";
+import { getDifficultyElapsed } from "../../simulation/difficultyClock";
 import { getWaveBand } from "../../simulation/waveDirector";
 import type {
   ArenaObstacleContactCounts,
@@ -48,6 +49,7 @@ export type CreateArenaRunExportInput = {
 
 export function createArenaRunExport(input: CreateArenaRunExportInput): ArenaRunExport {
   const { context, world } = input;
+  const difficultyElapsed = getDifficultyElapsed(world);
   return {
     capturedAt: input.capturedAt,
     game: "arena-core-phaser",
@@ -73,7 +75,8 @@ export function createArenaRunExport(input: CreateArenaRunExportInput): ArenaRun
     performance: { ...input.performance },
     renderPerformance: structuredClone(input.renderPerformance),
     elapsed: world.state.elapsed,
-    wave: { ...getWaveBand(input.runConfig, world.state.elapsed) },
+    difficultyElapsed,
+    wave: { ...getWaveBand(input.runConfig, difficultyElapsed) },
     resultSummary: createRunResultSummary(world, input.runConfig),
     stats: copyRunStats(world),
     counts: {
