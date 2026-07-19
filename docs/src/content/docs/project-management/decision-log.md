@@ -878,3 +878,31 @@ RC6の6構成probeは、全6勝ではなく、全6のCommander撃破、Act 5、3
 - code SHAでは65 files・420 passed / 2 skipped、normal / repair probe各`1 passed / 1 skipped`、Playwright 73 passed / 1 skipped、production buildを通過した。
 
 production採否には、同じVersion PreviewでPulseの中央周回とSpreadの通常戦術を各1本、両武器ともboss phase 2と3攻撃種まで確認する手動ゲートを残す。debug時刻ジャンプと将来fallbackの共通API edge、厳密な永続LRU、GitHub Actions新設はRC6の直接blockerにせず、再現条件と着手条件を後続で管理する。
+
+## 2026-07-20: 通常UI採否を通過しRC6 controlを採用する
+
+決定: `faeb3f5e8c5e`のVersion PreviewでPulse 2本、Spread 1本の欠陥特化ランを行い、`repairBudget: null`のRC6 controlをゲームルール候補として採用する。2400 HP有限回復candidate Aは棄却したまま再調整しない。Draft PR #82をmainへ統合し、UI candidateとproduction traffic切替は別判断にする。
+
+証拠:
+
+- Pulseは430.66秒 / 44,574点でphase 1敗北後、578.93秒 / 107,011点でphase 2勝利した。
+- Spreadは584.49秒 / 108,891点でphase 2勝利した。
+- 両武器で`targeted-salvo`、`escort-pincer`、`command-pulse`を確認した。
+- 勝利ランの回復相殺率は99.96%と98.21%だったが、位置、標的、回復経路を変えない中央周回には固定できなかった。
+- 範囲外退避、障害物、通常敵撃破、回復取得、ボスへの再接近を組み合わせる必要があり、回復をさらに減らすと終盤密度へ過度に厳しくなると判断した。
+- 不可視攻撃、操作不能、soft lock、記録損失、P0 / P1不具合、50ms超フレームは確認されなかった。
+
+高い回復相殺率だけを欠陥判定に使いません。相殺率は供給量の観測値であり、無期限の安定循環には「位置、標的、回復経路を変えずに120秒以上維持できる」という行動条件も必要です。今回その条件は成立しませんでした。
+
+## 2026-07-20: 外部ゲームデザイン助言をv0.8設計入力として扱う
+
+決定: 緊張と緩和、HP以外のボス強度、攻略メタ、惜敗、再挑戦支援に関する外部助言を[外部ゲームデザイン助言メモ](../../design/external-game-design-advice/)へ原文保存し、[PH-V08-020 #83](https://github.com/garchomp-game/create-game/issues/83)でWork再レビューと設計契約化を行う。RC6採用とPR統合はこのレビューで止めず、v0.8のゲームルール実装前に結果を反映する。
+
+公平性の境界:
+
+- Endless、fixed seed、ランキング対象ランへ、履歴に応じた隠れた難度補正を入れない。
+- Campaign Assistを導入する場合は明示選択とし、difficulty、assist、rulesetをRunRecordへ残す。
+- Assist使用ランを標準ランキングへ混ぜない。
+- 「自分が上手くやった」という感覚は、判定の偽装ではなく、成功した判断と前回差の可視化で支える。
+
+Work回答は設計入力であり、採用・保留・棄却はIssue #83と本decision logへ記録する。10ステージを一括量産せず、Stage 1 / 5 / 10とEasyからHellの難度軸を設計上分けて検証する。

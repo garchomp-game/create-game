@@ -3,13 +3,13 @@ title: 現在地
 description: Arena Core Phaser版の実装状況、確認済み課題、次の作業。
 ---
 
-最終整理日: 2026-07-19
+最終整理日: 2026-07-20
 
 ## 現在の状態
 
 Phaser版v0.6.8は、Phaser 4.2.1 WebGL、可変桁HUD、ゲスト・ローカル保存を公開ベータとして固定した版です。[Cloudflare公開URL](https://arena-core.garchomp-game.workers.dev/)は基準commit `ff686f992a65`、Version ID `e86f90b8-ea15-4d1d-b01b-59e4f9fea78e`を配信しています。タイトルとリザルト、HTML meta、ベータ情報ページからアプリ版、ルール版、ビルドを識別できます。保存データ、削除、既知制約、フィードバック、第三者ライセンスも同一オリジンで公開します。
 
-v0.7 RC6は別branchで安定化を継続しています。[フォローアップ監査](../../playtest/v07-rc6-integration-report/)を受け、ボス遭遇の無期限signal待ち、全run終端、390秒境界、配置期限と予告方向、profile別PB、0.01秒比較、ランキングboard、probeのnormal / repair分離を修正しました。Endlessの戦闘ルールは変えていないため、既存`phaser-v0.6.8-pulse-boundary-ricochet` PBを維持します。2400 HP有限回復候補は棄却したままで、中央周回と回復循環は通常UI採否のproduction blockerです。productionはv0.6.8のまま変更していません。
+v0.7 RC6は[フォローアップ監査](../../playtest/v07-rc6-integration-report/)を受け、ボス遭遇の無期限signal待ち、全run終端、390秒境界、配置期限と予告方向、profile別PB、0.01秒比較、ランキングboard、probeのnormal / repair分離を修正しました。Endlessの戦闘ルールは変えていないため、既存`phaser-v0.6.8-pulse-boundary-ricochet` PBを維持します。2400 HP有限回復候補は棄却し、通常UIのPulse 2本・Spread 1本で中央周回と回復循環を再確認した結果、既定controlをproduction候補として採用しました。production trafficはリポジトリ統合とUI候補の採否までv0.6.8のまま維持しています。
 
 ゲーム数値はv0.6.6のままです。672.20秒 / 92728点でアリーナ崩壊2段階へ到達したPulse手動ランにより、精密射撃調整の採用を完了しました。Pulseは照準・貫通・反射角で成果上限を伸ばす単線武器、Spreadは広角の複数標的処理を安定させる武器として分かれています。
 
@@ -221,17 +221,21 @@ RC3で`赤 -> 大型黄 -> 小型黄緑 -> 紫`の順で敵を解禁し、大型
 
 RC5は基準証跡として保持し、productionへ直接昇格しません。UI変更前の基点`d16655a`からRC6を分け、Wave 1でEncounter時計、Commander 120秒とspawn defer、Wave 2で勝利時間、戦術点、時間メダル、overall / weapon、fixed実seed、`phaser-v0.7.0-final-expedition-rc6`を実装しました。Wave 3の2400 HP有限回復候補は0/6勝利となり棄却し、既定controlを維持しています。Stage 10のメダルは金9分、銀10分、銅12分で、速攻加点は廃止しています。
 
-提出物再レビュー後のrelease contract追補はcode commit `c908450a7101`で完了しました。repair release matrixの4条件を個別assertし、Expeditionの比較・保存・メダル・表示・PB差分を整数centisecondへ統一しました。Commander解決後はAct 3の通常目標へ戻り、敗北履歴は`PB対象外: 遠征未完遂`を表示します。このcode SHAでunit / simulationは65 files、420 passed / 2 skipped、normal / repair probeは各`1 passed / 1 skipped`、Playwrightは73 passed / 1 skipped、production buildと配布検査も成功しています。最新Version PreviewとDraft PRの動的証跡は[#59](https://github.com/garchomp-game/create-game/issues/59)へ集約し、v0.6.8 productionは手動採否まで維持します。
+提出物再レビュー後のrelease contract追補はcode commit `c908450a7101`で完了しました。repair release matrixの4条件を個別assertし、Expeditionの比較・保存・メダル・表示・PB差分を整数centisecondへ統一しました。Commander解決後はAct 3の通常目標へ戻り、敗北履歴は`PB対象外: 遠征未完遂`を表示します。このcode SHAでunit / simulationは65 files、420 passed / 2 skipped、normal / repair probeは各`1 passed / 1 skipped`、Playwrightは73 passed / 1 skipped、production buildと配布検査も成功しています。
+
+最終Version Preview `faeb3f5e8c5e`の通常UIでは、Pulseが430.66秒で1敗、578.93秒で1勝、Spreadが584.49秒で1勝しました。両武器でphase 2と3攻撃種へ到達し、中央周回後も位置、標的、回復経路を変える必要がありました。勝利ランの回復相殺率は99.96%と98.21%ですが、回復だけで無期限に固定できる状態ではありません。P0 / P1不具合と性能停止条件は再現せず、RC6のゲームルール採否を完了しました。
+
+選択画面の高解像度化、戦場透過、数字キー、照準継続は`agent/v07-rc6-ui-playtest`へ仮統合し、別の[UI統合Preview](https://v07-rc6-ui-playtest-arena-core.garchomp-game.workers.dev)で外部所感を集めます。これは同じRC6 rulesetを使う表示candidateであり、PR #82のゲームルール採否へ混ぜません。
 
 ## 次の優先順
 
-公開ベータ基準とRC6の自動証跡は固定済みです。次は同じRC6 Previewで人間の欠陥特化採否を優先します。
+公開ベータ基準、RC6の自動証跡、通常UIの欠陥特化採否は固定済みです。次はRC6をmainへ統合し、表示candidateとv0.8設計レビューを別経路で進めます。
 
-1. [#59](https://github.com/garchomp-game/create-game/issues/59)のRC6専用Draft PRと最終Version Previewへ自動証跡を紐付ける。
-2. Pulseで中央誘導・近距離周回を意図的に試し、boss phase 2と3攻撃種へ到達する。
-3. Spreadで通常の遮蔽・距離・優先標的判断を試し、boss phase 2と3攻撃種へ到達する。
-4. 回復循環、Commander objective、PB scope、seed、ruleset、敗北理由を確認し、production採否を記録する。
-5. 公開ベータのPulse / Spread分布と600秒以降の崩壊体感は非停止条件として継続観測する。
-6. RC6採否後にv0.8の面白さ検証、Stage 1 / 5 / 10の3作戦検証へ進む。
+1. Draft PR [#82](https://github.com/garchomp-game/create-game/pull/82)をmainへ統合する。
+2. UI統合Previewを初心者・経験者のRC6 baseline観測へ使い、P0 / P1を分ける。
+3. 採用する選択UIをRC6後のmainへ独立PRとして載せ、旧UI stackを整理する。
+4. 外部ゲームデザイン助言を含むWork再レビューで、緊張と緩和、ボスphase、介入選択、難易度支援の境界を確認する。
+5. 採用するv0.7配布SHAを固定し、production build、実URLsmoke、rollback確認後にtrafficを昇格する。
+6. v0.8の面白さ検証を行い、採用した核だけをStage 1 / 5 / 10へ展開する。
 
 直近の詳細は[直近フェーズ](../../project-management/next-phase-plan/)と[v0.7 実行計画](../../project-management/v07-execution-plan/)、技術契約は[RC6の時計と記録規則](../../engineering/expedition-rc6-clock-and-ranking-adr/)、3作戦系列は[エクスペディション3作戦検証](../../design/expedition-campaign/)、表示改善は[UI・グラフィック再設計計画](../../project-management/ui-visual-redesign-plan/)を参照してください。
