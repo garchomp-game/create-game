@@ -1,6 +1,6 @@
 import type { MenuAction, SecondaryMenu } from "../application/ArenaMenuTypes";
 import {
-  compareRunRecords,
+  compareRunPerformance,
   getExpeditionTacticalScore,
   isRankableRun,
 } from "../application/runRecords";
@@ -12,7 +12,7 @@ import type {
   SimulationConfig,
   WorldState,
 } from "../domain/types";
-import { formatTime } from "../format/time";
+import { formatTime, formatTimePrecise } from "../format/time";
 import { TEXT } from "../lang";
 import { getUpgradeRequirementProgress } from "../simulation/buildComposer";
 import { createRunResultSummary } from "../simulation/resultSummary";
@@ -122,7 +122,7 @@ function formatGameOverText(world: WorldState, uiState?: ArenaUiState): string {
   const expeditionOutcome = world.stats.encounterMetrics.expedition?.outcome;
   const expedition = world.stats.encounterMetrics.expedition;
   const primaryResult = expedition
-    ? `${formatTime(summary.elapsed)} / 戦術 ${expedition.tacticalScore.toLocaleString()}点`
+    ? `${formatTimePrecise(summary.elapsed)} / 戦術 ${expedition.tacticalScore.toLocaleString()}点`
     : TEXT.ui.result.scoreTime(summary.score, formatTime(summary.elapsed));
   const lines = [
     expeditionOutcome === "victory"
@@ -156,11 +156,9 @@ function formatGameOverText(world: WorldState, uiState?: ArenaUiState): string {
 function formatGameOverDetails(uiState?: ArenaUiState): string {
   const record = uiState?.latestRunRecord;
   if (!record) return "記録を保存できませんでした";
-  const eligibility = record.rankEligibility.eligible
+  const eligibility = isRankableRun(record)
     ? TEXT.ui.rankingEligible
-    : TEXT.ui.rankingIneligible(
-        record.rankEligibility.reasons.map(formatRankReason).join(" / "),
-      );
+    : TEXT.ui.rankingIneligible(formatRankIneligibility(record));
   return [
     `モード: ${formatModeName(record.modeId)} / ステージ: ${formatStageName(record.stageId)}`,
     `開始武器: ${TEXT.hud.weaponNames[record.weaponId]}`,
@@ -171,6 +169,7 @@ function formatGameOverDetails(uiState?: ArenaUiState): string {
     `シード: ${record.seed} / ${record.seedCategory === "fixed" ? "固定" : "ランダム"}`,
     eligibility,
     `版: ${record.appVersion} / ${record.buildCommit.slice(0, 8)}`,
+    `ルール: ${record.rulesetVersion}`,
     uiState.notice ?? "",
   ].filter(Boolean).join("\n");
 }
@@ -194,16 +193,16 @@ function formatBestComparison(
   previousBest: RunRecord | null,
 ): string {
   if (previousBest === null) return `${label} 初回記録`;
-  const comparison = compareRunRecords(record, previousBest);
+  const comparison = compareRunPerformance(record, previousBest);
   if (record.modeId === "expedition") {
     if (comparison < 0) {
       const improvement = previousBest.elapsed - record.elapsed;
       return improvement > 0
-        ? `${label}PB更新 -${formatTime(improvement)}`
+        ? `${label}PB更新 -${formatTimePrecise(improvement)}`
         : `${label}PB更新`;
     }
     if (comparison === 0) return `${label}PBと同記録`;
-    return `${label}PBまで +${formatTime(record.elapsed - previousBest.elapsed)}`;
+    return `${label}PBまで +${formatTimePrecise(record.elapsed - previousBest.elapsed)}`;
   }
 
   const scoreDifference = record.score - previousBest.score;
@@ -353,9 +352,9 @@ function formatHistory(uiState: ArenaUiState): string {
     lines[0] =
       `${TEXT.ui.historyTitle}  ${filterLabel}  ${uiState.historyPage + 1}/${pageCount}`;
     uiState.records.slice(start, start + pageSize).forEach((record, index) => {
-      const eligibility = record.rankEligibility.eligible ? "対象" : "対象外";
+      const eligibility = isRankableRun(record) ? "対象" : "対象外";
       const recordResult = record.modeId === "expedition"
-        ? `${record.encounterMetrics.expedition?.outcome === "victory" ? "完遂" : "敗退"} ${formatTime(record.elapsed)}  戦術${getExpeditionTacticalScore(record).toString().padStart(6)}点`
+        ? `${record.encounterMetrics.expedition?.outcome === "victory" ? "完遂" : "敗退"} ${formatTimePrecise(record.elapsed)}  戦術${getExpeditionTacticalScore(record).toString().padStart(6)}点`
         : `${record.score.toString().padStart(6)}点  ${formatTime(record.elapsed)}`;
       lines.push(
         `${start + index + 1}. ${formatRecordDate(record.capturedAt)}  ${recordResult}  ${formatModeName(record.modeId)}  Lv${record.level}/EX${record.extraLevel}/C${record.extraCycle}  ${TEXT.hud.weaponNames[record.weaponId]}  ${eligibility}`,
@@ -372,10 +371,18 @@ function formatHistory(uiState: ArenaUiState): string {
 }
 
 function formatRanking(uiState: ArenaUiState): string {
-  const context = uiState.runContext ?? uiState.ranking[0] ?? uiState.latestRunRecord;
+  const context = uiState.rankingQuery;
+  const scope = context?.comparisonScope === "weapon"
+    ? `${context.weaponId ? TEXT.hud.weaponNames[context.weaponId] : "武器"}別`
+    : "総合";
+  const seed = context?.seedCategory === "fixed"
+    ? `固定シード ${context.seed ?? "?"}`
+    : "ランダムシード";
   const lines = [
-    TEXT.ui.rankingTitle,
-    `${formatModeName(context?.modeId)} / ${formatStageName(context?.stageId)} / 標準`,
+    `${TEXT.ui.rankingTitle}  ${uiState.rankingBoardCount === 0 ? "0/0" : `${uiState.rankingBoardIndex + 1}/${uiState.rankingBoardCount}`}`,
+    `${formatModeName(context?.modeId)} / ${formatStageName(context?.stageId)} / ${formatDifficultyName(context?.difficultyId)}`,
+    `${scope} / ${seed}`,
+    `ルール: ${context?.rulesetVersion ?? uiState.releaseIdentity.rulesetVersion}`,
     "",
   ];
   if (uiState.ranking.length === 0) {
@@ -383,7 +390,7 @@ function formatRanking(uiState: ArenaUiState): string {
   } else {
     uiState.ranking.slice(0, 10).forEach((record, index) => {
       const rankedResult = record.modeId === "expedition"
-        ? `${formatTime(record.elapsed)}  戦術${getExpeditionTacticalScore(record).toString().padStart(6)}点  ${formatTimeMedal(record.encounterMetrics.expedition?.timeMedal ?? null)}`
+        ? `${formatTimePrecise(record.elapsed)}  戦術${getExpeditionTacticalScore(record).toString().padStart(6)}点  ${formatTimeMedal(record.encounterMetrics.expedition?.timeMedal ?? null)}`
         : `${record.score.toString().padStart(6)}点  ${formatTime(record.elapsed)}`;
       lines.push(
         `${String(index + 1).padStart(2)}. ${rankedResult}  EX${record.extraLevel}/C${record.extraCycle}  ${TEXT.hud.weaponNames[record.weaponId]}  ${formatRecordDate(record.capturedAt)}`,
@@ -392,6 +399,21 @@ function formatRanking(uiState: ArenaUiState): string {
   }
   if (uiState.notice) lines.push("", uiState.notice);
   return lines.join("\n");
+}
+
+function formatDifficultyName(difficultyId: string | undefined): string {
+  if (!difficultyId || difficultyId === "standard") return "標準";
+  return difficultyId;
+}
+
+function formatRankIneligibility(record: RunRecord): string {
+  if (
+    record.modeId === "expedition" &&
+    record.encounterMetrics.expedition?.outcome !== "victory"
+  ) {
+    return "遠征未完遂";
+  }
+  return record.rankEligibility.reasons.map(formatRankReason).join(" / ") || "対象外記録";
 }
 
 function formatTimeMedal(medal: "gold" | "silver" | "bronze" | null): string {

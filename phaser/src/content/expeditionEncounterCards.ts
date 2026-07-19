@@ -22,6 +22,7 @@ export const FINAL_EXPEDITION_ENCOUNTER_CARDS: EncounterCardDefinition[] = [
     tags: ["vanguard"],
     actIds: ["perimeter-watch"],
     blocksActClock: false,
+    activeTimeoutSeconds: null,
     deployment: null,
     timing: { telegraphSeconds: 1.4, activeSeconds: 14, recoverySeconds: 4 },
     spawn: {
@@ -43,6 +44,7 @@ export const FINAL_EXPEDITION_ENCOUNTER_CARDS: EncounterCardDefinition[] = [
     tags: ["crossfire"],
     actIds: ["first-assault"],
     blocksActClock: false,
+    activeTimeoutSeconds: null,
     deployment: null,
     timing: { telegraphSeconds: 1.6, activeSeconds: 17, recoverySeconds: 4 },
     spawn: {
@@ -64,6 +66,7 @@ export const FINAL_EXPEDITION_ENCOUNTER_CARDS: EncounterCardDefinition[] = [
     tags: ["heavy"],
     actIds: ["first-assault"],
     blocksActClock: false,
+    activeTimeoutSeconds: null,
     deployment: null,
     timing: { telegraphSeconds: 1.8, activeSeconds: 18, recoverySeconds: 4.5 },
     spawn: {
@@ -85,6 +88,7 @@ export const FINAL_EXPEDITION_ENCOUNTER_CARDS: EncounterCardDefinition[] = [
     tags: ["commander"],
     actIds: ["counterattack"],
     blocksActClock: true,
+    activeTimeoutSeconds: 120,
     deployment: {
       retryIntervalSeconds: 2,
       timeoutSeconds: 10,
@@ -109,6 +113,7 @@ export const FINAL_EXPEDITION_ENCOUNTER_CARDS: EncounterCardDefinition[] = [
     tags: ["charger"],
     actIds: ["breakthrough"],
     blocksActClock: false,
+    activeTimeoutSeconds: null,
     deployment: null,
     timing: { telegraphSeconds: 2, activeSeconds: 19, recoverySeconds: 4.5 },
     spawn: {
@@ -130,6 +135,7 @@ export const FINAL_EXPEDITION_ENCOUNTER_CARDS: EncounterCardDefinition[] = [
     tags: ["boss"],
     actIds: ["command-ship"],
     blocksActClock: false,
+    activeTimeoutSeconds: null,
     deployment: null,
     timing: { telegraphSeconds: 2.4, activeSeconds: 240, recoverySeconds: 2.5 },
     spawn: {

@@ -23,6 +23,7 @@ const WEAPONS = readWeaponList();
 const FRAME_RATE = 30;
 const MAX_SECONDS = 15 * 60;
 const MINIMUM_NATURAL_WINS = 3;
+const IS_REPAIR_PROBE = process.env.ARENA_PROBE_KIND === "repair-budget";
 const IS_RELEASE_MATRIX =
   SEEDS.length === DEFAULT_SEEDS.length &&
   DEFAULT_SEEDS.every((seed, index) => SEEDS[index] === seed) &&
@@ -77,12 +78,12 @@ export type ProbeResult = {
   bossFightDuration: number | null;
   bossActiveFrames: number;
   bossAimFrames: number;
-  bossCenterFrames: number;
-  bossOuterFrames: number;
-  bossCoverFrames: number;
-  bossOuterEntries: number;
-  bossCoverEntries: number;
-  bossTravelDistance: number;
+  bossPlayerCenterFrames: number;
+  bossPlayerOuterFrames: number;
+  bossPlayerCoverFrames: number;
+  bossPlayerOuterEntries: number;
+  bossPlayerCoverEntries: number;
+  bossPlayerTravelDistance: number;
   bossRegularEnemiesKilled: number;
   commanderSpawned: number;
   commanderKilled: number;
@@ -113,8 +114,7 @@ export type ProbeExecution = {
 };
 
 describe("v0.7 final Expedition release probe", () => {
-  it("reaches the final phase, preserves weapon clears, and remains deterministic", () => {
-    if (process.env.ARENA_PROBE_KIND === "repair-budget") return;
+  it.skipIf(IS_REPAIR_PROBE)("reaches the final phase, preserves weapon clears, and remains deterministic", () => {
     const executions = WEAPONS.flatMap((weaponType) =>
       SEEDS.map((seed) => executeExpedition(weaponType, seed)),
     );
@@ -185,8 +185,7 @@ describe("v0.7 final Expedition release probe", () => {
     }
   }, 900_000);
 
-  it("pairs RC6 control with finite repair candidate A using the same inputs", () => {
-    if (process.env.ARENA_PROBE_KIND !== "repair-budget") return;
+  it.skipIf(!IS_REPAIR_PROBE)("pairs RC6 control with finite repair candidate A using the same inputs", () => {
     const bossInputMode = process.env.ARENA_REPAIR_INPUT_MODE === "center-orbit"
       ? "center-orbit"
       : "auto";
@@ -225,15 +224,24 @@ describe("v0.7 final Expedition release probe", () => {
       }),
     );
 
-    const candidateMeetsAdoptionGate = pairs.every(({ candidate }) =>
-      candidate.outcome === "victory" &&
-      candidate.bossRepairOffsetRatio !== null &&
-      candidate.bossRepairOffsetRatio < 0.9 &&
-      candidate.bossRegularEnemiesKilled > 0 &&
-      candidate.bossOuterEntries + candidate.bossCoverEntries > 0
-    );
+    const candidateGate = {
+      allVictories: pairs.every(({ candidate }) => candidate.outcome === "victory"),
+      repairOffsetControlled: pairs.every(({ candidate }) =>
+        candidate.bossRepairOffsetRatio !== null &&
+        candidate.bossRepairOffsetRatio < 0.9
+      ),
+      regularEnemiesRequired: pairs.every(
+        ({ candidate }) => candidate.bossRegularEnemiesKilled > 0,
+      ),
+      arenaMovementRequired: pairs.every(
+        ({ candidate }) =>
+          candidate.bossPlayerOuterEntries + candidate.bossPlayerCoverEntries > 0,
+      ),
+    };
+    const candidateMeetsAdoptionGate = Object.values(candidateGate).every(Boolean);
     console.log(JSON.stringify({
       inputMode: bossInputMode,
+      candidateGate,
       candidateMeetsAdoptionGate,
       pairs,
     }, null, 2));
@@ -242,13 +250,8 @@ describe("v0.7 final Expedition release probe", () => {
     for (const { control, candidate, expectedCandidateInputHash } of pairs) {
       expect(control.reachedActId).toBe("command-ship");
       expect(candidate.reachedActId).toBe("command-ship");
-      if (bossInputMode === "auto") {
-        expect(control.bossPhaseReached).toBe(2);
-        expect(candidate.bossPhaseReached).toBe(2);
-      } else {
-        expect(control.bossPhaseReached).toBeGreaterThanOrEqual(1);
-        expect(candidate.bossPhaseReached).toBeGreaterThanOrEqual(1);
-      }
+      expect(control.bossPhaseReached).toBeGreaterThanOrEqual(1);
+      expect(candidate.bossPhaseReached).toBeGreaterThanOrEqual(1);
       expect(candidate.bossRepairBudgetInitial).toBe(2_400);
       expect(candidate.bossRepairBudgetSpent).toBeLessThanOrEqual(2_400);
       expect(candidate.bossRepairBudgetRemaining).toBe(
@@ -256,6 +259,21 @@ describe("v0.7 final Expedition release probe", () => {
       );
       expect(candidate.inputTapeExhausted || candidate.outcome !== null).toBe(true);
       expect(candidate.inputHash).toBe(expectedCandidateInputHash);
+    }
+
+    if (IS_RELEASE_MATRIX && bossInputMode === "auto") {
+      for (const weaponType of WEAPONS) {
+        expect(pairs.some(
+          ({ control }) =>
+            control.weaponType === weaponType && control.bossPhaseReached === 2,
+        )).toBe(true);
+        expect(pairs.some(
+          ({ candidate }) =>
+            candidate.weaponType === weaponType && candidate.bossPhaseReached === 2,
+        )).toBe(true);
+      }
+      expect(pairs.filter(({ control }) => control.outcome === "victory")).toHaveLength(3);
+      expect(pairs.filter(({ candidate }) => candidate.outcome === "victory")).toHaveLength(0);
     }
 
     if (process.env.ARENA_PROBE_SKIP_REPLAY !== "1") {
@@ -307,12 +325,12 @@ export function executeExpedition(
   let maximumPickups = 0;
   let bossActiveFrames = 0;
   let bossAimFrames = 0;
-  let bossCenterFrames = 0;
-  let bossOuterFrames = 0;
-  let bossCoverFrames = 0;
-  let bossOuterEntries = 0;
-  let bossCoverEntries = 0;
-  let bossTravelDistance = 0;
+  let bossPlayerCenterFrames = 0;
+  let bossPlayerOuterFrames = 0;
+  let bossPlayerCoverFrames = 0;
+  let bossPlayerOuterEntries = 0;
+  let bossPlayerCoverEntries = 0;
+  let bossPlayerTravelDistance = 0;
   let bossRegularEnemiesKilled = 0;
   let wasOuter = false;
   let wasNearCover = false;
@@ -356,15 +374,15 @@ export function executeExpedition(
         bossAimFrames += 1;
       }
       const zone = classifyBossPosition(session);
-      if (zone.center) bossCenterFrames += 1;
-      if (zone.outer) bossOuterFrames += 1;
-      if (zone.nearCover) bossCoverFrames += 1;
-      if (zone.outer && !wasOuter) bossOuterEntries += 1;
-      if (zone.nearCover && !wasNearCover) bossCoverEntries += 1;
+      if (zone.center) bossPlayerCenterFrames += 1;
+      if (zone.outer) bossPlayerOuterFrames += 1;
+      if (zone.nearCover) bossPlayerCoverFrames += 1;
+      if (zone.outer && !wasOuter) bossPlayerOuterEntries += 1;
+      if (zone.nearCover && !wasNearCover) bossPlayerCoverEntries += 1;
       wasOuter = zone.outer;
       wasNearCover = zone.nearCover;
       if (previousBossPosition) {
-        bossTravelDistance += Math.hypot(
+        bossPlayerTravelDistance += Math.hypot(
           session.world.player.position.x - previousBossPosition.x,
           session.world.player.position.y - previousBossPosition.y,
         );
@@ -463,12 +481,12 @@ export function executeExpedition(
     bossFightDuration: expedition?.bossFightDuration ?? null,
     bossActiveFrames,
     bossAimFrames,
-    bossCenterFrames,
-    bossOuterFrames,
-    bossCoverFrames,
-    bossOuterEntries,
-    bossCoverEntries,
-    bossTravelDistance,
+    bossPlayerCenterFrames,
+    bossPlayerOuterFrames,
+    bossPlayerCoverFrames,
+    bossPlayerOuterEntries,
+    bossPlayerCoverEntries,
+    bossPlayerTravelDistance,
     bossRegularEnemiesKilled,
     commanderSpawned: commander?.spawned ?? 0,
     commanderKilled: commander?.killed ?? 0,

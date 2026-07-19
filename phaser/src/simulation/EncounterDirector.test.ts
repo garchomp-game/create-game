@@ -167,6 +167,106 @@ describe("EncounterDirector", () => {
     });
   });
 
+  it("keeps a signal encounter active when no timeout policy is configured", () => {
+    const card = {
+      ...createCard(
+        "signal-card",
+        ["act-one"],
+        { type: "signal" as const, signalId: "target-destroyed" },
+      ),
+      activeTimeoutSeconds: null,
+    };
+    const director = new EncounterDirector({
+      cards: [card],
+      acts: [{ id: "act-one", titleKey: "act.one", startsAt: 0 }],
+      deck: createDeck([card.id]),
+    });
+    const random = createRandomStreams(31).encounter;
+    const state = director.createState(random);
+
+    director.update(state, { runElapsed: 0, threatTier: 0 }, random);
+    director.update(state, { runElapsed: 2, threatTier: 0 }, random);
+    expect(director.update(state, { runElapsed: 240, threatTier: 0 }, random)).toEqual([]);
+    expect(state).toMatchObject({ phase: "active", activeElapsed: 238 });
+  });
+
+  it("finalizes active and recovering cards when the run ends", () => {
+    const director = createTestDirector();
+    const random = createRandomStreams(32).encounter;
+    const interrupted = director.createState(random);
+    director.update(interrupted, { runElapsed: 0, threatTier: 0 }, random);
+    director.update(interrupted, { runElapsed: 2, threatTier: 0 }, random);
+
+    expect(
+      director.terminateRun(
+        interrupted,
+        "interrupted",
+        "run-ended:player-defeat",
+        2.5,
+        random,
+      ),
+    ).toEqual([{
+      type: "encounter.card.interrupted",
+      cardId: "card-one",
+      elapsed: 2.5,
+      reason: "run-ended:player-defeat",
+    }]);
+    expect(interrupted).toMatchObject({
+      phase: "interrupted",
+      actClockBlocked: false,
+      activeElapsed: 0.5,
+      nextDeploymentAttemptAt: null,
+      deploymentDeadlineAt: null,
+      metrics: { interrupted: 1 },
+    });
+    expect(interrupted.history.at(-1)).toMatchObject({
+      outcome: "interrupted",
+      reason: "run-ended:player-defeat",
+    });
+
+    const signalCard = {
+      ...createCard(
+        "boss-card",
+        ["act-one"],
+        { type: "signal" as const, signalId: "boss-defeated" },
+      ),
+      activeTimeoutSeconds: null,
+    };
+    const bossDirector = new EncounterDirector({
+      cards: [signalCard],
+      acts: [{ id: "act-one", titleKey: "act.one", startsAt: 0 }],
+      deck: createDeck([signalCard.id]),
+    });
+    const completed = bossDirector.createState(random);
+    bossDirector.update(completed, { runElapsed: 0, threatTier: 0 }, random);
+    bossDirector.update(completed, { runElapsed: 2, threatTier: 0 }, random);
+    bossDirector.update(
+      completed,
+      { runElapsed: 3, threatTier: 0, signals: ["boss-defeated"] },
+      random,
+    );
+
+    expect(
+      bossDirector.terminateRun(
+        completed,
+        "completed",
+        "signal:boss-defeated",
+        3,
+        random,
+      ),
+    ).toEqual([{
+      type: "encounter.card.completed",
+      cardId: "boss-card",
+      elapsed: 3,
+      reason: "signal:boss-defeated",
+    }]);
+    expect(completed).toMatchObject({
+      phase: "completed",
+      actClockBlocked: false,
+      metrics: { completed: 1 },
+    });
+  });
+
   it("changes acts and defers cards until their threat requirement is met", () => {
     const cards = [
       createCard("card-one", ["act-one"]),
@@ -206,31 +306,42 @@ describe("EncounterDirector", () => {
     expect(state.cardId).toBe("card-two");
   });
 
-  it("does not accumulate frame-rate-dependent rounding in the Act clock", () => {
+  it("uses the same Act and card at a cumulative 390-second boundary", () => {
     const director = new EncounterDirector({
-      cards: [createCard("unused-card", ["act-one", "act-two"])],
+      cards: [
+        createCard("act-one-card", ["act-one"]),
+        createCard("act-two-card", ["act-two"]),
+      ],
       acts: [
         { id: "act-one", titleKey: "act.one", startsAt: 0 },
         { id: "act-two", titleKey: "act.two", startsAt: 390 },
       ],
-      deck: createDeck(["unused-card"]),
+      deck: createDeck(["act-one-card", "act-two-card"]),
     });
 
+    const eventSequences: string[][] = [];
     for (const frameRate of [30, 60, 120, 144]) {
-      const random = createRandomStreams(frameRate).encounter;
+      const random = createRandomStreams(390).encounter;
       const state = director.createState(random);
-      state.nextSelectionAt = 1_000;
+      state.nextSelectionAt = 390;
+      let elapsed = 0;
+      const boundaryEvents = [];
       for (let frame = 1; frame <= frameRate * 390; frame += 1) {
-        director.update(
+        elapsed += 1 / frameRate;
+        const events = director.update(
           state,
-          { runElapsed: frame / frameRate, threatTier: 0 },
+          { runElapsed: elapsed, threatTier: 0 },
           random,
         );
+        if (frame === frameRate * 390) boundaryEvents.push(...events);
       }
 
       expect(state.actElapsed).toBeCloseTo(390, 9);
       expect(state.actId).toBe("act-two");
+      expect(state.cardId).toBe("act-two-card");
+      eventSequences.push(boundaryEvents.map((event) => JSON.stringify(event)));
     }
+    expect(new Set(eventSequences.map((events) => JSON.stringify(events))).size).toBe(1);
   });
 
   it("blocks the Act clock from selection until a deployment encounter resolves", () => {
@@ -241,6 +352,7 @@ describe("EncounterDirector", () => {
         { type: "signal" as const, signalId: "target-destroyed" },
       ),
       blocksActClock: true,
+      activeTimeoutSeconds: 120,
       deployment: { retryIntervalSeconds: 2, timeoutSeconds: 10 },
       timing: { telegraphSeconds: 2, activeSeconds: 120, recoverySeconds: 1 },
     };
@@ -372,6 +484,37 @@ describe("EncounterDirector", () => {
     });
   });
 
+  it("rejects a deployment reported at its deadline", () => {
+    const card = {
+      ...createCard("deploy-card", ["act-one"]),
+      blocksActClock: true,
+      deployment: { retryIntervalSeconds: 2, timeoutSeconds: 10 },
+    };
+    const director = new EncounterDirector({
+      cards: [card],
+      acts: [{ id: "act-one", titleKey: "act.one", startsAt: 0 }],
+      deck: createDeck([card.id]),
+    });
+    const random = createRandomStreams(33).encounter;
+    const state = director.createState(random);
+    director.update(state, { runElapsed: 0, threatTier: 0 }, random);
+    director.update(state, { runElapsed: 2, threatTier: 0 }, random);
+
+    expect(
+      director.reportDeployment(
+        state,
+        { status: "deployed", elapsed: 12 },
+        random,
+      ),
+    ).toEqual([{
+      type: "encounter.card.failed",
+      cardId: card.id,
+      elapsed: 12,
+      reason: "deployment-timeout",
+    }]);
+    expect(state).toMatchObject({ phase: "failed", activeStartedAt: null });
+  });
+
   it("rejects unknown card and act references", () => {
     expect(
       () =>
@@ -422,6 +565,8 @@ function createCard(
     tags: ["test"],
     actIds,
     blocksActClock: false,
+    activeTimeoutSeconds:
+      completionCondition.type === "signal" ? 3 : null,
     deployment: null,
     timing: {
       telegraphSeconds: 2,

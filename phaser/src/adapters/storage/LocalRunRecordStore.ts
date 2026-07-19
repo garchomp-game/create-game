@@ -5,6 +5,7 @@ import {
 } from "../../application/runRecords";
 import {
   RUN_HISTORY_LIMIT,
+  RUN_RANKING_GROUP_LIMIT,
   RUN_RANKING_LIMIT,
   runRecordSchema,
 } from "../../domain/runRecords";
@@ -32,6 +33,7 @@ export type LocalRunRecordStoreOptions = {
   legacyStorageKey?: string;
   historyLimit?: number;
   rankingLimit?: number;
+  rankingGroupLimit?: number;
   now?: () => number;
 };
 
@@ -40,6 +42,7 @@ export class LocalRunRecordStore implements RunRecordStorePort {
   private readonly legacyStorageKey: string;
   private readonly historyLimit: number;
   private readonly rankingLimit: number;
+  private readonly rankingGroupLimit: number;
   private readonly now: () => number;
 
   constructor(
@@ -50,6 +53,7 @@ export class LocalRunRecordStore implements RunRecordStorePort {
     this.legacyStorageKey = options.legacyStorageKey ?? LEGACY_RUN_RECORD_STORAGE_KEY;
     this.historyLimit = options.historyLimit ?? RUN_HISTORY_LIMIT;
     this.rankingLimit = options.rankingLimit ?? RUN_RANKING_LIMIT;
+    this.rankingGroupLimit = options.rankingGroupLimit ?? RUN_RANKING_GROUP_LIMIT;
     this.now = options.now ?? Date.now;
   }
 
@@ -93,6 +97,7 @@ export class LocalRunRecordStore implements RunRecordStorePort {
     const rankings = buildRankings(
       [parsedRecord.data, ...loaded.rankings],
       this.rankingLimit,
+      this.rankingGroupLimit,
     );
     const error = this.write(history, rankings);
     return error
@@ -111,11 +116,9 @@ export class LocalRunRecordStore implements RunRecordStorePort {
     if (loaded.error && !loaded.recovered) return emptyWriteResult(false, loaded.error);
     const history = loaded.history.filter((record) => record.id !== recordId);
     const rankings = buildRankings(
-      [
-        ...history,
-        ...loaded.rankings.filter((record) => record.id !== recordId),
-      ],
+      loaded.rankings.filter((record) => record.id !== recordId),
       this.rankingLimit,
+      this.rankingGroupLimit,
     );
     const error = this.write(history, rankings);
     return error
@@ -201,7 +204,11 @@ export class LocalRunRecordStore implements RunRecordStorePort {
     const parsedRankings = parseRecords(rankingCandidates);
     recovered ||= parsedHistory.recovered || parsedRankings.recovered;
     const history = sortHistory(parsedHistory.records).slice(0, this.historyLimit);
-    const rankings = buildRankings(parsedRankings.records, this.rankingLimit);
+    const rankings = buildRankings(
+      parsedRankings.records,
+      this.rankingLimit,
+      this.rankingGroupLimit,
+    );
     recovered ||=
       history.length !== historyCandidates.length || rankings.length !== rankingCandidates.length;
 
@@ -268,7 +275,11 @@ function parseRecords(candidates: unknown[]): { records: RunRecord[]; recovered:
   return { records, recovered };
 }
 
-function buildRankings(records: RunRecord[], limit: number): RunRecord[] {
+function buildRankings(
+  records: RunRecord[],
+  limit: number,
+  groupLimit: number,
+): RunRecord[] {
   const groups = new Map<string, RunRecord[]>();
   for (const record of deduplicate(records)) {
     if (!isRankableRun(record)) continue;
@@ -279,7 +290,11 @@ function buildRankings(records: RunRecord[], limit: number): RunRecord[] {
   }
 
   const selected = [...groups.entries()]
-    .sort(([left], [right]) => left.localeCompare(right))
+    .sort(([leftKey, left], [rightKey, right]) =>
+      getLatestCapturedAt(right).localeCompare(getLatestCapturedAt(left)) ||
+      leftKey.localeCompare(rightKey)
+    )
+    .slice(0, Math.max(0, groupLimit))
     .flatMap(([, group]) => {
       const source = group[0]!;
       const overall = selectRanking(
@@ -302,8 +317,16 @@ function buildRankings(records: RunRecord[], limit: number): RunRecord[] {
   return deduplicate(selected);
 }
 
+function getLatestCapturedAt(records: readonly RunRecord[]): string {
+  return records.reduce(
+    (latest, record) => record.capturedAt > latest ? record.capturedAt : latest,
+    "",
+  );
+}
+
 function comparisonGroupToString(key: RunComparisonKey & Pick<RunRecord, "seed">): string {
   return [
+    key.profileId,
     key.modeId,
     key.stageId,
     key.difficultyId,

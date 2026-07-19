@@ -14,7 +14,7 @@ import {
   RunRecordCoordinator,
 } from "./RunRecordCoordinator";
 import {
-  compareRunRecords,
+  compareRunPerformance,
   createRunComparisonQuery,
   isRankableRun,
   selectPersonalBest,
@@ -99,11 +99,12 @@ export class RunLifecycleController {
     this.latestRecord = result.record;
     const newPersonalBest =
       isRankableRun(result.record) &&
-      (this.previousBest === null || compareRunRecords(result.record, this.previousBest) < 0);
+      (this.previousBest === null ||
+        compareRunPerformance(result.record, this.previousBest) < 0);
     const newWeaponPersonalBest =
       isRankableRun(result.record) &&
       (this.previousWeaponBest === null ||
-        compareRunRecords(result.record, this.previousWeaponBest) < 0);
+        compareRunPerformance(result.record, this.previousWeaponBest) < 0);
     this.applyWriteResult(result.write);
     return { result, newPersonalBest, newWeaponPersonalBest };
   }

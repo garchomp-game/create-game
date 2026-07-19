@@ -4,6 +4,8 @@ import type { RunComparisonKey, RunContext, RunRecord } from "../domain/runRecor
 import { runRecordSchema } from "../domain/runRecords";
 import {
   compareRunRecords,
+  compareRunPerformance,
+  createRankingBoardQueries,
   createRunComparisonQuery,
   createRankEligibility,
   createRunRecord,
@@ -12,6 +14,7 @@ import {
 } from "./runRecords";
 
 const comparisonKey: RunComparisonKey = {
+  profileId: "guest-1",
   modeId: "endless",
   stageId: "arena-default",
   difficultyId: "standard",
@@ -97,6 +100,32 @@ describe("run records", () => {
     ]);
   });
 
+  it("compares performance at centisecond precision without treating metadata as a PB", () => {
+    const earlier = makeExpeditionRecord({
+      id: "earlier",
+      elapsed: 500.004,
+      capturedAt: "2026-07-10T10:00:00Z",
+    });
+    const later = makeExpeditionRecord({
+      id: "later",
+      elapsed: 500.003,
+      capturedAt: "2026-07-10T11:00:00Z",
+    });
+
+    expect(compareRunPerformance(later, earlier)).toBe(0);
+    expect(compareRunRecords(later, earlier)).toBeGreaterThan(0);
+  });
+
+  it("partitions personal bests by profile", () => {
+    const first = makeRecord({ id: "first", score: 10_000, profileId: "guest-1" });
+    const second = makeRecord({ id: "second", score: 20_000, profileId: "guest-2" });
+
+    expect(selectRanking(
+      [first, second],
+      createRunComparisonQuery(first, "overall"),
+    ).map((record) => record.id)).toEqual(["first"]);
+  });
+
   it("ranks victorious Expeditions by clear time before tactical score", () => {
     const records = [
       makeExpeditionRecord({ id: "slow-high-score", elapsed: 520, tacticalScore: 100_000 }),
@@ -173,6 +202,51 @@ describe("run records", () => {
       [rc5, rc6],
       createRunComparisonQuery(rc6, "overall"),
     ).map((record) => record.id)).toEqual(["rc6"]);
+  });
+
+  it("builds selectable overall and weapon boards without crossing profiles", () => {
+    const pulse = makeExpeditionRecord({
+      id: "pulse",
+      weaponId: "pulse",
+      seedCategory: "fixed",
+      seed: 77,
+    });
+    const spread = makeExpeditionRecord({
+      id: "spread",
+      weaponId: "spread",
+      seedCategory: "fixed",
+      seed: 77,
+    });
+    const otherProfile = makeExpeditionRecord({
+      id: "other-profile",
+      profileId: "guest-2",
+      seedCategory: "fixed",
+      seed: 88,
+    });
+    const preferredContext = makeContext();
+    Object.assign(preferredContext, {
+      modeId: pulse.modeId,
+      stageId: pulse.stageId,
+      difficultyId: pulse.difficultyId,
+      rulesetVersion: pulse.rulesetVersion,
+      seedCategory: pulse.seedCategory,
+      seed: pulse.seed,
+      weaponId: pulse.weaponId,
+    });
+
+    const boards = createRankingBoardQueries(
+      [spread, pulse, otherProfile],
+      "guest-1",
+      preferredContext,
+    );
+
+    expect(boards.map((query) => [query.comparisonScope, query.weaponId])).toEqual([
+      ["overall", null],
+      ["weapon", "pulse"],
+      ["weapon", "spread"],
+    ]);
+    expect(boards.every((query) => query.profileId === "guest-1")).toBe(true);
+    expect(boards.every((query) => query.seed === 77)).toBe(true);
   });
 
   it("rejects contradictory rank eligibility data", () => {
@@ -396,10 +470,9 @@ describe("run records", () => {
 
 function makeContext(): RunContext {
   return {
-    id: "run-1",
-    profileId: "guest-1",
-    startedAt: "2026-07-10T10:00:00.000Z",
     ...comparisonKey,
+    id: "run-1",
+    startedAt: "2026-07-10T10:00:00.000Z",
     weaponId: "pulse",
     modifierIds: ["auto-fire:on"],
     appVersion: "0.5",
@@ -496,12 +569,14 @@ function makeRecord(
     capturedAt?: string;
     origin?: RunContext["runOrigin"];
     seedCategory?: RunContext["seedCategory"];
+    profileId?: string;
   } = {},
 ): RunRecord {
   const context = makeContext();
   context.id = overrides.id ?? context.id;
   context.runOrigin = overrides.origin ?? context.runOrigin;
   context.seedCategory = overrides.seedCategory ?? context.seedCategory;
+  context.profileId = overrides.profileId ?? context.profileId;
   context.rankEligibility = createRankEligibility(context.runOrigin);
 
   return createRunRecord({
@@ -527,6 +602,8 @@ function makeExpeditionRecord(
     seed?: number;
     rulesetVersion?: string;
     outcome?: "victory" | "defeat";
+    capturedAt?: string;
+    profileId?: string;
   } = {},
 ): RunRecord {
   const tacticalScore = overrides.tacticalScore ?? 20_000;
@@ -535,6 +612,8 @@ function makeExpeditionRecord(
     elapsed: overrides.elapsed ?? 500,
     score: tacticalScore + (overrides.outcome === "defeat" ? 0 : 15_000),
     seedCategory: overrides.seedCategory,
+    capturedAt: overrides.capturedAt,
+    profileId: overrides.profileId,
   });
   record.modeId = "expedition";
   record.stageId = "final-expedition";

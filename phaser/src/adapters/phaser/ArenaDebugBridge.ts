@@ -9,6 +9,7 @@ import type {
 } from "../../domain/profile";
 import type {
   RankEligibility,
+  RunComparisonQuery,
   RunContext,
   RunOrigin,
   RunRecord,
@@ -64,6 +65,9 @@ export type ArenaDebugSnapshot = {
   runContext: RunContext | null;
   latestRunRecord: RunRecord | null;
   secondaryMenu: SecondaryMenu | null;
+  rankingQuery: RunComparisonQuery | null;
+  rankingBoardIndex: number;
+  rankingBoardCount: number;
   seed: number;
   randomStreams: ArenaRandomStreamSnapshot;
   status: GameStatus;

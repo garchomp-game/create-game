@@ -9,6 +9,7 @@ import {
   DEFAULT_MODE_ID,
   DEFAULT_STAGE_ID,
   RULESET_VERSION,
+  resolveRunRulesetVersion,
 } from "../../config/version";
 import { resolveRunOrigin, resolveSeedCategory } from "../../application/runEnvironment";
 import {
@@ -19,7 +20,10 @@ import { ArenaSession } from "../../application/ArenaSession";
 import { AutoPilotController } from "../../application/AutoPilotController";
 import { PerformanceMonitor } from "../../application/PerformanceMonitor";
 import { RunLifecycleController } from "../../application/RunLifecycleController";
-import { createRankEligibility } from "../../application/runRecords";
+import {
+  createRankEligibility,
+  createRankingBoardQueries,
+} from "../../application/runRecords";
 import type { RunOrigin } from "../../domain/runRecords";
 import type { LocalProfile, ProfileSettings } from "../../domain/profile";
 import type {
@@ -257,7 +261,10 @@ export class ArenaScene extends Phaser.Scene {
         modeId: this.session.modeId,
         stageId: this.session.stageId,
         difficultyId: DEFAULT_DIFFICULTY_ID,
-        rulesetVersion: RULESET_VERSION,
+        rulesetVersion: resolveRunRulesetVersion(
+          this.session.modeId,
+          this.session.stageId,
+        ),
         seedCategory: resolveSeedCategory(fixedSeed),
         weaponId: this.world.state.weaponType,
         modifierIds: [
@@ -392,6 +399,14 @@ export class ArenaScene extends Phaser.Scene {
         return { ...this.settings };
       },
       getSecondaryMenu: () => this.menuController.state.secondaryMenu,
+      getRankingView: () => {
+        const state = this.createUiState();
+        return {
+          query: state.rankingQuery,
+          index: state.rankingBoardIndex,
+          count: state.rankingBoardCount,
+        };
+      },
       openMenu: (menu) => {
         this.menuController.open(menu);
         this.renderCurrentWorld();
@@ -449,11 +464,18 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private handleMenuAction(action: MenuAction): boolean {
+    const runRankings = this.runLifecycle.getRankings();
+    const runContext = this.runLifecycle.getContext();
     const outcome = this.menuController.handle(action, {
       status: this.world.state.status,
       profileId: this.profile.id,
       settings: this.settings,
       runHistory: this.runLifecycle.getHistory(),
+      rankingBoardCount: createRankingBoardQueries(
+        runRankings,
+        this.profile.id,
+        runContext,
+      ).length,
     });
     if (!outcome.handled) return false;
 
@@ -513,6 +535,7 @@ export class ArenaScene extends Phaser.Scene {
       previousWeaponBest: this.runLifecycle.getPreviousWeaponBest(),
       historyClearPending: menuState.historyClearPending,
       rankingClearPending: menuState.rankingClearPending,
+      rankingBoardIndex: menuState.rankingBoardIndex,
       historyPage: menuState.historyPage,
       historyWeaponFilter: menuState.historyWeaponFilter,
       focusedMenuAction: this.inputAdapter.getFocusedMenuAction(

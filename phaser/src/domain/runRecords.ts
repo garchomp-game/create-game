@@ -22,6 +22,14 @@ import type {
 export const RUN_RECORD_SCHEMA_VERSION = 2 as const;
 export const RUN_HISTORY_LIMIT = 50;
 export const RUN_RANKING_LIMIT = 10;
+export const RUN_RANKING_GROUP_LIMIT = 16;
+export const RUN_TIME_PRECISION_SECONDS = 0.01;
+
+export function normalizeRunTime(elapsed: number): number {
+  return (
+    Math.round(elapsed / RUN_TIME_PRECISION_SECONDS) * RUN_TIME_PRECISION_SECONDS
+  );
+}
 
 export const RUN_ORIGINS = ["manual", "debug", "test"] as const;
 export type RunOrigin = (typeof RUN_ORIGINS)[number];
@@ -42,6 +50,7 @@ export type RankEligibility = {
 };
 
 export type RunComparisonKey = {
+  profileId: string;
   modeId: string;
   stageId: string;
   difficultyId: string;
@@ -60,7 +69,6 @@ export type RunComparisonQuery = RunComparisonKey & {
 
 export type RunContext = RunComparisonKey & {
   id: string;
-  profileId: string;
   startedAt: string;
   weaponId: WeaponTypeId;
   modifierIds: string[];
@@ -74,7 +82,6 @@ export type RunContext = RunComparisonKey & {
 export type RunRecord = RunComparisonKey & {
   schemaVersion: typeof RUN_RECORD_SCHEMA_VERSION;
   id: string;
-  profileId: string;
   capturedAt: string;
   weaponId: WeaponTypeId;
   modifierIds: string[];

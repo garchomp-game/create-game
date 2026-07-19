@@ -179,6 +179,6 @@ cd phaser
 npm run probe:v07
 ```
 
-このprobeはPulse / Spreadへ同じ3 seedを与え、15分以内の終了、5 Act、Commander出現と撃破、ボス第2段階、2攻撃、最長展開空白、敵・弾・Pickup上限を検査します。両武器の全勝は要求せず、各武器に少なくとも1勝があることを確認します。同一seedを再実行し、イベント列と終了worldのhashも比較します。通常の`npm test`へ含めず、統合QAとルール変更時に明示実行します。
+このprobeはPulse / Spreadへ同じ3 seedを与え、15分以内の終了、5 Act、Commander出現と撃破、ボス第2段階、3攻撃、最長展開空白、敵・弾・Pickup上限を検査します。両武器の全勝は要求せず、各武器に少なくとも1勝と1本以上の自然phase 2到達があることを確認します。同一seedを再実行し、入力、イベント列、終了worldのhashも比較します。通常の`npm test`へ含めず、統合QAとルール変更時に明示実行します。
 
-RC3候補版は大型黄HP 8、Commander HP 500、追跡ボス、通常ウェーブ継続によってRC2より高密度です。Commander、Chargerの予告、構造化侵入、ボス2攻撃を専用ブラウザfixtureで固定します。自動入力は人間採否を代替しないため、production昇格には別途Pulse / Spread各3本の通常UIプレイを必要とします。詳細は[v0.7 統合QAレポート](../../playtest/v07-qa-report/)を参照してください。
+RC5は大型黄HP 8、Commander HP 500、追跡ボス、通常ウェーブ継続による技術基準です。Commander、Chargerの予告、構造化侵入、ボス3攻撃を専用ブラウザfixtureで固定します。RC6では通常probeとrepair比較probeを別コマンドとして扱い、未実行側は明示的にskipします。自動入力は人間採否を代替しないため、production昇格にはPulse / Spread各1本以上の通常UI欠陥特化ランを必要とします。RC5基準は[v0.7 RC5統合QAレポート](../../playtest/v07-qa-report/)、現行RC6は[RC6統合QAレポート](../../playtest/v07-rc6-integration-report/)を参照してください。

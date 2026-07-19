@@ -4,7 +4,7 @@ import type {
   ProfileSettings,
   ProfileSettingsUpdate,
 } from "../../domain/profile";
-import type { RunOrigin } from "../../domain/runRecords";
+import type { RunComparisonQuery, RunOrigin } from "../../domain/runRecords";
 import type {
   BossAttackId,
   GameEvent,
@@ -73,6 +73,11 @@ export type ArenaDebugControllerDependencies = {
   getSettings(): ProfileSettings;
   updateSettings(update: ProfileSettingsUpdate): ProfileSettings;
   getSecondaryMenu(): SecondaryMenu | null;
+  getRankingView(): {
+    query: RunComparisonQuery | null;
+    index: number;
+    count: number;
+  };
   openMenu(menu: SecondaryMenu | null): void;
   getBaseRunOrigin(): RunOrigin;
   getFixedSeed(): number | null;
@@ -232,12 +237,16 @@ export class ArenaDebugController {
     const config = this.config;
     const randomStreams = this.dependencies.session.randomStreams;
     const autoPilot = this.dependencies.autoPilot.getSnapshot();
+    const rankingView = this.dependencies.getRankingView();
     return {
       configVersion: SIMULATION_CONFIG_VERSION,
       buildCommit: this.dependencies.getBuildCommit(),
       runContext: this.dependencies.runLifecycle.getContext(),
       latestRunRecord: this.dependencies.runLifecycle.getLatestRecord(),
       secondaryMenu: this.dependencies.getSecondaryMenu(),
+      rankingQuery: rankingView.query ? { ...rankingView.query } : null,
+      rankingBoardIndex: rankingView.index,
+      rankingBoardCount: rankingView.count,
       seed: this.dependencies.session.seed,
       randomStreams: {
         version: randomStreams.version,

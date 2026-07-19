@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { createRankEligibility, createRunRecord } from "../application/runRecords";
 import { SIMULATION_CONFIG } from "../config/gameConfig";
 import { createDefaultProfileSettings } from "../domain/profile";
+import type { RunRecord } from "../domain/runRecords";
+import type { WorldState } from "../domain/types";
 import { TEXT } from "../lang";
 import { createWorld } from "../simulation/createWorld";
+import { createRunResultSummary } from "../simulation/resultSummary";
 import { createArenaScreenViewModel } from "./ArenaScreenPresenter";
 import type { ArenaUiState } from "./ArenaUiState";
 
@@ -38,6 +42,33 @@ describe("createArenaScreenViewModel", () => {
     expect(viewModel.statusText).toContain(TEXT.ui.historyTitle);
     expect(viewModel.statusText).toContain(TEXT.ui.noRecords);
     expect(viewModel.statusText).toContain("履歴テスト");
+  });
+
+  it("shows the selected ranking scope, seed, and ruleset", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.state.status = "title";
+    const uiState = createUiState({
+      secondaryMenu: "ranking",
+      rankingBoardIndex: 2,
+      rankingBoardCount: 4,
+      rankingQuery: {
+        profileId: "00000000-0000-4000-8000-000000000001",
+        modeId: "expedition",
+        stageId: "final-expedition",
+        difficultyId: "standard",
+        rulesetVersion: "rules-rc6",
+        seedCategory: "fixed",
+        seed: 77,
+        comparisonScope: "weapon",
+        weaponId: "pulse",
+      },
+    });
+
+    const viewModel = createArenaScreenViewModel(world, SIMULATION_CONFIG, uiState);
+
+    expect(viewModel.statusText).toContain("3/4");
+    expect(viewModel.statusText).toContain("パルス別 / 固定シード 77");
+    expect(viewModel.statusText).toContain("ルール: rules-rc6");
   });
 
   it("derives settings labels and confirmation labels from UI state", () => {
@@ -163,6 +194,15 @@ describe("createArenaScreenViewModel", () => {
     expect(viewModel.statusText).toContain("遠征失敗");
     expect(viewModel.statusText).toContain("指揮艦 照準斉射");
 
+    const record = createRecord(world, "expedition", "final-expedition");
+    const details = createArenaScreenViewModel(
+      world,
+      SIMULATION_CONFIG,
+      createUiState({ latestRunRecord: record }),
+    ).detailText;
+    expect(details).toContain("遠征未完遂");
+    expect(details).toContain(`ルール: ${record.rulesetVersion}`);
+
     world.stats.lastDamageSource = {
       kind: "contact",
       enemyId: "escort-1",
@@ -176,6 +216,40 @@ describe("createArenaScreenViewModel", () => {
   });
 });
 
+function createRecord(
+  world: WorldState,
+  modeId = "endless",
+  stageId = "arena-default",
+): RunRecord {
+  return createRunRecord({
+    context: {
+      id: "run-presenter",
+      profileId: "00000000-0000-4000-8000-000000000001",
+      startedAt: "2026-07-19T00:00:00.000Z",
+      modeId,
+      stageId,
+      difficultyId: "standard",
+      rulesetVersion: "rules-rc6",
+      seedCategory: "random",
+      weaponId: world.state.weaponType,
+      modifierIds: [],
+      appVersion: "0.7.0",
+      buildCommit: "123456789abc",
+      seed: 77,
+      runOrigin: "manual",
+      rankEligibility: createRankEligibility("manual"),
+    },
+    capturedAt: "2026-07-19T00:10:00.000Z",
+    summary: createRunResultSummary(world),
+    upgradeRanks: world.progression.upgradeRanks,
+    upgradeSelections: world.stats.progressionMetrics.selections,
+    extraUpgradeRanks: world.progression.extraUpgradeRanks,
+    extraUpgradeSelections: world.stats.progressionMetrics.extraSelections,
+    buildCompletedAt: world.progression.buildCompletedAt,
+    encounterMetrics: world.stats.encounterMetrics,
+  });
+}
+
 function createUiState(
   overrides: Partial<ArenaUiState> = {},
 ): ArenaUiState {
@@ -183,6 +257,9 @@ function createUiState(
     secondaryMenu: null,
     records: [],
     ranking: [],
+    rankingQuery: null,
+    rankingBoardIndex: 0,
+    rankingBoardCount: 0,
     profile: {
       schemaVersion: 1,
       id: "00000000-0000-4000-8000-000000000001",

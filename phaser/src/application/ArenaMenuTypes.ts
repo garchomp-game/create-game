@@ -22,6 +22,8 @@ export type MenuAction =
   | "historyFilterAll"
   | "historyFilterPulse"
   | "historyFilterSpread"
+  | "rankingPrevious"
+  | "rankingNext"
   | "clearHistory"
   | "clearRankings"
   | "resetSettings"

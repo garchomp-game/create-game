@@ -10,6 +10,8 @@ const expected = {
     "phaser-v0.6.8-pulse-boundary-ricochet",
   buildCommit: process.env.ARENA_EXPECTED_BUILD_COMMIT ?? "ff686f992a65",
 };
+const expectedRunRulesetVersion =
+  process.env.ARENA_EXPECTED_RUN_RULESET_VERSION ?? expected.rulesetVersion;
 const gameOverTimeoutMs = Number(process.env.ARENA_GAME_OVER_TIMEOUT_MS ?? 180_000);
 const outputDirectory = path.resolve("test-results", "production-smoke");
 const consoleErrors = [];
@@ -109,7 +111,7 @@ try {
   }
   assert(record, `natural game over did not finish within ${gameOverTimeoutMs}ms`);
   assert(record.appVersion === expected.appVersion, "saved appVersion mismatch");
-  assert(record.rulesetVersion === expected.rulesetVersion, "saved rulesetVersion mismatch");
+  assert(record.rulesetVersion === expectedRunRulesetVersion, "saved rulesetVersion mismatch");
   assert(record.buildCommit === expected.buildCommit, "saved buildCommit mismatch");
   await page.waitForTimeout(300);
   await capture(page, "07-result.png");
@@ -154,6 +156,7 @@ try {
         ok: true,
         baseUrl,
         ...expected,
+        runRulesetVersion: expectedRunRulesetVersion,
         run: {
           score: record.score,
           elapsed: Number(record.elapsed.toFixed(2)),

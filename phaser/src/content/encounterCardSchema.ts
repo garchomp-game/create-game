@@ -26,6 +26,7 @@ const encounterCardDefinitionSchema = z
     tags: z.array(stableId).min(1),
     actIds: z.array(stableId).min(1),
     blocksActClock: z.boolean(),
+    activeTimeoutSeconds: positiveNumber.nullable(),
     deployment: z
       .object({
         retryIntervalSeconds: positiveNumber,
@@ -58,7 +59,16 @@ const encounterCardDefinitionSchema = z
     failureSignalIds: z.array(stableId),
     interruptSignalIds: z.array(stableId),
   })
-  .strict();
+  .strict()
+  .superRefine((card, context) => {
+    if (card.activeTimeoutSeconds !== null && card.completionCondition.type !== "signal") {
+      context.addIssue({
+        code: "custom",
+        path: ["activeTimeoutSeconds"],
+        message: "activeTimeoutSeconds is only valid for signal encounters",
+      });
+    }
+  });
 
 const encounterActDefinitionSchema = z
   .object({

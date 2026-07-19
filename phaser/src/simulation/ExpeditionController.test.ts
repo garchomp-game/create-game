@@ -56,6 +56,13 @@ describe("ExpeditionController", () => {
       hp: 500,
       elite: { maximumHp: 500 },
     });
+    const outsideDistance = Math.max(
+      -commanderEnemy!.position.x,
+      commanderEnemy!.position.x - SIMULATION_CONFIG.arena.width,
+      -commanderEnemy!.position.y,
+      commanderEnemy!.position.y - SIMULATION_CONFIG.arena.height,
+    );
+    expect(outsideDistance).toBeGreaterThanOrEqual(commanderEnemy!.radius);
     const commanderDefeated = commander.controller.update(
       commander.world,
       commander.random,
@@ -174,6 +181,236 @@ describe("ExpeditionController", () => {
     expect(defeat.world.expedition).toMatchObject({
       status: "defeat",
       outcome: "defeat",
+    });
+  });
+
+  it("completes the active boss card in the same step as victory", () => {
+    const fixture = selectActCard(390, 45);
+    fixture.world.state.elapsed = fixture.world.expedition!.director.selectedAt! + 2.4;
+    fixture.controller.update(
+      fixture.world,
+      fixture.random,
+      SIMULATION_CONFIG,
+      [],
+    );
+    const boss = fixture.world.enemies.find(
+      (enemy) => enemy.id === fixture.world.expedition!.boss!.enemyId,
+    )!;
+    fixture.world.state.elapsed += 12;
+
+    const events = fixture.controller.update(
+      fixture.world,
+      fixture.random,
+      SIMULATION_CONFIG,
+      [{
+        type: "enemy.killed",
+        bulletId: "bullet-boss-finish",
+        volleyId: 1,
+        enemyId: boss.id,
+        enemyType: boss.typeId,
+        weaponType: "pulse",
+        scoreAwarded: boss.score,
+        xpAwarded: boss.xpValue,
+        position: { ...boss.position },
+      }],
+    );
+
+    expect(events).toContainEqual({
+      type: "expedition.encounter.completed",
+      cardId: "command-ship-showdown",
+      elapsed: fixture.world.state.elapsed,
+      reason: "signal:boss-defeated",
+    });
+    expect(fixture.world.expedition).toMatchObject({
+      status: "victory",
+      currentCardTitleKey: null,
+      currentDirection: null,
+      currentGeometryId: null,
+      spawnOverride: null,
+      director: {
+        phase: "completed",
+        actClockBlocked: false,
+        metrics: { completed: 1 },
+      },
+    });
+    expect(fixture.world.expedition!.director.history.at(-1)).toMatchObject({
+      cardId: "command-ship-showdown",
+      outcome: "completed",
+      reason: "signal:boss-defeated",
+    });
+  });
+
+  it("does not time out the final boss after 240 active seconds", () => {
+    const fixture = selectActCard(390, 46);
+    fixture.world.state.elapsed = fixture.world.expedition!.director.selectedAt! + 2.4;
+    fixture.controller.update(
+      fixture.world,
+      fixture.random,
+      SIMULATION_CONFIG,
+      [],
+    );
+    const activeStartedAt = fixture.world.expedition!.director.activeStartedAt!;
+    fixture.world.state.hp = 1_000_000;
+    fixture.world.state.elapsed = activeStartedAt + 241;
+
+    const events = fixture.controller.update(
+      fixture.world,
+      fixture.random,
+      SIMULATION_CONFIG,
+      [],
+    );
+
+    expect(events).not.toContainEqual(
+      expect.objectContaining({
+        type: "expedition.encounter.failed",
+        cardId: "command-ship-showdown",
+      }),
+    );
+    expect(fixture.world.expedition!.director).toMatchObject({
+      phase: "active",
+      activeElapsed: 241,
+    });
+  });
+
+  it("interrupts every running Commander or boss phase on player defeat", () => {
+    const cases = [
+      {
+        name: "telegraph",
+        create: () => selectActCard(180, 47),
+      },
+      {
+        name: "deploying",
+        create: () => {
+          const fixture = selectActCard(180, 48);
+          fillToEnemyCap(fixture.world);
+          fixture.world.state.elapsed = fixture.world.expedition!.director.selectedAt! + 2.2;
+          fixture.controller.update(
+            fixture.world,
+            fixture.random,
+            SIMULATION_CONFIG,
+            [],
+          );
+          return fixture;
+        },
+      },
+      {
+        name: "commander active",
+        create: () => {
+          const fixture = selectActCard(180, 49);
+          fixture.world.state.elapsed = fixture.world.expedition!.director.selectedAt! + 2.2;
+          fixture.controller.update(
+            fixture.world,
+            fixture.random,
+            SIMULATION_CONFIG,
+            [],
+          );
+          return fixture;
+        },
+      },
+      {
+        name: "boss active",
+        create: () => {
+          const fixture = selectActCard(390, 50);
+          fixture.world.state.elapsed = fixture.world.expedition!.director.selectedAt! + 2.4;
+          fixture.controller.update(
+            fixture.world,
+            fixture.random,
+            SIMULATION_CONFIG,
+            [],
+          );
+          return fixture;
+        },
+      },
+    ];
+
+    for (const testCase of cases) {
+      const fixture = testCase.create();
+      fixture.world.state.status = "gameOver";
+      const elapsed = fixture.world.state.elapsed;
+      const events = fixture.controller.update(
+        fixture.world,
+        fixture.random,
+        SIMULATION_CONFIG,
+        [{ type: "game.over", score: 0, elapsed }],
+      );
+
+      expect(events, testCase.name).toContainEqual(
+        expect.objectContaining({
+          type: "expedition.encounter.interrupted",
+          reason: "run-ended:player-defeat",
+        }),
+      );
+      expect(fixture.world.expedition, testCase.name).toMatchObject({
+        status: "defeat",
+        currentCardTitleKey: null,
+        currentDirection: null,
+        currentGeometryId: null,
+        spawnOverride: null,
+        director: {
+          phase: "interrupted",
+          actClockBlocked: false,
+          metrics: { interrupted: 1 },
+        },
+      });
+      expect(
+        fixture.world.expedition!.director.history.at(-1),
+        testCase.name,
+      ).toMatchObject({
+        outcome: "interrupted",
+        reason: "run-ended:player-defeat",
+      });
+      expect(
+        fixture.world.enemies.some((enemy) => enemy.elite?.kind === "commander"),
+        testCase.name,
+      ).toBe(false);
+      if (fixture.world.expedition!.boss) {
+        expect(fixture.world.expedition!.boss!.status, testCase.name).toBe("interrupted");
+      }
+    }
+  });
+
+  it("treats simultaneous player and boss death as an Expedition defeat", () => {
+    const fixture = selectActCard(390, 51);
+    fixture.world.state.elapsed = fixture.world.expedition!.director.selectedAt! + 2.4;
+    fixture.controller.update(
+      fixture.world,
+      fixture.random,
+      SIMULATION_CONFIG,
+      [],
+    );
+    const boss = fixture.world.enemies.find(
+      (enemy) => enemy.id === fixture.world.expedition!.boss!.enemyId,
+    )!;
+    fixture.world.state.status = "gameOver";
+
+    const events = fixture.controller.update(
+      fixture.world,
+      fixture.random,
+      SIMULATION_CONFIG,
+      [
+        {
+          type: "enemy.killed",
+          bulletId: "bullet-trade",
+          volleyId: 1,
+          enemyId: boss.id,
+          enemyType: boss.typeId,
+          weaponType: "pulse",
+          scoreAwarded: boss.score,
+          xpAwarded: boss.xpValue,
+          position: { ...boss.position },
+        },
+        { type: "game.over", score: 0, elapsed: fixture.world.state.elapsed },
+      ],
+    );
+
+    expect(events.some((event) => event.type === "expedition.completed")).toBe(false);
+    expect(events).toContainEqual(
+      expect.objectContaining({ type: "expedition.failed" }),
+    );
+    expect(fixture.world.expedition).toMatchObject({
+      status: "defeat",
+      boss: { status: "interrupted" },
+      director: { phase: "interrupted" },
     });
   });
 

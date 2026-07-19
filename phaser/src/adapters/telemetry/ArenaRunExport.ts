@@ -8,7 +8,7 @@ import {
   DEFAULT_DIFFICULTY_ID,
   DEFAULT_MODE_ID,
   DEFAULT_STAGE_ID,
-  RULESET_VERSION,
+  resolveRunRulesetVersion,
 } from "../../config/version";
 import type { RunContext, RunOrigin } from "../../domain/runRecords";
 import type {
@@ -54,7 +54,9 @@ export function createArenaRunExport(input: CreateArenaRunExportInput): ArenaRun
     capturedAt: input.capturedAt,
     game: "arena-core-phaser",
     appVersion: APP_VERSION,
-    rulesetVersion: RULESET_VERSION,
+    rulesetVersion:
+      context?.rulesetVersion ??
+      resolveRunRulesetVersion(DEFAULT_MODE_ID, DEFAULT_STAGE_ID),
     configVersion: SIMULATION_CONFIG_VERSION,
     buildCommit: input.buildCommit,
     runId: context?.id ?? "unknown",

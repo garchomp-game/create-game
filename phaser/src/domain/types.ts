@@ -550,7 +550,7 @@ export type ExpeditionBossActionState = {
 export type ExpeditionBossState = {
   bossId: string;
   enemyId: string;
-  status: "active" | "defeated";
+  status: "active" | "defeated" | "interrupted";
   maxHp: number;
   phase: 1 | 2;
   phaseChangedAt: number | null;

@@ -22,6 +22,7 @@ export type ArenaMenuState = {
   rankingClearPending: boolean;
   historyPage: number;
   historyWeaponFilter: HistoryWeaponFilter;
+  rankingBoardIndex: number;
   notice: string | null;
 };
 
@@ -30,6 +31,7 @@ export type ArenaMenuActionContext = {
   profileId: string;
   settings: ProfileSettings;
   runHistory: readonly RunRecord[];
+  rankingBoardCount?: number;
 };
 
 export type ArenaMenuCommand =
@@ -187,6 +189,16 @@ export class ArenaMenuController {
       return handled();
     }
 
+    if (action === "rankingPrevious" || action === "rankingNext") {
+      const count = Math.max(1, context.rankingBoardCount ?? 1);
+      const direction = action === "rankingNext" ? 1 : -1;
+      this.menuState.rankingBoardIndex =
+        (this.menuState.rankingBoardIndex + direction + count) % count;
+      this.menuState.rankingClearPending = false;
+      this.menuState.notice = null;
+      return handled();
+    }
+
     if (action === "clearRankings") {
       if (!this.menuState.rankingClearPending) {
         this.menuState.rankingClearPending = true;
@@ -199,6 +211,7 @@ export class ArenaMenuController {
         ? "ランキングを消去しました"
         : "ランキングを消去できませんでした";
       this.menuState.rankingClearPending = false;
+      if (result.ok) this.menuState.rankingBoardIndex = 0;
       return result.ok
         ? handled(undefined, undefined, {
             history: result.history,
@@ -312,6 +325,7 @@ function createInitialMenuState(): ArenaMenuState {
     rankingClearPending: false,
     historyPage: 0,
     historyWeaponFilter: "all",
+    rankingBoardIndex: 0,
     notice: null,
   };
 }

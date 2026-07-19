@@ -7,6 +7,8 @@ import {
   FINAL_EXPEDITION_ENCOUNTER_CARDS,
   FINAL_EXPEDITION_ENCOUNTER_DECK,
 } from "../content/expeditionEncounterCards";
+import { TELEGRAPH_CHARGER_DEFINITION } from "../content/chargerCatalog";
+import { COMMANDER_ELITE_DEFINITION } from "../content/eliteCatalog";
 import type { StageDefinition } from "../domain/gameContent";
 import type {
   EncounterDirectorEvent,
@@ -124,7 +126,16 @@ export class ExpeditionController {
     if (!expedition || expedition.status !== "active") return [];
 
     if (baseEvents.some((event) => event.type === "game.over")) {
-      return [this.complete(world, "defeat")];
+      return [
+        ...this.terminateEncounter(
+          world,
+          "interrupted",
+          "run-ended:player-defeat",
+          random,
+          config,
+        ),
+        this.complete(world, "defeat"),
+      ];
     }
 
     const bossEvents = updateFinalExpeditionBoss(
@@ -142,6 +153,13 @@ export class ExpeditionController {
         score: world.state.score,
         elapsed: world.state.elapsed,
       });
+      events.push(...this.terminateEncounter(
+        world,
+        "interrupted",
+        "run-ended:player-defeat",
+        random,
+        config,
+      ));
       events.push(this.complete(world, "defeat"));
       return events;
     }
@@ -174,6 +192,13 @@ export class ExpeditionController {
       defeatedBoss?.bossId === this.stage.clearCondition.bossId &&
       world.state.status === "playing"
     ) {
+      events.push(...this.terminateEncounter(
+        world,
+        "completed",
+        "signal:boss-defeated",
+        random,
+        config,
+      ));
       events.push(this.complete(world, "victory"));
       events.push({
         type: "game.over",
@@ -326,6 +351,10 @@ export class ExpeditionController {
     }
 
     expedition.spawnOverride = null;
+    expedition.currentCardTitleKey = null;
+    expedition.currentDirection = null;
+    expedition.currentGeometryId = null;
+    expedition.deployedCardKey = null;
     const type = event.type.replace(
       "encounter.card.",
       "expedition.encounter.",
@@ -339,7 +368,7 @@ export class ExpeditionController {
       elapsed: event.elapsed,
       reason: event.reason,
     };
-    if (event.type !== "encounter.card.failed") return [terminalEvent];
+    if (event.type === "encounter.card.completed") return [terminalEvent];
 
     const card = this.director.getCard(event.cardId);
     if (!card.tags.includes("commander")) return [terminalEvent];
@@ -351,6 +380,24 @@ export class ExpeditionController {
       retireCommanderElite(world, commander, event.reason, retirementEvents);
     }
     return [terminalEvent, ...retirementEvents];
+  }
+
+  private terminateEncounter(
+    world: WorldState,
+    outcome: "completed" | "interrupted",
+    reason: string,
+    random: RandomStreams,
+    config: SimulationConfig,
+  ): GameEvent[] {
+    return this.director
+      .terminateRun(
+        world.expedition!.director,
+        outcome,
+        reason,
+        world.state.elapsed,
+        random.encounter,
+      )
+      .flatMap((event) => this.applyDirectorEvent(world, event, random, config));
   }
 
   private deployStructuredSpawn(
@@ -376,6 +423,13 @@ export class ExpeditionController {
     const enemyRadius = Math.max(
       ...enemyTypes.map((typeId) => config.enemies[typeId].radius),
     );
+    const primaryEnemyRadius = tags.includes("commander")
+      ? config.enemies[COMMANDER_ELITE_DEFINITION.baseEnemyTypeId].radius *
+        COMMANDER_ELITE_DEFINITION.radiusMultiplier
+      : tags.includes("charger")
+        ? config.enemies[TELEGRAPH_CHARGER_DEFINITION.baseEnemyTypeId].radius *
+          TELEGRAPH_CHARGER_DEFINITION.radiusMultiplier
+        : undefined;
     const wave = getSpawnWave(world, config);
     const plan = planStructuredSpawn(
       {
@@ -391,6 +445,7 @@ export class ExpeditionController {
         obstacles: world.obstacles,
         playerPosition: world.player.position,
         enemyRadius,
+        primaryEnemyRadius,
         minimumPlayerDistance: 150,
         spawnMargin: 24,
         collapseInset: world.encounter.collapse.inset,
@@ -501,6 +556,13 @@ export class ExpeditionController {
     expedition.outcome = outcome;
     expedition.completedAt = world.state.elapsed;
     expedition.spawnOverride = null;
+    expedition.currentCardTitleKey = null;
+    expedition.currentDirection = null;
+    expedition.currentGeometryId = null;
+    expedition.deployedCardKey = null;
+    if (outcome === "defeat" && expedition.boss?.status === "active") {
+      expedition.boss.status = "interrupted";
+    }
     return {
       type: outcome === "victory" ? "expedition.completed" : "expedition.failed",
       actId: expedition.actId,

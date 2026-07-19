@@ -48,4 +48,17 @@ describe("PhaserMenuLayout", () => {
       "contractOverdrive",
     ]);
   });
+
+  it("provides board navigation on rankings", () => {
+    expect(
+      getMenuButtons("title", 960, 540, undefined, "ranking").map(
+        (button) => button.action,
+      ),
+    ).toEqual([
+      "rankingPrevious",
+      "rankingNext",
+      "clearRankings",
+      "back",
+    ]);
+  });
 });

@@ -90,7 +90,7 @@ describe("structuredSpawnPlanner", () => {
     expect(distanceLimited.metrics.rejectedByReason.playerDistance).toBeGreaterThan(0);
   });
 
-  it("uses a safe fallback direction and never forces an invalid primary placement", () => {
+  it("never changes the warned direction when a fallback geometry is attempted", () => {
     const plan = planStructuredSpawn(
       createRequest({
         geometryId: "arc",
@@ -102,10 +102,45 @@ describe("structuredSpawnPlanner", () => {
       createRandom(75),
     );
 
-    expect(plan.status).toBe("ready");
+    expect(plan.status).toBe("deferred");
     expect(plan.metrics.fallbackUsed).toBe(true);
-    expect(plan.placements.length).toBeGreaterThan(0);
-    expect(plan.placements.every((placement) => placement.direction === "east")).toBe(true);
+    expect(plan.telegraph.directions).toEqual(["north"]);
+    expect(plan.placements).toEqual([]);
+  });
+
+  it("uses the primary enemy radius for safety without shifting its spawn position", () => {
+    const base = planStructuredSpawn(
+      createRequest({ count: 1, obstacles: [], minimumPlayerDistance: 0 }),
+      createRandom(91),
+    );
+    const primary = planStructuredSpawn(
+      createRequest({
+        count: 1,
+        obstacles: [],
+        minimumPlayerDistance: 0,
+        primaryEnemyRadius: 20,
+      }),
+      createRandom(91),
+    );
+
+    expect(primary.status).toBe("ready");
+    expect(primary.placements[0]!.position).toEqual(base.placements[0]!.position);
+    expect(primary.placements[0]!.entryPoint.x).toBeLessThan(
+      base.placements[0]!.entryPoint.x,
+    );
+
+    const overlapping = planStructuredSpawn(
+      createRequest({
+        count: 1,
+        obstacles: [],
+        minimumPlayerDistance: 0,
+        fallbackGeometryId: undefined,
+        primaryEnemyRadius: 48,
+      }),
+      createRandom(91),
+    );
+    expect(overlapping.status).toBe("deferred");
+    expect(overlapping.metrics.rejectedByReason.insideArena).toBeGreaterThan(0);
   });
 
   it("shrinks to the existing enemy cap without exceeding it", () => {

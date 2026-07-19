@@ -32,6 +32,7 @@ export type StructuredSpawnRequest = {
   obstacles: readonly ObstacleDefinition[];
   playerPosition: Vec2;
   enemyRadius: number;
+  primaryEnemyRadius?: number;
   minimumPlayerDistance: number;
   spawnMargin: number;
   collapseInset: number;

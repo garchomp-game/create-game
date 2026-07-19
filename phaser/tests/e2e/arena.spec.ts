@@ -1,5 +1,9 @@
 import { expect, type Page, test } from "@playwright/test";
-import { APP_VERSION, RULESET_VERSION } from "../../src/config/version";
+import {
+  APP_VERSION,
+  ENDLESS_RULESET_VERSION,
+  RULESET_VERSION,
+} from "../../src/config/version";
 import type { RunRecord } from "../../src/domain/runRecords";
 import { probeVisibleCanvasSamples, probeWebglCanvas } from "./webglCanvasProbe";
 
@@ -196,6 +200,126 @@ test("runs the final expedition from mode selection through result and retry", a
   expect(
     await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().music.track),
   ).toBe("arena");
+});
+
+test("navigates Expedition ranking boards across weapons, fixed seeds, and rulesets", async ({
+  page,
+}) => {
+  await gotoArena(page, "/?seed=20260717");
+  await clickCanvasAt(page, 480, 339);
+  await page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']").click();
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
+    if (!debug) throw new Error("Debug API is unavailable.");
+    debug.setPaused(true);
+    debug.setExpeditionBossFixture("targeted-salvo", 2);
+    debug.armExpeditionBossDefeat();
+    debug.step({}, 1 / 60);
+  });
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+    .toBe("gameOver");
+
+  await page.evaluate(() => {
+    const key = "arena-core.run-records.v2";
+    const raw = localStorage.getItem(key);
+    if (!raw) throw new Error("Run record storage is missing.");
+    const envelope = JSON.parse(raw) as {
+      schemaVersion: 2;
+      history: RunRecord[];
+      rankings: RunRecord[];
+    };
+    const base = envelope.history[0];
+    if (!base?.encounterMetrics.expedition || !base.encounterMetrics.boss) {
+      throw new Error("Expedition victory fixture is missing.");
+    }
+
+    const rulesets = ["ranking-fixture-a", "ranking-fixture-b"];
+    const seeds = [101, 202];
+    const weapons = ["pulse", "spread"] as const;
+    let index = 0;
+    const records = rulesets.flatMap((rulesetVersion) =>
+      seeds.flatMap((seed) =>
+        weapons.map((weaponId) => {
+          index += 1;
+          const tacticalScore = 20_000 + index * 100;
+          return {
+            ...structuredClone(base),
+            id: `ranking-fixture-${index}`,
+            capturedAt: `2026-07-19T10:00:${String(index).padStart(2, "0")}.000Z`,
+            weaponId,
+            rulesetVersion,
+            seed,
+            seedCategory: "fixed" as const,
+            runOrigin: "manual" as const,
+            rankEligibility: { eligible: true, reasons: [] },
+            elapsed: 500 + index,
+            score: tacticalScore + 15_000,
+            encounterMetrics: {
+              ...structuredClone(base.encounterMetrics),
+              expedition: {
+                ...structuredClone(base.encounterMetrics.expedition),
+                outcome: "victory" as const,
+                tacticalScore,
+                scoreBeforeBonus: tacticalScore,
+              },
+              boss: {
+                ...structuredClone(base.encounterMetrics.boss),
+                defeatedByWeapon: weaponId,
+              },
+            },
+          } satisfies RunRecord;
+        }),
+      ),
+    );
+    localStorage.setItem(
+      key,
+      JSON.stringify({ schemaVersion: 2, history: records, rankings: records }),
+    );
+  });
+
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  await page.evaluate(() => window.__ARENA_DEBUG__?.openMenu("ranking"));
+  const boardCount = await page.evaluate(
+    () => window.__ARENA_DEBUG__?.getSnapshot().rankingBoardCount ?? 0,
+  );
+  expect(boardCount).toBeGreaterThanOrEqual(12);
+
+  const queries = [];
+  for (let index = 0; index < boardCount; index += 1) {
+    const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+    if (snapshot?.rankingQuery) queries.push(snapshot.rankingQuery);
+    if (index === boardCount - 1) break;
+    await clickCanvasAt(page, 625, 415);
+    await expect
+      .poll(() =>
+        page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().rankingBoardIndex)
+      )
+      .toBe(index + 1);
+  }
+
+  const expeditionBoards = queries
+    .filter((query) => query.modeId === "expedition")
+    .map((query) =>
+      [
+        query.rulesetVersion,
+        query.seed,
+        query.comparisonScope,
+        query.weaponId ?? "all",
+      ].join(":"),
+    )
+    .sort();
+  const expectedBoards = ["ranking-fixture-a", "ranking-fixture-b"]
+    .flatMap((rulesetVersion) =>
+      [101, 202].flatMap((seed) => [
+        `${rulesetVersion}:${seed}:overall:all`,
+        `${rulesetVersion}:${seed}:weapon:pulse`,
+        `${rulesetVersion}:${seed}:weapon:spread`,
+      ]),
+    )
+    .sort();
+  expect(expeditionBoards).toEqual(expectedBoards);
 });
 
 test("runs the observer auto pilot outside ranking and allows manual takeover", async ({ page }) => {
@@ -515,7 +639,7 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   expect(runExport).toBeTruthy();
   expect(runExport?.game).toBe("arena-core-phaser");
   expect(runExport?.appVersion).toBe(APP_VERSION);
-  expect(runExport?.rulesetVersion).toBe(RULESET_VERSION);
+  expect(runExport?.rulesetVersion).toBe(ENDLESS_RULESET_VERSION);
   expect(runExport?.configVersion).toBe(RULESET_VERSION);
   expect(runExport?.buildCommit).toMatch(/^[0-9a-f]{12}$/);
   expect(runExport?.runOrigin).toBe("test");

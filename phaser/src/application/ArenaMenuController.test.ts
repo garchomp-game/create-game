@@ -76,6 +76,18 @@ describe("ArenaMenuController", () => {
     });
   });
 
+  it("cycles ranking boards with wraparound", () => {
+    const { controller } = createController();
+    const context = createContext({ rankingBoardCount: 3 });
+
+    controller.handle("ranking", context);
+    controller.handle("rankingPrevious", context);
+    expect(controller.state.rankingBoardIndex).toBe(2);
+
+    controller.handle("rankingNext", context);
+    expect(controller.state.rankingBoardIndex).toBe(0);
+  });
+
   it("updates settings through the profile port and reports persistence failures", () => {
     const { controller, logger, profileStore } = createController();
     const context = createContext();

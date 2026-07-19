@@ -50,6 +50,9 @@ describe("ArenaDebugController", () => {
       difficultyElapsed: 0,
       hp: SIMULATION_CONFIG.player.maxHp,
       autoPilotEnabled: false,
+      rankingQuery: null,
+      rankingBoardIndex: 0,
+      rankingBoardCount: 0,
     });
     expect(dependencies.render).toHaveBeenCalled();
   });
@@ -131,6 +134,7 @@ function createFixture(run: { modeId?: string; stageId?: string } = {}) {
       return settings;
     },
     getSecondaryMenu: () => null,
+    getRankingView: () => ({ query: null, index: 0, count: 0 }),
     openMenu: vi.fn(),
     getBaseRunOrigin: () => "test",
     getFixedSeed: () => 42,

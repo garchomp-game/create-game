@@ -15,6 +15,7 @@ export type EncounterCardDefinition = {
   tags: string[];
   actIds: string[];
   blocksActClock: boolean;
+  activeTimeoutSeconds: number | null;
   deployment: {
     retryIntervalSeconds: number;
     timeoutSeconds: number;

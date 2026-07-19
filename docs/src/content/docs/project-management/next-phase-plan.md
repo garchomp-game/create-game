@@ -71,7 +71,7 @@ Issue: [PH-V07-012 #75](https://github.com/garchomp-game/create-game/issues/75)
 
 Issue: [PH-V07-008 #59](https://github.com/garchomp-game/create-game/issues/59)
 
-状態: 実装、ローカル自動検証、Version Previewの実URLsmokeは完了。Commander停止中も`runElapsed`で通常敵圧力が先行する不整合とAct時計のstep丸め依存を修正しました。候補は3/6勝（Pulse 1、Spread 2）、全6で全攻撃、5/6でphase 2へ到達し、全入力replayと全回帰を通過しました。通常UI採否だけを残しています。
+状態: フォローアップ監査を受けてRC6安定化を再実行中です。Encounter終端、390秒境界、配置期限、profile別PB、ランキングboard、probe分岐は修正済みです。全入力replay、repair比較、ブラウザ回帰、更新版Version Preview、通常UI採否を再取得してから完了に戻します。
 
 - 全6のCommander撃破、Act 5、全攻撃種と、専用fixtureのboss phase 2を機構到達性としてassertする。
 - 自然runはPulse / Spread各1本以上のboss phase 2到達を要求する。
@@ -91,11 +91,14 @@ v0.8はコンテンツ量を増やす前に、Arena Coreの面白さの核を縦
 | --- | --- | --- |
 | 0 | [#66](https://github.com/garchomp-game/create-game/issues/66) | 世界観、視覚言語、素材と音の境界 |
 | 1 | [#76](https://github.com/garchomp-game/create-game/issues/76) | 危険を敵へ返す危険反転event |
-| 1 | [#78](https://github.com/garchomp-game/create-game/issues/78) | 選択停止時間、頻度、再開硬直の計測 |
 | 2 | [#77](https://github.com/garchomp-game/create-game/issues/77) | 技能shadow ledgerと次ランの目標 |
-| 3 | [#79](https://github.com/garchomp-game/create-game/issues/79) | Pulse / Spreadの武器教義branch |
-| 4 | [#80](https://github.com/garchomp-game/create-game/issues/80) | 最大密度の視覚fixtureと警告音分離 |
-| 6 | [#81](https://github.com/garchomp-game/create-game/issues/81) | 初心者・経験者の構造化プレイテスト |
+| 3 | [#81](https://github.com/garchomp-game/create-game/issues/81) | RC6と危険反転単独版のpaired playtest |
+| 4 | [#78](https://github.com/garchomp-game/create-game/issues/78) | 選択停止時間、頻度、再開硬直の計測 |
+| 5 | [#79](https://github.com/garchomp-game/create-game/issues/79) | Pulse / Spreadの武器教義branch |
+| 6 | [#80](https://github.com/garchomp-game/create-game/issues/80) | 最大密度の視覚fixtureと警告音分離 |
+| 7 | [#81](https://github.com/garchomp-game/create-game/issues/81) | v0.8統合候補の最終playtest |
+
+[#77](https://github.com/garchomp-game/create-game/issues/77)は[#76](https://github.com/garchomp-game/create-game/issues/76)と既存eventだけからledgerを導出し、[#79](https://github.com/garchomp-game/create-game/issues/79)へ逆依存しません。[#81](https://github.com/garchomp-game/create-game/issues/81)はRC6 baseline、危険反転単独paired、v0.8統合後の3段階に分け、変更をまとめて一度に評価しません。
 
 UI境界[#68](https://github.com/garchomp-game/create-game/issues/68)、比較prototype[#67](https://github.com/garchomp-game/create-game/issues/67)、選択画面縦切り[#70](https://github.com/garchomp-game/create-game/issues/70)は既存branchに実装済みです。統合前のためIssueは開いたまま維持し、v0.8 Milestoneで追跡します。
 
@@ -105,9 +108,9 @@ UI境界[#68](https://github.com/garchomp-game/create-game/issues/68)、比較pr
 
 10ステージを一括で実装する計画は、2026-07-19にStage 1 / 5 / 10の3作戦検証へ変更しました。旧計画は履歴として残し、Stage 2から4、6から9を3本の採否後へ延期します。
 
-- [PH-V09-001 #62](https://github.com/garchomp-game/create-game/issues/62): 3作戦の進行と選択基盤。
-- [PH-V09-002 #64](https://github.com/garchomp-game/create-game/issues/64): Stage 1 基礎迎撃。
-- [PH-V09-003 #65](https://github.com/garchomp-game/create-game/issues/65): Stage 5 四方包囲。
+- [PH-V09-001 #62](https://github.com/garchomp-game/create-game/issues/62): 仮StageDefinitionで完了可能な3作戦の進行と選択基盤。
+- [PH-V09-002 #64](https://github.com/garchomp-game/create-game/issues/64): #62へ載せるStage 1 基礎迎撃。
+- [PH-V09-003 #65](https://github.com/garchomp-game/create-game/issues/65): #62と#64の後に載せるStage 5 四方包囲。
 - Stage 10: 現行`final-expedition`をRC6で安定化。
 
 この3本で、初回学習、中間の複合判断、高難度最終試験がつながるかを確認します。つながらない状態で残り7本を量産しません。

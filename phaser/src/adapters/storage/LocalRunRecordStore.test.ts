@@ -92,6 +92,21 @@ describe("LocalRunRecordStore", () => {
     );
   });
 
+  it("preserves personal bests for separate profiles after history eviction", () => {
+    const storage = new MemoryStorage();
+    const store = new LocalRunRecordStore(storage, { historyLimit: 1, rankingLimit: 1 });
+    const first = makeRecord("profile-one", 10_000);
+    const second = makeRecord("profile-two", 20_000, "2026-07-10T10:01:00Z");
+    second.profileId = "guest-2";
+
+    store.save(first);
+    store.save(second);
+
+    expect(new Set(store.load().rankings.map((record) => record.id))).toEqual(
+      new Set(["profile-one", "profile-two"]),
+    );
+  });
+
   it("keeps Expedition defeats in history without adding them to rankings", () => {
     const storage = new MemoryStorage();
     const store = new LocalRunRecordStore(storage);
@@ -110,17 +125,23 @@ describe("LocalRunRecordStore", () => {
     expect(store.load().rankings.map((record) => record.id)).toEqual(["victory"]);
   });
 
-  it("keeps a separate ranking for every comparison key", () => {
+  it("bounds comparison groups and keeps the most recently active ones", () => {
     const storage = new MemoryStorage();
-    const store = new LocalRunRecordStore(storage);
+    const store = new LocalRunRecordStore(storage, { rankingGroupLimit: 8 });
 
     for (let index = 0; index < 21; index += 1) {
-      const record = makeRecord(`run-${index}`, 100 + index);
+      const record = makeRecord(
+        `run-${index}`,
+        100 + index,
+        `2026-07-10T10:${String(index).padStart(2, "0")}:00Z`,
+      );
       record.stageId = `arena-${index}`;
       expect(store.save(record).ok).toBe(true);
     }
 
-    expect(new Set(store.load().rankings.map((record) => record.stageId)).size).toBe(21);
+    expect(new Set(store.load().rankings.map((record) => record.stageId))).toEqual(
+      new Set(Array.from({ length: 8 }, (_, index) => `arena-${index + 13}`)),
+    );
   });
 
   it("quarantines invalid JSON without throwing", () => {
@@ -217,6 +238,20 @@ describe("LocalRunRecordStore", () => {
     expect(result.ok).toBe(true);
     expect(result.history.map((record) => record.id)).toEqual(["run-a"]);
     expect(result.rankings).toEqual([]);
+  });
+
+  it("does not resurrect cleared rankings when history is deleted later", () => {
+    const storage = new MemoryStorage();
+    const store = new LocalRunRecordStore(storage);
+    store.save(makeRecord("run-a", 100));
+    store.save(makeRecord("run-b", 200));
+
+    expect(store.clearRankings().rankings).toEqual([]);
+    const result = store.delete("run-b");
+
+    expect(result.history.map((record) => record.id)).toEqual(["run-a"]);
+    expect(result.rankings).toEqual([]);
+    expect(store.load().rankings).toEqual([]);
   });
 
   it("deletes one record from history and preserved rankings", () => {

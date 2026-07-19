@@ -40,6 +40,8 @@ const DEFAULT_MENU_LABELS: Record<MenuAction, string> = {
   historyFilterAll: "すべて",
   historyFilterPulse: "パルス",
   historyFilterSpread: "拡散",
+  rankingPrevious: "前のボード",
+  rankingNext: "次のボード",
   clearHistory: "履歴を消去",
   clearRankings: "ランキングを消去",
   resetSettings: "設定を初期化",
@@ -197,6 +199,22 @@ export function getMenuButtons(
 
   if (secondaryMenu === "ranking") {
     return [
+      {
+        action: "rankingPrevious",
+        label: label("rankingPrevious"),
+        x: arenaWidth / 2 - 270,
+        y: arenaHeight - 146,
+        width: 250,
+        height: buttonHeight,
+      },
+      {
+        action: "rankingNext",
+        label: label("rankingNext"),
+        x: arenaWidth / 2 + 20,
+        y: arenaHeight - 146,
+        width: 250,
+        height: buttonHeight,
+      },
       {
         action: "clearRankings",
         label: label("clearRankings"),

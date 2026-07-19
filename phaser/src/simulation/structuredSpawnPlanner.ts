@@ -60,18 +60,14 @@ export function planStructuredSpawn(
   if (placements.length === 0 && request.fallbackGeometryId) {
     metrics.fallbackUsed = true;
     geometryId = request.fallbackGeometryId;
-    const fallbackRequest = {
-      ...request,
-      direction: rotateDirection(request.direction, 1),
-    };
     placements = collectSafePlacements(
-      fallbackRequest,
+      request,
       geometryId,
       capacity,
       random,
       metrics,
     );
-    telegraph.directions = getGeometryDirections(geometryId, fallbackRequest.direction);
+    telegraph.directions = getGeometryDirections(geometryId, request.direction);
   }
 
   if (placements.length === 0) {
@@ -149,10 +145,11 @@ function createCandidate(
   const laneCount = Math.ceil(candidateCount / directions.length);
   const normalized = getLanePosition(geometryId, laneIndex, laneCount, phase, random);
   const edgePoint = pointOnEdge(request, direction, normalized);
+  const radius = getPlacementRadius(request, acceptedIndex);
 
   return {
     position: spawnPointOutsideArena(request, direction, edgePoint),
-    entryPoint: entryPointInsideActiveArea(request, direction, edgePoint),
+    entryPoint: entryPointInsideActiveArea(request, direction, edgePoint, radius),
     direction,
     role: getRole(geometryId, acceptedIndex),
     slot: acceptedIndex,
@@ -209,8 +206,9 @@ function entryPointInsideActiveArea(
   request: StructuredSpawnRequest,
   direction: EncounterDirection,
   edgePoint: Vec2,
+  radius: number,
 ): Vec2 {
-  const inset = request.collapseInset + request.enemyRadius;
+  const inset = request.collapseInset + radius;
   const minX = inset;
   const maxX = request.arena.width - inset;
   const minY = inset;
@@ -236,34 +234,45 @@ function getRejectionReason(
   candidate: SpawnCandidate,
   accepted: readonly StructuredSpawnPlacement[],
 ): Exclude<SpawnSafetyRejectionReason, "enemyCap"> | null {
-  if (isInsideArena(candidate.position, request.arena.width, request.arena.height)) {
+  const candidateRadius = getPlacementRadius(request, candidate.slot);
+  if (
+    circleIntersectsArena(
+      candidate.position,
+      candidateRadius,
+      request.arena.width,
+      request.arena.height,
+    )
+  ) {
     return "insideArena";
   }
-  if (!isInsideActiveArea(candidate.entryPoint, request)) return "outsideActiveArea";
+  if (!isInsideActiveArea(candidate.entryPoint, request, candidateRadius)) {
+    return "outsideActiveArea";
+  }
   if (distance(candidate.entryPoint, request.playerPosition) < request.minimumPlayerDistance) {
     return "playerDistance";
   }
   if (
     request.obstacles.some(
       (obstacle) =>
-        circleIntersectsRect(candidate.entryPoint, request.enemyRadius, obstacle) ||
+        circleIntersectsRect(candidate.entryPoint, candidateRadius, obstacle) ||
         segmentIntersectsExpandedRect(
           candidate.position,
           candidate.entryPoint,
-          request.enemyRadius,
+          candidateRadius,
           obstacle,
         ),
     )
   ) {
     return "obstacle";
   }
-  if (request.isReachable && !request.isReachable(candidate.entryPoint, request.enemyRadius)) {
+  if (request.isReachable && !request.isReachable(candidate.entryPoint, candidateRadius)) {
     return "unreachable";
   }
-  const minimumSeparation = request.enemyRadius * 2 + 6;
   if (
     accepted.some(
-      (placement) => distance(placement.position, candidate.position) < minimumSeparation,
+      (placement) =>
+        distance(placement.position, candidate.position) <
+        candidateRadius + getPlacementRadius(request, placement.slot) + 6,
     )
   ) {
     return "overlap";
@@ -271,8 +280,12 @@ function getRejectionReason(
   return null;
 }
 
-function isInsideActiveArea(point: Vec2, request: StructuredSpawnRequest): boolean {
-  const inset = request.collapseInset + request.enemyRadius;
+function isInsideActiveArea(
+  point: Vec2,
+  request: StructuredSpawnRequest,
+  radius: number,
+): boolean {
+  const inset = request.collapseInset + radius;
   return (
     point.x >= inset &&
     point.x <= request.arena.width - inset &&
@@ -281,8 +294,23 @@ function isInsideActiveArea(point: Vec2, request: StructuredSpawnRequest): boole
   );
 }
 
-function isInsideArena(point: Vec2, width: number, height: number): boolean {
-  return point.x >= 0 && point.x <= width && point.y >= 0 && point.y <= height;
+function circleIntersectsArena(
+  point: Vec2,
+  radius: number,
+  width: number,
+  height: number,
+): boolean {
+  return (
+    point.x + radius >= 0 &&
+    point.x - radius <= width &&
+    point.y + radius >= 0 &&
+    point.y - radius <= height
+  );
+}
+
+function getPlacementRadius(request: StructuredSpawnRequest, slot: number): number {
+  if (slot !== 0) return request.enemyRadius;
+  return Math.max(request.enemyRadius, request.primaryEnemyRadius ?? request.enemyRadius);
 }
 
 function circleIntersectsRect(point: Vec2, radius: number, obstacle: Obstacle): boolean {
@@ -327,15 +355,6 @@ function segmentIntersectsExpandedRect(
 
 function oppositeDirection(direction: EncounterDirection): EncounterDirection {
   return DIRECTION_ORDER[(DIRECTION_ORDER.indexOf(direction) + 2) % 4]!;
-}
-
-function rotateDirection(
-  direction: EncounterDirection,
-  clockwiseSteps: number,
-): EncounterDirection {
-  return DIRECTION_ORDER[
-    (DIRECTION_ORDER.indexOf(direction) + clockwiseSteps) % DIRECTION_ORDER.length
-  ]!;
 }
 
 function createMetrics(requestedCount: number, capacity: number): StructuredSpawnMetrics {

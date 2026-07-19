@@ -1,6 +1,7 @@
 import {
   RUN_RANKING_LIMIT,
   RUN_RECORD_SCHEMA_VERSION,
+  normalizeRunTime,
 } from "../domain/runRecords";
 import type {
   CreateRunRecordInput,
@@ -110,19 +111,23 @@ function createEmptyEncounterMetrics(): EncounterRunStats {
   };
 }
 
-export function compareRunRecords(left: RunRecord, right: RunRecord): number {
+export function compareRunPerformance(left: RunRecord, right: RunRecord): number {
   if (left.modeId === "expedition" && right.modeId === "expedition") {
     return (
-      left.elapsed - right.elapsed ||
-      getExpeditionTacticalScore(right) - getExpeditionTacticalScore(left) ||
-      left.capturedAt.localeCompare(right.capturedAt) ||
-      left.id.localeCompare(right.id)
+      normalizeRunTime(left.elapsed) - normalizeRunTime(right.elapsed) ||
+      getExpeditionTacticalScore(right) - getExpeditionTacticalScore(left)
     );
   }
 
   return (
     right.score - left.score ||
-    right.elapsed - left.elapsed ||
+    normalizeRunTime(right.elapsed) - normalizeRunTime(left.elapsed)
+  );
+}
+
+export function compareRunRecords(left: RunRecord, right: RunRecord): number {
+  return (
+    compareRunPerformance(left, right) ||
     left.capturedAt.localeCompare(right.capturedAt) ||
     left.id.localeCompare(right.id)
   );
@@ -131,6 +136,7 @@ export function compareRunRecords(left: RunRecord, right: RunRecord): number {
 export function createRunComparisonQuery(
   source: Pick<
     RunContext | RunRecord,
+    | "profileId"
     | "modeId"
     | "stageId"
     | "difficultyId"
@@ -142,6 +148,7 @@ export function createRunComparisonQuery(
   comparisonScope: RunComparisonScope,
 ): RunComparisonQuery {
   return {
+    profileId: source.profileId,
     modeId: source.modeId,
     stageId: source.stageId,
     difficultyId: source.difficultyId,
@@ -158,6 +165,7 @@ export function matchesComparisonKey(
   key: RunComparisonKey,
 ): boolean {
   return (
+    record.profileId === key.profileId &&
     record.modeId === key.modeId &&
     record.stageId === key.stageId &&
     record.difficultyId === key.difficultyId &&
@@ -213,4 +221,54 @@ export function selectPersonalBest(
   query: RunComparisonQuery,
 ): RunRecord | null {
   return selectRanking(records, query, 1)[0] ?? null;
+}
+
+export function createRankingBoardQueries(
+  records: readonly RunRecord[],
+  profileId: string,
+  preferredContext: RunContext | null = null,
+): RunComparisonQuery[] {
+  const candidates: RunComparisonQuery[] = [];
+  if (preferredContext?.profileId === profileId) {
+    candidates.push(
+      createRunComparisonQuery(preferredContext, "overall"),
+      createRunComparisonQuery(preferredContext, "weapon"),
+    );
+  }
+
+  records
+    .filter((record) => record.profileId === profileId && isRankableRun(record))
+    .sort(
+      (left, right) =>
+        right.capturedAt.localeCompare(left.capturedAt) ||
+        right.id.localeCompare(left.id),
+    )
+    .forEach((record) => {
+      candidates.push(
+        createRunComparisonQuery(record, "overall"),
+        createRunComparisonQuery(record, "weapon"),
+      );
+    });
+
+  const seen = new Set<string>();
+  return candidates.filter((query) => {
+    const key = serializeRunComparisonQuery(query);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function serializeRunComparisonQuery(query: RunComparisonQuery): string {
+  return [
+    query.profileId,
+    query.modeId,
+    query.stageId,
+    query.difficultyId,
+    query.rulesetVersion,
+    query.seedCategory,
+    query.seedCategory === "fixed" ? query.seed : "random",
+    query.comparisonScope,
+    query.comparisonScope === "weapon" ? query.weaponId : "all",
+  ].join("\u001f");
 }

@@ -109,7 +109,7 @@ export class EncounterDirector {
       events.push({
         type: "encounter.act.changed",
         actId: act.id,
-        elapsed: frame.runElapsed,
+        elapsed: roundToMillis(frame.runElapsed),
       });
     }
 
@@ -207,18 +207,19 @@ export class EncounterDirector {
         );
       const activeTimedOut =
         card.completionCondition.type === "signal" &&
+        card.activeTimeoutSeconds !== null &&
         !completionSignal &&
         hasReached(
           frame.runElapsed,
-          roundToMillis(state.activeStartedAt! + card.timing.activeSeconds),
+          roundToMillis(state.activeStartedAt! + card.activeTimeoutSeconds),
         );
       if (activeTimedOut) {
-        state.activeElapsed = card.timing.activeSeconds;
+        state.activeElapsed = card.activeTimeoutSeconds!;
         this.finish(
           state,
           "failed",
           "timeout",
-          roundToMillis(state.activeStartedAt! + card.timing.activeSeconds),
+          roundToMillis(state.activeStartedAt! + card.activeTimeoutSeconds!),
           random,
           events,
         );
@@ -276,12 +277,6 @@ export class EncounterDirector {
 
     const card = this.cards.get(state.cardId)!;
     const events: EncounterDirectorEvent[] = [];
-    if (result.status === "deployed") {
-      this.startActive(state, card, result.elapsed, events);
-      return events;
-    }
-
-    state.deploymentLastReason = result.reason;
     if (hasReached(result.elapsed, state.deploymentDeadlineAt!)) {
       this.finish(
         state,
@@ -293,7 +288,12 @@ export class EncounterDirector {
       );
       return events;
     }
+    if (result.status === "deployed") {
+      this.startActive(state, card, result.elapsed, events);
+      return events;
+    }
 
+    state.deploymentLastReason = result.reason;
     const nextAttemptAt = roundToMillis(
       state.deploymentStartedAt! +
         state.deploymentAttempts * card.deployment!.retryIntervalSeconds,
@@ -307,6 +307,41 @@ export class EncounterDirector {
       reason: result.reason,
       nextAttemptAt,
     });
+    return events;
+  }
+
+  terminateRun(
+    state: EncounterDirectorState,
+    outcome: "completed" | "interrupted",
+    reason: string,
+    runElapsed: number,
+    random: EncounterDirectorRandom,
+  ): EncounterDirectorEvent[] {
+    if (!Number.isFinite(runElapsed) || runElapsed < state.runElapsed) {
+      throw new Error("EncounterDirector termination time must be finite and monotonic.");
+    }
+
+    this.advanceClocks(state, runElapsed);
+    if (!isRunning(state.phase) || state.cardId === null) {
+      state.actClockBlocked = false;
+      return [];
+    }
+    if (state.activeStartedAt !== null) {
+      state.activeElapsed = roundToMillis(
+        Math.max(0, runElapsed - state.activeStartedAt),
+      );
+    }
+
+    const events: EncounterDirectorEvent[] = [];
+    this.finish(
+      state,
+      outcome,
+      reason,
+      roundToMillis(runElapsed),
+      random,
+      events,
+      false,
+    );
     return events;
   }
 
@@ -486,6 +521,7 @@ export class EncounterDirector {
     finishedAt: number,
     random: EncounterDirectorRandom,
     events: EncounterDirectorEvent[],
+    scheduleNextSelection = true,
   ): void {
     const historyEntry: EncounterDirectorHistoryEntry = {
       cardId: state.cardId!,
@@ -505,14 +541,19 @@ export class EncounterDirector {
     };
     state.phase = outcome;
     state.finishedAt = finishedAt;
+    state.completionReason = reason;
     state.actClockBlocked = false;
+    state.deploymentDeadlineAt = null;
+    state.nextDeploymentAttemptAt = null;
     state.history.push(historyEntry);
     state.history = state.history.slice(-64);
     state.metrics[outcome] += 1;
     state.metrics.lastMeaningfulAt = finishedAt;
-    state.nextSelectionAt = roundToMillis(
-      state.actElapsed + drawRange(random, this.deck.interval),
-    );
+    if (scheduleNextSelection) {
+      state.nextSelectionAt = roundToMillis(
+        state.actElapsed + drawRange(random, this.deck.interval),
+      );
+    }
     events.push({
       type: `encounter.card.${outcome}`,
       cardId: historyEntry.cardId,
@@ -524,7 +565,7 @@ export class EncounterDirector {
   private resolveAct(elapsed: number): EncounterActDefinition {
     let result = this.acts[0]!;
     for (const act of this.acts) {
-      if (act.startsAt > elapsed) break;
+      if (!hasReached(elapsed, act.startsAt)) break;
       result = act;
     }
     return result;
@@ -614,5 +655,5 @@ function roundToMillis(value: number): number {
 }
 
 function hasReached(elapsed: number, threshold: number): boolean {
-  return roundToMillis(elapsed) >= threshold;
+  return roundToMillis(elapsed) >= roundToMillis(threshold);
 }

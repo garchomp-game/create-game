@@ -62,6 +62,38 @@ describe("createPhaserUiState", () => {
     expect(state.records.map((record) => record.id)).toEqual(["spread"]);
     expect(state.ranking.map((record) => record.id)).toEqual(["spread", "pulse"]);
   });
+
+  it("selects a weapon-specific ranking board by index", () => {
+    const profile = { id: "profile-a", displayName: "", schemaVersion: 1 } as LocalProfile;
+    const pulse = makeRecord("pulse", "profile-a", 100);
+    const spread = { ...makeRecord("spread", "profile-a", 200), weaponId: "spread" as const };
+    const state = createPhaserUiState({
+      secondaryMenu: "ranking",
+      runHistory: [spread, pulse],
+      runRankings: [spread, pulse],
+      runContext: pulse as unknown as RunContext,
+      profile,
+      settings: {} as ProfileSettings,
+      latestRunRecord: null,
+      previousBest: null,
+      previousWeaponBest: null,
+      historyClearPending: false,
+      rankingClearPending: false,
+      rankingBoardIndex: 1,
+      historyPage: 0,
+      historyWeaponFilter: "all",
+      focusedMenuAction: "rankingNext",
+      notice: null,
+      releaseIdentity: createReleaseIdentity(),
+    });
+
+    expect(state.rankingQuery).toMatchObject({
+      comparisonScope: "weapon",
+      weaponId: "pulse",
+    });
+    expect(state.ranking.map((record) => record.id)).toEqual(["pulse"]);
+    expect(state.rankingBoardCount).toBe(3);
+  });
 });
 
 function createReleaseIdentity() {
