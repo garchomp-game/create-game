@@ -106,9 +106,11 @@ export const RUN_SUMMARY_COLUMNS = [
   "expedition_structured_enemies_spawned",
   "expedition_structured_spawns_deferred",
   "expedition_longest_meaningful_gap_seconds",
+  "expedition_tactical_score",
   "expedition_score_before_bonus",
   "expedition_clear_score_bonus",
   "expedition_time_score_bonus",
+  "expedition_time_medal",
   "expedition_boss_fight_seconds",
   "commander_spawned",
   "commander_killed",
@@ -331,9 +333,11 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
       numberAt(expeditionMetrics, "structuredSpawnsDeferred") ?? 0,
     expedition_longest_meaningful_gap_seconds:
       roundedNumber(expeditionMetrics, "longestMeaningfulGap"),
+    expedition_tactical_score: numberAt(expeditionMetrics, "tacticalScore") ?? 0,
     expedition_score_before_bonus: numberAt(expeditionMetrics, "scoreBeforeBonus") ?? 0,
     expedition_clear_score_bonus: numberAt(expeditionMetrics, "clearScoreBonus") ?? 0,
     expedition_time_score_bonus: numberAt(expeditionMetrics, "timeScoreBonus") ?? 0,
+    expedition_time_medal: stringAt(expeditionMetrics, "timeMedal") ?? "",
     expedition_boss_fight_seconds:
       nullableRoundedNumber(expeditionMetrics, "bossFightDuration"),
     commander_spawned: numberAt(commanderMetrics, "spawned") ?? 0,

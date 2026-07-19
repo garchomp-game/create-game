@@ -184,6 +184,11 @@ class MemoryRunRecordStore implements RunRecordStorePort {
     return this.writeResult();
   }
 
+  delete(recordId: string): RunRecordWriteResult {
+    this.records = this.records.filter((record) => record.id !== recordId);
+    return this.writeResult();
+  }
+
   clearHistory(): RunRecordWriteResult {
     return this.clear();
   }

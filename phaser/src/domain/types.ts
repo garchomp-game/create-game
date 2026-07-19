@@ -533,6 +533,8 @@ export type EncounterState = {
 };
 
 export type ExpeditionOutcome = "victory" | "defeat";
+export const EXPEDITION_TIME_MEDALS = ["gold", "silver", "bronze"] as const;
+export type ExpeditionTimeMedal = (typeof EXPEDITION_TIME_MEDALS)[number];
 
 export type BossActionPhase = "telegraph" | "execute" | "recovery";
 
@@ -742,9 +744,11 @@ export type ExpeditionEncounterRunStats = {
   structuredSpawnsDeferred: number;
   longestMeaningfulGap: number;
   completedAt: number | null;
+  tacticalScore: number;
   scoreBeforeBonus: number;
   clearScoreBonus: number;
   timeScoreBonus: number;
+  timeMedal: ExpeditionTimeMedal | null;
   bossFightDuration: number | null;
   cardHistory: EncounterDirectorHistoryEntry[];
 };
@@ -1325,9 +1329,11 @@ export type GameEvent =
       actId: string;
       elapsed: number;
       score: number;
+      tacticalScore: number;
       scoreBeforeBonus: number;
       clearScoreBonus: number;
       timeScoreBonus: number;
+      timeMedal: ExpeditionTimeMedal | null;
       bossFightDuration: number | null;
     }
   | {
@@ -1335,9 +1341,11 @@ export type GameEvent =
       actId: string;
       elapsed: number;
       score: number;
+      tacticalScore: number;
       scoreBeforeBonus: number;
       clearScoreBonus: number;
       timeScoreBonus: number;
+      timeMedal: ExpeditionTimeMedal | null;
       bossFightDuration: number | null;
     }
   | { type: "collapse.advanced"; stage: number; inset: number; elapsed: number }

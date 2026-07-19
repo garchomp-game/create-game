@@ -1,4 +1,8 @@
-import { selectRanking } from "../../application/runRecords";
+import {
+  createRunComparisonQuery,
+  isRankableRun,
+  selectRanking,
+} from "../../application/runRecords";
 import {
   RUN_HISTORY_LIMIT,
   RUN_RANKING_LIMIT,
@@ -99,6 +103,23 @@ export class LocalRunRecordStore implements RunRecordStorePort {
           rankings: loaded.rankings,
           error,
         }
+      : createWriteResult(true, history, rankings);
+  }
+
+  delete(recordId: string): RunRecordWriteResult {
+    const loaded = this.load();
+    if (loaded.error && !loaded.recovered) return emptyWriteResult(false, loaded.error);
+    const history = loaded.history.filter((record) => record.id !== recordId);
+    const rankings = buildRankings(
+      [
+        ...history,
+        ...loaded.rankings.filter((record) => record.id !== recordId),
+      ],
+      this.rankingLimit,
+    );
+    const error = this.write(history, rankings);
+    return error
+      ? createWriteResult(false, loaded.history, loaded.rankings, error)
       : createWriteResult(true, history, rankings);
   }
 
@@ -248,28 +269,47 @@ function parseRecords(candidates: unknown[]): { records: RunRecord[]; recovered:
 }
 
 function buildRankings(records: RunRecord[], limit: number): RunRecord[] {
-  const groups = new Map<string, { key: RunComparisonKey; records: RunRecord[] }>();
+  const groups = new Map<string, RunRecord[]>();
   for (const record of deduplicate(records)) {
-    if (!record.rankEligibility.eligible) continue;
-    const key: RunComparisonKey = record;
-    const serializedKey = comparisonKeyToString(key);
-    const group = groups.get(serializedKey) ?? { key, records: [] };
-    group.records.push(record);
+    if (!isRankableRun(record)) continue;
+    const serializedKey = comparisonGroupToString(record);
+    const group = groups.get(serializedKey) ?? [];
+    group.push(record);
     groups.set(serializedKey, group);
   }
 
-  return [...groups.entries()]
+  const selected = [...groups.entries()]
     .sort(([left], [right]) => left.localeCompare(right))
-    .flatMap(([, group]) => selectRanking(group.records, group.key, limit));
+    .flatMap(([, group]) => {
+      const source = group[0]!;
+      const overall = selectRanking(
+        group,
+        createRunComparisonQuery(source, "overall"),
+        limit,
+      );
+      const byWeapon = [...new Set(group.map((record) => record.weaponId))]
+        .sort()
+        .flatMap((weaponId) => {
+          const weaponSource = group.find((record) => record.weaponId === weaponId)!;
+          return selectRanking(
+            group,
+            createRunComparisonQuery(weaponSource, "weapon"),
+            limit,
+          );
+        });
+      return deduplicate([...overall, ...byWeapon]);
+    });
+  return deduplicate(selected);
 }
 
-function comparisonKeyToString(key: RunComparisonKey): string {
+function comparisonGroupToString(key: RunComparisonKey & Pick<RunRecord, "seed">): string {
   return [
     key.modeId,
     key.stageId,
     key.difficultyId,
     key.rulesetVersion,
     key.seedCategory,
+    key.seedCategory === "fixed" ? key.seed : "random",
   ].join("\u001f");
 }
 

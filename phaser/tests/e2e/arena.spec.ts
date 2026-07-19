@@ -156,8 +156,10 @@ test("runs the final expedition from mode selection through result and retry", a
       expedition: {
         outcome: "victory",
         reachedActId: "command-ship",
+        tacticalScore: expect.any(Number),
         clearScoreBonus: 15_000,
-        timeScoreBonus: expect.any(Number),
+        timeScoreBonus: 0,
+        timeMedal: "gold",
         bossFightDuration: expect.any(Number),
       },
       boss: {

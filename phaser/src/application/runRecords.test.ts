@@ -4,6 +4,7 @@ import type { RunComparisonKey, RunContext, RunRecord } from "../domain/runRecor
 import { runRecordSchema } from "../domain/runRecords";
 import {
   compareRunRecords,
+  createRunComparisonQuery,
   createRankEligibility,
   createRunRecord,
   selectPersonalBest,
@@ -17,6 +18,13 @@ const comparisonKey: RunComparisonKey = {
   rulesetVersion: "rules-v1",
   seedCategory: "random",
 };
+
+const comparisonQuery = {
+  ...comparisonKey,
+  comparisonScope: "overall",
+  weaponId: null,
+  seed: null,
+} as const;
 
 describe("run records", () => {
   it("marks manual standard runs eligible and excludes debug or test runs", () => {
@@ -68,11 +76,11 @@ describe("run records", () => {
       makeRecord({ id: "fixed", score: 5000, seedCategory: "fixed" }),
     ];
 
-    expect(selectRanking(records, comparisonKey).map((record) => record.id)).toEqual([
+    expect(selectRanking(records, comparisonQuery).map((record) => record.id)).toEqual([
       "best",
       "low",
     ]);
-    expect(selectPersonalBest(records, comparisonKey)?.id).toBe("best");
+    expect(selectPersonalBest(records, comparisonQuery)?.id).toBe("best");
   });
 
   it("uses elapsed, captured time, and id as deterministic tie breakers", () => {
@@ -89,21 +97,82 @@ describe("run records", () => {
     ]);
   });
 
-  it("prefers a faster Expedition clear when scores are tied", () => {
-    const expeditionKey: RunComparisonKey = {
-      ...comparisonKey,
-      modeId: "expedition",
-      stageId: "final-expedition",
-    };
+  it("ranks victorious Expeditions by clear time before tactical score", () => {
     const records = [
-      makeRecord({ id: "slow", score: 100_000, elapsed: 520 }),
-      makeRecord({ id: "fast", score: 100_000, elapsed: 470 }),
-    ].map((record) => ({ ...record, ...expeditionKey }));
+      makeExpeditionRecord({ id: "slow-high-score", elapsed: 520, tacticalScore: 100_000 }),
+      makeExpeditionRecord({ id: "fast", elapsed: 470, tacticalScore: 40_000 }),
+    ];
+    const query = createRunComparisonQuery(records[0]!, "overall");
 
-    expect(selectRanking(records, expeditionKey).map((record) => record.id)).toEqual([
+    expect(selectRanking(records, query).map((record) => record.id)).toEqual([
       "fast",
-      "slow",
+      "slow-high-score",
     ]);
+  });
+
+  it("keeps defeats in history candidates without allowing them into Expedition PBs", () => {
+    const victory = makeExpeditionRecord({ id: "victory", elapsed: 600, tacticalScore: 20_000 });
+    const defeat = makeExpeditionRecord({
+      id: "defeat",
+      elapsed: 100,
+      tacticalScore: 200_000,
+      outcome: "defeat",
+    });
+
+    expect(selectRanking(
+      [defeat, victory],
+      createRunComparisonQuery(victory, "overall"),
+    ).map((record) => record.id)).toEqual(["victory"]);
+  });
+
+  it("derives overall and weapon PBs from the same Expedition records", () => {
+    const pulse = makeExpeditionRecord({
+      id: "pulse-fast",
+      elapsed: 480,
+      tacticalScore: 30_000,
+      weaponId: "pulse",
+    });
+    const spread = makeExpeditionRecord({
+      id: "spread-fast",
+      elapsed: 500,
+      tacticalScore: 40_000,
+      weaponId: "spread",
+    });
+    const records = [spread, pulse];
+
+    expect(selectPersonalBest(
+      records,
+      createRunComparisonQuery(spread, "overall"),
+    )?.id).toBe("pulse-fast");
+    expect(selectPersonalBest(
+      records,
+      createRunComparisonQuery(spread, "weapon"),
+    )?.id).toBe("spread-fast");
+  });
+
+  it("partitions fixed seeds by value and excludes fixed runs from random queries", () => {
+    const fixedOne = makeExpeditionRecord({ id: "fixed-1", seedCategory: "fixed", seed: 1 });
+    const fixedTwo = makeExpeditionRecord({ id: "fixed-2", seedCategory: "fixed", seed: 2 });
+    const random = makeExpeditionRecord({ id: "random", seedCategory: "random", seed: 3 });
+
+    expect(selectRanking(
+      [fixedOne, fixedTwo, random],
+      createRunComparisonQuery(fixedOne, "overall"),
+    ).map((record) => record.id)).toEqual(["fixed-1"]);
+    expect(selectRanking(
+      [fixedOne, fixedTwo, random],
+      createRunComparisonQuery(random, "overall"),
+    ).map((record) => record.id)).toEqual(["random"]);
+  });
+
+  it("partitions RC5 and RC6 rulesets", () => {
+    const rc5 = makeExpeditionRecord({ id: "rc5", rulesetVersion: "rules-rc5" });
+    const rc6 = makeExpeditionRecord({ id: "rc6", rulesetVersion: "rules-rc6" });
+
+    expect(selectRanking(
+      [rc5, rc6],
+      createRunComparisonQuery(rc6, "overall"),
+    ).map((record) => record.id)).toEqual(["rc6"]);
   });
 
   it("rejects contradictory rank eligibility data", () => {
@@ -293,9 +362,11 @@ describe("run records", () => {
     expect(runRecordSchema.parse(legacy)).toMatchObject({
       encounterMetrics: {
         expedition: {
+          tacticalScore: 0,
           scoreBeforeBonus: 0,
           clearScoreBonus: 0,
           timeScoreBonus: 0,
+          timeMedal: null,
           bossFightDuration: null,
           cardHistory: [],
         },
@@ -432,4 +503,53 @@ function makeRecord(
     upgradeSelections: [],
     buildCompletedAt: null,
   });
+}
+
+function makeExpeditionRecord(
+  overrides: {
+    id?: string;
+    elapsed?: number;
+    tacticalScore?: number;
+    weaponId?: RunRecord["weaponId"];
+    seedCategory?: RunRecord["seedCategory"];
+    seed?: number;
+    rulesetVersion?: string;
+    outcome?: "victory" | "defeat";
+  } = {},
+): RunRecord {
+  const tacticalScore = overrides.tacticalScore ?? 20_000;
+  const record = makeRecord({
+    id: overrides.id,
+    elapsed: overrides.elapsed ?? 500,
+    score: tacticalScore + (overrides.outcome === "defeat" ? 0 : 15_000),
+    seedCategory: overrides.seedCategory,
+  });
+  record.modeId = "expedition";
+  record.stageId = "final-expedition";
+  record.weaponId = overrides.weaponId ?? "pulse";
+  record.seed = overrides.seed ?? 42;
+  record.rulesetVersion = overrides.rulesetVersion ?? "rules-rc6";
+  record.encounterMetrics.expedition = {
+    outcome: overrides.outcome ?? "victory",
+    reachedActId: "command-ship",
+    reachedActIds: ["command-ship"],
+    actChanges: 4,
+    cardsSelected: 5,
+    cardsCompleted: 5,
+    cardsFailed: 0,
+    cardsInterrupted: 0,
+    cardsDeferred: 0,
+    structuredEnemiesSpawned: 20,
+    structuredSpawnsDeferred: 0,
+    longestMeaningfulGap: 0,
+    completedAt: record.elapsed,
+    tacticalScore,
+    scoreBeforeBonus: tacticalScore,
+    clearScoreBonus: overrides.outcome === "defeat" ? 0 : 15_000,
+    timeScoreBonus: 0,
+    timeMedal: overrides.outcome === "defeat" ? null : "gold",
+    bossFightDuration: 120,
+    cardHistory: [],
+  };
+  return record;
 }

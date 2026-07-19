@@ -1,4 +1,7 @@
-import { selectRanking } from "../application/runRecords";
+import {
+  createRunComparisonQuery,
+  selectRanking,
+} from "../application/runRecords";
 import type {
   HistoryWeaponFilter,
   MenuAction,
@@ -23,6 +26,7 @@ export type ArenaUiState = {
   settings: ProfileSettings;
   latestRunRecord: RunRecord | null;
   previousBest: RunRecord | null;
+  previousWeaponBest: RunRecord | null;
   historyClearPending: boolean;
   rankingClearPending: boolean;
   historyPage: number;
@@ -42,6 +46,7 @@ export type CreateArenaUiStateInput = {
   settings: ProfileSettings;
   latestRunRecord: RunRecord | null;
   previousBest: RunRecord | null;
+  previousWeaponBest: RunRecord | null;
   historyClearPending: boolean;
   rankingClearPending: boolean;
   historyPage: number;
@@ -60,7 +65,7 @@ export function createArenaUiState(input: CreateArenaUiStateInput): ArenaUiState
   const ranking = input.runContext
     ? selectRanking(
         input.runRankings.filter((record) => record.profileId === input.profile.id),
-        input.runContext,
+        createRunComparisonQuery(input.runContext, "overall"),
       )
     : [];
 
@@ -72,6 +77,9 @@ export function createArenaUiState(input: CreateArenaUiStateInput): ArenaUiState
     settings: { ...input.settings },
     latestRunRecord: input.latestRunRecord ? { ...input.latestRunRecord } : null,
     previousBest: input.previousBest ? { ...input.previousBest } : null,
+    previousWeaponBest: input.previousWeaponBest
+      ? { ...input.previousWeaponBest }
+      : null,
     historyClearPending: input.historyClearPending,
     rankingClearPending: input.rankingClearPending,
     historyPage: input.historyPage,

@@ -98,9 +98,11 @@ describe("createArenaScreenViewModel", () => {
       structuredSpawnsDeferred: 0,
       longestMeaningfulGap: 0,
       completedAt: 421.4,
+      tacticalScore: 18_300,
       scoreBeforeBonus: 18_300,
       clearScoreBonus: 15_000,
-      timeScoreBonus: 107_992,
+      timeScoreBonus: 0,
+      timeMedal: "gold",
       bossFightDuration: 0.016,
       cardHistory: [],
     };
@@ -113,7 +115,7 @@ describe("createArenaScreenViewModel", () => {
 
     expect(viewModel.statusText?.split("\n")).toEqual(
       expect.arrayContaining([
-        "完遂 +15,000 / 速攻 +107,992",
+        "時間メダル 金 / 完遂 +15,000",
         "指揮艦撃破 00:00",
       ]),
     );
@@ -143,9 +145,11 @@ describe("createArenaScreenViewModel", () => {
       structuredSpawnsDeferred: 0,
       longestMeaningfulGap: 0,
       completedAt: 430,
+      tacticalScore: 20_000,
       scoreBeforeBonus: 20_000,
       clearScoreBonus: 0,
       timeScoreBonus: 0,
+      timeMedal: null,
       bossFightDuration: 30,
       cardHistory: [],
     };
@@ -189,6 +193,7 @@ function createUiState(
     settings: createDefaultProfileSettings(),
     latestRunRecord: null,
     previousBest: null,
+    previousWeaponBest: null,
     historyClearPending: false,
     rankingClearPending: false,
     historyPage: 0,

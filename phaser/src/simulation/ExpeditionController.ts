@@ -19,6 +19,7 @@ import { getThreatTier } from "./threatDirector";
 import { EncounterDirector } from "./EncounterDirector";
 import { estimatePointNavigationPath } from "./navigationField";
 import { planStructuredSpawn } from "./structuredSpawnPlanner";
+import { calculateExpeditionCompletionRewards } from "./expeditionScoring";
 import { spawnTelegraphCharger } from "./systems/chargerEnemySystem";
 import {
   retireCommanderElite,
@@ -83,9 +84,11 @@ export class ExpeditionController {
       structuredSpawnsDeferred: 0,
       longestMeaningfulGap: 0,
       completedAt: null,
+      tacticalScore: 0,
       scoreBeforeBonus: 0,
       clearScoreBonus: 0,
       timeScoreBonus: 0,
+      timeMedal: null,
       bossFightDuration: null,
       cardHistory: [],
     };
@@ -462,24 +465,16 @@ export class ExpeditionController {
     outcome: "victory" | "defeat",
   ): Extract<GameEvent, { type: "expedition.completed" | "expedition.failed" }> {
     const expedition = world.expedition!;
-    const scoreBeforeBonus = world.state.score;
+    const tacticalScore = world.state.score;
     const bossFightDuration = expedition.boss
       ? Math.max(0, world.state.elapsed - expedition.boss.spawnedAt)
       : null;
-    const scoring = this.stage.completionScoring;
-    const clearScoreBonus = outcome === "victory" && scoring
-      ? scoring.clearBonus
-      : 0;
-    const timeScoreBonus =
-      outcome === "victory" && scoring && bossFightDuration !== null
-        ? Math.max(
-            0,
-            Math.floor(
-              (scoring.bossFightTargetSeconds - bossFightDuration) *
-                scoring.bossTimeBonusPerSecond,
-            ),
-          )
-        : 0;
+    const { clearScoreBonus, timeScoreBonus, timeMedal } =
+      calculateExpeditionCompletionRewards(
+        outcome,
+        world.state.elapsed,
+        this.stage.completionScoring,
+      );
     world.state.score += clearScoreBonus + timeScoreBonus;
     expedition.status = outcome;
     expedition.outcome = outcome;
@@ -490,9 +485,11 @@ export class ExpeditionController {
       actId: expedition.actId,
       elapsed: world.state.elapsed,
       score: world.state.score,
-      scoreBeforeBonus,
+      tacticalScore,
+      scoreBeforeBonus: tacticalScore,
       clearScoreBonus,
       timeScoreBonus,
+      timeMedal,
       bossFightDuration,
     };
   }

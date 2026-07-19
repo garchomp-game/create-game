@@ -105,8 +105,11 @@ export const FINAL_EXPEDITION_STAGE_DEFINITION = {
   },
   completionScoring: {
     clearBonus: 15_000,
-    bossFightTargetSeconds: 240,
-    bossTimeBonusPerSecond: 450,
+    timeMedalSeconds: {
+      gold: 540,
+      silver: 600,
+      bronze: 720,
+    },
   },
   clearCondition: { type: "bossDefeat", bossId: FINAL_COMMAND_SHIP_BOSS_ID },
   bossId: FINAL_COMMAND_SHIP_BOSS_ID,

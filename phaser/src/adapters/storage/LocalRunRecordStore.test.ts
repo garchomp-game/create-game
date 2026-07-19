@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { createRankEligibility, createRunRecord } from "../../application/runRecords";
+import {
+  createRankEligibility,
+  createRunComparisonQuery,
+  createRunRecord,
+  selectPersonalBest,
+} from "../../application/runRecords";
 import type { RunRecord } from "../../domain/runRecords";
 import type { StorageLike } from "../../ports/RunRecordStorePort";
 import {
@@ -47,6 +52,62 @@ describe("LocalRunRecordStore", () => {
     const loaded = store.load();
     expect(loaded.history.map((record) => record.id)).toEqual(["recent-b", "recent-a"]);
     expect(loaded.rankings.map((record) => record.id)).toEqual(["old-best", "recent-b"]);
+  });
+
+  it("preserves overall and per-weapon Expedition PBs beyond recent history", () => {
+    const storage = new MemoryStorage();
+    const store = new LocalRunRecordStore(storage, { historyLimit: 1, rankingLimit: 1 });
+    const pulse = makeExpeditionRecord("pulse-best", 480, "pulse");
+    const spread = makeExpeditionRecord("spread-best", 500, "spread");
+
+    store.save(pulse);
+    store.save(spread);
+
+    const loaded = store.load();
+    expect(loaded.history.map((record) => record.id)).toEqual(["spread-best"]);
+    expect(new Set(loaded.rankings.map((record) => record.id))).toEqual(
+      new Set(["pulse-best", "spread-best"]),
+    );
+    expect(selectPersonalBest(
+      loaded.rankings,
+      createRunComparisonQuery(spread, "overall"),
+    )?.id).toBe("pulse-best");
+    expect(selectPersonalBest(
+      loaded.rankings,
+      createRunComparisonQuery(spread, "weapon"),
+    )?.id).toBe("spread-best");
+  });
+
+  it("preserves a separate fixed-seed Expedition PB for each seed value", () => {
+    const storage = new MemoryStorage();
+    const store = new LocalRunRecordStore(storage, { historyLimit: 1, rankingLimit: 1 });
+    const first = makeExpeditionRecord("seed-11", 500, "pulse", 11);
+    const second = makeExpeditionRecord("seed-12", 490, "pulse", 12);
+
+    store.save(first);
+    store.save(second);
+
+    expect(new Set(store.load().rankings.map((record) => record.id))).toEqual(
+      new Set(["seed-11", "seed-12"]),
+    );
+  });
+
+  it("keeps Expedition defeats in history without adding them to rankings", () => {
+    const storage = new MemoryStorage();
+    const store = new LocalRunRecordStore(storage);
+    const victory = makeExpeditionRecord("victory", 600, "pulse");
+    const defeat = makeExpeditionRecord("defeat", 100, "pulse");
+    defeat.capturedAt = "2026-07-10T10:01:00Z";
+    defeat.score = 999_999;
+    defeat.encounterMetrics.expedition!.outcome = "defeat";
+    defeat.encounterMetrics.expedition!.clearScoreBonus = 0;
+    defeat.encounterMetrics.expedition!.timeMedal = null;
+
+    store.save(victory);
+    store.save(defeat);
+
+    expect(store.load().history.map((record) => record.id)).toEqual(["defeat", "victory"]);
+    expect(store.load().rankings.map((record) => record.id)).toEqual(["victory"]);
   });
 
   it("keeps a separate ranking for every comparison key", () => {
@@ -156,6 +217,19 @@ describe("LocalRunRecordStore", () => {
     expect(result.ok).toBe(true);
     expect(result.history.map((record) => record.id)).toEqual(["run-a"]);
     expect(result.rankings).toEqual([]);
+  });
+
+  it("deletes one record from history and preserved rankings", () => {
+    const storage = new MemoryStorage();
+    const store = new LocalRunRecordStore(storage);
+    store.save(makeRecord("run-a", 100));
+    store.save(makeRecord("run-b", 200));
+
+    const result = store.delete("run-b");
+
+    expect(result.ok).toBe(true);
+    expect(result.history.map((record) => record.id)).toEqual(["run-a"]);
+    expect(result.rankings.map((record) => record.id)).toEqual(["run-a"]);
   });
 });
 
@@ -271,4 +345,44 @@ function makeRecord(id: string, score: number, capturedAt = "2026-07-10T10:00:00
     upgradeSelections: [],
     buildCompletedAt: null,
   });
+}
+
+function makeExpeditionRecord(
+  id: string,
+  elapsed: number,
+  weaponId: RunRecord["weaponId"],
+  seed = 42,
+): RunRecord {
+  const tacticalScore = 40_000;
+  const record = makeRecord(id, tacticalScore + 15_000);
+  record.modeId = "expedition";
+  record.stageId = "final-expedition";
+  record.rulesetVersion = "rules-rc6";
+  record.seedCategory = "fixed";
+  record.seed = seed;
+  record.weaponId = weaponId;
+  record.elapsed = elapsed;
+  record.encounterMetrics.expedition = {
+    outcome: "victory",
+    reachedActId: "command-ship",
+    reachedActIds: ["command-ship"],
+    actChanges: 4,
+    cardsSelected: 5,
+    cardsCompleted: 5,
+    cardsFailed: 0,
+    cardsInterrupted: 0,
+    cardsDeferred: 0,
+    structuredEnemiesSpawned: 20,
+    structuredSpawnsDeferred: 0,
+    longestMeaningfulGap: 0,
+    completedAt: elapsed,
+    tacticalScore,
+    scoreBeforeBonus: tacticalScore,
+    clearScoreBonus: 15_000,
+    timeScoreBonus: 0,
+    timeMedal: elapsed <= 540 ? "gold" : "silver",
+    bossFightDuration: 120,
+    cardHistory: [],
+  };
+  return record;
 }

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   BOSS_ATTACK_IDS,
+  EXPEDITION_TIME_MEDALS,
   EXTRA_UPGRADE_IDS,
   UPGRADE_IDS,
   WEAPON_TYPE_IDS,
@@ -46,6 +47,15 @@ export type RunComparisonKey = {
   difficultyId: string;
   rulesetVersion: string;
   seedCategory: SeedCategory;
+};
+
+export const RUN_COMPARISON_SCOPES = ["overall", "weapon"] as const;
+export type RunComparisonScope = (typeof RUN_COMPARISON_SCOPES)[number];
+
+export type RunComparisonQuery = RunComparisonKey & {
+  comparisonScope: RunComparisonScope;
+  weaponId: WeaponTypeId | null;
+  seed: number | null;
 };
 
 export type RunContext = RunComparisonKey & {
@@ -315,9 +325,11 @@ const encounterMetricsSchema = z.object({
       structuredSpawnsDeferred: z.number().int().nonnegative(),
       longestMeaningfulGap: z.number().nonnegative(),
       completedAt: z.number().nonnegative().nullable(),
+      tacticalScore: z.number().int().nonnegative().default(0),
       scoreBeforeBonus: z.number().int().nonnegative().default(0),
       clearScoreBonus: z.number().int().nonnegative().default(0),
       timeScoreBonus: z.number().int().nonnegative().default(0),
+      timeMedal: z.enum(EXPEDITION_TIME_MEDALS).nullable().default(null),
       bossFightDuration: z.number().nonnegative().nullable().default(null),
       cardHistory: z
         .array(

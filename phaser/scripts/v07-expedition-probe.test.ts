@@ -38,8 +38,10 @@ type ProbeResult = {
   bossHealPickupsCollected: number;
   bossHpRecovered: number;
   bossHpRemaining: number | null;
+  tacticalScore: number;
   clearScoreBonus: number;
   timeScoreBonus: number;
+  timeMedal: "gold" | "silver" | "bronze" | null;
   bossFightDuration: number | null;
   bossActiveFrames: number;
   bossAimFrames: number;
@@ -77,6 +79,14 @@ describe("v0.7 final Expedition release probe", () => {
       expect(result.bossAttacksExecuted["command-pulse"]).toBeGreaterThan(0);
       expect(result.commanderSpawned).toBe(1);
       expect(result.commanderKilled).toBe(1);
+      expect(result.timeScoreBonus).toBe(0);
+      if (result.outcome === "victory") {
+        expect(result.score).toBe(result.tacticalScore + result.clearScoreBonus);
+        expect(result.timeMedal).toBe(expectedTimeMedal(result.elapsed));
+      } else {
+        expect(result.clearScoreBonus).toBe(0);
+        expect(result.timeMedal).toBeNull();
+      }
       expect(result.maximumEnemies).toBeLessThanOrEqual(96);
       expect(result.maximumProjectiles).toBeLessThanOrEqual(160);
       expect(result.maximumPickups).toBeLessThanOrEqual(2_000);
@@ -163,8 +173,10 @@ function runExpedition(weaponType: WeaponTypeId, seed: number): ProbeResult {
     bossHealPickupsCollected: boss?.healPickupsCollected ?? 0,
     bossHpRecovered: boss?.hpRecoveredDuringBoss ?? 0,
     bossHpRemaining: activeBoss?.hp ?? null,
+    tacticalScore: expedition?.tacticalScore ?? 0,
     clearScoreBonus: expedition?.clearScoreBonus ?? 0,
     timeScoreBonus: expedition?.timeScoreBonus ?? 0,
+    timeMedal: expedition?.timeMedal ?? null,
     bossFightDuration: expedition?.bossFightDuration ?? null,
     bossActiveFrames,
     bossAimFrames,
@@ -177,6 +189,15 @@ function runExpedition(weaponType: WeaponTypeId, seed: number): ProbeResult {
     eventHash: stableHash(JSON.stringify(eventDigest)),
     worldHash: stableHash(JSON.stringify(session.world)),
   };
+}
+
+function expectedTimeMedal(
+  elapsed: number,
+): "gold" | "silver" | "bronze" | null {
+  if (elapsed <= 540) return "gold";
+  if (elapsed <= 600) return "silver";
+  if (elapsed <= 720) return "bronze";
+  return null;
 }
 
 function formatEventForHash(event: GameEvent): string {

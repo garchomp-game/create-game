@@ -66,6 +66,57 @@ describe("RunLifecycleController", () => {
     expect(controller.getPreviousBest()).toMatchObject({ id: "run-best", score: 1000 });
   });
 
+  it("keeps a victory PB when a faster higher-scoring Expedition defeat is saved", () => {
+    const store = new MemoryRunRecordStore();
+    const first = new RunLifecycleController(store);
+    const victory = createWorld(SIMULATION_CONFIG);
+    setExpeditionResult(victory, "victory", 600, 20_000);
+    first.begin(makeExpeditionContext("victory"), true);
+    first.finalize(victory, SIMULATION_CONFIG, "2026-07-17T04:00:00Z");
+
+    const controller = new RunLifecycleController(store);
+    const defeat = createWorld(SIMULATION_CONFIG);
+    setExpeditionResult(defeat, "defeat", 100, 200_000);
+    controller.begin(makeExpeditionContext("defeat"), true);
+    const outcome = controller.finalize(
+      defeat,
+      SIMULATION_CONFIG,
+      "2026-07-17T04:01:00Z",
+    );
+
+    expect(outcome.newPersonalBest).toBe(false);
+    expect(outcome.newWeaponPersonalBest).toBe(false);
+    expect(controller.getPreviousBest()?.id).toBe("victory");
+    expect(controller.getHistory().map((record) => record.id)).toEqual([
+      "defeat",
+      "victory",
+    ]);
+  });
+
+  it("reports a weapon PB without incorrectly reporting an overall PB", () => {
+    const store = new MemoryRunRecordStore();
+    const first = new RunLifecycleController(store);
+    const pulse = createWorld(SIMULATION_CONFIG);
+    setExpeditionResult(pulse, "victory", 480, 20_000);
+    first.begin(makeExpeditionContext("pulse-best", "pulse"), true);
+    first.finalize(pulse, SIMULATION_CONFIG, "2026-07-17T04:00:00Z");
+
+    const controller = new RunLifecycleController(store);
+    const spread = createWorld(SIMULATION_CONFIG);
+    setExpeditionResult(spread, "victory", 500, 30_000);
+    controller.begin(makeExpeditionContext("spread-best", "spread"), true);
+    const outcome = controller.finalize(
+      spread,
+      SIMULATION_CONFIG,
+      "2026-07-17T04:01:00Z",
+    );
+
+    expect(outcome.newPersonalBest).toBe(false);
+    expect(outcome.newWeaponPersonalBest).toBe(true);
+    expect(controller.getPreviousBest()?.id).toBe("pulse-best");
+    expect(controller.getPreviousWeaponBest()).toBeNull();
+  });
+
   it("synchronizes menu writes and clears all lifecycle state", () => {
     const store = new MemoryRunRecordStore();
     const controller = new RunLifecycleController(store);
@@ -105,6 +156,16 @@ class MemoryRunRecordStore implements RunRecordStorePort {
     };
   }
 
+  delete(recordId: string): RunRecordWriteResult {
+    this.records = this.records.filter((record) => record.id !== recordId);
+    return {
+      ok: true,
+      records: [...this.records],
+      history: [...this.records],
+      rankings: [...this.records],
+    };
+  }
+
   clearHistory(): RunRecordWriteResult {
     return this.clear();
   }
@@ -136,5 +197,51 @@ function makeContext(id = "run-1"): RunContext {
     seed: 42,
     runOrigin: "manual",
     rankEligibility: createRankEligibility("manual"),
+  };
+}
+
+function makeExpeditionContext(
+  id: string,
+  weaponId: RunContext["weaponId"] = "pulse",
+): RunContext {
+  return {
+    ...makeContext(id),
+    modeId: "expedition",
+    stageId: "final-expedition",
+    rulesetVersion: "rules-rc6",
+    weaponId,
+  };
+}
+
+function setExpeditionResult(
+  world: ReturnType<typeof createWorld>,
+  outcome: "victory" | "defeat",
+  elapsed: number,
+  tacticalScore: number,
+): void {
+  world.state.status = "gameOver";
+  world.state.elapsed = elapsed;
+  world.state.score = tacticalScore + (outcome === "victory" ? 15_000 : 0);
+  world.stats.encounterMetrics.expedition = {
+    outcome,
+    reachedActId: "command-ship",
+    reachedActIds: ["command-ship"],
+    actChanges: 4,
+    cardsSelected: 5,
+    cardsCompleted: outcome === "victory" ? 5 : 4,
+    cardsFailed: 0,
+    cardsInterrupted: 0,
+    cardsDeferred: 0,
+    structuredEnemiesSpawned: 20,
+    structuredSpawnsDeferred: 0,
+    longestMeaningfulGap: 0,
+    completedAt: elapsed,
+    tacticalScore,
+    scoreBeforeBonus: tacticalScore,
+    clearScoreBonus: outcome === "victory" ? 15_000 : 0,
+    timeScoreBonus: 0,
+    timeMedal: outcome === "victory" ? "silver" : null,
+    bossFightDuration: 120,
+    cardHistory: [],
   };
 }

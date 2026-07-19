@@ -316,7 +316,7 @@ export class ArenaScene extends Phaser.Scene {
 
     if (result.status === "notStarted" || result.status === "alreadyFinalized") return;
 
-    if (outcome.newPersonalBest) {
+    if (outcome.newPersonalBest || outcome.newWeaponPersonalBest) {
       this.feedbackLayer.celebrateRecord(this.world.player.position);
     }
     if (result.status === "saveFailed") {
@@ -510,6 +510,7 @@ export class ArenaScene extends Phaser.Scene {
       settings: this.settings,
       latestRunRecord: this.runLifecycle.getLatestRecord(),
       previousBest: this.runLifecycle.getPreviousBest(),
+      previousWeaponBest: this.runLifecycle.getPreviousWeaponBest(),
       historyClearPending: menuState.historyClearPending,
       rankingClearPending: menuState.rankingClearPending,
       historyPage: menuState.historyPage,

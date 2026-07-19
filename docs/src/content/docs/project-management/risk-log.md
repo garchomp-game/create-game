@@ -65,7 +65,7 @@ v0.5の手動5ランはすべてPulseで、全ランが`splitShot`ランク2、`
 
 ### ルールセットとランキングの整合性
 
-状態: RC6で再対応。旧記録読込は成立しているが、Expeditionの比較意味論を固定するまでproduction昇格を保留。
+状態: RC6で実装済み。旧記録読込と比較意味論はfixtureで固定した。統合QA完了までproduction昇格は保留。
 
 バランス変更後も同じ設定版を使うと、比較できないランが同じランキングへ混ざります。開発ログには、デバッグで強制終了した0秒ランも含まれます。
 
@@ -85,6 +85,8 @@ RC6対応:
 - fixed runは実seed値ごと、random runはrandom同士で比較する。
 - 速攻成果を時間メダルへ移し、戦術点との二重評価を止める。
 - rulesetを`phaser-v0.7.0-final-expedition-rc6`へ更新し、RC5以前をRC6順位へ混ぜない。
+
+実績: 勝利時間優先、敗北除外、overall / weapon、fixed実seed、RC5 / RC6、時間非加点を保存・比較fixtureで保証しました。ランキング保存はoverallと各weapon上位の和集合とし、履歴上限後も双方のPBを保持します。
 
 停止条件: 敗北による勝利PB上書き、fixed seed間の混在、overallとweapon PBの排他、旧rulesetの混入が1件でも再現した場合はproductionへ進みません。
 

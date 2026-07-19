@@ -46,6 +46,8 @@ Issue: [PH-V07-010 #73](https://github.com/garchomp-game/create-game/issues/73)
 
 Issue: [PH-V07-011 #74](https://github.com/garchomp-game/create-game/issues/74)
 
+状態: 完了。保存fixture、全unit / simulation、production build、最終遠征ブラウザフロー、リザルト画像を確認しました。
+
 - 勝利ランの総クリア時間をExpeditionの主記録にする。
 - 敗北が勝利PBを上書きしないようにする。
 - `overall | weapon`の比較scopeを同じ履歴から導出する。
@@ -55,6 +57,8 @@ Issue: [PH-V07-011 #74](https://github.com/garchomp-game/create-game/issues/74)
 ### Wave 3: 有限回復候補
 
 Issue: [PH-V07-012 #75](https://github.com/garchomp-game/create-game/issues/75)
+
+状態: 着手可能。Wave 2のRC6基礎版をcontrolとして固定します。
 
 - Wave 1 / 2を通したRC6基礎版をcontrolにする。
 - 同じ3 seed x 2武器で有限repair budget候補をペア比較する。

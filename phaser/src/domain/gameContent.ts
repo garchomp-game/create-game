@@ -50,8 +50,11 @@ export type StageProgressionDefinition = {
 
 export type StageCompletionScoringDefinition = {
   clearBonus: number;
-  bossFightTargetSeconds: number;
-  bossTimeBonusPerSecond: number;
+  timeMedalSeconds: {
+    gold: number;
+    silver: number;
+    bronze: number;
+  };
 };
 
 export type StageDefinition = {

@@ -13,11 +13,17 @@ import {
   type FinalizeRunResult,
   RunRecordCoordinator,
 } from "./RunRecordCoordinator";
-import { compareRunRecords, selectPersonalBest } from "./runRecords";
+import {
+  compareRunRecords,
+  createRunComparisonQuery,
+  isRankableRun,
+  selectPersonalBest,
+} from "./runRecords";
 
 export type RunLifecycleFinalizeOutcome = {
   result: FinalizeRunResult;
   newPersonalBest: boolean;
+  newWeaponPersonalBest: boolean;
 };
 
 export class RunLifecycleController {
@@ -26,6 +32,7 @@ export class RunLifecycleController {
   private rankings: RunRecord[];
   private latestRecord: RunRecord | null = null;
   private previousBest: RunRecord | null = null;
+  private previousWeaponBest: RunRecord | null = null;
   private lastEvents: GameEvent[] = [];
 
   constructor(private readonly store: RunRecordStorePort) {
@@ -39,6 +46,7 @@ export class RunLifecycleController {
     this.coordinator.reset(context, started);
     this.latestRecord = null;
     this.previousBest = null;
+    this.previousWeaponBest = null;
     this.lastEvents = [];
   }
 
@@ -55,10 +63,19 @@ export class RunLifecycleController {
 
   finalize(world: WorldState, config: SimulationConfig, capturedAt: string): RunLifecycleFinalizeOutcome {
     const context = this.coordinator.getContext();
+    const profileRankings = context
+      ? this.rankings.filter((record) => record.profileId === context.profileId)
+      : [];
     this.previousBest = context
       ? selectPersonalBest(
-          this.rankings.filter((record) => record.profileId === context.profileId),
-          context,
+          profileRankings,
+          createRunComparisonQuery(context, "overall"),
+        )
+      : null;
+    this.previousWeaponBest = context
+      ? selectPersonalBest(
+          profileRankings,
+          createRunComparisonQuery(context, "weapon"),
         )
       : null;
     const result = this.coordinator.finalize({
@@ -72,15 +89,23 @@ export class RunLifecycleController {
       encounterMetrics: world.stats.encounterMetrics,
     });
     if (result.status === "notStarted" || result.status === "alreadyFinalized") {
-      return { result, newPersonalBest: false };
+      return {
+        result,
+        newPersonalBest: false,
+        newWeaponPersonalBest: false,
+      };
     }
 
     this.latestRecord = result.record;
     const newPersonalBest =
-      result.record.rankEligibility.eligible &&
+      isRankableRun(result.record) &&
       (this.previousBest === null || compareRunRecords(result.record, this.previousBest) < 0);
+    const newWeaponPersonalBest =
+      isRankableRun(result.record) &&
+      (this.previousWeaponBest === null ||
+        compareRunRecords(result.record, this.previousWeaponBest) < 0);
     this.applyWriteResult(result.write);
-    return { result, newPersonalBest };
+    return { result, newPersonalBest, newWeaponPersonalBest };
   }
 
   markDebugMutation(): void {
@@ -108,6 +133,7 @@ export class RunLifecycleController {
       this.rankings = [];
       this.latestRecord = null;
       this.previousBest = null;
+      this.previousWeaponBest = null;
     }
     return result;
   }
@@ -130,6 +156,16 @@ export class RunLifecycleController {
 
   getPreviousBest(): RunRecord | null {
     return this.previousBest ? structuredClone(this.previousBest) : null;
+  }
+
+  getPreviousWeaponBest(): RunRecord | null {
+    return this.previousWeaponBest ? structuredClone(this.previousWeaponBest) : null;
+  }
+
+  deleteRecord(recordId: string): RunRecordWriteResult {
+    const result = this.store.delete(recordId);
+    if (result.ok) this.applyRecordViews(result);
+    return result;
   }
 
   getLastEvents(): GameEvent[] {

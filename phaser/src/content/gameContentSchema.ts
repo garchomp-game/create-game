@@ -139,10 +139,27 @@ const stageProgressionSchema = z
 const stageCompletionScoringSchema = z
   .object({
     clearBonus: z.number().int().nonnegative(),
-    bossFightTargetSeconds: positiveNumber,
-    bossTimeBonusPerSecond: z.number().int().positive(),
+    timeMedalSeconds: z
+      .object({
+        gold: positiveNumber,
+        silver: positiveNumber,
+        bronze: positiveNumber,
+      })
+      .strict(),
   })
-  .strict();
+  .strict()
+  .superRefine((value, context) => {
+    if (
+      value.timeMedalSeconds.gold > value.timeMedalSeconds.silver ||
+      value.timeMedalSeconds.silver > value.timeMedalSeconds.bronze
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "Time medal thresholds must be ordered gold, silver, bronze.",
+        path: ["timeMedalSeconds"],
+      });
+    }
+  });
 
 const stageDefinitionSchema = z
   .object({

@@ -312,9 +312,11 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
       metrics.outcome = event.type === "expedition.completed" ? "victory" : "defeat";
       metrics.reachedActId = event.actId;
       metrics.completedAt = event.elapsed;
+      metrics.tacticalScore = event.tacticalScore;
       metrics.scoreBeforeBonus = event.scoreBeforeBonus;
       metrics.clearScoreBonus = event.clearScoreBonus;
       metrics.timeScoreBonus = event.timeScoreBonus;
+      metrics.timeMedal = event.timeMedal;
       metrics.bossFightDuration = event.bossFightDuration;
     } else if (event.type === "collapse.advanced") {
       world.stats.encounterMetrics.collapseStartedAt ??= event.elapsed;
@@ -394,9 +396,11 @@ function getExpeditionMetrics(world: WorldState) {
     structuredSpawnsDeferred: 0,
     longestMeaningfulGap: 0,
     completedAt: null,
+    tacticalScore: 0,
     scoreBeforeBonus: 0,
     clearScoreBonus: 0,
     timeScoreBonus: 0,
+    timeMedal: null,
     bossFightDuration: null,
     cardHistory: [],
   });

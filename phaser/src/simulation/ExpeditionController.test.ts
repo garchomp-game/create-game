@@ -141,10 +141,12 @@ describe("ExpeditionController", () => {
       expect.objectContaining({
         type: "expedition.completed",
         elapsed: 480,
-        score: 127_000,
+        score: 55_000,
+        tacticalScore: 40_000,
         scoreBeforeBonus: 40_000,
         clearScoreBonus: 15_000,
-        timeScoreBonus: 72_000,
+        timeScoreBonus: 0,
+        timeMedal: "gold",
         bossFightDuration: 80,
       }),
     );
@@ -152,7 +154,7 @@ describe("ExpeditionController", () => {
       expect.objectContaining({ type: "game.over", elapsed: 480 }),
     );
     expect(victory.world).toMatchObject({
-      state: { status: "gameOver", score: 127_000 },
+      state: { status: "gameOver", score: 55_000 },
       expedition: { status: "victory", outcome: "victory" },
     });
 
@@ -172,6 +174,24 @@ describe("ExpeditionController", () => {
     expect(defeat.world.expedition).toMatchObject({
       status: "defeat",
       outcome: "defeat",
+    });
+  });
+
+  it("keeps tactical score independent from total clear time", () => {
+    const fast = completeExpeditionAt(57, 480, 40_000);
+    const slow = completeExpeditionAt(58, 620, 40_000);
+
+    expect(fast.event).toMatchObject({
+      tacticalScore: 40_000,
+      score: 55_000,
+      timeScoreBonus: 0,
+      timeMedal: "gold",
+    });
+    expect(slow.event).toMatchObject({
+      tacticalScore: 40_000,
+      score: 55_000,
+      timeScoreBonus: 0,
+      timeMedal: "bronze",
     });
   });
 
@@ -212,6 +232,7 @@ describe("ExpeditionController", () => {
         type: "expedition.failed",
         clearScoreBonus: 0,
         timeScoreBonus: 0,
+        timeMedal: null,
       }),
     );
   });
@@ -439,6 +460,35 @@ function selectActCard(elapsed: number, seed: number) {
     [],
   );
   return { ...fixture, events };
+}
+
+function completeExpeditionAt(seed: number, elapsed: number, tacticalScore: number) {
+  const fixture = createFixture(seed);
+  fixture.world.state.elapsed = 400;
+  const boss = spawnFinalExpeditionBoss(fixture.world, [])!;
+  fixture.world.state.elapsed = elapsed;
+  fixture.world.state.score = tacticalScore;
+  const events = fixture.controller.update(
+    fixture.world,
+    fixture.random,
+    SIMULATION_CONFIG,
+    [{
+      type: "enemy.killed",
+      bulletId: `bullet-${seed}`,
+      volleyId: seed,
+      enemyId: boss.id,
+      enemyType: boss.typeId,
+      weaponType: "pulse",
+      scoreAwarded: boss.score,
+      xpAwarded: boss.xpValue,
+      position: { ...boss.position },
+    }],
+  );
+  const event = events.find(
+    (candidate): candidate is Extract<GameEvent, { type: "expedition.completed" }> =>
+      candidate.type === "expedition.completed",
+  )!;
+  return { event, world: fixture.world };
 }
 
 function captureOpening(seed: number) {

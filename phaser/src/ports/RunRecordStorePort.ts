@@ -21,6 +21,7 @@ export type RunRecordWriteResult = {
 export interface RunRecordStorePort {
   load(): RunRecordLoadResult;
   save(record: RunRecord): RunRecordWriteResult;
+  delete(recordId: string): RunRecordWriteResult;
   clearHistory(): RunRecordWriteResult;
   clearRankings(): RunRecordWriteResult;
   clear(): RunRecordWriteResult;
