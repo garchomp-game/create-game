@@ -262,6 +262,12 @@ describe("v0.7 final Expedition release probe", () => {
     }
 
     if (IS_RELEASE_MATRIX && bossInputMode === "auto") {
+      expect(candidateGate).toEqual({
+        allVictories: false,
+        repairOffsetControlled: true,
+        regularEnemiesRequired: true,
+        arenaMovementRequired: true,
+      });
       for (const weaponType of WEAPONS) {
         expect(pairs.some(
           ({ control }) =>
