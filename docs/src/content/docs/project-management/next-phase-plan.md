@@ -1,94 +1,126 @@
 ---
 title: 直近フェーズ
-description: v0.7最終遠征RC5を手動採否し、10ステージ展開とUI・グラフィック再設計へ進む現在の計画。
+description: v0.7 RC6の安定化、v0.8の面白さ検証、Stage 1 / 5 / 10の3作戦検証へ進む現在の計画。
 ---
 
-最終整理日: 2026-07-18
+最終整理日: 2026-07-19
 
 ## 現在の判断
 
-v0.6.8公開ベータはcommit `ff686f992a65`、Cloudflare Version ID `e86f90b8-ea15-4d1d-b01b-59e4f9fea78e`としてproductionへ固定しています。v0.7では責務分離、Stage / Encounter基盤、構造化出現、Commander、Charger、5 ActのExpedition、2攻撃・2段階の指揮艦ボスまで実装しました。
+v0.6.8 productionはcommit `ff686f992a65`、Cloudflare Version `e86f90b8-ea15-4d1d-b01b-59e4f9fea78e`のまま維持します。
 
-RC1とRC2の手動所感から、道中に対してボスが易しい難度逆転と、初心者向け学習ステージとしては道中が難しすぎることが分かりました。現行縦切りを第10ステージへ再分類し、RC3で最終遠征の戦闘値を固定しました。RC4でEndless C5到達性を分離調整しましたが、手動5勝から中央周回、貫通雑魚処理、回復供給、長時間稼ぎが循環する欠陥が判明しました。
+v0.7 RC5は、5 Act、構造化出現、HP 500のCommander、Charger、追跡ボス、制圧衝撃波、ボス中回復drop制限、勝利リザルトまで統合しました。3 fixed seed x 2武器の6勝、決定論、72件のE2E、Version Preview smokeも完了しています。
 
-現在の候補は`0.7.0` / `phaser-v0.7.0-final-expedition-rc5`です。RC5は範囲外か遮蔽物で避ける制圧衝撃波、ボス戦中の回復drop毎秒1個制限、完遂・速攻ボーナス、3列リザルトを追加しました。両武器3 seedの6勝、決定論、72件のE2E、実URLsmokeは完了しています。次の作業はPulse / Spread各1本以上の欠陥特化手動採否です。
+ただし、RC5をそのままproductionへ昇格しません。外部レビューと現行設計の再確認から、次の3点をRC6で直してから採否する方針へ変更しました。
 
-- 体験要件: [v0.7 最終遠征プロトタイプ](../../design/v07-first-expedition/)
-- 実装順と受け入れ条件: [v0.7 実行計画](../v07-execution-plan/)
-- 中長期の範囲: [中長期作業計画](../gameplay-expansion-plan/)
-- 現在の実装: [現在地](../../game/current-state/)
-- QA結果と手動項目: [v0.7 統合QAレポート](../../playtest/v07-qa-report/)
-- 複数ステージへの展開: [エクスペディション10ステージ設計](../../design/expedition-campaign/)
-- UIと視覚設計: [UI・グラフィック再設計計画](../ui-visual-redesign-plan/)
+1. HUD表示だけでなく、Encounter DirectorがAct遷移を所有する。
+2. Expeditionの総クリア時間、戦術点、総合PB、武器別PB、fixed seedを分離する。
+3. 中央周回と回復循環は、有限回復予算を独立候補として比較する。
 
-## 現在の移行点
+RC5は棄却して消すのではなく、技術回帰と欠陥分類の基準証跡として保持します。
 
-productionはv0.6.8のまま維持します。v0.7はCloudflare Version Previewだけへ公開し、手動採否が終わるまで`wrangler deploy`やtraffic昇格を行いません。保存比較は新しいルール版へ分かれるため、旧履歴を残してもランキングへ混ざりません。
+## 実装基点
 
+- RC5 UI変更前の統合基点: `d16655a`
+- RC5 app / ruleset: `0.7.0` / `phaser-v0.7.0-final-expedition-rc5`
+- RC6予定ruleset: `phaser-v0.7.0-final-expedition-rc6`
 - RC5 Preview: `https://v07-final-expedition-arena-core.garchomp-game.workers.dev`
-- commit: `155d4986ffe1`
-- Cloudflare Version: `ef6324fd-1cf6-450f-8026-fbcf0f579842`
-- production: Version `e86f90b8-ea15-4d1d-b01b-59e4f9fea78e` 100%を維持
+- production: v0.6.8 Versionを100%維持
 
-## 入口ゲート
+`d16655a`はUI境界、比較prototype、選択画面の変更前にあるRC5基点です。RC6のゲームルールはここから独立branchで進め、既存のUI branchを維持します。RC6採否前にproduction trafficを変更しません。
 
-### 1. 公開ルール固定
+## RC6の実行順
 
-状態: 2026-07-17完了。
+### Wave 1: Encounter時計
 
-- 外周反射をPulse固有の地形判断として有効採用する。
-- `RULESET_VERSION`を`phaser-v0.6.8-pulse-boundary-ricochet`へ更新する。
-- 過去ランキングと比較不能な記録を混ぜない。
-- production build、公開URL、保存、ライセンス、プライバシー、フィードバック導線を確認する。
-- 基準コミットとCloudflare Version IDを記録する。
+Issue: [PH-V07-010 #73](https://github.com/garchomp-game/create-game/issues/73)
 
-### 2. 責務分離
+- `runElapsed`、`actElapsed`、`activeElapsed`の所有者を分ける。
+- Commander cardがAct時計を止める。
+- 120秒はspawn成功後から数える。
+- spawn deferを決定論的に再試行し、期限で必ず解放する。
 
-状態: 2026-07-17完了。
+### Wave 2: 記録とruleset
 
-- `PH-ARCH-005`でSessionとRun LifecycleをSceneから分ける。
-- `PH-ARCH-006`でDebug、AI、PerformanceをSceneから分ける。
-- 同一seed / inputのworldとresult hash、保存結果、既存E2Eを維持する。
+Issue: [PH-V07-011 #74](https://github.com/garchomp-game/create-game/issues/74)
 
-Session、Run Lifecycle、Debug、AI、Performanceを単一所有者へ分け、`ArenaScene`は649行の調停中心になりました。全面的なフォルダー移動やDDD化は行っていません。
+- 勝利ランの総クリア時間をExpeditionの主記録にする。
+- 敗北が勝利PBを上書きしないようにする。
+- `overall | weapon`の比較scopeを同じ履歴から導出する。
+- fixed seed実値とRC6 rulesetで記録を分ける。
+- 速攻成果は戦術点から外し、時間メダルへ移す。
 
-## v0.7の最小成果
+### Wave 3: 有限回復候補
 
-- 第10ステージ相当の高難度Expedition 1本。
-- 既存アリーナをデータ化したStage 1件。
-- Encounter Card 3枚以上と構造化出現3形状。
-- 指揮艦エリート1種、予兆付き突進敵1種。
-- 2攻撃以上と段階変化を持つボス1体。
-- Act、目的、ボスHP、勝敗を伝えるUI。
-- 背景1、敵またはボス1、危険イベント1の視覚縦切り。
-- mode / stage / encounter / boss / 勝敗を追えるラン記録。
+Issue: [PH-V07-012 #75](https://github.com/garchomp-game/create-game/issues/75)
 
-第1から第9ステージ、ステージ選択、アカウント、オンラインランキング、恒久強化、3つ目の武器、長編ストーリーはRC3対象外です。
+- Wave 1 / 2を通したRC6基礎版をcontrolにする。
+- 同じ3 seed x 2武器で有限repair budget候補をペア比較する。
+- 回復相殺率を`ボス中の実HP回復量 / ボス中の総被ダメージ`で統一する。
+- 回復全体、Endless、武器数値を同時に変えない。
 
-## 実行順
+### Wave 6: 統合QAと採否
 
-1. 完了: `PH-ARCH-005`、`006`で所有権を分離。
-2. 完了: `PH-V07-001`から`003`でStage、Encounter、出現安全を実装。
-3. 完了: `PH-V07-004`、`005`で優先標的と予兆回避を実装。
-4. 完了: `PH-V07-006`、`PH-ARCH-007`でExpeditionと視覚縦切りを統合。
-5. 完了: `PH-V07-007`でボスと勝利条件を接続。
-6. 完了: RC2までの`PH-V07-008`自動回帰、到達性、性能、preview準備。
-7. 完了: 最終遠征RC3の敵順、Commander、ボス追跡、増援継続、広域射撃を再検証。
-8. 完了: RC4の周回・回復・長時間稼ぎ欠陥を手動5ランから分類し、RC5の局所対策と自動回帰を実装。
-9. 完了: RC5をproduction trafficなしでVersion Previewへ公開し、実URLsmokeを通過。
-10. 残り: RC5 PreviewでPulse / Spread各1本以上を使い、制圧衝撃波、回復制御、速攻得点を手動採否。
-11. 並行可能: `PH-V08-011`のUI責務マップとtheme token設計、`PH-V08-012`のproduction外比較草案。
-12. 次段: 端末内進行、ステージ選択、第1から第4の学習ステージを依存順に実装。
+Issue: [PH-V07-008 #59](https://github.com/garchomp-game/create-game/issues/59)
 
-## production昇格判定
+- 6構成すべての勝利を機構到達性としてassertする。
+- CommanderのAct境界越え、spawn defer replay、PB分離を明示assertする。
+- 全回帰後、Pulse / Spread各1本以上で中央周回を手動再試行する。
+- 新しいVersion Previewで実URLsmoke後にproduction判断を記録する。
 
-Version Previewからproductionへ進める条件です。
+技術契約は[最終遠征RC6の時計と記録規則](../../engineering/expedition-rc6-clock-and-ranking-adr/)、検証手順は[RC6 QA・採否計画](../../playtest/v07-rc6-qa-plan/)を正本とします。
 
-- Pulse / Spread各1本以上をデバッグhookと観戦AIなしで行い、両武器でボス第2段階へ到達する。
-- 従来の中央周回を試し、回復供給だけで無期限に安定しないことを確認する。
-- 制圧衝撃波を範囲外か遮蔽物で回避でき、完遂・速攻得点をリザルトで理解できる。
-- 不可視、即死、操作不能、データ損失、再現する重大性能劣化がない。
-- 予告、難度曲線、武器役割、再挑戦理由を所感とRunRecordの両方で説明できる。
-- 必要な調整が出た場合は新しい候補commitとルール版で自動ゲートを再実行する。
+## RC6後のv0.8
 
-手動ゲートを通過するまで、v0.8のゲームルールとproduction UIは変更しません。ゲームルールから独立した責務整理、theme token設計、比較prototypeは進められます。要件・判断はStarlight、作業状態はGitHub Issues / Projectsへ一本化し、Linearや独自管理ツールは追加しません。
+v0.8はコンテンツ量を増やす前に、Arena Coreの面白さの核を縦切りで検証します。
+
+| 順序 | Issue | 検証するもの |
+| --- | --- | --- |
+| 0 | [#66](https://github.com/garchomp-game/create-game/issues/66) | 世界観、視覚言語、素材と音の境界 |
+| 1 | [#76](https://github.com/garchomp-game/create-game/issues/76) | 危険を敵へ返す危険反転event |
+| 1 | [#78](https://github.com/garchomp-game/create-game/issues/78) | 選択停止時間、頻度、再開硬直の計測 |
+| 2 | [#77](https://github.com/garchomp-game/create-game/issues/77) | 技能shadow ledgerと次ランの目標 |
+| 3 | [#79](https://github.com/garchomp-game/create-game/issues/79) | Pulse / Spreadの武器教義branch |
+| 4 | [#80](https://github.com/garchomp-game/create-game/issues/80) | 最大密度の視覚fixtureと警告音分離 |
+| 6 | [#81](https://github.com/garchomp-game/create-game/issues/81) | 初心者・経験者の構造化プレイテスト |
+
+UI境界[#68](https://github.com/garchomp-game/create-game/issues/68)、比較prototype[#67](https://github.com/garchomp-game/create-game/issues/67)、選択画面縦切り[#70](https://github.com/garchomp-game/create-game/issues/70)は既存branchに実装済みです。統合前のためIssueは開いたまま維持し、v0.8 Milestoneで追跡します。
+
+体験仮説と採否順は[v0.8 面白さの核の検証](../../design/core-promise-validation/)を正本とします。
+
+## キャンペーン再スコープ
+
+10ステージを一括で実装する計画は、2026-07-19にStage 1 / 5 / 10の3作戦検証へ変更しました。旧計画は履歴として残し、Stage 2から4、6から9を3本の採否後へ延期します。
+
+- [PH-V09-001 #62](https://github.com/garchomp-game/create-game/issues/62): 3作戦の進行と選択基盤。
+- [PH-V09-002 #64](https://github.com/garchomp-game/create-game/issues/64): Stage 1 基礎迎撃。
+- [PH-V09-003 #65](https://github.com/garchomp-game/create-game/issues/65): Stage 5 四方包囲。
+- Stage 10: 現行`final-expedition`をRC6で安定化。
+
+この3本で、初回学習、中間の複合判断、高難度最終試験がつながるかを確認します。つながらない状態で残り7本を量産しません。
+
+詳細は[エクスペディション3作戦検証](../../design/expedition-campaign/)を参照してください。
+
+## 着手条件
+
+翌日の実装開始前に、各Issueで次を満たします。
+
+- プレイヤー体験として解く問題が一文で説明できる。
+- 所有者、依存方向、対象外が決まっている。
+- fixed fixtureまたはseedで再現できる。
+- ruleset、保存schema、比較scopeへの影響が明記されている。
+- 自動保証と手動採否を分けている。
+- 不採用時に戻せる境界がある。
+
+要件と判断はStarlight、進捗・依存・PRはGitHub Issues / Projectを正本とします。Linearや別の独自管理ツールは追加しません。
+
+## production昇格条件
+
+- #73、#74、採用する#75候補が完了している。
+- RC6の6構成probeと決定論replayが通る。
+- 敗北、fixed seed、overall / weapon PB、旧ruleset分離がfixtureで保証される。
+- Pulse / Spread各1本以上の通常UIランで中央周回を再試行している。
+- 不可視攻撃、予告なし即死、操作不能、データ損失、重大性能劣化がない。
+- 新しいVersion Previewの実URLsmokeと採否記録がある。
+
+RC6がこの条件を満たすまで、v0.8のゲームルール実装とStage 1 / 5の実装は開始しません。文書、UI branch、fixture設計は並行可能です。

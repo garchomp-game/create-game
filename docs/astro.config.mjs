@@ -28,6 +28,7 @@ export default defineConfig({
           label: "ゲームデザイン",
           items: [
             { label: "拡張設計の全体像", slug: "design/gameplay-expansion-blueprint" },
+            { label: "v0.8 面白さの核", slug: "design/core-promise-validation" },
             { label: "操作設計", slug: "design/controls" },
             { label: "ビルドと成長", slug: "design/build-and-progression" },
             { label: "武器アイデンティティ", slug: "design/weapon-identities" },
@@ -49,6 +50,8 @@ export default defineConfig({
           items: [
             { label: "アーキテクチャ", slug: "engineering/architecture" },
             { label: "Phaserプレゼンテーション再設計", slug: "engineering/phaser-presentation-architecture" },
+            { label: "UIライブラリと視覚方向", slug: "engineering/ui-library-and-visual-direction-adr" },
+            { label: "RC6の時計と記録規則", slug: "engineering/expedition-rc6-clock-and-ranking-adr" },
             { label: "観戦AIの設計判断", slug: "engineering/auto-pilot-architecture" },
             { label: "品質戦略", slug: "engineering/quality-strategy" }
           ]
@@ -77,7 +80,8 @@ export default defineConfig({
           items: [
             { label: "手動プレイ記録", slug: "playtest/playtest-notes" },
             { label: "バランス回帰テスト", slug: "playtest/balance-probe" },
-            { label: "v0.7 統合QA", slug: "playtest/v07-qa-report" }
+            { label: "v0.7 統合QA", slug: "playtest/v07-qa-report" },
+            { label: "v0.7 RC6 QA計画", slug: "playtest/v07-rc6-qa-plan" }
           ]
         },
         {

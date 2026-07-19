@@ -116,7 +116,7 @@ description: v0.4からv1.0までの目的と主要チケット。
 
 ## v0.7 最終遠征プロトタイプ
 
-状態: Wave 0から5、最終遠征RC5実装、全回帰、Version Preview公開まで完了。RC4は周回・回復循環・長時間稼ぎ欠陥により棄却しました。production昇格はRC5のPulse / Spread各1本以上の欠陥特化手動採否待ちです。
+状態: RC5の実装、全回帰、Version Preview公開まで完了。RC5は基準証跡として保持し、RC6でEncounter時計、記録scope、ruleset、有限回復候補を安定化してからproduction採否を行います。
 
 目的:
 
@@ -138,36 +138,48 @@ description: v0.4からv1.0までの目的と主要チケット。
 - [`PH-V07-006` #48](https://github.com/garchomp-game/create-game/issues/48) エクスペディション縦切り。
 - [`PH-V07-007` #58](https://github.com/garchomp-game/create-game/issues/58) 指揮艦ボス戦。
 - [`PH-V07-008` #59](https://github.com/garchomp-game/create-game/issues/59) 統合QAと採否判定。
-- [`PH-V07-009` #63](https://github.com/garchomp-game/create-game/issues/63) 最終遠征RC5ボス終盤調整。
+- [`PH-V07-009` #63](https://github.com/garchomp-game/create-game/issues/63) 最終遠征RC5ボス終盤調整。完了しRC6へ継承。
+- [`PH-V07-010` #73](https://github.com/garchomp-game/create-game/issues/73) Encounter時計とCommanderライフサイクル。
+- [`PH-V07-011` #74](https://github.com/garchomp-game/create-game/issues/74) Expedition記録scopeとRC6 ruleset分離。
+- [`PH-V07-012` #75](https://github.com/garchomp-game/create-game/issues/75) 最終決戦の有限回復予算を比較検証。
 
-## v0.8 チャレンジ、熟練度、遠征進行
+## v0.8 Core Promise Validation
 
 目的:
 
-- 恒久ステータス上昇に頼らず、ランをまたぐ目標を作る。
-- ローカル保存上でチャレンジ、武器熟練度、収集状況を成立させる。
+- 危険を避けるだけでなく攻撃機会へ反転する、Arena Core固有の短い攻防を試す。
+- スコアだけで見えない上達と武器固有の行動を記録し、次ランの目標へつなげる。
+- 選択停止、最大密度の可読性、警告音を計測し、演出追加前の品質基準を作る。
+- 初心者と経験者を分けた構造化プレイテストで採否する。
 
 主要チケット:
 
-- `PH-V08-001` バージョン付きローカル保存と移行。
-- `PH-V08-002` 解放条件の評価基盤。
-- `PH-V08-003` チャレンジ定義と固定ルールセット。
-- `PH-V08-004` 武器熟練度と評価。
-- `PH-V08-005` プロフィール統計と収集画面。
-- `PH-V08-006` アカウント同期の要件判断。
-- [`PH-V08-007` #62](https://github.com/garchomp-game/create-game/issues/62) 10ステージ進行とステージ選択基盤。
-- [`PH-V08-008` #64](https://github.com/garchomp-game/create-game/issues/64) 第1から第4の敵学習系列。
-- [`PH-V08-009` #65](https://github.com/garchomp-game/create-game/issues/65) 第5から第9の複合技能系列。
 - [`PH-V08-010` #66](https://github.com/garchomp-game/create-game/issues/66) 世界観と視覚テーマの決定。
 - [`PH-V08-011` #68](https://github.com/garchomp-game/create-game/issues/68) UIプレゼンテーション境界とデザイントークン。
 - [`PH-V08-012` #67](https://github.com/garchomp-game/create-game/issues/67) 比較可能なUI草案とライブラリ採否。
+- [`PH-V08-013` #70](https://github.com/garchomp-game/create-game/issues/70) 採用UI縦切り: 選択画面。
+- [`PH-V08-014` #76](https://github.com/garchomp-game/create-game/issues/76) 危険反転イベントの縦切り。
+- [`PH-V08-015` #77](https://github.com/garchomp-game/create-game/issues/77) 技能shadow ledgerと成果フィードバック。
+- [`PH-V08-016` #78](https://github.com/garchomp-game/create-game/issues/78) 強化選択の停止時間と頻度を計測する。
+- [`PH-V08-017` #79](https://github.com/garchomp-game/create-game/issues/79) Pulse / Spreadの武器教義ブランチ。
+- [`PH-V08-018` #80](https://github.com/garchomp-game/create-game/issues/80) 最大密度の視覚fixtureと警告音分離。
+- [`PH-V08-019` #81](https://github.com/garchomp-game/create-game/issues/81) 初心者・経験者の構造化プレイテスト。
 
-## v0.9 コンテンツ完成とリリース準備
+## v0.9 3作戦キャンペーン検証
 
 目的:
 
-- 最小コンテンツ量を満たす。
-- アクセシビリティ、性能、演出、複数セッションのバランスを整える。
+- Stage 1 / 5 / 10で、初回学習、複合判断、高難度最終試験を接続する。
+- 欠番を許容する進行と選択基盤を作り、未実装stageを表示しない。
+- 3本の採否と制作実績から、残り7本を実装する価値と見積もりを判断する。
+
+主要チケット:
+
+- [`PH-V09-001` #62](https://github.com/garchomp-game/create-game/issues/62) Stage 1 / 5 / 10進行と選択基盤。
+- [`PH-V09-002` #64](https://github.com/garchomp-game/create-game/issues/64) Stage 1 基礎迎撃の学習縦切り。
+- [`PH-V09-003` #65](https://github.com/garchomp-game/create-game/issues/65) Stage 5 四方包囲の複合判断縦切り。
+
+旧10ステージ案のStage 2から4、6から9はdeferredです。3作戦の採否後に再計画します。
 
 ## v1.0 最初のローカル完成版
 
@@ -184,6 +196,7 @@ description: v0.4からv1.0までの目的と主要チケット。
 - [v0.6チケット詳細](../v06-tickets/)
 - [v0.7 最終遠征プロトタイプ](../../design/v07-first-expedition/)
 - [v0.7 実行計画](../v07-execution-plan/)
+- [v0.8 面白さの核の検証](../../design/core-promise-validation/)
 - [UI・グラフィック再設計計画](../ui-visual-redesign-plan/)
 - [中長期作業計画](../gameplay-expansion-plan/)
 - [ゲームプレイ拡張設計](../../design/gameplay-expansion-blueprint/)
