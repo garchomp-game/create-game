@@ -72,7 +72,11 @@ jobs:
           cache-dependency-path: phaser/package-lock.json
       - run: npm ci
       - run: npx playwright install --with-deps chromium firefox
-      - run: npm run test:e2e:release -- --workers=1
+      - name: Run browser release smoke
+        run: xvfb-run --auto-servernum npm run test:e2e:release -- --workers=1
+        env:
+          ARENA_FIREFOX_HEADED: "1"
+          LIBGL_ALWAYS_SOFTWARE: "1"
       - name: Upload browser failure evidence
         if: failure()
         uses: actions/upload-artifact@v7
