@@ -515,6 +515,48 @@ describe("EncounterDirector", () => {
     expect(state).toMatchObject({ phase: "failed", activeStartedAt: null });
   });
 
+  it("times out before requesting deployment when a frame jumps past the deadline", () => {
+    const card = {
+      ...createCard("deploy-card", ["act-one"]),
+      blocksActClock: true,
+      deployment: { retryIntervalSeconds: 2, timeoutSeconds: 10 },
+    };
+    const director = new EncounterDirector({
+      cards: [card],
+      acts: [{ id: "act-one", titleKey: "act.one", startsAt: 0 }],
+      deck: createDeck([card.id]),
+    });
+    const random = createRandomStreams(34).encounter;
+    const state = director.createState(random);
+    director.update(state, { runElapsed: 0, threatTier: 0 }, random);
+
+    const events = director.update(
+      state,
+      { runElapsed: 15, threatTier: 0 },
+      random,
+    );
+
+    expect(events).toEqual([{
+      type: "encounter.card.failed",
+      cardId: card.id,
+      elapsed: 12,
+      reason: "deployment-timeout",
+    }]);
+    expect(state).toMatchObject({
+      phase: "failed",
+      actClockBlocked: false,
+      deploymentAttempts: 0,
+      deploymentStartedAt: 2,
+      activeStartedAt: null,
+    });
+    expect(state.history.at(-1)).toMatchObject({
+      deploymentStartedAt: 2,
+      deploymentAttempts: 0,
+      finishedAt: 12,
+      reason: "deployment-timeout",
+    });
+  });
+
   it("rejects unknown card and act references", () => {
     expect(
       () =>

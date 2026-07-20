@@ -108,6 +108,46 @@ describe("structuredSpawnPlanner", () => {
     expect(plan.placements).toEqual([]);
   });
 
+  it("uses a compatible fallback without changing the warned directions", () => {
+    const plan = planStructuredSpawn(
+      createRequest({
+        geometryId: "arc",
+        fallbackGeometryId: "perimeter-random",
+        direction: "north",
+        count: 1,
+        minimumPlayerDistance: 0,
+        obstacles: [{ id: "north-center", x: 120, y: 0, width: 720, height: 80 }],
+      }),
+      createRandom(76),
+    );
+
+    expect(plan.status).toBe("ready");
+    expect(plan.geometryId).toBe("perimeter-random");
+    expect(plan.metrics.fallbackUsed).toBe(true);
+    expect(plan.telegraph.directions).toEqual(["north"]);
+    expect(plan.placements.every((placement) => placement.direction === "north")).toBe(true);
+  });
+
+  it("does not attempt a fallback that adds an unwarned direction", () => {
+    const plan = planStructuredSpawn(
+      createRequest({
+        geometryId: "arc",
+        fallbackGeometryId: "pincer",
+        direction: "north",
+        count: 1,
+        minimumPlayerDistance: 0,
+        obstacles: [{ id: "north-center", x: 120, y: 0, width: 720, height: 80 }],
+      }),
+      createRandom(77),
+    );
+
+    expect(plan.status).toBe("deferred");
+    expect(plan.geometryId).toBe("arc");
+    expect(plan.metrics.fallbackUsed).toBe(false);
+    expect(plan.telegraph.directions).toEqual(["north"]);
+    expect(plan.placements).toEqual([]);
+  });
+
   it("uses the primary enemy radius for safety without shifting its spawn position", () => {
     const base = planStructuredSpawn(
       createRequest({ count: 1, obstacles: [], minimumPlayerDistance: 0 }),

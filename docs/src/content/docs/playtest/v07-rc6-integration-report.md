@@ -32,7 +32,19 @@ code commit `c908450a7101`で提出物再レビューの追補を完了し、nor
 - Commander撃破、active timeout、deployment timeout後に固有objectiveを消し、現在Actの通常objectiveへ戻した。
 - Expedition敗北の履歴へ`PB対象外: 遠征未完遂`を表示し、詳細表示と理由を統一した。
 
-この追補で自動release contractは閉じました。debug時刻ジャンプと将来fallbackの共通API edge、厳密な永続LRU、GitHub Actions新設は今回のproduction blockerへ含めず、後続の着手条件として残します。
+この追補で自動release contractは閉じました。後続の`PH-QA-002`で、debug相当の時刻ジャンプでは期限切れ配置要求を発行せず、fallbackが予告方向を増やさない共通API契約もfixture化しました。厳密な永続LRUは現行仕様に含めず、保存中のranked record最新時刻による上限管理を維持します。GitHub Actionsは`PH-QA-001`でmainへ追加済みですが、初回のGitHub上のgreen証跡は2026-07-20の公式Actions障害復旧後に再取得します。
+
+## PH-QA-002 共通API境界追補
+
+RC6のゲーム数値を変えず、通常の0.05秒stepでは露出しない配置境界を[#88](https://github.com/garchomp-game/create-game/issues/88)で固定しました。
+
+- telegraph中からdeployment deadline以後へ時刻が飛んでも、期限切れの配置要求と敵生成を発生させず、deadline時刻で1回だけ失敗させる。
+- fallback geometryは元のtelegraph方向集合を増やさない場合だけ実行し、成功時も予告方向を変更しない。
+- Director単体、Expedition Controller結合、compatible / incompatible geometryのfixtureを追加した。
+- 全unitは65 files、424 passed / 2 skipped。型検査、配布build、release smoke 6件、Starlight 92ページを通過した。
+- normal probeは従来どおり3/6勝、Pulse 1勝、Spread 2勝で、6構成のevent / world hashも変更前と一致した。
+
+非PB runによる比較group再訪まで保持する厳密な永続LRUは実装しません。現行の「保存中のranked record最新時刻による最大16 group」を仕様として維持し、実利用で記録消失の問題が確認された場合だけschema変更候補として再評価します。
 
 ## 発見した不整合
 
