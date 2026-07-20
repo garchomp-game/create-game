@@ -181,6 +181,17 @@ export class EncounterDirector {
             activeAt + card.deployment.timeoutSeconds,
           );
           state.nextDeploymentAttemptAt = activeAt;
+          if (hasReached(frame.runElapsed, state.deploymentDeadlineAt)) {
+            this.finish(
+              state,
+              "failed",
+              "deployment-timeout",
+              state.deploymentDeadlineAt,
+              random,
+              events,
+            );
+            return events;
+          }
           this.requestDeployment(state, frame.runElapsed, events);
         } else {
           this.startActive(state, card, activeAt, events);

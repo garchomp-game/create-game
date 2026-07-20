@@ -930,3 +930,15 @@ Work回答は設計入力であり、採用・保留・棄却はIssue #83と本d
 - 2400 HP有限回復candidateは0/6勝利で棄却済みのまま再投入しない。新しい回復候補が必要なら別Issue・別事前登録・別rulesetで扱う。
 
 この決定は設計・観測契約の同期であり、runtime、ruleset、RunRecord schema、production trafficを変更しない。
+## 2026-07-20: Encounterの期限切れ要求と予告外fallbackを共通APIで拒否する
+
+決定: `PH-QA-002`で、telegraphからdeployment deadline以後へ時刻が飛んだ場合は配置要求を発行する前にtimeoutへし、fallback geometryは元の予告方向集合を増やさない場合だけ実行する。通常のEncounter数値、Commander、Boss、rulesetは変更しない。
+
+根拠:
+
+- 通常の0.05秒stepではdeadline判定が先に走るが、debug相当の大幅な時刻ジャンプではtelegraph分岐から期限切れrequestを1件出せた。
+- 現在のfallback指定は予告方向の部分集合だが、共通APIは将来callerが`arc`から`pincer`へ切り替えて予告外方向を増やすことを防いでいなかった。
+- 再予告の状態機械を追加する必要はなく、予告集合を増やさないfallbackだけを許可すれば現行用途を維持できる。
+- 厳密な永続LRUはこの問題と独立し、現行仕様もranked record最新時刻による上限と明記済みのためschemaを増やさない。
+
+検証: Director、Controller、structured spawnの専用fixture、65 files・424 passed / 2 skipped、型検査、配布build、release smoke 6件、Starlight 92ページを通過した。RC6 normal probeは従来と同じ3/6勝、両武器各1勝以上、同一event / world hashを維持した。

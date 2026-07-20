@@ -31,6 +31,8 @@ v0.8のWork再レビューは受領し、Issue #83で採否を完了しました
 
 横断QAのGitHub ActionsはPR #87でmainへ追加し、PR #96でGitHub-hosted UbuntuのFirefox WebGL実行を安定化しました。[#86](https://github.com/garchomp-game/create-game/issues/86)は、PR #96とmain `8635ca0`の3 job greenを取得して完了しています。型、unit、配布build、Starlight、短いrelease smokeをPR statusにし、probe、全画像、実GPU耐久、人間採否は変更内容に応じた手動ゲートとして残します。
 
+RC6採用を止めなかった共通APIのLowリスクは[#88](https://github.com/garchomp-game/create-game/issues/88)で独立処理しました。debug相当の時刻ジャンプで期限切れspawnを出さず、fallback geometryが予告方向を増やさないことをfixture化し、Encounter数値と難度は変更していません。全unit、配布build、release smoke、normal probeとPR #89の3 job greenを取得し、mainへ統合して完了しています。
+
 ## RC6の実行順
 
 ### Wave 1: Encounter時計
@@ -147,4 +149,4 @@ UI境界[#68](https://github.com/garchomp-game/create-game/issues/68)、比較pr
 - 不可視攻撃、予告なし即死、操作不能、データ損失、重大性能劣化がない。
 - 新しいVersion Previewの実URLsmokeと採否記録がある。
 
-RC6はこの条件を満たしてmainへ統合済みです。直近は#83の正本文書同期、最新SHAのfresh CI、Draft PR #89の境界修正統合を閉じ、その後もPR #84のUI採否と#76のruntime candidateを分離して進めます。production trafficの切替は、採用するUIと配布SHAを固定してから別途行います。
+RC6はこの条件を満たしてmainへ統合済みです。#86の品質ゲートと#88のEncounter境界追補もmainへ統合し、最新SHAのfresh CIを取得しました。直近は#83の正本文書同期を閉じ、その後もPR #84のUI採否と#76のruntime candidateを分離して進めます。production trafficの切替は、採用するUIと配布SHAを固定してから別途行います。

@@ -26,7 +26,7 @@ v0.8では機能量を増やす前に、Arena Coreの面白さの核を小さい
 | 順序 | 対象 | 現在地 | 次のゲート |
 | ---: | --- | --- | --- |
 | 1 | [#86](https://github.com/garchomp-game/create-game/issues/86) / PR #87 / #96 | workflowとFirefox WebGL修正をmainへ統合済み。main `8635ca0`の3 jobがgreen | 完了。required check化は安定運用後に別判断 |
-| 2 | [#88](https://github.com/garchomp-game/create-game/issues/88) / Draft PR #89 | ローカル全回帰とnormal probeがgreen、GitHub check未取得 | fresh CI green後にmainへ統合 |
+| 2 | [#88](https://github.com/garchomp-game/create-game/issues/88) / PR #89 | main `c7ec724`へ統合済み。ローカル回帰、normal probe、PR / main CIがgreen | 完了 |
 | 3 | Draft PR #90 | UI比較手順を文書化済み | #89後へ更新し、docs CI green後に統合 |
 | 4 | Draft PR #91 | 圧力カーブ、計装、保守性を監査済み。#83の設計判断を同期中 | #89後へ更新し、docs CI green後に統合 |
 | 別経路 | Draft PR #84 | RC6 UI candidateとPreviewを公開済み | 人間比較で採用、再調整、棄却を決めるまでDraft維持 |
@@ -105,7 +105,7 @@ RC6 baseline
 ## 作業再開チェック
 
 1. **完了**: main `8635ca0`のCIがfresh greenで、#86の証拠がSHAへ結び付いている。
-2. #88を統合し、PR #90 / #91を最新mainへ更新している。
+2. **進行中**: #88は統合済み。PR #90 / #91を最新mainへ更新している。
 3. #83の判断、#93から#95の責務、#81の再利用レーンをStarlightへ同期している。
 4. #77の最小fact / episode / invalid-state schemaを利用できる。
 5. #80のwarning / impact最低fixtureと#81のbaseline手順を固定している。
