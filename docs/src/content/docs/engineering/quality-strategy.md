@@ -25,7 +25,7 @@ npm run build
 
 CIはNode 24を使い、repository内容の読取権限だけを持ちます。Cloudflare secret、deploy、production trafficは扱いません。同じbranchで新しいcommitがpushされた場合は古いrunをcancelします。ブラウザ失敗時だけtraceとscreenshotを7日間artifactへ残します。
 
-CIではPlaywright同梱Chromium、ローカルでは既定で`/usr/bin/google-chrome`を使います。`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`を指定した場合は両環境でその値を優先します。
+CIではPlaywright同梱Chromium、ローカルでは既定で`/usr/bin/google-chrome`を使います。`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`を指定した場合は両環境でその値を優先します。GitHub-hosted Ubuntuのheadless FirefoxでWebGL context生成に失敗したため、CIのFirefoxだけを`ARENA_FIREFOX_HEADED=1`でheadedにし、`xvfb-run`とMesa software renderingの下で同じWebGL smokeを実行します。Firefoxの検査やWebGL要件はskipしません。
 
 全E2E画像、v0.7 probe、15分GPU耐久、通常UI採否は毎PRへ含めません。描画、ゲームルール、長時間性能、人間の所感に応じて、以下の手動ゲートを追加します。
 
