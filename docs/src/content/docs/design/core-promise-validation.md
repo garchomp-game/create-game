@@ -167,6 +167,8 @@ Issue: [PH-V08-019 #81](https://github.com/garchomp-game/create-game/issues/81)
 - 危険を回避だけでなく機会として認識したか。
 - もう1回試したい理由、止めたい理由。
 
+同じ質問、武器順序、匿名記録を使う実施票は[v0.8 構造化プレイテスト記録票](../../playtest/v08-structured-playtest-template/)を正本とします。
+
 ## 実装順
 
 1. v0.7 RC6をmainへ統合し、ゲームルール基準を固定する。

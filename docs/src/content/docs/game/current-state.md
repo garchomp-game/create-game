@@ -229,7 +229,7 @@ RC5は基準証跡として保持し、productionへ直接昇格しません。U
 
 ## 次の優先順
 
-公開ベータ基準、RC6の自動証跡、通常UIの欠陥特化採否は固定済みです。次はRC6をmainへ統合し、表示candidateとv0.8設計レビューを別経路で進めます。
+公開ベータ基準、RC6の自動証跡、通常UIの欠陥特化採否、main統合は固定済みです。次は表示candidateとv0.8設計レビューを別経路で進めます。GitHub Actions workflowはmainへ追加済みですが、2026-07-20の公式障害によりgreen証跡の取得だけが保留です。
 
 1. Draft PR [#84](https://github.com/garchomp-game/create-game/pull/84)のUI統合Previewを初心者・経験者のRC6 baseline観測へ使い、P0 / P1を分ける。
 2. [#83](https://github.com/garchomp-game/create-game/issues/83)のWork再レビューで、緊張と緩和、ボスphase、介入選択、難易度支援の境界を確認する。
@@ -237,4 +237,4 @@ RC5は基準証跡として保持し、productionへ直接昇格しません。U
 4. 採用するv0.7配布SHAを固定し、production build、実URLsmoke、rollback確認後にtrafficを昇格する。
 5. v0.8の面白さ検証を1仮説ずつ行い、採用した核だけをStage 1 / 5 / 10へ展開する。
 
-直近の詳細は[直近フェーズ](../../project-management/next-phase-plan/)と[v0.7 実行計画](../../project-management/v07-execution-plan/)、技術契約は[RC6の時計と記録規則](../../engineering/expedition-rc6-clock-and-ranking-adr/)、3作戦系列は[エクスペディション3作戦検証](../../design/expedition-campaign/)、表示改善は[UI・グラフィック再設計計画](../../project-management/ui-visual-redesign-plan/)を参照してください。
+直近の詳細は[直近フェーズ](../../project-management/next-phase-plan/)と[v0.8 実行計画](../../project-management/v08-execution-plan/)、技術契約は[RC6の時計と記録規則](../../engineering/expedition-rc6-clock-and-ranking-adr/)、3作戦系列は[エクスペディション3作戦検証](../../design/expedition-campaign/)、表示改善は[UI・グラフィック再設計計画](../../project-management/ui-visual-redesign-plan/)を参照してください。

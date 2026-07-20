@@ -161,19 +161,20 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-V08-011` | [#68](https://github.com/garchomp-game/create-game/issues/68) | UIプレゼンテーション境界とデザイントークン | P0 | branch実装済み、統合待ち |
 | `PH-V08-012` | [#67](https://github.com/garchomp-game/create-game/issues/67) | 比較可能なUI草案とライブラリ採否 | P1 | branch実装済み、統合待ち |
 | `PH-V08-013` | [#70](https://github.com/garchomp-game/create-game/issues/70) | 採用UI縦切り: 選択画面 | P1 | Draft PR #84、外部可読性確認と採否待ち |
-| `PH-V08-014` | [#76](https://github.com/garchomp-game/create-game/issues/76) | 危険反転イベントの縦切り | P0 | Todo。Wave 1 |
-| `PH-V08-015` | [#77](https://github.com/garchomp-game/create-game/issues/77) | 技能shadow ledgerと成果フィードバック | P1 | Todo。Wave 2 |
-| `PH-V08-016` | [#78](https://github.com/garchomp-game/create-game/issues/78) | 強化選択の停止時間と頻度を計測する | P1 | Todo。Wave 1 |
+| `PH-V08-014` | [#76](https://github.com/garchomp-game/create-game/issues/76) | 危険反転イベントの縦切り | P0 | Todo。#83完了後のWave 1A |
+| `PH-V08-015` | [#77](https://github.com/garchomp-game/create-game/issues/77) | 技能shadow ledgerと成果フィードバック | P1 | 既存event棚卸し済み。#83 / #76待ちのWave 2 |
+| `PH-V08-016` | [#78](https://github.com/garchomp-game/create-game/issues/78) | 強化選択の停止時間と頻度を計測する | P1 | 二時計と責務を監査済み。#70採否待ちのWave 1B |
 | `PH-V08-017` | [#79](https://github.com/garchomp-game/create-game/issues/79) | Pulse / Spreadの武器教義ブランチ | P1 | Todo。Wave 3 |
 | `PH-V08-018` | [#80](https://github.com/garchomp-game/create-game/issues/80) | 最大密度の視覚fixtureと警告音分離 | P1 | Todo。Wave 4 |
 | `PH-V08-019` | [#81](https://github.com/garchomp-game/create-game/issues/81) | 初心者・経験者の構造化プレイテスト | P0 | Todo。Wave 6 QA |
-| `PH-V08-020` | [#83](https://github.com/garchomp-game/create-game/issues/83) | 緊張・緩和と難易度支援の設計契約 | P1 | Todo。Wave 0設計レビュー |
+| `PH-V08-020` | [#83](https://github.com/garchomp-game/create-game/issues/83) | 緊張・緩和と難易度支援の設計契約 | P1 | 進行中。現行カーブ棚卸し済み、Work回答待ちのWave 0A |
 
 ## 横断QA
 
 | ID | GitHub | チケット | 優先度 | 状態 |
 | --- | --- | --- | --- | --- |
-| `PH-QA-001` | [#86](https://github.com/garchomp-game/create-game/issues/86) | GitHub Actionsの再現可能なPR品質ゲート | P1 | 実装中。短い自動ゲートと手動QAを分離 |
+| `PH-QA-001` | [#86](https://github.com/garchomp-game/create-game/issues/86) | GitHub Actionsの再現可能なPR品質ゲート | P1 | PR #87でmain統合済み。公式Actions障害復旧後のgreen証跡待ち |
+| `PH-QA-002` | [#88](https://github.com/garchomp-game/create-game/issues/88) | Encounter配置期限と予告方向の境界を固定する | P1 | Draft PR #89。全ローカル回帰済み、CI復旧待ち |
 
 旧`PH-V08-001`から`006`の保存、解放、チャレンジ、熟練度、プロフィール、アカウント判断は削除していません。RC6、v0.8の面白さ検証、Stage 1 / 5 / 10の進行契約が固まるまでLater backlogへ延期します。
 
@@ -187,4 +188,4 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 
 Stage 10はv0.7 RC6で安定化する現行`final-expedition`です。3本の採否後に、deferredのStage 2から4、6から9と、リリース準備チケットを再採番します。
 
-v0.5の全体計画は [v0.5作業計画](../endless-polish-plan/)、v0.6の個別要件は[v0.6チケット詳細](../v06-tickets/)、v0.7は[v0.7 実行計画](../v07-execution-plan/)、その先は [中長期作業計画](../gameplay-expansion-plan/) を参照してください。
+v0.5の全体計画は [v0.5作業計画](../endless-polish-plan/)、v0.6の個別要件は[v0.6チケット詳細](../v06-tickets/)、v0.7は[v0.7 実行計画](../v07-execution-plan/)、v0.8は[v0.8 実行計画](../v08-execution-plan/)、その先は [中長期作業計画](../gameplay-expansion-plan/) を参照してください。

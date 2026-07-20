@@ -198,6 +198,7 @@ description: v0.4からv1.0までの目的と主要チケット。
 - [v0.7 最終遠征プロトタイプ](../../design/v07-first-expedition/)
 - [v0.7 実行計画](../v07-execution-plan/)
 - [v0.8 面白さの核の検証](../../design/core-promise-validation/)
+- [v0.8 実行計画](../v08-execution-plan/)
 - [UI・グラフィック再設計計画](../ui-visual-redesign-plan/)
 - [中長期作業計画](../gameplay-expansion-plan/)
 - [ゲームプレイ拡張設計](../../design/gameplay-expansion-blueprint/)
