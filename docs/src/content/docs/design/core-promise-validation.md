@@ -54,6 +54,8 @@ Issue: [PH-V08-014 #76](https://github.com/garchomp-game/create-game/issues/76)
 
 最初の縦切りでは、既存hazardを全面置換せず、敵にも作用する危険を1件だけ試します。
 
+既存eventと副作用の比較、およびCharger衝突妨害の第一候補は[危険反転の実装前比較](../hazard-reversal-preflight/)へ整理しています。数値と採用は#83 / #66後に固定します。
+
 プレイヤーには二つの成功段階を用意します。
 
 - 基本成功: 予告を読んで回避する。

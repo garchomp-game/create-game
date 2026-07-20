@@ -40,7 +40,7 @@ v0.8では機能量を増やす前に、Arena Coreの面白さの核を小さい
 | 0A | [#83](https://github.com/garchomp-game/create-game/issues/83) | 緊張・緩和、near-miss、攻略メタ、公平性の契約 | Work回答と現行カーブ棚卸し | 採用、再設計、延期、棄却をdecision logへ記録 |
 | 0B | [#66](https://github.com/garchomp-game/create-game/issues/66) | 世界観、視覚言語、素材境界 | gameplay数値を変えない比較案 | 背景、敵、警告へ展開できる1方向を選ぶ |
 | UI | [#68](https://github.com/garchomp-game/create-game/issues/68) / [#67](https://github.com/garchomp-game/create-game/issues/67) / [#70](https://github.com/garchomp-game/create-game/issues/70) | 選択画面の可読性と再開操作 | PR #84と比較手順 | candidateを採用、再調整、棄却のいずれかに固定 |
-| 1A | [#76](https://github.com/garchomp-game/create-game/issues/76) | 危険1件を攻撃機会へ反転できるか | #83完了 | 回避だけと熟練反転の両方が成立するかpaired比較 |
+| 1A | [#76](https://github.com/garchomp-game/create-game/issues/76) | 危険1件を攻撃機会へ反転できるか | #83完了。Charger衝突妨害を第一候補として監査済み | 回避だけと熟練反転の両方が成立するかpaired比較 |
 | 1B | [#78](https://github.com/garchomp-game/create-game/issues/78) | 選択停止時間と再開事故を測れるか | #70のUI境界採否 | 計装がsimulation hashを変えず、原因別KPIを出せるか確認 |
 | 2 | [#77](https://github.com/garchomp-game/create-game/issues/77) | 技能成果と次ラン目標が理解を助けるか | #83、#76。既存event棚卸し済み | 3成果と1目標を、スコア加点なしで説明可能にする |
 | 3 | [#79](https://github.com/garchomp-game/create-game/issues/79) | 武器ごとに違う判断を1 branchで作れるか | #77で観測指標を固定 | 取得前後の照準、位置、標的優先の変化で採否 |
