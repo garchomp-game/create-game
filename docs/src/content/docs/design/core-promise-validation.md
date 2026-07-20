@@ -46,7 +46,7 @@ Issue: [PH-V08-020 #83](https://github.com/garchomp-game/create-game/issues/83)
 - Assist使用ランを標準ランキングへ混ぜない。
 - 惜敗や有能感は結果を偽装せず、残HP、到達phase、成功行動、次に変えられる判断から伝える。
 
-助言原文、Arena Coreへの一次解釈、Work再レビューの質問は[外部ゲームデザイン助言メモ](../external-game-design-advice/)へ残します。
+助言原文とArena Coreへの一次解釈は[外部ゲームデザイン助言メモ](../external-game-design-advice/)、提出用の質問と期待出力は[v0.8 Work再レビュー依頼](../../playtest/v08-work-design-review-request/)へ残します。
 
 ## 1. 危険反転
 
