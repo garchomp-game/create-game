@@ -955,3 +955,16 @@ Work回答は設計入力であり、採用・保留・棄却はIssue #83と本d
 - TrainingはStage 1の代替ではなく、学んだ文法を通常勝利条件へ転移させる#64を別コンテンツとして維持する。
 
 この判断は初見2runの探索的証拠に基づく仮説であり、継続率や一般的な初心者行動の証明とは扱わない。
+
+## 2026-07-20: Training T1を実装候補として固定し採用判断を分離する
+
+決定: main `b561aa6aeca5`をT0基準、`2c0348133f02`を[#97](https://github.com/garchomp-game/create-game/issues/97)のT1実装候補として固定する。コード、自動試験、画像、比較可能buildの完成を「実装完了」とし、人間が無提示transferへ知識を移せるかを確認する「採用完了」と分ける。
+
+- Trainingは`training/basic-training`、Pulse、seed `20260720`の任意・再実行可能な固定体験とする。
+- 8課題は通常のWorld、GameEvent、敵、敵弾、Pickup、強化規則で判定し、時間だけでは合格させない。
+- GameContentの`recordPolicy: none`でRun Lifecycleを開始せず、履歴、ランキング、PB、報酬、外部exportを作らない。
+- 通常モードは`recordPolicy: standard`を明示し、既存のevent / world hash、ruleset、保存schemaを維持する。
+- T1の自動greenだけでは#98のruntime視覚変更を開始しない。#81で誤認が残った場合だけ別branchのT2へ進む。
+- production traffic、#76、#84、#94をT1 buildへ混ぜない。
+
+rollbackはT1実装commitを戻すか、Training modeとタイトル導線を外す。RunRecord migrationとruleset更新は不要である。

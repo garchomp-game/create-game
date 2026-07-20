@@ -172,7 +172,7 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-V08-022` | [#93](https://github.com/garchomp-game/create-game/issues/93) | ボス攻撃文法と回復・反撃窓を比較可能にする | P1 | 攻撃文法と観測契約を先行するWave 0D。runtime候補は#76採否後 |
 | `PH-V08-023` | [#94](https://github.com/garchomp-game/create-game/issues/94) | 敗因説明・実測near-miss・即時再挑戦 | P1 | 事実定義と記録契約を先行するWave 0E。表示実装は後続 |
 | `PH-V08-024` | [#95](https://github.com/garchomp-game/create-game/issues/95) | Standard / Assist / Practice / Overloadの記録契約 | P0 | division、modifier、PB分離、旧記録migrationを先に固定するWave 0F |
-| `PH-V08-025` | [#97](https://github.com/garchomp-game/create-game/issues/97) | 選択式・再プレイ可能な基本操作Training | P1 | T1を現行visual・recordなしで独立実装し、#81でtransferを確認 |
+| `PH-V08-025` | [#97](https://github.com/garchomp-game/create-game/issues/97) | 選択式・再プレイ可能な基本操作Training | P1 | T1候補`2c0348133f02`を実装。Draft CI / Previewと#81の人間transfer確認待ち |
 | `PH-V08-026` | [#98](https://github.com/garchomp-game/create-game/issues/98) | 撃つ・避ける・取るの戦闘オブジェクト視覚言語 | P1 | Phase A fixtureは先行可。runtime T2は#97のT1結果で誤認が残る場合だけ |
 
 ## 横断QA
