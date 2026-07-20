@@ -230,7 +230,7 @@ RC5は基準証跡として保持し、productionへ直接昇格しません。U
 
 ## 次の優先順
 
-公開ベータ基準、RC6の自動証跡、通常UIの欠陥特化採否、main統合は固定済みです。v0.8のWork再レビューも受領し、Issue #83で設計採否を完了しました。GitHub Actions workflowはmainへ追加済みで、2026-07-20の公式障害は復旧しましたが、障害中の`startup_failure`をgreenとは扱わず最新SHAで再取得します。
+公開ベータ基準、RC6の自動証跡、通常UIの欠陥特化採否、main統合は固定済みです。v0.8のWork再レビューも受領し、Issue #83で設計採否を完了しました。GitHub Actions workflowとFirefox WebGL安定化はmainへ統合済みで、main `8635ca0`の3 job greenを取得してIssue #86を完了しました。
 
 1. #83の採否をStarlight正本へ同期し、[#77](https://github.com/garchomp-game/create-game/issues/77)、[#80](https://github.com/garchomp-game/create-game/issues/80)、[#93](https://github.com/garchomp-game/create-game/issues/93)、[#94](https://github.com/garchomp-game/create-game/issues/94)、[#95](https://github.com/garchomp-game/create-game/issues/95)の責務と検証レーンを固定する。
 2. 最新mainとDraft PR [#89](https://github.com/garchomp-game/create-game/pull/89) / [#91](https://github.com/garchomp-game/create-game/pull/91)でfresh CIを取得し、Encounter境界修正と文書同期をSHAへ結び付ける。

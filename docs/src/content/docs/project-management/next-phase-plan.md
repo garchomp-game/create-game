@@ -29,7 +29,7 @@ v0.8のWork再レビューは受領し、Issue #83で採否を完了しました
 
 `d16655a`はUI境界、比較prototype、選択画面の変更前にあるRC5基点です。RC6のゲームルールはここから独立branchで実装し、採否後にmainへ統合しました。既存UIの採用範囲はRC6基点のPR #84へ移し、production trafficは配布SHA固定まで変更しません。
 
-横断QAのGitHub ActionsはPR #87でmainへ追加済みです。2026-07-20の公式Actions障害は復旧しましたが、障害中の`startup_failure`はgreen証跡として扱いません。[#86](https://github.com/garchomp-game/create-game/issues/86)は、最新mainと対象PR SHAへfreshな3 jobのgreen証跡を結び付けるまで開いたまま維持します。型、unit、配布build、Starlight、短いrelease smokeをPR statusにし、probe、全画像、実GPU耐久、人間採否は変更内容に応じた手動ゲートとして残します。
+横断QAのGitHub ActionsはPR #87でmainへ追加し、PR #96でGitHub-hosted UbuntuのFirefox WebGL実行を安定化しました。[#86](https://github.com/garchomp-game/create-game/issues/86)は、PR #96とmain `8635ca0`の3 job greenを取得して完了しています。型、unit、配布build、Starlight、短いrelease smokeをPR statusにし、probe、全画像、実GPU耐久、人間採否は変更内容に応じた手動ゲートとして残します。
 
 ## RC6の実行順
 
