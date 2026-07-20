@@ -9,8 +9,10 @@ import {
   DEFAULT_MODE_ID,
   DEFAULT_STAGE_ID,
   RULESET_VERSION,
+  TRAINING_MODE_ID,
   resolveRunRulesetVersion,
 } from "../../config/version";
+import { BASIC_TUTORIAL_SEED } from "../../simulation/TutorialController";
 import { resolveRunOrigin, resolveSeedCategory } from "../../application/runEnvironment";
 import {
   ArenaMenuController,
@@ -239,7 +241,10 @@ export class ArenaScene extends Phaser.Scene {
     this.performanceMonitor.reset();
     this.arenaRenderer.resetPerformance();
     const fixedSeed = this.getFixedRunSeed();
-    const runSeed = this.createRunSeed(fixedSeed);
+    const runSeed =
+      this.selectedModeId === TRAINING_MODE_ID
+        ? BASIC_TUTORIAL_SEED
+        : this.createRunSeed(fixedSeed);
     this.session.start({
       seed: runSeed,
       weaponType: this.selectedWeapon,
@@ -248,46 +253,50 @@ export class ArenaScene extends Phaser.Scene {
       stageId: this.selectedStageId,
     });
     this.debugController?.resetRun();
-    const runOrigin =
-      runOriginOverride ??
-      (this.autoPilotController.enabled
-        ? this.getDebugRunOrigin()
-        : this.getBaseRunOrigin());
-    this.runLifecycle.begin(
-      {
-        id: this.createRunId(),
-        profileId: this.profile.id,
-        startedAt: new Date().toISOString(),
-        modeId: this.session.modeId,
-        stageId: this.session.stageId,
-        difficultyId: DEFAULT_DIFFICULTY_ID,
-        rulesetVersion: resolveRunRulesetVersion(
-          this.session.modeId,
-          this.session.stageId,
-        ),
-        seedCategory: resolveSeedCategory(fixedSeed),
-        weaponId: this.world.state.weaponType,
-        modifierIds: [
-          `auto-fire:${this.settings.autoFireEnabled ? "on" : "off"}`,
-          ...(this.autoPilotController.enabled
-            ? [AUTO_PILOT_MODIFIER_ID]
-            : []),
-          ...(this.autoPilotController.enabled &&
-              this.autoPilotController.patrolStrategy === "visit-history-v1"
-            ? [AUTO_PILOT_PATROL_MODIFIER_ID]
-            : []),
-        ],
-        appVersion: APP_VERSION,
-        buildCommit: this.getBuildCommit(),
-        seed: runSeed,
-        runOrigin,
-        rankEligibility: createRankEligibility(
+    if (this.session.recordPolicy === "none") {
+      this.runLifecycle.discard();
+    } else {
+      const runOrigin =
+        runOriginOverride ??
+        (this.autoPilotController.enabled
+          ? this.getDebugRunOrigin()
+          : this.getBaseRunOrigin());
+      this.runLifecycle.begin(
+        {
+          id: this.createRunId(),
+          profileId: this.profile.id,
+          startedAt: new Date().toISOString(),
+          modeId: this.session.modeId,
+          stageId: this.session.stageId,
+          difficultyId: DEFAULT_DIFFICULTY_ID,
+          rulesetVersion: resolveRunRulesetVersion(
+            this.session.modeId,
+            this.session.stageId,
+          ),
+          seedCategory: resolveSeedCategory(fixedSeed),
+          weaponId: this.world.state.weaponType,
+          modifierIds: [
+            `auto-fire:${this.settings.autoFireEnabled ? "on" : "off"}`,
+            ...(this.autoPilotController.enabled
+              ? [AUTO_PILOT_MODIFIER_ID]
+              : []),
+            ...(this.autoPilotController.enabled &&
+                this.autoPilotController.patrolStrategy === "visit-history-v1"
+              ? [AUTO_PILOT_PATROL_MODIFIER_ID]
+              : []),
+          ],
+          appVersion: APP_VERSION,
+          buildCommit: this.getBuildCommit(),
+          seed: runSeed,
           runOrigin,
-          !this.autoPilotController.enabled,
-        ),
-      },
-      status === "playing",
-    );
+          rankEligibility: createRankEligibility(
+            runOrigin,
+            !this.autoPilotController.enabled,
+          ),
+        },
+        status === "playing",
+      );
+    }
     this.menuController.reset();
     this.feedbackLayer.reset();
     this.audioRouter.reset();
@@ -302,13 +311,15 @@ export class ArenaScene extends Phaser.Scene {
       gameOver,
     );
 
-    this.runLifecycle.observeEvents(result.events);
+    if (this.session.recordPolicy === "standard") {
+      this.runLifecycle.observeEvents(result.events);
+    }
     for (const event of result.events) {
       this.logEvent(event);
     }
     this.feedbackLayer.handleEvents(result.events, this.world);
     this.audioRouter.handleEvents(result.events);
-    if (gameOver) {
+    if (gameOver && this.session.recordPolicy === "standard") {
       this.finalizeRunRecord();
     }
   }
@@ -366,6 +377,7 @@ export class ArenaScene extends Phaser.Scene {
       this.createUiState(),
       autoPilot.enabled,
       autoPilot.mode,
+      this.session.tutorialSnapshot,
     );
     this.choiceOverlay.render(this.world, secondaryMenu === null);
     this.musicController.sync(
@@ -432,6 +444,12 @@ export class ArenaScene extends Phaser.Scene {
   private submitDevRunExport(): Promise<{ ok: boolean; path?: string; error?: string }> {
     if (!import.meta.env.DEV || !this.devRunExportClient) {
       return Promise.resolve({ ok: false, error: "Run export logging is only available in dev." });
+    }
+    if (this.session.recordPolicy === "none") {
+      return Promise.resolve({
+        ok: false,
+        error: "Training sessions do not create run exports.",
+      });
     }
 
     const runExport = this.debugController?.getRunExport();
@@ -500,6 +518,14 @@ export class ArenaScene extends Phaser.Scene {
       this.selectedModeId = command.modeId;
       this.selectedStageId = command.stageId;
       this.resetGame("weaponSelect");
+      return;
+    }
+    if (command.type === "startTraining") {
+      this.selectedModeId = command.modeId;
+      this.selectedStageId = command.stageId;
+      this.selectedWeapon = "pulse";
+      this.autoPilotController.setEnabled(false);
+      this.resetGame("playing");
       return;
     }
     if (command.type === "startRun") {

@@ -130,6 +130,26 @@ describe("RunLifecycleController", () => {
     expect(controller.getLatestRecord()).toBeNull();
     expect(controller.getPreviousBest()).toBeNull();
   });
+
+  it("discards a non-recording session without writing or clearing saved boards", () => {
+    const store = new MemoryRunRecordStore();
+    const controller = new RunLifecycleController(store);
+    const world = createWorld(SIMULATION_CONFIG);
+    controller.begin(makeContext(), true);
+    controller.observeEvents([{ type: "game.started" }]);
+
+    controller.discard();
+    const outcome = controller.finalize(
+      world,
+      SIMULATION_CONFIG,
+      "2026-07-20T00:00:00Z",
+    );
+
+    expect(outcome.result.status).toBe("notStarted");
+    expect(store.saveAttempts).toBe(0);
+    expect(controller.getContext()).toBeNull();
+    expect(controller.getLastEvents()).toEqual([]);
+  });
 });
 
 class MemoryRunRecordStore implements RunRecordStorePort {

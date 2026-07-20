@@ -11,10 +11,12 @@ import type {
   ModeDefinition,
   StageDefinition,
 } from "../domain/gameContent";
+import type { TutorialSnapshot } from "../domain/tutorial";
 import { createRandomStreams, type RandomStreams } from "../math/random";
 import { createWorld } from "../simulation/createWorld";
 import { stepWorld } from "../simulation/stepWorld";
 import { ExpeditionController } from "../simulation/ExpeditionController";
+import { TutorialController } from "../simulation/TutorialController";
 import { updateRunStats } from "../simulation/systems/statsSystem";
 import { DEFAULT_MODE_ID, DEFAULT_STAGE_ID } from "../config/version";
 import type { GameContentRegistry } from "./GameContentRegistry";
@@ -40,6 +42,7 @@ type ActiveArenaSession = {
   mode: ModeDefinition;
   stage: StageDefinition;
   expeditionController: ExpeditionController | null;
+  tutorialController: TutorialController | null;
 };
 
 export class ArenaSession {
@@ -69,8 +72,11 @@ export class ArenaSession {
             this.options.finalExpeditionBossSustain,
           )
         : null;
+    const tutorialController =
+      mode.runtimeKind === "training" ? new TutorialController() : null;
     const randomStreams = createRandomStreams(seed);
     expeditionController?.initialize(world, randomStreams);
+    tutorialController?.initialize(world, config);
     this.active = {
       seed,
       config,
@@ -79,11 +85,16 @@ export class ArenaSession {
       mode,
       stage,
       expeditionController,
+      tutorialController,
     };
   }
 
   step(input: InputSnapshot, deltaSeconds: number): StepWorldResult {
     const active = this.requireActive();
+    const frameBefore = {
+      elapsed: active.world.state.elapsed,
+      playerPosition: { ...active.world.player.position },
+    };
     const result = stepWorld(
       active.world,
       input,
@@ -101,6 +112,18 @@ export class ArenaSession {
       if (expeditionEvents.length > 0) {
         result.events.push(...expeditionEvents);
         updateRunStats(active.world, expeditionEvents);
+      }
+    }
+    if (active.tutorialController) {
+      const tutorialEvents = active.tutorialController.update(
+        active.world,
+        active.config,
+        result.events,
+        frameBefore,
+      );
+      if (tutorialEvents.length > 0) {
+        result.events.push(...tutorialEvents);
+        updateRunStats(active.world, tutorialEvents);
       }
     }
     return result;
@@ -134,6 +157,18 @@ export class ArenaSession {
     return structuredClone(this.requireActive().stage);
   }
 
+  get recordPolicy(): ModeDefinition["recordPolicy"] {
+    return this.requireActive().mode.recordPolicy;
+  }
+
+  get runtimeKind(): ModeDefinition["runtimeKind"] {
+    return this.requireActive().mode.runtimeKind;
+  }
+
+  get tutorialSnapshot(): TutorialSnapshot | null {
+    return this.requireActive().tutorialController?.getSnapshot() ?? null;
+  }
+
   private requireActive(): ActiveArenaSession {
     if (!this.active) throw new Error("ArenaSession has not been started.");
     return this.active;
@@ -151,7 +186,7 @@ function applyStageToConfig(
     ...baseConfig,
     seed,
     features:
-      mode.runtimeKind === "expedition"
+      mode.runtimeKind === "expedition" || mode.runtimeKind === "training"
         ? {
             ...baseConfig.features,
             encounterDeck: false,
@@ -188,16 +223,24 @@ function applyStageToConfig(
           ]),
         ) as SimulationConfig["enemies"]
       : baseConfig.enemies,
-    pickup: difficulty
-      ? {
-          ...baseConfig.pickup,
-          healDropChance: Math.min(
-            1,
-            baseConfig.pickup.healDropChance *
-              difficulty.rewardScaling.healDropChanceMultiplier,
-          ),
-        }
-      : baseConfig.pickup,
+    pickup:
+      mode.runtimeKind === "training"
+        ? {
+            ...baseConfig.pickup,
+            healDropChance: 0,
+            healDropPityBonus: 0,
+            healDropMaxChance: 0,
+          }
+        : difficulty
+          ? {
+              ...baseConfig.pickup,
+              healDropChance: Math.min(
+                1,
+                baseConfig.pickup.healDropChance *
+                  difficulty.rewardScaling.healDropChanceMultiplier,
+              ),
+            }
+          : baseConfig.pickup,
     waves: difficulty
       ? difficulty.waves.map((wave) => ({
           ...wave,

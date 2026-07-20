@@ -983,7 +983,13 @@ test("persists accessibility settings and disables automatic fire", async ({ pag
 test("supports keyboard navigation and Escape on secondary menus", async ({ page }) => {
   await gotoArena(page);
   await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
-  for (const key of ["ArrowDown", "ArrowDown", "ArrowDown", "Enter"]) {
+  for (const key of [
+    "ArrowDown",
+    "ArrowDown",
+    "ArrowDown",
+    "ArrowDown",
+    "Enter",
+  ]) {
     await page.keyboard.down(key);
     await page.waitForTimeout(80);
     await page.keyboard.up(key);

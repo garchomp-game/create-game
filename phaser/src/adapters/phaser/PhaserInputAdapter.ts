@@ -146,7 +146,9 @@ export class PhaserInputAdapter {
           secondaryMenu === null &&
           Phaser.Input.Keyboard.JustDown(this.keys.shoot)));
     const backActivated =
-      (secondaryMenu !== null || status === "weaponSelect") &&
+      (secondaryMenu !== null ||
+        status === "weaponSelect" ||
+        status === "trainingComplete") &&
       Phaser.Input.Keyboard.JustDown(this.keys.escape);
     const menuAction = backActivated
       ? "back"

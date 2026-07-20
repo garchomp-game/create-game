@@ -41,6 +41,13 @@ export class RunRecordCoordinator {
     this.finalizedWrite = null;
   }
 
+  discard(): void {
+    this.context = null;
+    this.started = false;
+    this.finalizedRecord = null;
+    this.finalizedWrite = null;
+  }
+
   markStarted(): void {
     this.started = true;
   }

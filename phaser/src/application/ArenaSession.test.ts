@@ -152,6 +152,74 @@ describe("ArenaSession", () => {
     });
   });
 
+  it("starts deterministic basic training without normal spawns or records", () => {
+    const session = new ArenaSession(SIMULATION_CONFIG);
+    session.start({
+      seed: 20260720,
+      weaponType: "pulse",
+      modeId: "training",
+      stageId: "basic-training",
+    });
+
+    expect(session.runtimeKind).toBe("training");
+    expect(session.recordPolicy).toBe("none");
+    expect(session.tutorialSnapshot).toMatchObject({
+      stepId: "move",
+      stepNumber: 1,
+      stepCount: 8,
+    });
+    expect(session.world.state).toMatchObject({
+      status: "playing",
+      weaponType: "pulse",
+      hp: 60,
+    });
+    expect(session.config.waves[0]).toMatchObject({ maxEnemies: 0 });
+    expect(session.config.pickup).toMatchObject({
+      healDropChance: 0,
+      healDropPityBonus: 0,
+      healDropMaxChance: 0,
+    });
+
+    for (let index = 0; index < 120; index += 1) {
+      session.step({ ...input, move: { x: 0, y: 0 }, shootHeld: false }, 1 / 60);
+    }
+    expect(session.world.enemies).toEqual([]);
+    expect(session.tutorialSnapshot?.stepId).toBe("move");
+  });
+
+  it("replays Training events and world state deterministically", () => {
+    const left = new ArenaSession(SIMULATION_CONFIG);
+    const right = new ArenaSession(SIMULATION_CONFIG);
+    const start = {
+      seed: 20260720,
+      weaponType: "pulse" as const,
+      modeId: "training",
+      stageId: "basic-training",
+    };
+    left.start(start);
+    right.start(start);
+    const leftEvents: string[] = [];
+    const rightEvents: string[] = [];
+
+    for (let index = 0; index < 240; index += 1) {
+      const replayInput = {
+        ...input,
+        move: index < 90 ? { x: -1, y: -1 } : { x: 0, y: 0 },
+        shootHeld: false,
+      };
+      leftEvents.push(
+        ...left.step(replayInput, 1 / 60).events.map((event) => JSON.stringify(event)),
+      );
+      rightEvents.push(
+        ...right.step(replayInput, 1 / 60).events.map((event) => JSON.stringify(event)),
+      );
+    }
+
+    expect(rightEvents).toEqual(leftEvents);
+    expect(right.world).toEqual(left.world);
+    expect(right.tutorialSnapshot).toEqual(left.tutorialSnapshot);
+  });
+
   it("requires an active run before exposing state", () => {
     const session = new ArenaSession(SIMULATION_CONFIG);
     expect(() => session.world).toThrow("ArenaSession has not been started.");

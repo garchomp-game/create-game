@@ -24,8 +24,23 @@ describe("createArenaScreenViewModel", () => {
       detailText: null,
     });
     expect(viewModel.statusText).toBe(
-      `${TEXT.ui.titleScreen}\nENDLESS / EXPEDITION\n生存限界か、最終決戦か\n技術プレビュー v0.7.0`,
+      `${TEXT.ui.titleScreen}\nENDLESS / EXPEDITION / TRAINING\n生存限界か、最終決戦か\n技術プレビュー v0.7.0`,
     );
+  });
+
+  it("presents Training completion without a RunRecord result", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.state.status = "trainingComplete";
+
+    const viewModel = createArenaScreenViewModel(world, SIMULATION_CONFIG);
+
+    expect(viewModel).toMatchObject({
+      kind: "trainingComplete",
+      status: "trainingComplete",
+      statusText: `${TEXT.ui.trainingCompleteTitle}\n${TEXT.ui.trainingCompleteDescription}`,
+      detailText: null,
+    });
+    expect(viewModel.menuLabels.start).toBe("エンドレスへ出撃");
   });
 
   it("formats secondary history state and its notice", () => {

@@ -13,7 +13,8 @@ const modeDefinitionSchema = z
   .object({
     id: contentId,
     titleKey: z.string().min(1),
-    runtimeKind: z.enum(["endless", "expedition"]),
+    runtimeKind: z.enum(["endless", "expedition", "training"]),
+    recordPolicy: z.enum(["standard", "none"]),
     stageIds: z.array(contentId).min(1),
     defaultStageId: contentId,
   })
@@ -41,6 +42,7 @@ const obstacleDefinitionSchema = z
 
 const clearConditionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("endless") }).strict(),
+  z.object({ type: z.literal("training") }).strict(),
   z
     .object({
       type: z.literal("survive"),
@@ -60,7 +62,7 @@ const stageWaveSchema = z
     start: coordinate,
     spawnInterval: positiveNumber,
     speedMultiplier: positiveNumber,
-    maxEnemies: z.number().int().positive(),
+    maxEnemies: z.number().int().nonnegative(),
     spawnBudget: positiveNumber,
     enemyWeights: z.partialRecord(z.enum(ENEMY_TYPE_IDS), positiveNumber),
   })

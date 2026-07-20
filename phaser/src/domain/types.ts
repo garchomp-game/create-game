@@ -4,6 +4,7 @@ import type {
   EncounterDirectorState,
 } from "./encounterDirector";
 import type { SpawnGeometryId } from "./structuredSpawning";
+import type { TutorialStepId } from "./tutorial";
 
 export type Vec2 = {
   x: number;
@@ -19,6 +20,7 @@ export type GameStatus =
   | "paused"
   | "upgradeSelect"
   | "contractSelect"
+  | "trainingComplete"
   | "gameOver";
 
 export const ENEMY_TYPE_IDS = ["chaser", "brute", "fast", "ranged"] as const;
@@ -957,6 +959,22 @@ export type GameEvent =
   | { type: "game.started" }
   | { type: "game.restart.requested" }
   | { type: "game.title.requested" }
+  | {
+      type: "tutorial.step.started";
+      stepId: TutorialStepId;
+      stepNumber: number;
+    }
+  | {
+      type: "tutorial.step.completed";
+      stepId: TutorialStepId;
+      elapsed: number;
+    }
+  | {
+      type: "tutorial.step.retried";
+      stepId: TutorialStepId;
+      retryCount: number;
+    }
+  | { type: "tutorial.completed"; elapsed: number }
   | { type: "game.paused"; elapsed: number }
   | { type: "game.resumed"; elapsed: number }
   | {

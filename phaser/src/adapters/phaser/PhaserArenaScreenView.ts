@@ -102,6 +102,21 @@ export class PhaserArenaScreenView {
       graphics.fillRect(0, 0, width, height);
       return;
     }
+    if (screen.kind === "trainingComplete") {
+      graphics.fillStyle(0x020617, 0.92);
+      graphics.fillRect(0, 0, width, height);
+      this.statusText
+        .setOrigin(0.5)
+        .setAlign("center")
+        .setFontSize(30)
+        .setLineSpacing(8)
+        .setWordWrapWidth(width - 180)
+        .setPosition(width / 2, 218)
+        .setText(screen.statusText ?? "")
+        .setVisible(true);
+      this.drawMenuButtons(graphics, world, screen);
+      return;
+    }
     if (screen.kind === "paused") {
       graphics.fillStyle(0x020617, 0.9);
       graphics.fillRect(0, 0, width, height);

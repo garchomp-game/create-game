@@ -12,8 +12,10 @@ import type {
 import {
   DEFAULT_MODE_ID,
   DEFAULT_STAGE_ID,
+  BASIC_TRAINING_STAGE_ID,
   EXPEDITION_MODE_ID,
   FINAL_EXPEDITION_STAGE_ID,
+  TRAINING_MODE_ID,
 } from "../config/version";
 
 export type ArenaMenuState = {
@@ -36,6 +38,7 @@ export type ArenaMenuActionContext = {
 
 export type ArenaMenuCommand =
   | { type: "showWeaponSelect"; modeId: string; stageId: string }
+  | { type: "startTraining"; modeId: string; stageId: string }
   | { type: "startRun"; weaponType: WeaponTypeId }
   | { type: "showTitle" }
   | { type: "showBetaInfo" }
@@ -89,12 +92,24 @@ export class ArenaMenuController {
     action: MenuAction,
     context: ArenaMenuActionContext,
   ): ArenaMenuActionOutcome {
-    if (action === "start" && context.status === "title") {
+    if (
+      action === "start" &&
+      (context.status === "title" || context.status === "trainingComplete")
+    ) {
       this.setNotice(null);
       return handled({
         type: "showWeaponSelect",
         modeId: DEFAULT_MODE_ID,
         stageId: DEFAULT_STAGE_ID,
+      });
+    }
+
+    if (action === "startTraining" && context.status === "title") {
+      this.setNotice(null);
+      return handled({
+        type: "startTraining",
+        modeId: TRAINING_MODE_ID,
+        stageId: BASIC_TRAINING_STAGE_ID,
       });
     }
 
@@ -115,6 +130,10 @@ export class ArenaMenuController {
     }
 
     if (action === "back" && context.status === "weaponSelect") {
+      return handled({ type: "showTitle" });
+    }
+
+    if (action === "back" && context.status === "trainingComplete") {
       return handled({ type: "showTitle" });
     }
 

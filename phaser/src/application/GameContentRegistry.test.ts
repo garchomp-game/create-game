@@ -77,6 +77,23 @@ describe("GameContentRegistry", () => {
     });
   });
 
+  it("resolves basic training as a non-recording runtime", () => {
+    const registry = new GameContentRegistry(GAME_CONTENT_DEFINITIONS);
+
+    expect(registry.resolveRun("training", "basic-training")).toMatchObject({
+      mode: {
+        id: "training",
+        runtimeKind: "training",
+        recordPolicy: "none",
+      },
+      stage: {
+        id: "basic-training",
+        clearCondition: { type: "training" },
+        difficulty: { waves: [{ maxEnemies: 0 }] },
+      },
+    });
+  });
+
   it("rejects unknown mode, stage, and mode-stage combinations", () => {
     const registry = new GameContentRegistry(GAME_CONTENT_DEFINITIONS);
     expect(() => registry.resolveRun("missing", "arena-default")).toThrow(

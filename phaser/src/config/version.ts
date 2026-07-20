@@ -6,6 +6,8 @@ export const DEFAULT_MODE_ID = "endless";
 export const DEFAULT_STAGE_ID = "arena-default";
 export const EXPEDITION_MODE_ID = "expedition";
 export const FINAL_EXPEDITION_STAGE_ID = "final-expedition";
+export const TRAINING_MODE_ID = "training";
+export const BASIC_TRAINING_STAGE_ID = "basic-training";
 export const DEFAULT_DIFFICULTY_ID = "standard";
 
 export function resolveRunRulesetVersion(modeId: string, stageId: string): string {

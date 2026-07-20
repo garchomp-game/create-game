@@ -54,7 +54,7 @@ test("publishes privacy, feedback, licenses, and complete local-data deletion", 
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
     .toBe("title");
-  await clickCanvasLogical(page, 480, 499);
+  await clickCanvasLogical(page, 620, 495);
   await expect(page).toHaveURL(/\/beta-info\.html$/);
   await expect(page.getByRole("heading", { name: "ARENA CORE" })).toBeVisible();
   await expect(page.locator("#app-version")).toHaveText(APP_VERSION);

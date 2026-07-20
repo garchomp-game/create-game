@@ -5,6 +5,7 @@ export const uiText: UiText = {
   titleScreen: "ARENA CORE",
   endlessMode: "ENDLESS\n照準と位置取りで、押し寄せる敵を生き延びろ",
   expeditionMode: "FINAL EXPEDITION\n四方からの総攻撃を退け、敵中枢を撃破せよ",
+  trainingMode: "TRAINING\n撃つ・避ける・取るを実戦操作で確認",
   weaponSelectTitle: "開始武器を選択",
   weaponSelectDescription:
     "パルス: 連射と継続照準に優れた標準型\n拡散: 近距離で複数の敵を捉える広角型",
@@ -21,6 +22,9 @@ export const uiText: UiText = {
   rankingEligible: "ランキング対象",
   rankingIneligible: (reasons) => `ランキング対象外: ${reasons}`,
   paused: "一時停止",
+  trainingCompleteTitle: "TRAINING COMPLETE",
+  trainingCompleteDescription:
+    "基本操作の確認が完了しました\n記録やランキングは更新されていません",
   upgradeHeading: (level) => `レベル ${level}\n強化を選択`,
   extraUpgradeHeading: (extraLevel, cycle) =>
     `EXTRA LEVEL ${extraLevel} / CYCLE ${cycle}\n限界強化を選択`,
@@ -36,6 +40,7 @@ export const uiText: UiText = {
   menu: {
     start: "エンドレス開始",
     startExpedition: "最終遠征に挑む",
+    startTraining: "基本訓練",
     selectPulse: "パルスを選ぶ",
     selectSpread: "拡散を選ぶ",
     contractStandard: "標準を維持",
@@ -62,6 +67,50 @@ export const uiText: UiText = {
     settingsShake: "画面揺れ",
     settingsFlash: "画面点滅",
     settingsAutoFire: "自動射撃",
+  },
+  trainingSteps: {
+    move: {
+      title: "移動",
+      instruction: "WASD / 矢印キーで移動",
+      hint1: "押している方向へ自機が移動します",
+      hint2: "同じ場所に留まらず、64px以上移動してください",
+    },
+    navigate: {
+      title: "進路変更",
+      instruction: "壁を迂回して目標区域へ移動",
+      hint1: "壁には通り抜けられません",
+      hint2: "表示された線を目安に、壁の外側へ回り込んでください",
+    },
+    aimAndKill: {
+      title: "照準と射撃",
+      instruction: "照準を敵本体へ合わせて撃破",
+      hint1: "マウスを動かすと照準方向が変わります",
+      hint2: "自動射撃がオフなら左クリックかSpaceで射撃します",
+    },
+    collectXp: {
+      title: "XP回収",
+      instruction: "緑のXPへ近づいて取得",
+      hint1: "近づくとXPが自機へ吸引されます",
+      hint2: "リングで示した取得物へ移動してください",
+    },
+    dodgeProjectile: {
+      title: "敵弾回避",
+      instruction: "桃色の敵弾は撃ち落とせません。2回避ける",
+      hint1: "敵弾の進行線から上下へ外れてください",
+      hint2: "射撃では消えません。移動だけで安全位置へ抜けます",
+    },
+    collectRepair: {
+      title: "修復",
+      instruction: "訓練用損傷を、十字のREPAIRで回復",
+      hint1: "REPAIRも近づくと自機へ吸引されます",
+      hint2: "リングで示したREPAIRへ移動してください",
+    },
+    chooseUpgrade: {
+      title: "強化選択",
+      instruction: "強化を一つ選択",
+      hint1: "1 / 2 / 3キー、またはクリックで選べます",
+      hint2: "選んだ効果は、この後の短い実戦へ反映されます",
+    },
   },
   damageSource: {
     enemyContact: (enemyName) => `${enemyName}との接触`,

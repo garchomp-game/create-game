@@ -5,6 +5,7 @@ export type HistoryWeaponFilter = "all" | "pulse" | "spread";
 export type MenuAction =
   | "start"
   | "startExpedition"
+  | "startTraining"
   | "selectPulse"
   | "selectSpread"
   | "contractStandard"

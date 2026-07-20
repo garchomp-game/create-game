@@ -31,6 +31,7 @@ export type ArenaScreenKind =
   | "gameOver"
   | "upgradeSelect"
   | "contractSelect"
+  | "trainingComplete"
   | "paused"
   | "weaponSelect"
   | "title";
@@ -95,6 +96,17 @@ export function createArenaScreenViewModel(
       return { ...base, kind: "upgradeSelect", statusText: null, detailText: null };
     case "contractSelect":
       return { ...base, kind: "contractSelect", statusText: null, detailText: null };
+    case "trainingComplete":
+      return {
+        ...base,
+        kind: "trainingComplete",
+        statusText: `${TEXT.ui.trainingCompleteTitle}\n${TEXT.ui.trainingCompleteDescription}`,
+        detailText: null,
+        menuLabels: {
+          ...base.menuLabels,
+          start: "エンドレスへ出撃",
+        },
+      };
     case "paused":
       return {
         ...base,
@@ -108,7 +120,7 @@ export function createArenaScreenViewModel(
       return {
         ...base,
         kind: "title",
-        statusText: `${TEXT.ui.titleScreen}\nENDLESS / EXPEDITION\n生存限界か、最終決戦か\n${RELEASE_CHANNEL_LABEL} v${uiState?.releaseIdentity.appVersion ?? APP_VERSION}`,
+        statusText: `${TEXT.ui.titleScreen}\nENDLESS / EXPEDITION / TRAINING\n生存限界か、最終決戦か\n${RELEASE_CHANNEL_LABEL} v${uiState?.releaseIdentity.appVersion ?? APP_VERSION}`,
         detailText: null,
       };
     default:

@@ -178,6 +178,21 @@ test("matches the fixed title frame", async ({ page }) => {
   });
 });
 
+test("keeps the first Training instruction clear of the HUD", async ({ page }) => {
+  await gotoArena(page);
+  await moveMouseToCanvasLogical(page, 480, 393);
+  await page.mouse.down();
+  await page.mouse.up();
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.stepId))
+    .toBe("move");
+  await page.evaluate(() => window.__ARENA_DEBUG__?.setPaused(true));
+
+  await expect(page.locator("canvas")).toHaveScreenshot("arena-training-move.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
 test("shows the observer auto pilot status without covering the HUD", async ({ page }) => {
   await gotoArena(page);
   const canvas = page.locator("canvas");
@@ -774,6 +789,23 @@ test("matches the portrait title frame without overflow", async ({ page }) => {
   await expect(canvas).toHaveScreenshot("arena-title-portrait.png", {
     maxDiffPixelRatio: 0.01,
   });
+});
+
+test("keeps the Training instruction readable in portrait", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await gotoArena(page);
+  await moveMouseToCanvasLogical(page, 480, 393);
+  await page.mouse.down();
+  await page.mouse.up();
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.stepId))
+    .toBe("move");
+  await page.evaluate(() => window.__ARENA_DEBUG__?.setPaused(true));
+
+  await expect(page.locator("canvas")).toHaveScreenshot(
+    "arena-training-move-portrait.png",
+    { maxDiffPixelRatio: 0.01 },
+  );
 });
 
 test("matches the landscape long-run HUD frame without label overlap", async ({ page }) => {

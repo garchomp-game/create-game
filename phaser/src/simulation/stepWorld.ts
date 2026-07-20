@@ -61,6 +61,13 @@ export function stepWorld(
     return collectResult(world, 0, rawDt, config, events);
   }
 
+  if (world.state.status === "trainingComplete") {
+    if (input.quitToTitlePressed || input.pausePressed) {
+      events.push({ type: "game.title.requested" });
+    }
+    return collectResult(world, 0, rawDt, config, events);
+  }
+
   if (world.state.status === "gameOver") {
     if (input.restartPressed || input.startPressed) {
       events.push({ type: "game.restart.requested" });
