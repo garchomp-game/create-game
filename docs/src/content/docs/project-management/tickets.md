@@ -169,6 +169,12 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-V08-019` | [#81](https://github.com/garchomp-game/create-game/issues/81) | 初心者・経験者の構造化プレイテスト | P0 | Todo。Wave 6 QA |
 | `PH-V08-020` | [#83](https://github.com/garchomp-game/create-game/issues/83) | 緊張・緩和と難易度支援の設計契約 | P1 | Todo。Wave 0設計レビュー |
 
+## 横断QA
+
+| ID | GitHub | チケット | 優先度 | 状態 |
+| --- | --- | --- | --- | --- |
+| `PH-QA-001` | [#86](https://github.com/garchomp-game/create-game/issues/86) | GitHub Actionsの再現可能なPR品質ゲート | P1 | 実装中。短い自動ゲートと手動QAを分離 |
+
 旧`PH-V08-001`から`006`の保存、解放、チャレンジ、熟練度、プロフィール、アカウント判断は削除していません。RC6、v0.8の面白さ検証、Stage 1 / 5 / 10の進行契約が固まるまでLater backlogへ延期します。
 
 ## v0.9 3作戦キャンペーン検証

@@ -32,6 +32,8 @@ npm run test:e2e
 npm run build
 ```
 
+pull requestとmain pushではGitHub Actionsが型検査、unit / simulation、配布build、Starlight build、短いChromium / Firefox release smokeを再実行します。全画像E2E、v0.7 probe、15分GPU耐久、手動プレイは変更内容に応じてローカルで追加します。詳細は[品質戦略](../../engineering/quality-strategy/)を参照してください。
+
 任意の実時間15分ブラウザ耐久試験:
 
 ```bash

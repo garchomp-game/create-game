@@ -3,6 +3,9 @@ import { defineConfig, devices } from "@playwright/test";
 const port = 5174;
 const isLongSoak = process.env.ARENA_LONG_SOAK === "1";
 const isHardwareSoak = isLongSoak && process.env.ARENA_HARDWARE_SOAK === "1";
+const chromiumExecutablePath =
+  process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ??
+  (process.env.CI ? undefined : "/usr/bin/google-chrome");
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -34,8 +37,7 @@ export default defineConfig({
         locale: "ja-JP",
         viewport: { width: 960, height: 540 },
         launchOptions: {
-          executablePath:
-            process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ?? "/usr/bin/google-chrome",
+          ...(chromiumExecutablePath ? { executablePath: chromiumExecutablePath } : {}),
           args: ["--disable-features=Translate,TranslateUI", "--disable-translate"],
         },
       },
