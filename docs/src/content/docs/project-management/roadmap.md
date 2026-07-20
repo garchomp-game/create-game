@@ -149,8 +149,12 @@ description: v0.4からv1.0までの目的と主要チケット。
 
 - 危険を避けるだけでなく攻撃機会へ反転する、Arena Core固有の短い攻防を試す。
 - スコアだけで見えない上達と武器固有の行動を記録し、次ランの目標へつなげる。
+- ボス攻撃を予告、回避、回復、反撃の文法として比較し、HP量以外の強さを作る。
+- 敗因、実測near-miss、同条件再挑戦を事実から提示し、再挑戦を強制せず近づける。
+- Standard / Assist / Practice / Overloadの記録を分離し、支援と競技PBを混在させない。
 - 選択停止、最大密度の可読性、警告音を計測し、演出追加前の品質基準を作る。
-- 初心者と経験者を分けた構造化プレイテストで採否する。
+- 現行visualのTrainingと戦闘オブジェクト視覚candidateを分け、説明不足と識別不足を切り分ける。
+- 初心者と経験者を分けた再利用可能な構造化プレイテストで各candidateを採否する。
 
 主要チケット:
 
@@ -158,13 +162,19 @@ description: v0.4からv1.0までの目的と主要チケット。
 - [`PH-V08-011` #68](https://github.com/garchomp-game/create-game/issues/68) UIプレゼンテーション境界とデザイントークン。
 - [`PH-V08-012` #67](https://github.com/garchomp-game/create-game/issues/67) 比較可能なUI草案とライブラリ採否。
 - [`PH-V08-013` #70](https://github.com/garchomp-game/create-game/issues/70) 採用UI縦切り: 選択画面。
-- [`PH-V08-014` #76](https://github.com/garchomp-game/create-game/issues/76) 危険反転イベントの縦切り。
-- [`PH-V08-015` #77](https://github.com/garchomp-game/create-game/issues/77) 技能shadow ledgerと成果フィードバック。
+- [`PH-V08-014` #76](https://github.com/garchomp-game/create-game/issues/76) Charger衝突妨害による危険反転の単一candidate。
+- [`PH-V08-015` #77](https://github.com/garchomp-game/create-game/issues/77) candidate非依存の技能shadow ledgerと成果フィードバック。
 - [`PH-V08-016` #78](https://github.com/garchomp-game/create-game/issues/78) 強化選択の停止時間と頻度を計測する。
 - [`PH-V08-017` #79](https://github.com/garchomp-game/create-game/issues/79) Pulse / Spreadの武器教義ブランチ。
 - [`PH-V08-018` #80](https://github.com/garchomp-game/create-game/issues/80) 最大密度の視覚fixtureと警告音分離。
 - [`PH-V08-019` #81](https://github.com/garchomp-game/create-game/issues/81) 初心者・経験者の構造化プレイテスト。
 - [`PH-V08-020` #83](https://github.com/garchomp-game/create-game/issues/83) 緊張・緩和と難易度支援の設計契約。
+- [`PH-V08-021` #92](https://github.com/garchomp-game/create-game/issues/92) 通常強化の候補偏りと基礎ビルド保証。
+- [`PH-V08-022` #93](https://github.com/garchomp-game/create-game/issues/93) ボス攻撃文法と回復・反撃窓の比較。
+- [`PH-V08-023` #94](https://github.com/garchomp-game/create-game/issues/94) 敗因説明、実測near-miss、同条件再挑戦。
+- [`PH-V08-024` #95](https://github.com/garchomp-game/create-game/issues/95) Standard / Assist / Practice / Overloadの記録契約。
+- [`PH-V08-025` #97](https://github.com/garchomp-game/create-game/issues/97) 選択式・再プレイ可能な基本操作Training。
+- [`PH-V08-026` #98](https://github.com/garchomp-game/create-game/issues/98) 撃つ・避ける・取るの戦闘オブジェクト視覚言語。
 
 ## v0.9 3作戦キャンペーン検証
 
@@ -198,6 +208,7 @@ description: v0.4からv1.0までの目的と主要チケット。
 - [v0.7 最終遠征プロトタイプ](../../design/v07-first-expedition/)
 - [v0.7 実行計画](../v07-execution-plan/)
 - [v0.8 面白さの核の検証](../../design/core-promise-validation/)
+- [v0.8 実行計画](../v08-execution-plan/)
 - [UI・グラフィック再設計計画](../ui-visual-redesign-plan/)
 - [中長期作業計画](../gameplay-expansion-plan/)
 - [ゲームプレイ拡張設計](../../design/gameplay-expansion-blueprint/)
