@@ -160,7 +160,7 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-V08-010` | [#66](https://github.com/garchomp-game/create-game/issues/66) | 世界観と視覚テーマの決定 | P1 | Todo |
 | `PH-V08-011` | [#68](https://github.com/garchomp-game/create-game/issues/68) | UIプレゼンテーション境界とデザイントークン | P0 | branch実装済み、統合待ち |
 | `PH-V08-012` | [#67](https://github.com/garchomp-game/create-game/issues/67) | 比較可能なUI草案とライブラリ採否 | P1 | branch実装済み、統合待ち |
-| `PH-V08-013` | [#70](https://github.com/garchomp-game/create-game/issues/70) | 採用UI縦切り: 選択画面 | P1 | Draft PR #84、外部可読性確認と採否待ち |
+| `PH-V08-013` | [#70](https://github.com/garchomp-game/create-game/issues/70) | 採用UI縦切り: 選択画面 | P1 | Draft PR #84、同一RC6比較手順を準備済み、外部採否待ち |
 | `PH-V08-014` | [#76](https://github.com/garchomp-game/create-game/issues/76) | 危険反転イベントの縦切り | P0 | Todo。Wave 1 |
 | `PH-V08-015` | [#77](https://github.com/garchomp-game/create-game/issues/77) | 技能shadow ledgerと成果フィードバック | P1 | Todo。Wave 2 |
 | `PH-V08-016` | [#78](https://github.com/garchomp-game/create-game/issues/78) | 強化選択の停止時間と頻度を計測する | P1 | Todo。Wave 1 |
