@@ -44,7 +44,7 @@ v0.8では機能量を増やす前に、Arena Coreの面白さの核を小さい
 | 1B | [#78](https://github.com/garchomp-game/create-game/issues/78) | 選択停止時間と再開事故を測れるか | #70のUI境界採否 | 計装がsimulation hashを変えず、原因別KPIを出せるか確認 |
 | 2 | [#77](https://github.com/garchomp-game/create-game/issues/77) | 技能成果と次ラン目標が理解を助けるか | #83、#76。既存event棚卸し済み | 3成果と1目標を、スコア加点なしで説明可能にする |
 | 3 | [#79](https://github.com/garchomp-game/create-game/issues/79) | 武器ごとに違う判断を1 branchで作れるか | #77で観測指標を固定 | 取得前後の照準、位置、標的優先の変化で採否 |
-| 4 | [#80](https://github.com/garchomp-game/create-game/issues/80) | 最大密度でも重要情報を読めるか | #66、#76 | 固定fixture、画像、警告音優先度、実GPU性能で採否 |
+| 4 | [#80](https://github.com/garchomp-game/create-game/issues/80) | 最大密度でも重要情報を読めるか | #66、#76。既存fixtureとaudio routeを監査済み | 固定fixture、画像、警告音優先度、実GPU性能で採否 |
 | 6 | [#81](https://github.com/garchomp-game/create-game/issues/81) | 初心者と経験者に学習・再挑戦が生まれるか | 各単独candidateの採否後 | RC6、単独candidate、統合候補を混ぜず最終判断 |
 
 Wave番号はGitHub Projectの依存順と合わせます。1Aと1Bは別branch、別rulesetまたは計測設定で進め、同時に実装できても同じ比較へ混ぜません。

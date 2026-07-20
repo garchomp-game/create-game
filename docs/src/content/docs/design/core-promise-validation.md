@@ -140,6 +140,8 @@ Issue: [PH-V08-018 #80](https://github.com/garchomp-game/create-game/issues/80)
 
 通常終盤、危険event、Commander、ボス第2段階の固定fixtureを作り、見た目と音の変更を同じ最大密度条件で比較します。
 
+現行fixture、描画順、音声routeの保証範囲と不足は[最大密度の可読性・警告音 事前監査](../maximum-density-readability-preflight/)へ整理しています。
+
 優先順位:
 
 1. プレイヤーの位置と移動可能領域。
