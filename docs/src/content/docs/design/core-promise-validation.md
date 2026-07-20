@@ -53,6 +53,18 @@ Issue: [PH-V08-020 #83](https://github.com/garchomp-game/create-game/issues/83)
 
 助言原文とArena Coreへの一次解釈は[外部ゲームデザイン助言メモ](../external-game-design-advice/)へ残します。[v0.8 Work再レビュー依頼](../../playtest/v08-work-design-review-request/)は提出時点の履歴であり、採用判断の正本は[#83](https://github.com/garchomp-game/create-game/issues/83)と本ページです。
 
+## 学習と視覚意味の切り分け
+
+Issue: [PH-V08-025 #97](https://github.com/garchomp-game/create-game/issues/97) / [PH-V08-026 #98](https://github.com/garchomp-game/create-game/issues/98)
+
+初見プレイでは再挑戦意欲と立ち回りの手応えが観測された一方、敗因と「撃つ・避ける・取る」の分類に理解負債が残りました。これを難度や敵密度の問題と即断せず、現行visualのまま学ぶ選択式TrainingをT1、Training後も誤認が残る場合だけ戦闘オブジェクトの視覚candidateをT2として分けます。
+
+- Trainingは強制導線にせず、RunRecord、PB、ランキング、報酬を更新しない。
+- T1は現行の当たり判定、敵弾、Pickup、強化UIを再利用し、説明不足だけを検証する。
+- T2は敵本体、敵弾、自機弾、XP、回復の意味だけを扱い、simulation、magnet、damage、dropを変えない。
+- #76のgameplay candidate、#84の選択UI、#94の敗因UIをT1 / T2へ混ぜない。
+- #81で`該当人数 / 到達人数`と`not-observed / not-reached / failure`を残す。
+
 ## 1. 危険反転
 
 Issue: [PH-V08-014 #76](https://github.com/garchomp-game/create-game/issues/76)
@@ -213,7 +225,7 @@ Issue: [PH-V08-019 #81](https://github.com/garchomp-game/create-game/issues/81)
 
 - 初心者: 説明なしの初回ランと、最小説明後の2回目を比較する。
 - 経験者: 現行Endlessまたは最終遠征を複数回経験した状態で比較する。
-- RC6、#76、#93、#94、#95、#92、#79、統合buildを別cellとして扱う。
+- RC6、#97 T1、#98 T2、#76、#93、#94、#95、#92、#79、統合buildを別cellとして扱う。
 - `not-observed`、`not-reached`、`failure`を分け、割合ではなく`該当人数 / 到達人数`を残す。
 - 両層でPulse / Spread、危険反転、敗因、再挑戦理由を確認する。
 - RunRecordと所感を匿名IDで対応させ、個人情報は保存しない。
@@ -232,14 +244,15 @@ Issue: [PH-V08-019 #81](https://github.com/garchomp-game/create-game/issues/81)
 
 1. v0.7 RC6をmainへ統合し、ゲームルール基準を固定する。
 2. #83の採用判断を正本へ同期し、#77、#93 Phase A、#94 Phase A、#95、#80 fixture骨格をsimulation非介入で分けて進める。
-3. #66の世界観とPR #84のUI採否はgameplay candidateと別経路で進める。
-4. #89統合とmain green後、#76のCharger衝突妨害だけを別ruleset / SHAで試す。
-5. #81の同一手順でRC6と#76を別cellとして人間評価し、判断を記録する。
-6. 必要な場合だけ#93のBoss runtime候補を#76と別buildで比較する。
-7. #95の記録分離後に#94の結果・再挑戦UXを接続する。
-8. #92通常強化と#79武器教義を別buildで個別評価する。
-9. #80で採用済み要素の最大密度表現を固定し、#81で統合buildを確認する。
-10. 人間検証を通った核だけをStage 1 / 5 / 10へ展開する。
+3. #97のT1を現行visualで独立実装し、#81でTraining後の無提示transferを観察する。誤認が残る場合だけ#98のT2へ進む。
+4. #66の世界観とPR #84のUI採否はgameplay candidateと別経路で進める。
+5. #89統合とmain green後、#76のCharger衝突妨害だけを別ruleset / SHAで試す。
+6. #81の同一手順でRC6と#76を別cellとして人間評価し、判断を記録する。
+7. 必要な場合だけ#93のBoss runtime候補を#76と別buildで比較する。
+8. #95の記録分離後に#94の結果・再挑戦UXを接続する。
+9. #92通常強化と#79武器教義を別buildで個別評価する。
+10. #80で採用済み要素の最大密度表現を固定し、#81で統合buildを確認する。
+11. 人間検証を通った核だけをStage 1 / 5 / 10へ展開する。
 
 ## 対象外
 

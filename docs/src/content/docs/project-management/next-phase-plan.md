@@ -95,6 +95,8 @@ v0.8はコンテンツ量を増やす前に、Arena Coreの面白さの核を単
 | --- | --- | --- |
 | 0A | [#83](https://github.com/garchomp-game/create-game/issues/83) | 採否済みの緊張・緩和、near-miss、難易度支援、公平性を正本文書へ同期 |
 | 0B | [#66](https://github.com/garchomp-game/create-game/issues/66) | 世界観、視覚言語、素材と音の境界 |
+| T1 | [#97](https://github.com/garchomp-game/create-game/issues/97) | 現行visualのTrainingで説明不足だけを切り分ける |
+| T2 | [#98](https://github.com/garchomp-game/create-game/issues/98) | T1後も誤認が残る場合だけ戦闘オブジェクト視覚を比較する |
 | 0C | [#77](https://github.com/garchomp-game/create-game/issues/77) | candidate非依存のsimulation facts、純粋ledger集計、Presenter境界 |
 | 0D | [#93](https://github.com/garchomp-game/create-game/issues/93) | ボス攻撃文法、回復窓、反撃窓の観測契約 |
 | 0E | [#94](https://github.com/garchomp-game/create-game/issues/94) | 主敗因、実測near-miss、同条件再挑戦の事実契約 |
@@ -149,4 +151,4 @@ UI境界[#68](https://github.com/garchomp-game/create-game/issues/68)、比較pr
 - 不可視攻撃、予告なし即死、操作不能、データ損失、重大性能劣化がない。
 - 新しいVersion Previewの実URLsmokeと採否記録がある。
 
-RC6はこの条件を満たしてmainへ統合済みです。#86の品質ゲートと#88のEncounter境界追補もmainへ統合し、最新SHAのfresh CIを取得しました。直近は#83の正本文書同期を閉じ、その後もPR #84のUI採否と#76のruntime candidateを分離して進めます。production trafficの切替は、採用するUIと配布SHAを固定してから別途行います。
+RC6はこの条件を満たしてmainへ統合済みです。#86の品質ゲート、#88のEncounter境界追補、PR #90のUI比較手順もmainへ統合し、最新SHAのfresh CIを取得しました。直近は#83の正本文書同期を閉じ、#97のTraining T1、必要な場合だけ#98の視覚T2を独立レーンで進めます。PR #84のUI採否と#76のruntime candidateも同じ比較buildへ混ぜません。production trafficの切替は、採用するUIと配布SHAを固定してから別途行います。

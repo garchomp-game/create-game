@@ -232,12 +232,12 @@ RC5は基準証跡として保持し、productionへ直接昇格しません。U
 
 ## 次の優先順
 
-公開ベータ基準、RC6の自動証跡、通常UIの欠陥特化採否、main統合は固定済みです。v0.8のWork再レビューも受領し、Issue #83で設計採否を完了しました。GitHub ActionsとEncounter境界追補はmainへ統合済みで、main `c7ec724`の3 job greenを取得してIssue #86 / #88を完了しました。
+公開ベータ基準、RC6の自動証跡、通常UIの欠陥特化採否、main統合は固定済みです。v0.8のWork再レビューも受領し、Issue #83で設計採否を完了しました。GitHub Actions、Encounter境界追補、UI比較手順はmainへ統合済みで、main `df61f14`の3 job greenを取得してIssue #86 / #88を完了しました。
 
-1. #83の採否をStarlight正本へ同期し、[#77](https://github.com/garchomp-game/create-game/issues/77)、[#80](https://github.com/garchomp-game/create-game/issues/80)、[#93](https://github.com/garchomp-game/create-game/issues/93)、[#94](https://github.com/garchomp-game/create-game/issues/94)、[#95](https://github.com/garchomp-game/create-game/issues/95)の責務と検証レーンを固定する。
-2. Draft PR #90 / #91を最新mainへ更新し、文書CIを取得して統合する。
+1. #83の採否と[#77](https://github.com/garchomp-game/create-game/issues/77)、[#80](https://github.com/garchomp-game/create-game/issues/80)、[#93](https://github.com/garchomp-game/create-game/issues/93)から[#95](https://github.com/garchomp-game/create-game/issues/95)、[#97](https://github.com/garchomp-game/create-game/issues/97)、[#98](https://github.com/garchomp-game/create-game/issues/98)の責務をPR #91で正本へ同期し、fresh CI後に統合する。
+2. #97のTraining T1を現行visual・recordなしの独立buildで実装し、#81で無提示transferを観察する。誤認が残る場合だけ#98の視覚T2へ進む。
 3. Draft PR [#84](https://github.com/garchomp-game/create-game/pull/84)のUI統合Previewを初心者・経験者のRC6 baseline観測へ使い、選択UIを採用、再調整、棄却のいずれかに決める。
-4. 最初のruntime candidateは[#76](https://github.com/garchomp-game/create-game/issues/76)のCharger衝突妨害だけとし、値、seed、raw-count閾値を事前登録してRC6とpaired比較する。
+4. #77の最小schemaと#80の最低fixtureを固定し、[#76](https://github.com/garchomp-game/create-game/issues/76)のCharger衝突妨害だけを値・seed・raw-count閾値の事前登録後にRC6とpaired比較する。
 5. [#81](https://github.com/garchomp-game/create-game/issues/81)を各単独candidateへ再利用し、#93のボス攻撃文法、#94の敗因・再挑戦、#95のdivision記録、#92の基礎ビルド保証、#79の武器教義を一括投入しない。
 6. 採用するv0.7配布SHAを固定し、production build、実URLsmoke、rollback確認後にtrafficを昇格する。
 

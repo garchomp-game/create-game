@@ -930,6 +930,7 @@ Work回答は設計入力であり、採用・保留・棄却はIssue #83と本d
 - 2400 HP有限回復candidateは0/6勝利で棄却済みのまま再投入しない。新しい回復候補が必要なら別Issue・別事前登録・別rulesetで扱う。
 
 この決定は設計・観測契約の同期であり、runtime、ruleset、RunRecord schema、production trafficを変更しない。
+
 ## 2026-07-20: Encounterの期限切れ要求と予告外fallbackを共通APIで拒否する
 
 決定: `PH-QA-002`で、telegraphからdeployment deadline以後へ時刻が飛んだ場合は配置要求を発行する前にtimeoutへし、fallback geometryは元の予告方向集合を増やさない場合だけ実行する。通常のEncounter数値、Commander、Boss、rulesetは変更しない。
@@ -942,3 +943,15 @@ Work回答は設計入力であり、採用・保留・棄却はIssue #83と本d
 - 厳密な永続LRUはこの問題と独立し、現行仕様もranked record最新時刻による上限と明記済みのためschemaを増やさない。
 
 検証: Director、Controller、structured spawnの専用fixture、65 files・424 passed / 2 skipped、型検査、配布build、release smoke 6件、Starlight 92ページを通過した。RC6 normal probeは従来と同じ3/6勝、両武器各1勝以上、同一event / world hashを維持した。
+
+## 2026-07-20: Trainingと戦闘オブジェクト視覚をT1 / T2へ分離する
+
+決定: 初見プレイで観測した敗因不明と敵弾・Pickupの誤認を、難度調整や一括redesignへ直結させない。[PH-V08-025 #97](https://github.com/garchomp-game/create-game/issues/97)で現行visualの選択式Training T1を先に検証し、Training後の無提示transferでも誤認が残る場合だけ[PH-V08-026 #98](https://github.com/garchomp-game/create-game/issues/98)の視覚T2へ進む。
+
+- T1は強制初回導線にせず、`recordPolicy: none`でPB、ランキング、履歴、報酬を更新しない。
+- T2のPhase A fixtureは先行できるが、runtime visualはT1の分母付き証拠を開始条件にする。
+- #76のgameplay、#84の選択UI、#94の敗因UIを同じ比較buildへ混ぜない。
+- T0 / T1 / T2を別SHAで固定し、#81へ分類、誤認、未到達、未観測をraw countで記録する。
+- TrainingはStage 1の代替ではなく、学んだ文法を通常勝利条件へ転移させる#64を別コンテンツとして維持する。
+
+この判断は初見2runの探索的証拠に基づく仮説であり、継続率や一般的な初心者行動の証明とは扱わない。
