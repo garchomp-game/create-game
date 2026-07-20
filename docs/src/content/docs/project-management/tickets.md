@@ -168,6 +168,7 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-V08-018` | [#80](https://github.com/garchomp-game/create-game/issues/80) | 最大密度の視覚fixtureと警告音分離 | P1 | Todo。Wave 4 |
 | `PH-V08-019` | [#81](https://github.com/garchomp-game/create-game/issues/81) | 初心者・経験者の構造化プレイテスト | P0 | Todo。Wave 6 QA |
 | `PH-V08-020` | [#83](https://github.com/garchomp-game/create-game/issues/83) | 緊張・緩和と難易度支援の設計契約 | P1 | 進行中。現行カーブ棚卸し済み、Work回答待ちのWave 0A |
+| `PH-V08-021` | [#92](https://github.com/garchomp-game/create-game/issues/92) | 通常強化の候補偏りと基礎ビルド保証 | P1 | Todo。#83 / #78後のWave 2B |
 
 ## 横断QA
 

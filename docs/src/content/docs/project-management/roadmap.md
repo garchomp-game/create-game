@@ -165,6 +165,7 @@ description: v0.4からv1.0までの目的と主要チケット。
 - [`PH-V08-018` #80](https://github.com/garchomp-game/create-game/issues/80) 最大密度の視覚fixtureと警告音分離。
 - [`PH-V08-019` #81](https://github.com/garchomp-game/create-game/issues/81) 初心者・経験者の構造化プレイテスト。
 - [`PH-V08-020` #83](https://github.com/garchomp-game/create-game/issues/83) 緊張・緩和と難易度支援の設計契約。
+- [`PH-V08-021` #92](https://github.com/garchomp-game/create-game/issues/92) 通常強化の候補偏りと基礎ビルド保証。
 
 ## v0.9 3作戦キャンペーン検証
 

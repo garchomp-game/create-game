@@ -94,9 +94,10 @@ v0.8はコンテンツ量を増やす前に、Arena Coreの面白さの核を縦
 | 2 | [#76](https://github.com/garchomp-game/create-game/issues/76) | 危険を敵へ返す危険反転event |
 | 3 | [#78](https://github.com/garchomp-game/create-game/issues/78) | 選択停止時間、頻度、再開硬直の計測 |
 | 4 | [#77](https://github.com/garchomp-game/create-game/issues/77) | 技能shadow ledgerと次ランの目標 |
-| 5 | [#79](https://github.com/garchomp-game/create-game/issues/79) | Pulse / Spreadの武器教義branch |
-| 6 | [#80](https://github.com/garchomp-game/create-game/issues/80) | 最大密度の視覚fixtureと警告音分離 |
-| 7 | [#81](https://github.com/garchomp-game/create-game/issues/81) | baseline、単独candidate、統合候補の構造化playtest |
+| 5 | [#92](https://github.com/garchomp-game/create-game/issues/92) | 通常強化の候補偏りと基礎カテゴリ保証の採否 |
+| 6 | [#79](https://github.com/garchomp-game/create-game/issues/79) | Pulse / Spreadの武器教義branch |
+| 7 | [#80](https://github.com/garchomp-game/create-game/issues/80) | 最大密度の視覚fixtureと警告音分離 |
+| 8 | [#81](https://github.com/garchomp-game/create-game/issues/81) | baseline、単独candidate、統合候補の構造化playtest |
 
 [#77](https://github.com/garchomp-game/create-game/issues/77)は[#76](https://github.com/garchomp-game/create-game/issues/76)と既存eventだけからledgerを導出し、[#79](https://github.com/garchomp-game/create-game/issues/79)へ逆依存しません。[#81](https://github.com/garchomp-game/create-game/issues/81)はRC6 baseline、危険反転単独paired、v0.8統合後の3段階に分け、変更をまとめて一度に評価しません。
 
