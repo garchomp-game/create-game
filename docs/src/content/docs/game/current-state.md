@@ -230,12 +230,13 @@ RC5は基準証跡として保持し、productionへ直接昇格しません。U
 
 ## 次の優先順
 
-公開ベータ基準、RC6の自動証跡、通常UIの欠陥特化採否、main統合は固定済みです。次は表示candidateとv0.8設計レビューを別経路で進めます。GitHub Actions workflowはmainへ追加済みですが、2026-07-20の公式障害によりgreen証跡の取得だけが保留です。
+公開ベータ基準、RC6の自動証跡、通常UIの欠陥特化採否、main統合は固定済みです。v0.8のWork再レビューも受領し、Issue #83で設計採否を完了しました。GitHub Actions workflowはmainへ追加済みで、2026-07-20の公式障害は復旧しましたが、障害中の`startup_failure`をgreenとは扱わず最新SHAで再取得します。
 
-1. Draft PR [#84](https://github.com/garchomp-game/create-game/pull/84)のUI統合Previewを初心者・経験者のRC6 baseline観測へ使い、P0 / P1を分ける。
-2. [#83](https://github.com/garchomp-game/create-game/issues/83)のWork再レビューで、緊張と緩和、ボスphase、介入選択、難易度支援の境界を確認する。
-3. 選択UIを採用、再調整、棄却のいずれかに決め、#70とStarlightへ記録する。
-4. 採用するv0.7配布SHAを固定し、production build、実URLsmoke、rollback確認後にtrafficを昇格する。
-5. v0.8の面白さ検証を1仮説ずつ行う。通常強化の候補運は#92で現行、カテゴリ最低保証、通常bagから1案ずつ比較し、採用した核だけをStage 1 / 5 / 10へ展開する。
+1. #83の採否をStarlight正本へ同期し、[#77](https://github.com/garchomp-game/create-game/issues/77)、[#80](https://github.com/garchomp-game/create-game/issues/80)、[#93](https://github.com/garchomp-game/create-game/issues/93)、[#94](https://github.com/garchomp-game/create-game/issues/94)、[#95](https://github.com/garchomp-game/create-game/issues/95)の責務と検証レーンを固定する。
+2. 最新mainとDraft PR [#89](https://github.com/garchomp-game/create-game/pull/89) / [#91](https://github.com/garchomp-game/create-game/pull/91)でfresh CIを取得し、Encounter境界修正と文書同期をSHAへ結び付ける。
+3. Draft PR [#84](https://github.com/garchomp-game/create-game/pull/84)のUI統合Previewを初心者・経験者のRC6 baseline観測へ使い、選択UIを採用、再調整、棄却のいずれかに決める。
+4. 最初のruntime candidateは[#76](https://github.com/garchomp-game/create-game/issues/76)のCharger衝突妨害だけとし、値、seed、raw-count閾値を事前登録してRC6とpaired比較する。
+5. [#81](https://github.com/garchomp-game/create-game/issues/81)を各単独candidateへ再利用し、#93のボス攻撃文法、#94の敗因・再挑戦、#95のdivision記録、#92の基礎ビルド保証、#79の武器教義を一括投入しない。
+6. 採用するv0.7配布SHAを固定し、production build、実URLsmoke、rollback確認後にtrafficを昇格する。
 
 直近の詳細は[直近フェーズ](../../project-management/next-phase-plan/)と[v0.8 実行計画](../../project-management/v08-execution-plan/)、技術契約は[RC6の時計と記録規則](../../engineering/expedition-rc6-clock-and-ranking-adr/)、3作戦系列は[エクスペディション3作戦検証](../../design/expedition-campaign/)、表示改善は[UI・グラフィック再設計計画](../../project-management/ui-visual-redesign-plan/)を参照してください。

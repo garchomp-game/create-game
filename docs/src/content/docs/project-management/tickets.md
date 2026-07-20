@@ -161,21 +161,24 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-V08-011` | [#68](https://github.com/garchomp-game/create-game/issues/68) | UIプレゼンテーション境界とデザイントークン | P0 | branch実装済み、統合待ち |
 | `PH-V08-012` | [#67](https://github.com/garchomp-game/create-game/issues/67) | 比較可能なUI草案とライブラリ採否 | P1 | branch実装済み、統合待ち |
 | `PH-V08-013` | [#70](https://github.com/garchomp-game/create-game/issues/70) | 採用UI縦切り: 選択画面 | P1 | Draft PR #84、外部可読性確認と採否待ち |
-| `PH-V08-014` | [#76](https://github.com/garchomp-game/create-game/issues/76) | 危険反転イベントの縦切り | P0 | Todo。#83完了後のWave 1A |
-| `PH-V08-015` | [#77](https://github.com/garchomp-game/create-game/issues/77) | 技能shadow ledgerと成果フィードバック | P1 | 既存event棚卸し済み。#83 / #76待ちのWave 2 |
-| `PH-V08-016` | [#78](https://github.com/garchomp-game/create-game/issues/78) | 強化選択の停止時間と頻度を計測する | P1 | 二時計と責務を監査済み。#70採否待ちのWave 1B |
+| `PH-V08-014` | [#76](https://github.com/garchomp-game/create-game/issues/76) | Charger衝突妨害による危険反転（単一candidate） | P0 | candidate固定済み。値・seed・閾値の事前登録と共通観測基盤待ちのWave 1 |
+| `PH-V08-015` | [#77](https://github.com/garchomp-game/create-game/issues/77) | 技能shadow ledgerと成果フィードバック | P1 | 既存event棚卸し済み。candidate非依存の共通ledgerを先行するWave 0C |
+| `PH-V08-016` | [#78](https://github.com/garchomp-game/create-game/issues/78) | 強化選択の停止時間と頻度を計測する | P1 | 二時計と責務を監査済み。文書境界はWave 0H、runtimeは#70採否後 |
 | `PH-V08-017` | [#79](https://github.com/garchomp-game/create-game/issues/79) | Pulse / Spreadの武器教義ブランチ | P1 | Todo。Wave 3 |
-| `PH-V08-018` | [#80](https://github.com/garchomp-game/create-game/issues/80) | 最大密度の視覚fixtureと警告音分離 | P1 | Todo。Wave 4 |
-| `PH-V08-019` | [#81](https://github.com/garchomp-game/create-game/issues/81) | 初心者・経験者の構造化プレイテスト | P0 | Todo。Wave 6 QA |
-| `PH-V08-020` | [#83](https://github.com/garchomp-game/create-game/issues/83) | 緊張・緩和と難易度支援の設計契約 | P1 | 進行中。現行カーブ棚卸し済み、Work回答待ちのWave 0A |
+| `PH-V08-018` | [#80](https://github.com/garchomp-game/create-game/issues/80) | 最大密度の視覚fixtureと警告音分離 | P1 | candidate非依存のfixture骨格を先行できるWave 0G |
+| `PH-V08-019` | [#81](https://github.com/garchomp-game/create-game/issues/81) | 初心者・経験者の構造化プレイテスト | P0 | 単発の最終QAではなく各単独candidateで再利用する検証レーン。Wave 2から反復 |
+| `PH-V08-020` | [#83](https://github.com/garchomp-game/create-game/issues/83) | 緊張・緩和と難易度支援の設計契約 | P1 | Work回答を採否済み。Starlight正本同期中のWave 0A |
 | `PH-V08-021` | [#92](https://github.com/garchomp-game/create-game/issues/92) | 通常強化の候補偏りと基礎ビルド保証 | P1 | Todo。#83 / #78後のWave 2B |
+| `PH-V08-022` | [#93](https://github.com/garchomp-game/create-game/issues/93) | ボス攻撃文法と回復・反撃窓を比較可能にする | P1 | 攻撃文法と観測契約を先行するWave 0D。runtime候補は#76採否後 |
+| `PH-V08-023` | [#94](https://github.com/garchomp-game/create-game/issues/94) | 敗因説明・実測near-miss・即時再挑戦 | P1 | 事実定義と記録契約を先行するWave 0E。表示実装は後続 |
+| `PH-V08-024` | [#95](https://github.com/garchomp-game/create-game/issues/95) | Standard / Assist / Practice / Overloadの記録契約 | P0 | division、modifier、PB分離、旧記録migrationを先に固定するWave 0F |
 
 ## 横断QA
 
 | ID | GitHub | チケット | 優先度 | 状態 |
 | --- | --- | --- | --- | --- |
-| `PH-QA-001` | [#86](https://github.com/garchomp-game/create-game/issues/86) | GitHub Actionsの再現可能なPR品質ゲート | P1 | PR #87でmain統合済み。公式Actions障害復旧後のgreen証跡待ち |
-| `PH-QA-002` | [#88](https://github.com/garchomp-game/create-game/issues/88) | Encounter配置期限と予告方向の境界を固定する | P1 | Draft PR #89。全ローカル回帰済み、CI復旧待ち |
+| `PH-QA-001` | [#86](https://github.com/garchomp-game/create-game/issues/86) | GitHub Actionsの再現可能なPR品質ゲート | P1 | PR #87でmain統合済み。公式障害は復旧、最新main / PR SHAのfresh green取得待ち |
+| `PH-QA-002` | [#88](https://github.com/garchomp-game/create-game/issues/88) | Encounter配置期限と予告方向の境界を固定する | P1 | Draft PR #89。全ローカル回帰済み、fresh CIとmerge判断待ち |
 
 旧`PH-V08-001`から`006`の保存、解放、チャレンジ、熟練度、プロフィール、アカウント判断は削除していません。RC6、v0.8の面白さ検証、Stage 1 / 5 / 10の進行契約が固まるまでLater backlogへ延期します。
 
