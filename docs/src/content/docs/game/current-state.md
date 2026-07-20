@@ -237,7 +237,7 @@ RC5は基準証跡として保持し、productionへ直接昇格しません。U
 
 公開ベータ基準、RC6の自動証跡、通常UIの欠陥特化採否、main統合は固定済みです。v0.8のWork再レビューも受領し、Issue #83で設計採否を完了しました。GitHub Actions、Encounter境界追補、UI比較手順、v0.8正本同期はmainへ統合済みで、基準main `b561aa6aeca5`の3 job greenを取得しています。
 
-1. #97のTraining T1実装候補をDraft PRとPreviewへ固定し、#81で介助なし完了と無提示transferをraw countで観察する。
+1. PR #99の3 CI jobがgreenであるTraining T1候補をPreviewへ固定し、#81で介助なし完了と無提示transferをraw countで観察する。
 2. T1後も敵弾、XP、REPAIRの誤認が残る場合だけ#98の視覚T2へ進む。誤認が解消した場合はruntime変更不要と判断する。
 3. Draft PR [#84](https://github.com/garchomp-game/create-game/pull/84)のUI統合Previewを初心者・経験者のRC6 baseline観測へ使い、選択UIを採用、再調整、棄却のいずれかに決める。
 4. #77の最小schemaと#80の最低fixtureを固定し、[#76](https://github.com/garchomp-game/create-game/issues/76)のCharger衝突妨害だけを値・seed・raw-count閾値の事前登録後にRC6とpaired比較する。
