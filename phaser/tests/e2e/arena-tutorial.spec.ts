@@ -7,6 +7,7 @@ test.describe("basic Training", () => {
   }) => {
     test.setTimeout(150_000);
     await gotoArena(page);
+    await seedExistingRunRecord(page);
     const before = await readLocalState(page);
 
     await clickCanvasLogical(page, 480, 393);
@@ -91,6 +92,7 @@ test.describe("basic Training", () => {
     page,
   }) => {
     await gotoArena(page);
+    await seedExistingRunRecord(page);
     const before = await readLocalState(page);
 
     await page.keyboard.press("ArrowDown");
@@ -134,6 +136,71 @@ async function gotoArena(page: Page): Promise<void> {
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
     .toBe("title");
+}
+
+async function seedExistingRunRecord(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
+    const context = debug?.getSnapshot().runContext;
+    const profile = debug?.getProfile();
+    if (!context || !profile) throw new Error("Run context is not available.");
+    const record = {
+      schemaVersion: 1,
+      id: "training-isolation-existing-run",
+      profileId: profile.id,
+      capturedAt: "2026-07-20T10:00:00.000Z",
+      modeId: context.modeId,
+      stageId: context.stageId,
+      difficultyId: context.difficultyId,
+      weaponId: "pulse",
+      modifierIds: ["auto-fire:on"],
+      appVersion: context.appVersion,
+      rulesetVersion: context.rulesetVersion,
+      buildCommit: context.buildCommit,
+      seed: 20260720,
+      seedCategory: context.seedCategory,
+      runOrigin: "manual",
+      rankEligibility: { eligible: true, reasons: [] },
+      elapsed: 180,
+      score: 8_000,
+      level: 12,
+      kills: 500,
+      damageTaken: 320,
+      lastDamageSource: {
+        kind: "contact",
+        enemyId: "enemy-existing",
+        enemyType: "chaser",
+      },
+      shotsFired: 1_600,
+      hpRecovered: 240,
+      upgradesChosen: 11,
+      upgradeRanks: {
+        rapidFire: 4,
+        swiftStep: 2,
+        vitalCore: 1,
+        overdriveRounds: 2,
+        splitShot: 0,
+        piercingRounds: 1,
+      },
+    };
+    localStorage.setItem(
+      "arena-core.run-records.v2",
+      JSON.stringify({
+        schemaVersion: 2,
+        history: [record],
+        rankings: [record],
+      }),
+    );
+  });
+  await page.reload();
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getRunHistory().length))
+    .toBe(1);
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getRunRankingRecords().length),
+    )
+    .toBe(1);
 }
 
 async function expectTrainingStep(

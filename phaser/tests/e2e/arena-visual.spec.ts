@@ -1,7 +1,19 @@
 import { expect, type Page, test } from "@playwright/test";
 import { SIMULATION_CONFIG } from "../../src/config/gameConfig";
 import type { BossAttackId } from "../../src/domain/types";
+import type { TutorialStepId } from "../../src/domain/tutorial";
 import { probeWebglCanvas } from "./webglCanvasProbe";
+
+const TRAINING_VISUAL_FIXTURES = [
+  { stepId: "move", snapshotName: "move" },
+  { stepId: "navigate", snapshotName: "navigate" },
+  { stepId: "aimAndKill", snapshotName: "aim" },
+  { stepId: "collectXp", snapshotName: "xp" },
+  { stepId: "collectRepair", snapshotName: "repair" },
+] as const satisfies readonly {
+  stepId: TutorialStepId;
+  snapshotName: string;
+}[];
 
 async function gotoArena(page: Page): Promise<void> {
   await page.goto(`/?webglReadback=1`);
@@ -159,6 +171,117 @@ async function seedVisualRunRecords(page: Page): Promise<void> {
   await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
 }
 
+async function showTrainingPresentation(
+  page: Page,
+  targetStep: TutorialStepId,
+): Promise<void> {
+  await moveMouseToCanvasLogical(page, 480, 393);
+  await page.mouse.down();
+  await page.mouse.up();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.stepId,
+      ),
+    )
+    .toBe("move");
+
+  await page.evaluate((requestedStep) => {
+    const debug = window.__ARENA_DEBUG__;
+    if (!debug) throw new Error("Debug API is not available.");
+    const currentStep = () => debug.getSnapshot().tutorial?.stepId ?? null;
+    const stepFrame = (
+      move: { x: number; y: number },
+      aimWorld: { x: number; y: number } | null = null,
+      shootHeld = false,
+    ) => debug.step({ move, aimWorld, shootHeld }, 1 / 60);
+    const runUntilStepChanges = (
+      stepId: TutorialStepId,
+      maxFrames: number,
+      inputForFrame: () => {
+        move: { x: number; y: number };
+        aimWorld?: { x: number; y: number } | null;
+        shootHeld?: boolean;
+      },
+    ) => {
+      for (
+        let frame = 0;
+        frame < maxFrames && currentStep() === stepId;
+        frame += 1
+      ) {
+        const input = inputForFrame();
+        stepFrame(
+          input.move,
+          input.aimWorld ?? null,
+          input.shootHeld ?? false,
+        );
+      }
+      if (currentStep() === stepId) {
+        throw new Error(`Training fixture did not leave ${stepId}.`);
+      }
+    };
+
+    if (requestedStep !== "move") {
+      runUntilStepChanges("move", 120, () => ({
+        move: { x: 1, y: 0 },
+      }));
+    }
+    if (requestedStep === "navigate" || requestedStep === "move") return;
+
+    runUntilStepChanges("navigate", 360, () => {
+      const snapshot = debug.getSnapshot();
+      const target = snapshot.tutorial?.target?.position;
+      if (!target) throw new Error("Navigation target is unavailable.");
+      const yDifference = target.y - snapshot.player.y;
+      const xDifference = target.x - snapshot.player.x;
+      if (Math.abs(yDifference) > 8) {
+        return { move: { x: 0, y: Math.sign(yDifference) } };
+      }
+      return { move: { x: Math.sign(xDifference), y: 0 } };
+    });
+    if (requestedStep === "aimAndKill") return;
+
+    runUntilStepChanges("aimAndKill", 360, () => {
+      const target = debug.getSnapshot().tutorial?.target?.position;
+      if (!target) throw new Error("Enemy target is unavailable.");
+      return {
+        move: { x: 0, y: 0 },
+        aimWorld: target,
+        shootHeld: true,
+      };
+    });
+    if (requestedStep === "collectXp") return;
+
+    runUntilStepChanges("collectXp", 420, () => {
+      const snapshot = debug.getSnapshot();
+      const target = snapshot.tutorial?.target?.position;
+      if (!target) throw new Error("XP target is unavailable.");
+      const yDifference = target.y - snapshot.player.y;
+      const xDifference = target.x - snapshot.player.x;
+      if (Math.abs(yDifference) > 10) {
+        return { move: { x: 0, y: Math.sign(yDifference) } };
+      }
+      return { move: { x: Math.sign(xDifference), y: 0 } };
+    });
+
+    runUntilStepChanges("dodgeProjectile", 720, () => ({
+      move: { x: 0, y: -1 },
+    }));
+    if (requestedStep !== "collectRepair") {
+      throw new Error(`Unsupported Training visual fixture ${requestedStep}.`);
+    }
+  }, targetStep);
+
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.stepId,
+      ),
+    )
+    .toBe(targetStep);
+  await page.evaluate(() => window.__ARENA_DEBUG__?.setPaused(true));
+}
+
 test("matches the fixed title frame", async ({ page }) => {
   await gotoArena(page);
   const canvas = page.locator("canvas");
@@ -178,20 +301,26 @@ test("matches the fixed title frame", async ({ page }) => {
   });
 });
 
-test("keeps the first Training instruction clear of the HUD", async ({ page }) => {
-  await gotoArena(page);
-  await moveMouseToCanvasLogical(page, 480, 393);
-  await page.mouse.down();
-  await page.mouse.up();
-  await expect
-    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.stepId))
-    .toBe("move");
-  await page.evaluate(() => window.__ARENA_DEBUG__?.setPaused(true));
+for (const fixture of TRAINING_VISUAL_FIXTURES) {
+  test(`keeps the Training ${fixture.stepId} target clear of its instruction panel`, async ({
+    page,
+  }) => {
+    await gotoArena(page);
+    await showTrainingPresentation(page, fixture.stepId);
 
-  await expect(page.locator("canvas")).toHaveScreenshot("arena-training-move.png", {
-    maxDiffPixelRatio: 0.01,
+    await expect(page.locator("canvas")).toHaveScreenshot(
+      `arena-training-${fixture.snapshotName}.png`,
+      { maxDiffPixelRatio: 0.01 },
+    );
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(100);
+    await expect(page.locator("canvas")).toHaveScreenshot(
+      `arena-training-${fixture.snapshotName}-portrait.png`,
+      { maxDiffPixelRatio: 0.01 },
+    );
   });
-});
+}
 
 test("shows the observer auto pilot status without covering the HUD", async ({ page }) => {
   await gotoArena(page);
@@ -789,23 +918,6 @@ test("matches the portrait title frame without overflow", async ({ page }) => {
   await expect(canvas).toHaveScreenshot("arena-title-portrait.png", {
     maxDiffPixelRatio: 0.01,
   });
-});
-
-test("keeps the Training instruction readable in portrait", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await gotoArena(page);
-  await moveMouseToCanvasLogical(page, 480, 393);
-  await page.mouse.down();
-  await page.mouse.up();
-  await expect
-    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.stepId))
-    .toBe("move");
-  await page.evaluate(() => window.__ARENA_DEBUG__?.setPaused(true));
-
-  await expect(page.locator("canvas")).toHaveScreenshot(
-    "arena-training-move-portrait.png",
-    { maxDiffPixelRatio: 0.01 },
-  );
 });
 
 test("matches the landscape long-run HUD frame without label overlap", async ({ page }) => {

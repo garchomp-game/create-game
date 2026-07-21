@@ -49,6 +49,8 @@ const TRANSFER_REQUIRED_KILLS = 2;
 const TRANSFER_REQUIRED_PICKUPS = 1;
 
 type ControllerCheckpoint = {
+  // Checkpoints intentionally own World state only. Training steps must not
+  // consume RandomStreams because retries do not rewind their generators.
   world: WorldState;
   movementDistance: number;
   dodgePasses: number;

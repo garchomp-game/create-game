@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { SIMULATION_CONFIG } from "../config/gameConfig";
 import type { InputSnapshot } from "../domain/types";
-import { createRandomStreams } from "../math/random";
+import {
+  createRandomStreams,
+  RANDOM_STREAM_IDS,
+  type RandomStreamId,
+} from "../math/random";
 import { createWorld } from "../simulation/createWorld";
 import { stepWorld } from "../simulation/stepWorld";
 import { ArenaSession } from "./ArenaSession";
@@ -218,6 +222,55 @@ describe("ArenaSession", () => {
     expect(rightEvents).toEqual(leftEvents);
     expect(right.world).toEqual(left.world);
     expect(right.tutorialSnapshot).toEqual(left.tutorialSnapshot);
+  });
+
+  it("does not consume random streams while restoring a Training checkpoint", () => {
+    const session = new ArenaSession(SIMULATION_CONFIG);
+    session.start({
+      seed: 20260720,
+      weaponType: "pulse",
+      modeId: "training",
+      stageId: "basic-training",
+    });
+    const calls = Object.fromEntries(
+      RANDOM_STREAM_IDS.map((streamId) => [streamId, 0]),
+    ) as Record<RandomStreamId, number>;
+    for (const streamId of RANDOM_STREAM_IDS) {
+      const source = session.randomStreams[streamId];
+      session.randomStreams[streamId] = () => {
+        calls[streamId] += 1;
+        return source();
+      };
+    }
+
+    for (let index = 0; index < 120; index += 1) {
+      session.step(
+        { ...input, move: { x: 0, y: 0 }, shootHeld: false },
+        1 / 60,
+      );
+    }
+    session.world.state.hp = 0;
+    const retried = session.step(
+      { ...input, move: { x: 0, y: 0 }, shootHeld: false },
+      1 / 60,
+    );
+
+    expect(retried.events).toContainEqual({
+      type: "tutorial.step.retried",
+      stepId: "move",
+      retryCount: 1,
+    });
+    expect(session.tutorialSnapshot).toMatchObject({
+      stepId: "move",
+      retryCount: 1,
+    });
+    expect(calls).toEqual({
+      spawn: 0,
+      upgrade: 0,
+      drop: 0,
+      encounter: 0,
+      stageVariant: 0,
+    });
   });
 
   it("requires an active run before exposing state", () => {

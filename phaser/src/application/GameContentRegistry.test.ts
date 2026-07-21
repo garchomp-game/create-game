@@ -143,6 +143,22 @@ describe("GameContentRegistry", () => {
     );
   });
 
+  it("rejects zero-enemy waves in recorded Standard stages", () => {
+    const zeroEnemyStandard = cloneDefinitions();
+    zeroEnemyStandard.stages[1]!.difficulty!.waves[0]!.maxEnemies = 0;
+
+    expect(() => new GameContentRegistry(zeroEnemyStandard)).toThrow(
+      'Standard stage "final-expedition" must not declare a zero-enemy wave.',
+    );
+
+    expect(
+      new GameContentRegistry(GAME_CONTENT_DEFINITIONS).resolveRun(
+        "training",
+        "basic-training",
+      ).stage.difficulty?.waves[0]?.maxEnemies,
+    ).toBe(0);
+  });
+
   it("rejects an extra XP cap below its stage base requirement", () => {
     const invalidProgression = cloneDefinitions();
     invalidProgression.stages[0]!.progression = {

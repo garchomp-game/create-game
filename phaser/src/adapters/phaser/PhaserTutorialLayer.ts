@@ -2,6 +2,13 @@ import * as Phaser from "phaser";
 import type { SimulationConfig, WorldState } from "../../domain/types";
 import type { ArenaTutorialViewModel } from "../../presentation/ArenaTutorialPresenter";
 
+const TUTORIAL_PANEL_BOUNDS = {
+  x: 130,
+  y: 446,
+  width: 700,
+  height: 78,
+} as const;
+
 export class PhaserTutorialLayer {
   private readonly graphics: Phaser.GameObjects.Graphics;
   private readonly eyebrowText: Phaser.GameObjects.Text;
@@ -32,10 +39,8 @@ export class PhaserTutorialLayer {
     if (!view || !visible) return;
 
     const panel = {
-      x: 130,
-      y: 104,
-      width: this.simulationConfig.arena.width - 260,
-      height: 78,
+      ...TUTORIAL_PANEL_BOUNDS,
+      width: this.simulationConfig.arena.width - TUTORIAL_PANEL_BOUNDS.x * 2,
     };
     this.graphics.fillStyle(0x020617, 0.9);
     this.graphics.fillRoundedRect(panel.x, panel.y, panel.width, panel.height, 6);
