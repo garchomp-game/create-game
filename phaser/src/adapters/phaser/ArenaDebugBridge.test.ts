@@ -56,6 +56,7 @@ function createApi(): ArenaDebugApi {
     setObstacleFrictionFixture: vi.fn(),
     setHealPickupFixture: vi.fn(),
     setOffscreenEnemyIndicatorFixture: vi.fn(),
+    loadCaptureScenario: vi.fn(),
     step: vi.fn(),
   } as unknown as ArenaDebugApi;
 }

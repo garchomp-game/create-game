@@ -20,6 +20,7 @@ import {
   ArenaDebugController,
   type ArenaDebugControllerDependencies,
 } from "./ArenaDebugController";
+import { ARENA_CAPTURE_SCENARIOS } from "./ArenaCaptureScenarios";
 
 describe("ArenaDebugController", () => {
   it("owns debug mutation, soak protection, snapshot, and API state", () => {
@@ -98,6 +99,33 @@ describe("ArenaDebugController", () => {
       difficultyElapsed: 0,
     });
   });
+
+  it("loads a shared capture scenario and exposes its observation ports", () => {
+    const { controller } = createFixture({
+      modeId: "expedition",
+      stageId: "final-expedition",
+    });
+    const api = controller.createApi();
+
+    expect(api.loadCaptureScenario("rc6-control")).toBe(true);
+    expect(api.getSnapshot()).toMatchObject({
+      captureScenario: {
+        id: "rc6-control",
+        layers: ARENA_CAPTURE_SCENARIOS["rc6-control"].expectedLayers,
+      },
+      audioRouting: {
+        requested: [],
+        played: [],
+        suppressed: [],
+      },
+    });
+
+    api.setElapsed(422);
+    expect(api.getSnapshot().captureScenario).toBeNull();
+    expect(api.loadCaptureScenario("rc6-control")).toBe(true);
+    controller.resetRun();
+    expect(api.getSnapshot().captureScenario).toBeNull();
+  });
 });
 
 function createFixture(run: { modeId?: string; stageId?: string } = {}) {
@@ -144,6 +172,11 @@ function createFixture(run: { modeId?: string; stageId?: string } = {}) {
       screenFlashAlpha: 0,
     }),
     getAudioCues: () => [],
+    getAudioRoutingSnapshot: () => ({
+      requested: [],
+      played: [],
+      suppressed: [],
+    }),
     getMusicSnapshot: () => ({
       loaded: false,
       playing: false,
