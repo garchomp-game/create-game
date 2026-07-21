@@ -63,6 +63,7 @@ ArenaScene
 | visual | move / navigate / aim / XP / REPAIRを960 x 540と390 x 844で固定。課題対象と4障害物を説明パネルが隠さない |
 | 全Playwright | 3 shard合計83 passed / 1 skipped。skipは明示opt-inの15分soak |
 | Starlight build | 101 pages、pass |
+| Version Preview smoke | meta、debug hook非公開、設定、ランキング、履歴、自然終了記録、リトライ、Pause、Expedition選択、公開情報を確認。console / page / request / HTTP error 0 |
 | GitHub Actions | 最終candidate SHAに紐づくPhaser quality、Starlight build、Browser release smokeをPR #99で確認する |
 
 初回全件実行で見つけたfocus順の旧期待値と、並列時の壁時計timeoutは修正しました。2026-07-21の追補では、Workレビューで見つかった説明パネル遮蔽、Firefox Training導線、非空記録、Standard catalog、checkpoint乱数契約をそれぞれ独立fixtureで固定しています。
