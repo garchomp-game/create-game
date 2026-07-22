@@ -310,6 +310,7 @@ const encounterMetricsSchema = z.object({
       spawned: z.number().int().nonnegative(),
       telegraphs: z.number().int().nonnegative(),
       charges: z.number().int().nonnegative(),
+      killedBeforeTelegraph: z.number().int().nonnegative().default(0),
       playerHits: z.number().int().nonnegative(),
       avoided: z.number().int().nonnegative(),
       obstacleInterruptions: z.number().int().nonnegative(),
