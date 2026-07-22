@@ -232,13 +232,14 @@ RC5は基準証跡として保持し、productionへ直接昇格しません。U
 
 ## 次の優先順
 
-公開ベータ基準、RC6の自動証跡、通常UIの欠陥特化採否、main統合は固定済みです。v0.8のWork再レビューも受領し、Issue #83で設計採否を完了しました。GitHub Actions、Encounter境界追補、UI比較手順はmainへ統合済みで、main `df61f14`の3 job greenを取得してIssue #86 / #88を完了しました。
+公開ベータ基準、RC6の自動証跡、通常UIの欠陥特化採否、main統合は固定済みです。GitHub Actions、Encounter境界追補、UI比較手順に加え、Run Fact Kernelと最大密度fixture骨格をmain `f19889b`まで統合しました。2026-07-22の批判的レビューでは、現行コアを維持しつつ、未検証の危険反転をcontrol観測より先に実装しない判断へ更新しました。
 
-1. #83の採否と[#77](https://github.com/garchomp-game/create-game/issues/77)、[#80](https://github.com/garchomp-game/create-game/issues/80)、[#93](https://github.com/garchomp-game/create-game/issues/93)から[#95](https://github.com/garchomp-game/create-game/issues/95)、[#97](https://github.com/garchomp-game/create-game/issues/97)、[#98](https://github.com/garchomp-game/create-game/issues/98)の責務をPR #91で正本へ同期し、fresh CI後に統合する。
-2. #97のTraining T1を現行visual・recordなしの独立buildで実装し、#81で無提示transferを観察する。誤認が残る場合だけ#98の視覚T2へ進む。
-3. Draft PR [#84](https://github.com/garchomp-game/create-game/pull/84)のUI統合Previewを初心者・経験者のRC6 baseline観測へ使い、選択UIを採用、再調整、棄却のいずれかに決める。
-4. #77の最小schemaと#80の最低fixtureを固定し、[#76](https://github.com/garchomp-game/create-game/issues/76)のCharger衝突妨害だけを値・seed・raw-count閾値の事前登録後にRC6とpaired比較する。
-5. [#81](https://github.com/garchomp-game/create-game/issues/81)を各単独candidateへ再利用し、#93のボス攻撃文法、#94の敗因・再挑戦、#95のdivision記録、#92の基礎ビルド保証、#79の武器教義を一括投入しない。
-6. 採用するv0.7配布SHAを固定し、production build、実URLsmoke、rollback確認後にtrafficを昇格する。
+1. #97のTraining T1を現行visual・recordなしで維持し、#81でT0 / T1を分けた事前教材なしのEndlessを死亡または90秒まで観察する。誤認が残る場合だけ#98の視覚T2へ進む。
+2. 必須run後に5分の自由選択を置き、EndlessとExpeditionが別の再挑戦理由を作れているか観察する。
+3. #78の選択wall-clock、#93のBoss / recovery shadow、#76のCharger control viabilityをsimulation非介入で分けて整える。
+4. #94 Phase Aの主敗因、進捗、再挑戦contextを純粋ViewModelとして固定し、閾値未登録のnear-missは表示しない。
+5. Charger control viabilityを通過した場合だけ、[#76](https://github.com/garchomp-game/create-game/issues/76)の衝突妨害を値・seed・raw-count閾値の事前登録後に別rulesetで比較する。
+6. Draft PR [#84](https://github.com/garchomp-game/create-game/pull/84)の選択UIは#78の計測と人間比較を揃えて採用、再調整、棄却を決める。
+7. 採用するv0.7配布SHAを固定し、production build、実URLsmoke、rollback確認後にtrafficを昇格する。
 
-直近の詳細は[直近フェーズ](../../project-management/next-phase-plan/)と[v0.8 実行計画](../../project-management/v08-execution-plan/)、技術契約は[RC6の時計と記録規則](../../engineering/expedition-rc6-clock-and-ranking-adr/)、3作戦系列は[エクスペディション3作戦検証](../../design/expedition-campaign/)、表示改善は[UI・グラフィック再設計計画](../../project-management/ui-visual-redesign-plan/)を参照してください。
+採否の理由は[v0.8 批判的レビューの採用判断](../../design/v08-critical-review-adoption/)、直近の詳細は[直近フェーズ](../../project-management/next-phase-plan/)と[v0.8 実行計画](../../project-management/v08-execution-plan/)、技術契約は[RC6の時計と記録規則](../../engineering/expedition-rc6-clock-and-ranking-adr/)、3作戦系列は[エクスペディション3作戦検証](../../design/expedition-campaign/)、表示改善は[UI・グラフィック再設計計画](../../project-management/ui-visual-redesign-plan/)を参照してください。

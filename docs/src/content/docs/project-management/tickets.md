@@ -161,18 +161,18 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-V08-011` | [#68](https://github.com/garchomp-game/create-game/issues/68) | UIプレゼンテーション境界とデザイントークン | P0 | branch実装済み、統合待ち |
 | `PH-V08-012` | [#67](https://github.com/garchomp-game/create-game/issues/67) | 比較可能なUI草案とライブラリ採否 | P1 | branch実装済み、統合待ち |
 | `PH-V08-013` | [#70](https://github.com/garchomp-game/create-game/issues/70) | 採用UI縦切り: 選択画面 | P1 | Draft PR #84。同一RC6比較手順はmain統合済み、外部可読性確認と採否待ち |
-| `PH-V08-014` | [#76](https://github.com/garchomp-game/create-game/issues/76) | Charger衝突妨害による危険反転（単一candidate） | P0 | candidate固定済み。値・seed・閾値の事前登録と共通観測基盤待ちのWave 1 |
+| `PH-V08-014` | [#76](https://github.com/garchomp-game/create-game/issues/76) | Charger control viabilityと衝突妨害candidate | P0 | 先に予告前撃破、突進、妨害、回復をcontrolで分離。viability通過後だけWave 1 |
 | `PH-V08-015` | [#77](https://github.com/garchomp-game/create-game/issues/77) | 技能shadow ledgerと成果フィードバック | P1 | PR #102をmainへ統合しPhase 0完了。Presenter、容量上限付きsummary、固有fact接続は後続 |
 | `PH-V08-016` | [#78](https://github.com/garchomp-game/create-game/issues/78) | 強化選択の停止時間と頻度を計測する | P1 | 二時計と責務を監査済み。文書境界はWave 0H、runtimeは#70採否後 |
 | `PH-V08-017` | [#79](https://github.com/garchomp-game/create-game/issues/79) | Pulse / Spreadの武器教義ブランチ | P1 | Todo。Wave 3 |
 | `PH-V08-018` | [#80](https://github.com/garchomp-game/create-game/issues/80) | 最大密度の視覚fixtureと警告音分離 | P1 | PR #103をmainへ統合し共通skeleton完了。最大密度scenarioと警告優先度は後続 |
-| `PH-V08-019` | [#81](https://github.com/garchomp-game/create-game/issues/81) | 初心者・経験者の構造化プレイテスト | P0 | 単発の最終QAではなく各単独candidateで再利用する検証レーン。Wave 2から反復 |
-| `PH-V08-020` | [#83](https://github.com/garchomp-game/create-game/issues/83) | 緊張・緩和と難易度支援の設計契約 | P1 | 設計判断済み。PR #91の正本同期と統合で完了するWave 0A |
+| `PH-V08-019` | [#81](https://github.com/garchomp-game/create-game/issues/81) | 初心者・経験者の構造化プレイテスト | P0 | T0 / T1の90秒transferと必須run後5分自由選択を含む反復検証レーン |
+| `PH-V08-020` | [#83](https://github.com/garchomp-game/create-game/issues/83) | 緊張・緩和と難易度支援の設計契約 | P1 | 設計判断と正本同期をmainへ統合済み。2026-07-22の採否記録で補足 |
 | `PH-V08-021` | [#92](https://github.com/garchomp-game/create-game/issues/92) | 通常強化の候補偏りと基礎ビルド保証 | P1 | Todo。#83 / #78後のWave 2B |
 | `PH-V08-022` | [#93](https://github.com/garchomp-game/create-game/issues/93) | ボス攻撃文法と回復・反撃窓を比較可能にする | P1 | 攻撃文法と観測契約を先行するWave 0D。runtime候補は#76採否後 |
 | `PH-V08-023` | [#94](https://github.com/garchomp-game/create-game/issues/94) | 敗因説明・実測near-miss・即時再挑戦 | P1 | 事実定義と記録契約を先行するWave 0E。表示実装は後続 |
-| `PH-V08-024` | [#95](https://github.com/garchomp-game/create-game/issues/95) | Standard / Assist / Practice / Overloadの記録契約 | P0 | division、modifier、PB分離、旧記録migrationを先に固定するWave 0F |
-| `PH-V08-025` | [#97](https://github.com/garchomp-game/create-game/issues/97) | 選択式・再プレイ可能な基本操作Training | P1 | T1を現行visual・recordなしで独立実装し、#81でtransferを確認 |
+| `PH-V08-024` | [#95](https://github.com/garchomp-game/create-game/issues/95) | mode、modifier、記録policy、比較eligibility | P0 | 単一division序列にせず、PB分離と旧記録migrationを先に固定するWave 0F |
+| `PH-V08-025` | [#97](https://github.com/garchomp-game/create-game/issues/97) | 選択式・再プレイ可能な基本操作Training | P1 | T1を現行visual・recordなしで固定済み。#81で事前教材なし90秒transferを確認 |
 | `PH-V08-026` | [#98](https://github.com/garchomp-game/create-game/issues/98) | 撃つ・避ける・取るの戦闘オブジェクト視覚言語 | P1 | Phase A fixtureは先行可。runtime T2は#97のT1結果で誤認が残る場合だけ |
 
 ## 横断QA
