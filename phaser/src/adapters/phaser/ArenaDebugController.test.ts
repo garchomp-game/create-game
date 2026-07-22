@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { ArenaSession } from "../../application/ArenaSession";
 import { AutoPilotController } from "../../application/AutoPilotController";
+import { createEmptyChoiceInteractionReport } from "../../application/ChoiceInteractionMonitor";
 import { PerformanceMonitor } from "../../application/PerformanceMonitor";
 import { RunLifecycleController } from "../../application/RunLifecycleController";
 import { SIMULATION_CONFIG } from "../../config/gameConfig";
@@ -184,6 +185,7 @@ function createFixture(run: { modeId?: string; stageId?: string } = {}) {
       volume: 0,
       muted: false,
     }),
+    getChoiceInteractionReport: () => createEmptyChoiceInteractionReport(),
     clearTransientInput: vi.fn(),
     recordResult: (result) => {
       recorded.push(result);
