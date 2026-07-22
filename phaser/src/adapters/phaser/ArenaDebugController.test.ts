@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { ArenaSession } from "../../application/ArenaSession";
 import { AutoPilotController } from "../../application/AutoPilotController";
 import { createEmptyChoiceInteractionReport } from "../../application/ChoiceInteractionMonitor";
+import { createEmptyBossShadowReport } from "../../application/BossEncounterShadowMonitor";
 import { PerformanceMonitor } from "../../application/PerformanceMonitor";
 import { RunLifecycleController } from "../../application/RunLifecycleController";
 import { SIMULATION_CONFIG } from "../../config/gameConfig";
@@ -186,6 +187,7 @@ function createFixture(run: { modeId?: string; stageId?: string } = {}) {
       muted: false,
     }),
     getChoiceInteractionReport: () => createEmptyChoiceInteractionReport(),
+    getBossShadowReport: () => createEmptyBossShadowReport(),
     clearTransientInput: vi.fn(),
     recordResult: (result) => {
       recorded.push(result);

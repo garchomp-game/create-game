@@ -6,6 +6,7 @@ import { createRandomStreams } from "../../math/random";
 import { getWaveBand } from "../../simulation/waveDirector";
 import { createArenaRunExport } from "./ArenaRunExport";
 import { createEmptyChoiceInteractionReport } from "../../application/ChoiceInteractionMonitor";
+import { createEmptyBossShadowReport } from "../../application/BossEncounterShadowMonitor";
 
 describe("createArenaRunExport", () => {
   it("builds a detached development export from the current world", () => {
@@ -36,6 +37,11 @@ describe("createArenaRunExport", () => {
         schemaVersion: 1,
         samples: [],
         summary: { selectedCount: 0 },
+      },
+      bossShadow: {
+        schemaVersion: 1,
+        state: "not-reached",
+        reason: "bossNotSpawned",
       },
       elapsed: 12,
       difficultyElapsed: 12,
@@ -107,6 +113,7 @@ function createTestInput(world: WorldState) {
       feedback: { averageMs: 0.04, maxMs: 0.2 },
     },
     choiceInteraction: createEmptyChoiceInteractionReport(),
+    bossShadow: createEmptyBossShadowReport(),
     lastEvents: [{ type: "game.started" as const }],
   };
 }

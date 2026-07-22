@@ -31,6 +31,7 @@ import type {
 } from "../phaser/ArenaDebugBridge";
 import type { ArenaRenderPerformanceSnapshot } from "../phaser/PhaserArenaRenderer";
 import type { ChoiceInteractionReport } from "../../application/ChoiceInteractionMonitor";
+import type { BossShadowReport } from "../../domain/bossShadow";
 
 export type CreateArenaRunExportInput = {
   capturedAt: string;
@@ -46,6 +47,7 @@ export type CreateArenaRunExportInput = {
   performance: ArenaPerformanceSnapshot;
   renderPerformance: ArenaRenderPerformanceSnapshot;
   choiceInteraction: ChoiceInteractionReport;
+  bossShadow: BossShadowReport;
   lastEvents: readonly GameEvent[];
 };
 
@@ -79,6 +81,7 @@ export function createArenaRunExport(input: CreateArenaRunExportInput): ArenaRun
     performance: { ...input.performance },
     renderPerformance: structuredClone(input.renderPerformance),
     choiceInteraction: structuredClone(input.choiceInteraction),
+    bossShadow: structuredClone(input.bossShadow),
     elapsed: world.state.elapsed,
     difficultyElapsed,
     wave: { ...getWaveBand(input.runConfig, difficultyElapsed) },
