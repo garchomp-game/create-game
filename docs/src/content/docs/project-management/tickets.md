@@ -162,10 +162,10 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-V08-012` | [#67](https://github.com/garchomp-game/create-game/issues/67) | 比較可能なUI草案とライブラリ採否 | P1 | branch実装済み、統合待ち |
 | `PH-V08-013` | [#70](https://github.com/garchomp-game/create-game/issues/70) | 採用UI縦切り: 選択画面 | P1 | Draft PR #84。同一RC6比較手順はmain統合済み、外部可読性確認と採否待ち |
 | `PH-V08-014` | [#76](https://github.com/garchomp-game/create-game/issues/76) | Charger衝突妨害による危険反転（単一candidate） | P0 | candidate固定済み。値・seed・閾値の事前登録と共通観測基盤待ちのWave 1 |
-| `PH-V08-015` | [#77](https://github.com/garchomp-game/create-game/issues/77) | 技能shadow ledgerと成果フィードバック | P1 | 既存event棚卸し済み。candidate非依存の共通ledgerを先行するWave 0C |
+| `PH-V08-015` | [#77](https://github.com/garchomp-game/create-game/issues/77) | 技能shadow ledgerと成果フィードバック | P1 | PR #102をmainへ統合しPhase 0完了。Presenter、容量上限付きsummary、固有fact接続は後続 |
 | `PH-V08-016` | [#78](https://github.com/garchomp-game/create-game/issues/78) | 強化選択の停止時間と頻度を計測する | P1 | 二時計と責務を監査済み。文書境界はWave 0H、runtimeは#70採否後 |
 | `PH-V08-017` | [#79](https://github.com/garchomp-game/create-game/issues/79) | Pulse / Spreadの武器教義ブランチ | P1 | Todo。Wave 3 |
-| `PH-V08-018` | [#80](https://github.com/garchomp-game/create-game/issues/80) | 最大密度の視覚fixtureと警告音分離 | P1 | candidate非依存のfixture骨格を先行できるWave 0G |
+| `PH-V08-018` | [#80](https://github.com/garchomp-game/create-game/issues/80) | 最大密度の視覚fixtureと警告音分離 | P1 | PR #103をmainへ統合し共通skeleton完了。最大密度scenarioと警告優先度は後続 |
 | `PH-V08-019` | [#81](https://github.com/garchomp-game/create-game/issues/81) | 初心者・経験者の構造化プレイテスト | P0 | 単発の最終QAではなく各単独candidateで再利用する検証レーン。Wave 2から反復 |
 | `PH-V08-020` | [#83](https://github.com/garchomp-game/create-game/issues/83) | 緊張・緩和と難易度支援の設計契約 | P1 | 設計判断済み。PR #91の正本同期と統合で完了するWave 0A |
 | `PH-V08-021` | [#92](https://github.com/garchomp-game/create-game/issues/92) | 通常強化の候補偏りと基礎ビルド保証 | P1 | Todo。#83 / #78後のWave 2B |
