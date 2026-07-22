@@ -30,6 +30,7 @@ import type {
   ArenaRunExport,
 } from "../phaser/ArenaDebugBridge";
 import type { ArenaRenderPerformanceSnapshot } from "../phaser/PhaserArenaRenderer";
+import type { BossShadowReport } from "../../domain/bossShadow";
 
 export type CreateArenaRunExportInput = {
   capturedAt: string;
@@ -44,6 +45,7 @@ export type CreateArenaRunExportInput = {
   world: WorldState;
   performance: ArenaPerformanceSnapshot;
   renderPerformance: ArenaRenderPerformanceSnapshot;
+  bossShadow: BossShadowReport;
   lastEvents: readonly GameEvent[];
 };
 
@@ -76,6 +78,7 @@ export function createArenaRunExport(input: CreateArenaRunExportInput): ArenaRun
     status: world.state.status,
     performance: { ...input.performance },
     renderPerformance: structuredClone(input.renderPerformance),
+    bossShadow: structuredClone(input.bossShadow),
     elapsed: world.state.elapsed,
     difficultyElapsed,
     wave: { ...getWaveBand(input.runConfig, difficultyElapsed) },

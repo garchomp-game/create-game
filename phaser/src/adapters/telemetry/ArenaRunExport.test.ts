@@ -5,6 +5,7 @@ import { createWorld } from "../../simulation/createWorld";
 import { createRandomStreams } from "../../math/random";
 import { getWaveBand } from "../../simulation/waveDirector";
 import { createArenaRunExport } from "./ArenaRunExport";
+import { createEmptyBossShadowReport } from "../../application/BossEncounterShadowMonitor";
 
 describe("createArenaRunExport", () => {
   it("builds a detached development export from the current world", () => {
@@ -30,6 +31,11 @@ describe("createArenaRunExport", () => {
       renderPerformance: {
         staticBackground: { drawCount: 1 },
         renderedFrames: 720,
+      },
+      bossShadow: {
+        schemaVersion: 1,
+        state: "not-reached",
+        reason: "bossNotSpawned",
       },
       elapsed: 12,
       difficultyElapsed: 12,
@@ -100,6 +106,7 @@ function createTestInput(world: WorldState) {
       screenHud: { averageMs: 0.12, maxMs: 0.6 },
       feedback: { averageMs: 0.04, maxMs: 0.2 },
     },
+    bossShadow: createEmptyBossShadowReport(),
     lastEvents: [{ type: "game.started" as const }],
   };
 }

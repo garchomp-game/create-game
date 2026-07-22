@@ -67,6 +67,7 @@ import type { FeedbackSnapshot } from "./PhaserFeedbackLayer";
 import type { MusicSnapshot } from "./PhaserMusicController";
 import type { SecondaryMenu } from "../../application/ArenaMenuTypes";
 import type { ArenaRenderPerformanceSnapshot } from "./PhaserArenaRenderer";
+import type { BossShadowReport } from "../../domain/bossShadow";
 
 export type ArenaDebugControllerDependencies = {
   session: ArenaSession;
@@ -93,6 +94,7 @@ export type ArenaDebugControllerDependencies = {
   getAudioCues(): AudioCueId[];
   getAudioRoutingSnapshot(): AudioRoutingSnapshot;
   getMusicSnapshot(): MusicSnapshot;
+  getBossShadowReport(): BossShadowReport;
   clearTransientInput(): void;
   recordResult(result: StepWorldResult): void;
   resetGame(status: WorldState["state"]["status"], origin?: RunOrigin): void;
@@ -241,6 +243,7 @@ export class ArenaDebugController {
         this.dependencies.getActualFps(),
       ),
       renderPerformance: this.dependencies.getRenderPerformance(),
+      bossShadow: this.dependencies.getBossShadowReport(),
       lastEvents: this.dependencies.runLifecycle.getLastEvents(),
     });
   }
@@ -277,6 +280,7 @@ export class ArenaDebugController {
         this.dependencies.getActualFps(),
       ),
       renderPerformance: this.dependencies.getRenderPerformance(),
+      bossShadow: this.dependencies.getBossShadowReport(),
       elapsed: world.state.elapsed,
       difficultyElapsed: getDifficultyElapsed(world),
       hp: world.state.hp,

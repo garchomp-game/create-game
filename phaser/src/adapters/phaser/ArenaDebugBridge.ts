@@ -52,6 +52,7 @@ import type {
 import type { BuildComposition } from "../../simulation/buildComposer";
 import type { ArenaPerformanceSnapshot } from "../../application/PerformanceMonitor";
 import type { ArenaRenderPerformanceSnapshot } from "./PhaserArenaRenderer";
+import type { BossShadowReport } from "../../domain/bossShadow";
 export type { ArenaPerformanceSnapshot } from "../../application/PerformanceMonitor";
 
 export type ArenaObstacleContactCounts = {
@@ -86,6 +87,7 @@ export type ArenaDebugSnapshot = {
   autoPilotTargetId: string | null;
   performance: ArenaPerformanceSnapshot;
   renderPerformance: ArenaRenderPerformanceSnapshot;
+  bossShadow: BossShadowReport;
   elapsed: number;
   difficultyElapsed: number;
   hp: number;
@@ -147,6 +149,7 @@ export type ArenaRunExport = {
   status: GameStatus;
   performance: ArenaPerformanceSnapshot;
   renderPerformance: ArenaRenderPerformanceSnapshot;
+  bossShadow: BossShadowReport;
   elapsed: number;
   difficultyElapsed: number;
   wave: WaveBand;
