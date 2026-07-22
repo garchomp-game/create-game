@@ -184,6 +184,12 @@ function createFixture(run: { modeId?: string; stageId?: string } = {}) {
       volume: 0,
       muted: false,
     }),
+    getEncounterReliefReport: () => ({
+      schemaVersion: 1,
+      windowSeconds: 5,
+      state: "not-reached",
+      reason: "recoveryNotObserved",
+    }),
     clearTransientInput: vi.fn(),
     recordResult: (result) => {
       recorded.push(result);

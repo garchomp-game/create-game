@@ -52,6 +52,7 @@ import type {
 import type { BuildComposition } from "../../simulation/buildComposer";
 import type { ArenaPerformanceSnapshot } from "../../application/PerformanceMonitor";
 import type { ArenaRenderPerformanceSnapshot } from "./PhaserArenaRenderer";
+import type { EncounterReliefReport } from "../../domain/encounterRelief";
 export type { ArenaPerformanceSnapshot } from "../../application/PerformanceMonitor";
 
 export type ArenaObstacleContactCounts = {
@@ -104,6 +105,7 @@ export type ArenaDebugSnapshot = {
   runtime: RuntimeModifiers;
   buildComposition: BuildComposition;
   encounter: EncounterState;
+  encounterRelief: EncounterReliefReport;
   expedition: ExpeditionState | null;
   wave: WaveBand;
   stats: RunStats;
@@ -172,6 +174,7 @@ export type ArenaRunExport = {
   runtime: RuntimeModifiers;
   buildComposition: BuildComposition;
   encounter: EncounterState;
+  encounterRelief: EncounterReliefReport;
   expedition: ExpeditionState | null;
   lastEvents: GameEvent[];
 };

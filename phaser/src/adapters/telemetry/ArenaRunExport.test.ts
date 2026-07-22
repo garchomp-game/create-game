@@ -100,6 +100,12 @@ function createTestInput(world: WorldState) {
       screenHud: { averageMs: 0.12, maxMs: 0.6 },
       feedback: { averageMs: 0.04, maxMs: 0.2 },
     },
+    encounterRelief: {
+      schemaVersion: 1 as const,
+      windowSeconds: 5 as const,
+      state: "not-reached" as const,
+      reason: "recoveryNotObserved" as const,
+    },
     lastEvents: [{ type: "game.started" as const }],
   };
 }

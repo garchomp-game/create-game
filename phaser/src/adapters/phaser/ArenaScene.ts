@@ -20,6 +20,7 @@ import { ArenaSession } from "../../application/ArenaSession";
 import { AutoPilotController } from "../../application/AutoPilotController";
 import { PerformanceMonitor } from "../../application/PerformanceMonitor";
 import { RunLifecycleController } from "../../application/RunLifecycleController";
+import { EncounterReliefMonitor } from "../../application/EncounterReliefMonitor";
 import {
   createRankEligibility,
   createRankingBoardQueries,
@@ -78,6 +79,7 @@ export class ArenaScene extends Phaser.Scene {
   private musicController!: PhaserMusicController;
   private logger = new ConsoleLogger("warn");
   private performanceMonitor!: PerformanceMonitor;
+  private encounterReliefMonitor!: EncounterReliefMonitor;
   private simulationConfig: SimulationConfig = SIMULATION_CONFIG;
   private viewConfig: ViewConfig = VIEW_CONFIG;
   private selectedWeapon: WeaponTypeId = SIMULATION_CONFIG.defaultWeapon;
@@ -133,6 +135,7 @@ export class ArenaScene extends Phaser.Scene {
       metrics,
       new FrameSpikeReporter(this.logger, metrics),
     );
+    this.encounterReliefMonitor = new EncounterReliefMonitor();
     this.session = new ArenaSession(this.simulationConfig);
     this.runRecordStore = new LocalRunRecordStore(storage);
     this.runLifecycle = new RunLifecycleController(this.runRecordStore);
@@ -250,6 +253,7 @@ export class ArenaScene extends Phaser.Scene {
       modeId: this.selectedModeId,
       stageId: this.selectedStageId,
     });
+    this.encounterReliefMonitor.reset(this.world);
     this.debugController?.resetRun();
     const runOrigin =
       runOriginOverride ??
@@ -297,6 +301,7 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private recordResult(result: StepWorldResult, observedRawDtMs?: number): void {
+    this.encounterReliefMonitor.observe(this.world, result.events);
     const gameOver = result.events.some((event) => event.type === "game.over");
     this.performanceMonitor.record(
       result.metrics,
@@ -420,6 +425,8 @@ export class ArenaScene extends Phaser.Scene {
       getAudioCues: () => this.audioRouter.getLastCues(),
       getAudioRoutingSnapshot: () => this.audioRouter.getRoutingSnapshot(),
       getMusicSnapshot: () => this.musicController.getSnapshot(),
+      getEncounterReliefReport: () =>
+        this.encounterReliefMonitor.getReport(this.world.state.elapsed),
       clearTransientInput: () => this.inputAdapter.clearTransientInput(),
       recordResult: (result) => this.recordResult(result),
       resetGame: (status, origin) => this.resetGame(status, origin),

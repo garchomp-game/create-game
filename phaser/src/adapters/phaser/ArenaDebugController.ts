@@ -5,6 +5,7 @@ import type {
   ProfileSettingsUpdate,
 } from "../../domain/profile";
 import type { RunComparisonQuery, RunOrigin } from "../../domain/runRecords";
+import type { EncounterReliefReport } from "../../domain/encounterRelief";
 import type {
   BossAttackId,
   GameEvent,
@@ -93,6 +94,7 @@ export type ArenaDebugControllerDependencies = {
   getAudioCues(): AudioCueId[];
   getAudioRoutingSnapshot(): AudioRoutingSnapshot;
   getMusicSnapshot(): MusicSnapshot;
+  getEncounterReliefReport(): EncounterReliefReport;
   clearTransientInput(): void;
   recordResult(result: StepWorldResult): void;
   resetGame(status: WorldState["state"]["status"], origin?: RunOrigin): void;
@@ -241,6 +243,7 @@ export class ArenaDebugController {
         this.dependencies.getActualFps(),
       ),
       renderPerformance: this.dependencies.getRenderPerformance(),
+      encounterRelief: this.dependencies.getEncounterReliefReport(),
       lastEvents: this.dependencies.runLifecycle.getLastEvents(),
     });
   }
@@ -301,6 +304,7 @@ export class ArenaDebugController {
         world.progression.extraUpgradeRanks,
       ),
       encounter: structuredClone(world.encounter),
+      encounterRelief: this.dependencies.getEncounterReliefReport(),
       expedition: world.expedition ? structuredClone(world.expedition) : null,
       wave: { ...getWaveBand(config, getDifficultyElapsed(world)) },
       stats: copyRunStats(world),

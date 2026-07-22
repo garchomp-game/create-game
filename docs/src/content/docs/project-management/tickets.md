@@ -174,6 +174,7 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-V08-024` | [#95](https://github.com/garchomp-game/create-game/issues/95) | Standard / Assist / Practice / Overloadの記録契約 | P0 | division、modifier、PB分離、旧記録migrationを先に固定するWave 0F |
 | `PH-V08-025` | [#97](https://github.com/garchomp-game/create-game/issues/97) | 選択式・再プレイ可能な基本操作Training | P1 | T1を現行visual・recordなしで独立実装し、#81でtransferを確認 |
 | `PH-V08-026` | [#98](https://github.com/garchomp-game/create-game/issues/98) | 撃つ・避ける・取るの戦闘オブジェクト視覚言語 | P1 | Phase A fixtureは先行可。runtime T2は#97のT1結果で誤認が残る場合だけ |
+| `PH-V08-027` | [#110](https://github.com/garchomp-game/create-game/issues/110) | 危険イベント終了後5秒の立て直しshadow計測 | P1 | ゲーム数値を変えず、5秒窓と次警告時盤面をdev exportへ出す |
 
 ## 横断QA
 
