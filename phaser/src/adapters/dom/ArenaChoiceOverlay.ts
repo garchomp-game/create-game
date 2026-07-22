@@ -11,11 +11,13 @@ import { TEXT } from "../../lang";
 import { getUpgradeRequirementProgress } from "../../simulation/buildComposer";
 import { isExtraUpgradeId } from "../../simulation/extraProgression";
 import { createUpgradePreview, formatUpgradePreview } from "../../simulation/upgradePreview";
+import type { ChoiceInteractionInputMethod } from "../../application/ChoiceInteractionMonitor";
 
 export type ArenaChoiceInput = {
   menuAction: MenuAction | null;
   upgradeChoice: number | null;
   contractChoice: number | null;
+  inputMethod: ChoiceInteractionInputMethod | null;
 };
 
 export class ArenaChoiceOverlay {
@@ -246,8 +248,9 @@ export class ArenaChoiceOverlay {
       );
     }
 
-    button.addEventListener("click", () => {
+    button.addEventListener("click", (event) => {
       this.pendingInput.upgradeChoice = index;
+      this.pendingInput.inputMethod = getChoiceInputMethod(event);
     });
     return button;
   }
@@ -270,8 +273,9 @@ export class ArenaChoiceOverlay {
       element("span", "arena-choice-card-description", description),
       element("span", "arena-choice-card-metric", consequence),
     );
-    button.addEventListener("click", () => {
+    button.addEventListener("click", (event) => {
       this.pendingInput.contractChoice = index;
+      this.pendingInput.inputMethod = getChoiceInputMethod(event);
     });
     return button;
   }
@@ -383,7 +387,16 @@ function formatExtraPreview(effect: ExtraUpgradeEffect, currentRank: number): st
 }
 
 function emptyInput(): ArenaChoiceInput {
-  return { menuAction: null, upgradeChoice: null, contractChoice: null };
+  return {
+    menuAction: null,
+    upgradeChoice: null,
+    contractChoice: null,
+    inputMethod: null,
+  };
+}
+
+function getChoiceInputMethod(event: MouseEvent): ChoiceInteractionInputMethod {
+  return event.detail === 0 ? "keyboard" : "pointer";
 }
 
 function element<K extends keyof HTMLElementTagNameMap>(

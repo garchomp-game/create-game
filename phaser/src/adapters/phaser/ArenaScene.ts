@@ -21,6 +21,11 @@ import { AutoPilotController } from "../../application/AutoPilotController";
 import { PerformanceMonitor } from "../../application/PerformanceMonitor";
 import { RunLifecycleController } from "../../application/RunLifecycleController";
 import {
+  ChoiceInteractionMonitor,
+  createChoiceInteractionSurface,
+  type ChoiceInteractionInputMethod,
+} from "../../application/ChoiceInteractionMonitor";
+import {
   createRankEligibility,
   createRankingBoardQueries,
 } from "../../application/runRecords";
@@ -28,6 +33,7 @@ import type { RunOrigin } from "../../domain/runRecords";
 import type { LocalProfile, ProfileSettings } from "../../domain/profile";
 import type {
   GameEvent,
+  InputSnapshot,
   SimulationConfig,
   StepWorldResult,
   ViewConfig,
@@ -78,6 +84,7 @@ export class ArenaScene extends Phaser.Scene {
   private musicController!: PhaserMusicController;
   private logger = new ConsoleLogger("warn");
   private performanceMonitor!: PerformanceMonitor;
+  private choiceInteractionMonitor!: ChoiceInteractionMonitor;
   private simulationConfig: SimulationConfig = SIMULATION_CONFIG;
   private viewConfig: ViewConfig = VIEW_CONFIG;
   private selectedWeapon: WeaponTypeId = SIMULATION_CONFIG.defaultWeapon;
@@ -133,6 +140,7 @@ export class ArenaScene extends Phaser.Scene {
       metrics,
       new FrameSpikeReporter(this.logger, metrics),
     );
+    this.choiceInteractionMonitor = new ChoiceInteractionMonitor({ nowMs: now });
     this.session = new ArenaSession(this.simulationConfig);
     this.runRecordStore = new LocalRunRecordStore(storage);
     this.runLifecycle = new RunLifecycleController(this.runRecordStore);
@@ -182,12 +190,17 @@ export class ArenaScene extends Phaser.Scene {
       this.settings.autoFireEnabled,
       this.menuController.state.secondaryMenu,
     );
+    const adapterChoiceInputMethod = this.inputAdapter.consumeChoiceInputMethod();
     if (choiceInput.upgradeChoice !== null) {
       manualInput.upgradeChoicePressed = choiceInput.upgradeChoice;
     }
     if (choiceInput.contractChoice !== null) {
       manualInput.contractChoicePressed = choiceInput.contractChoice;
     }
+    this.recordChoiceSelection(
+      manualInput,
+      choiceInput.inputMethod ?? adapterChoiceInputMethod,
+    );
     const canvasMenuAction = this.inputAdapter.consumeMenuAction();
     const menuAction = choiceInput.menuAction ?? canvasMenuAction;
     if (menuAction && this.handleMenuAction(menuAction)) {
@@ -217,6 +230,13 @@ export class ArenaScene extends Phaser.Scene {
     );
     const result = this.session.step(input, deltaMs / 1000);
     this.debugController?.normalizeSoakHealth();
+    this.choiceInteractionMonitor.observeResume({
+      simulationSeconds: this.world.state.elapsed,
+      moveInput: Math.hypot(input.move.x, input.move.y) > 0,
+      aimInput: input.aimWorld !== null,
+      shootInput: input.shootHeld,
+      ...this.getChoiceInteractionCounters(),
+    });
     this.recordResult(result, this.game.loop.rawDelta);
     if (result.events.some((event) => event.type === "game.restart.requested")) {
       this.resetGame("playing");
@@ -291,6 +311,7 @@ export class ArenaScene extends Phaser.Scene {
       },
       status === "playing",
     );
+    this.choiceInteractionMonitor.reset(this.autoPilotController.enabled);
     this.menuController.reset();
     this.feedbackLayer.reset();
     this.audioRouter.reset();
@@ -371,6 +392,10 @@ export class ArenaScene extends Phaser.Scene {
       autoPilot.mode,
     );
     this.choiceOverlay.render(this.world, secondaryMenu === null);
+    this.choiceInteractionMonitor.syncSurface(
+      secondaryMenu === null ? createChoiceInteractionSurface(this.world) : null,
+      this.world.state.elapsed,
+    );
     this.musicController.sync(
       this.world.state.status,
       this.world.expedition?.outcome ?? null,
@@ -420,6 +445,8 @@ export class ArenaScene extends Phaser.Scene {
       getAudioCues: () => this.audioRouter.getLastCues(),
       getAudioRoutingSnapshot: () => this.audioRouter.getRoutingSnapshot(),
       getMusicSnapshot: () => this.musicController.getSnapshot(),
+      getChoiceInteractionReport: () =>
+        this.choiceInteractionMonitor.getReport(this.world.state.elapsed),
       clearTransientInput: () => this.inputAdapter.clearTransientInput(),
       recordResult: (result) => this.recordResult(result),
       resetGame: (status, origin) => this.resetGame(status, origin),
@@ -625,6 +652,7 @@ export class ArenaScene extends Phaser.Scene {
 
     this.autoPilotController.setEnabled(enabled);
     if (!enabled) return;
+    this.choiceInteractionMonitor.markAutoPilotObserved();
     this.runLifecycle.markDebugMutation();
     this.runLifecycle.addModifier(AUTO_PILOT_MODIFIER_ID, false);
     if (this.autoPilotController.patrolStrategy === "visit-history-v1") {
@@ -638,6 +666,33 @@ export class ArenaScene extends Phaser.Scene {
   private createRunId(): string {
     if (window.crypto?.randomUUID) return window.crypto.randomUUID();
     return `run-${Date.now()}-${this.runSeed}`;
+  }
+
+  private recordChoiceSelection(
+    input: InputSnapshot,
+    inputMethod: ChoiceInteractionInputMethod | null,
+  ): void {
+    if (inputMethod === null) return;
+    const selectedIndex = this.world.state.status === "upgradeSelect"
+      ? input.upgradeChoicePressed
+      : this.world.state.status === "contractSelect"
+        ? input.contractChoicePressed ?? null
+        : null;
+    if (selectedIndex === null) return;
+    this.choiceInteractionMonitor.select(
+      selectedIndex,
+      inputMethod,
+      this.world.state.elapsed,
+      this.getChoiceInteractionCounters(),
+    );
+  }
+
+  private getChoiceInteractionCounters() {
+    return {
+      movementDistance: this.world.stats.movementDistance,
+      shotsFired: this.world.stats.shotsFired,
+      damageTaken: this.world.stats.damageTaken,
+    };
   }
 
   private initializeProfile(storage: Pick<Storage, "getItem" | "setItem" | "removeItem">): void {
