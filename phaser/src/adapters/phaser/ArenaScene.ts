@@ -26,6 +26,7 @@ import {
   createChoiceInteractionSurface,
   type ChoiceInteractionInputMethod,
 } from "../../application/ChoiceInteractionMonitor";
+import { EncounterReliefMonitor } from "../../application/EncounterReliefMonitor";
 import {
   createRankEligibility,
   createRankingBoardQueries,
@@ -87,6 +88,7 @@ export class ArenaScene extends Phaser.Scene {
   private performanceMonitor!: PerformanceMonitor;
   private choiceInteractionMonitor!: ChoiceInteractionMonitor;
   private bossShadowMonitor!: BossEncounterShadowMonitor;
+  private encounterReliefMonitor!: EncounterReliefMonitor;
   private simulationConfig: SimulationConfig = SIMULATION_CONFIG;
   private viewConfig: ViewConfig = VIEW_CONFIG;
   private selectedWeapon: WeaponTypeId = SIMULATION_CONFIG.defaultWeapon;
@@ -144,6 +146,7 @@ export class ArenaScene extends Phaser.Scene {
     );
     this.choiceInteractionMonitor = new ChoiceInteractionMonitor({ nowMs: now });
     this.bossShadowMonitor = new BossEncounterShadowMonitor();
+    this.encounterReliefMonitor = new EncounterReliefMonitor();
     this.session = new ArenaSession(this.simulationConfig);
     this.runRecordStore = new LocalRunRecordStore(storage);
     this.runLifecycle = new RunLifecycleController(this.runRecordStore);
@@ -274,6 +277,7 @@ export class ArenaScene extends Phaser.Scene {
       stageId: this.selectedStageId,
     });
     this.bossShadowMonitor.reset(this.world);
+    this.encounterReliefMonitor.reset(this.world);
     this.debugController?.resetRun();
     const runOrigin =
       runOriginOverride ??
@@ -323,6 +327,7 @@ export class ArenaScene extends Phaser.Scene {
 
   private recordResult(result: StepWorldResult, observedRawDtMs?: number): void {
     this.bossShadowMonitor.observe(this.world, result.events);
+    this.encounterReliefMonitor.observe(this.world, result.events);
     const gameOver = result.events.some((event) => event.type === "game.over");
     this.performanceMonitor.record(
       result.metrics,
@@ -454,6 +459,8 @@ export class ArenaScene extends Phaser.Scene {
         this.choiceInteractionMonitor.getReport(this.world.state.elapsed),
       getBossShadowReport: () =>
         this.bossShadowMonitor.getReport(this.world.state.elapsed),
+      getEncounterReliefReport: () =>
+        this.encounterReliefMonitor.getReport(this.world.state.elapsed),
       clearTransientInput: () => this.inputAdapter.clearTransientInput(),
       recordResult: (result) => this.recordResult(result),
       resetGame: (status, origin) => this.resetGame(status, origin),

@@ -973,3 +973,15 @@ Work回答は設計入力であり、採用・保留・棄却はIssue #83と本d
 - ユーザー向けの「戦術点」は「撃破点」へ改める。Endlessは撃破点、Expeditionは完遂後の総クリア時間が主記録であることを一文表示する。
 
 #93の回復nerfや新Boss攻撃、#98のvisual runtime、大規模build tree、Stage量産、世界観本実装は、対応するcontrol証拠が揃うまで進めない。詳細な採否と停止条件は[v0.8 批判的レビューの採用判断](../../design/v08-critical-review-adoption/)を正本とする。
+
+## 2026-07-22: 危険イベントのrecoveryを緩和と仮定せずshadow事実を取る
+
+決定: 現行Endlessの`recovery`はイベント専用spawn overrideを外すだけで、通常wave、残敵、敵弾を止めない。区間名からearned relief成立を推測せず、[PH-V08-027 #110](https://github.com/garchomp-game/create-game/issues/110)で`encounter.recovery.started`後5秒を独立観測する。
+
+- 開始・5秒後・次警告時の残敵、敵弾、地上XP、地上REPAIR、HPをepisodeごとに保存する。
+- 5秒間のXP回収、被ダメージ、実回復、REPAIR取得、通常敵撃破を保存する。
+- 5秒未満で終わったrunは`partial`として未観測と失敗を分ける。
+- shadowはdev/debug run export専用とし、runtime数値、RNG、GameEvent、RunStats、RunRecord、rulesetを変更しない。
+- spawn抑制やdrop変更は、shadow事実と無誘導の口頭回答が立て直し不成立を示した場合だけ、別Issueの単一candidateとして事前登録する。
+
+Charger危険反転、選択UI、ボス調整を同じ比較buildへ混ぜない。

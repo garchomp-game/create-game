@@ -188,6 +188,12 @@ function createFixture(run: { modeId?: string; stageId?: string } = {}) {
     }),
     getChoiceInteractionReport: () => createEmptyChoiceInteractionReport(),
     getBossShadowReport: () => createEmptyBossShadowReport(),
+    getEncounterReliefReport: () => ({
+      schemaVersion: 1,
+      windowSeconds: 5,
+      state: "not-reached",
+      reason: "recoveryNotObserved",
+    }),
     clearTransientInput: vi.fn(),
     recordResult: (result) => {
       recorded.push(result);

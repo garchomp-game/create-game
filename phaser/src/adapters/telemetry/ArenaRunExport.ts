@@ -11,6 +11,7 @@ import {
   resolveRunRulesetVersion,
 } from "../../config/version";
 import type { RunContext, RunOrigin } from "../../domain/runRecords";
+import type { EncounterReliefReport } from "../../domain/encounterRelief";
 import type {
   CircleBody,
   EnemyTypeId,
@@ -48,6 +49,7 @@ export type CreateArenaRunExportInput = {
   renderPerformance: ArenaRenderPerformanceSnapshot;
   choiceInteraction: ChoiceInteractionReport;
   bossShadow: BossShadowReport;
+  encounterRelief: EncounterReliefReport;
   lastEvents: readonly GameEvent[];
 };
 
@@ -113,6 +115,7 @@ export function createArenaRunExport(input: CreateArenaRunExportInput): ArenaRun
       world.progression.extraUpgradeRanks,
     ),
     encounter: structuredClone(world.encounter),
+    encounterRelief: structuredClone(input.encounterRelief),
     expedition: world.expedition ? structuredClone(world.expedition) : null,
     lastEvents: input.lastEvents.map((event) => structuredClone(event)),
   };

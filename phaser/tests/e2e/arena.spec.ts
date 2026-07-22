@@ -675,6 +675,12 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   expect(runExport?.wave.start).toBe(60);
   expect(runExport?.counts.enemyTypes).toEqual({ chaser: 0, brute: 0, fast: 0, ranged: 0 });
   expect(runExport?.counts.obstacleContacts.player).toBe(0);
+  expect(runExport?.encounterRelief).toEqual({
+    schemaVersion: 1,
+    windowSeconds: 5,
+    state: "not-reached",
+    reason: "recoveryNotObserved",
+  });
   expect(new Date(runExport!.capturedAt).toString()).not.toBe("Invalid Date");
 
   const runExportJson = await page.evaluate(() => window.__ARENA_DEBUG__?.getRunExportJson());
@@ -1251,9 +1257,35 @@ test("replays the encounter deck timeline and excludes overdrive contracts from 
     if (scheduled === null) throw new Error("Encounter was not scheduled.");
     debug?.setElapsed(scheduled + 40);
     debug?.step({}, 1 / 60);
+  }, scheduledAt!);
+  const partialRelief = await page.evaluate(
+    () => window.__ARENA_DEBUG__?.getSnapshot().encounterRelief,
+  );
+  expect(partialRelief).toMatchObject({
+    state: "available",
+    summary: { completeWindowCount: 0, partialWindowCount: 1 },
+    episodes: [{ windowState: "partial" }],
+  });
+
+  await page.evaluate((targetEndsAt) => {
+    const debug = window.__ARENA_DEBUG__;
+    debug?.setElapsed(targetEndsAt);
+    debug?.step({}, 1 / 60);
+  }, partialRelief!.state === "available" ? partialRelief!.episodes[0]!.targetEndsAt : 0);
+  const completedRelief = await page.evaluate(
+    () => window.__ARENA_DEBUG__?.getRunExport().encounterRelief,
+  );
+  expect(completedRelief).toMatchObject({
+    state: "available",
+    summary: { completeWindowCount: 1, partialWindowCount: 0 },
+    episodes: [{ windowState: "complete", encounterId: expect.any(String) }],
+  });
+
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
     debug?.setElapsed(240);
     debug?.step({}, 1 / 60);
-  }, scheduledAt!);
+  });
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "contractSelect",
   );

@@ -54,6 +54,7 @@ import type { ArenaPerformanceSnapshot } from "../../application/PerformanceMoni
 import type { ArenaRenderPerformanceSnapshot } from "./PhaserArenaRenderer";
 import type { ChoiceInteractionReport } from "../../application/ChoiceInteractionMonitor";
 import type { BossShadowReport } from "../../domain/bossShadow";
+import type { EncounterReliefReport } from "../../domain/encounterRelief";
 export type { ArenaPerformanceSnapshot } from "../../application/PerformanceMonitor";
 
 export type ArenaObstacleContactCounts = {
@@ -108,6 +109,7 @@ export type ArenaDebugSnapshot = {
   runtime: RuntimeModifiers;
   buildComposition: BuildComposition;
   encounter: EncounterState;
+  encounterRelief: EncounterReliefReport;
   expedition: ExpeditionState | null;
   wave: WaveBand;
   stats: RunStats;
@@ -178,6 +180,7 @@ export type ArenaRunExport = {
   runtime: RuntimeModifiers;
   buildComposition: BuildComposition;
   encounter: EncounterState;
+  encounterRelief: EncounterReliefReport;
   expedition: ExpeditionState | null;
   lastEvents: GameEvent[];
 };

@@ -114,6 +114,12 @@ function createTestInput(world: WorldState) {
     },
     choiceInteraction: createEmptyChoiceInteractionReport(),
     bossShadow: createEmptyBossShadowReport(),
+    encounterRelief: {
+      schemaVersion: 1 as const,
+      windowSeconds: 5 as const,
+      state: "not-reached" as const,
+      reason: "recoveryNotObserved" as const,
+    },
     lastEvents: [{ type: "game.started" as const }],
   };
 }
