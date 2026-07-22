@@ -144,6 +144,7 @@ export class ArenaDebugController {
         quitToTitlePressed: input.quitToTitlePressed,
         upgradeChoicePressed: null,
         contractChoicePressed: null,
+        tutorialContinuePressed: false,
       },
       0,
     );

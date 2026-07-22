@@ -4,6 +4,8 @@ import type { GameEvent, WorldState } from "../domain/types";
 import { createWorld } from "./createWorld";
 import {
   BASIC_TUTORIAL_MOVE_DISTANCE,
+  BASIC_TUTORIAL_NAVIGATION_START,
+  BASIC_TUTORIAL_NAVIGATION_WAYPOINTS,
   BASIC_TUTORIAL_NAVIGATION_ZONE,
   BASIC_TUTORIAL_UPGRADE_CHOICES,
   TutorialController,
@@ -17,14 +19,26 @@ describe("TutorialController", () => {
 
     expect(controller.getSnapshot()).toMatchObject({
       stepId: "move",
+      phase: "briefing",
       progress: { current: 0, required: BASIC_TUTORIAL_MOVE_DISTANCE },
     });
+    expect(world.state.status).toBe("trainingBriefing");
+    activateCurrentStep(controller, world);
 
     advanceFrame(controller, world, [], () => {
       world.player.position.x += BASIC_TUTORIAL_MOVE_DISTANCE;
       world.state.elapsed += 0.25;
     });
-    expect(controller.getSnapshot().stepId).toBe("navigate");
+    expect(controller.getSnapshot()).toMatchObject({
+      stepId: "navigate",
+      phase: "briefing",
+      target: null,
+    });
+    expect(world.player.position).toEqual(BASIC_TUTORIAL_NAVIGATION_START);
+    activateCurrentStep(controller, world);
+    expect(controller.getSnapshot().target?.guidePath).toEqual(
+      BASIC_TUTORIAL_NAVIGATION_WAYPOINTS,
+    );
 
     advanceFrame(controller, world, [], () => {
       world.player.position = {
@@ -33,8 +47,13 @@ describe("TutorialController", () => {
       };
       world.state.elapsed += 0.25;
     });
+    expect(controller.getSnapshot()).toMatchObject({
+      stepId: "aimAndKill",
+      phase: "briefing",
+      target: null,
+    });
+    activateCurrentStep(controller, world);
     const aim = controller.getSnapshot();
-    expect(aim.stepId).toBe("aimAndKill");
     expect(aim.target).toMatchObject({ kind: "enemy" });
 
     const targetEnemyId = aim.target!.id!;
@@ -64,6 +83,13 @@ describe("TutorialController", () => {
     ]);
     expect(controller.getSnapshot()).toMatchObject({
       stepId: "collectXp",
+      phase: "briefing",
+      target: null,
+    });
+    activateCurrentStep(controller, world);
+    expect(controller.getSnapshot()).toMatchObject({
+      stepId: "collectXp",
+      phase: "active",
       target: {
         id: xpId,
         kind: "pickup",
@@ -83,30 +109,12 @@ describe("TutorialController", () => {
       },
     ]);
     expect(controller.getSnapshot()).toMatchObject({
-      stepId: "dodgeProjectile",
-      progress: { current: 0, required: 2 },
+      stepId: "chooseUpgrade",
+      phase: "briefing",
+      target: null,
     });
-
-    world.enemyProjectiles = [];
-    advanceFrame(controller, world);
-    expect(controller.getSnapshot().progress.current).toBe(1);
-    world.enemyProjectiles = [];
-    advanceFrame(controller, world);
-    expect(controller.getSnapshot().stepId).toBe("collectRepair");
-
-    const healId = controller.getSnapshot().target!.id!;
-    world.pickups = [];
-    advanceFrame(controller, world, [
-      {
-        type: "pickup.collected",
-        pickupId: healId,
-        pickupKind: "heal",
-        xpValue: 0,
-        healValue: 12,
-        hpRecovered: 12,
-      },
-    ]);
-    expect(controller.getSnapshot().stepId).toBe("chooseUpgrade");
+    expect(world.progression.pendingUpgradeChoices).toEqual([]);
+    activateCurrentStep(controller, world);
     expect(world.progression.pendingUpgradeChoices).toEqual(
       BASIC_TUTORIAL_UPGRADE_CHOICES,
     );
@@ -123,34 +131,130 @@ describe("TutorialController", () => {
       },
     ]);
     expect(controller.getSnapshot()).toMatchObject({
-      stepId: "transferDrill",
-      target: null,
+      stepId: "dodgeProjectile",
+      phase: "briefing",
+      selectedUpgradeId: "rapidFire",
     });
+    activateCurrentStep(controller, world);
+    expect(controller.getSnapshot()).toMatchObject({
+      stepId: "dodgeProjectile",
+      phase: "active",
+      progress: { current: 0, required: 2 },
+      readySecondsRemaining: 1,
+    });
+    expect(world.enemyProjectiles).toHaveLength(0);
+
+    advanceFrame(controller, world, [], () => {
+      world.state.elapsed += 1;
+    });
+    expect(world.enemyProjectiles).toHaveLength(1);
+
+    world.enemyProjectiles = [];
+    advanceFrame(controller, world);
+    expect(controller.getSnapshot().progress.current).toBe(1);
+    world.enemyProjectiles = [];
+    advanceFrame(controller, world);
+    expect(controller.getSnapshot()).toMatchObject({
+      stepId: "collectRepair",
+      phase: "briefing",
+      retryCount: 0,
+    });
+    activateCurrentStep(controller, world);
+
+    const healId = controller.getSnapshot().target!.id!;
+    world.pickups = [];
+    advanceFrame(controller, world, [
+      {
+        type: "pickup.collected",
+        pickupId: healId,
+        pickupKind: "heal",
+        xpValue: 0,
+        healValue: 12,
+        hpRecovered: 12,
+      },
+    ]);
+    expect(controller.getSnapshot()).toMatchObject({
+      stepId: "transferDrill",
+      phase: "briefing",
+    });
+    expect(world.enemies).toEqual([]);
+    activateCurrentStep(controller, world);
     expect(world.enemies.map((enemy) => enemy.typeId)).toEqual([
       "chaser",
       "brute",
       "ranged",
     ]);
+    expect(world.player.position).toEqual({ x: 480, y: 270 });
+    const transferRepair = world.pickups.find((pickup) => pickup.kind === "heal");
+    expect(transferRepair).toMatchObject({
+      position: { x: 480, y: 420 },
+      lifetime: null,
+    });
+    expect(
+      Math.hypot(
+        transferRepair!.position.x - world.player.position.x,
+        transferRepair!.position.y - world.player.position.y,
+      ),
+    ).toBeGreaterThan(SIMULATION_CONFIG.pickup.magnetRadius);
 
-    advanceFrame(
-      controller,
-      world,
-      [
-        enemyKilled("transfer-a", { x: 100, y: 270 }),
-        enemyKilled("transfer-b", { x: 860, y: 270 }),
-        {
-          type: "pickup.collected",
-          pickupId: "transfer-xp",
+    const enemyIds = world.enemies.map((enemy) => enemy.id);
+    const xpPickups = enemyIds.map((_, index) => ({
+      id: `transfer-xp-${index}`,
+      kind: "xp" as const,
+      position: { x: 200 + index * 280, y: 270 },
+      radius: SIMULATION_CONFIG.pickup.xpRadius,
+      xpValue: 1,
+      healValue: 0,
+      lifetime: null,
+    }));
+    world.enemies = [];
+    world.pickups.push(...xpPickups);
+    advanceFrame(controller, world, [
+      ...enemyIds.map((enemyId, index) =>
+        enemyKilled(enemyId, xpPickups[index]!.position),
+      ),
+      ...xpPickups.map(
+        (pickup): GameEvent => ({
+          type: "pickup.spawned",
+          pickupId: pickup.id,
           pickupKind: "xp",
+          position: { ...pickup.position },
           xpValue: 1,
           healValue: 0,
-          hpRecovered: 0,
-        },
-      ],
-      () => {
-        world.state.elapsed += 20;
+          lifetime: null,
+        }),
+      ),
+    ]);
+    expect(controller.getSnapshot()).toMatchObject({
+      stepId: "transferDrill",
+      transfer: {
+        kills: 3,
+        enemiesRemaining: 0,
+        pickupsRemaining: 4,
       },
-    );
+    });
+
+    world.pickups = [];
+    advanceFrame(controller, world, [
+      {
+        type: "pickup.collected",
+        pickupId: transferRepair!.id,
+        pickupKind: "heal",
+        xpValue: 0,
+        healValue: transferRepair!.healValue,
+        hpRecovered: transferRepair!.healValue,
+      },
+      ...xpPickups.map(
+        (pickup): Extract<GameEvent, { type: "pickup.collected" }> => ({
+          type: "pickup.collected",
+          pickupId: pickup.id,
+          pickupKind: "xp",
+          xpValue: pickup.xpValue,
+          healValue: 0,
+          hpRecovered: 0,
+        }),
+      ),
+    ]);
     expect(controller.getSnapshot().stepId).toBe("complete");
     expect(world.state.status).toBe("trainingComplete");
   });
@@ -160,6 +264,9 @@ describe("TutorialController", () => {
     const controller = new TutorialController();
     controller.initialize(world, SIMULATION_CONFIG);
     reachDodgeStep(controller, world);
+    advanceFrame(controller, world, [], () => {
+      world.state.elapsed += 1;
+    });
 
     const projectileId = world.enemyProjectiles[0]!.id;
     world.enemyProjectiles = [];
@@ -179,22 +286,96 @@ describe("TutorialController", () => {
     expect(controller.getSnapshot()).toMatchObject({
       stepId: "dodgeProjectile",
       retryCount: 1,
+      retryReason: "enemyProjectile",
+      readySecondsRemaining: 1,
       progress: { current: 0, required: 2 },
     });
     expect(world.state.status).toBe("playing");
-    expect(world.enemyProjectiles).toHaveLength(1);
+    expect(world.enemyProjectiles).toHaveLength(0);
     expect(events.some((event) => event.type === "game.over")).toBe(false);
     expect(added).toContainEqual({
       type: "tutorial.step.retried",
       stepId: "dodgeProjectile",
       retryCount: 1,
+      reason: "enemyProjectile",
     });
+  });
+
+  it("keeps hint time within a retried task and clears retry state on advance", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    const controller = new TutorialController();
+    controller.initialize(world, SIMULATION_CONFIG);
+    reachDodgeStep(controller, world);
+    advanceFrame(controller, world, [], () => {
+      world.state.elapsed += 8.1;
+    });
+    const projectileId = world.enemyProjectiles[0]!.id;
+    const events: GameEvent[] = [
+      {
+        type: "player.damaged",
+        damage: 8,
+        hpAfter: world.state.hp - 8,
+        source: { kind: "projectile", projectileId },
+      },
+    ];
+
+    advanceFrame(controller, world, events);
+    expect(controller.getSnapshot()).toMatchObject({
+      stepId: "dodgeProjectile",
+      retryCount: 1,
+      retryReason: "enemyProjectile",
+      hintLevel: 1,
+      stepActiveSeconds: 8.1,
+    });
+
+    advanceFrame(controller, world, [], () => {
+      world.state.elapsed += 1;
+    });
+    world.enemyProjectiles = [];
+    advanceFrame(controller, world);
+    world.enemyProjectiles = [];
+    advanceFrame(controller, world);
+    expect(controller.getSnapshot()).toMatchObject({
+      stepId: "collectRepair",
+      retryCount: 0,
+      retryReason: null,
+    });
+  });
+
+  it("uses an obstacle-safe navigation guide for a route that cannot be walked straight", () => {
+    const obstacle = SIMULATION_CONFIG.obstacles[0]!;
+    const margin = SIMULATION_CONFIG.player.radius;
+    const expanded = {
+      x: obstacle.x - margin,
+      y: obstacle.y - margin,
+      width: obstacle.width + margin * 2,
+      height: obstacle.height + margin * 2,
+    };
+    const route = [
+      BASIC_TUTORIAL_NAVIGATION_START,
+      ...BASIC_TUTORIAL_NAVIGATION_WAYPOINTS,
+      BASIC_TUTORIAL_NAVIGATION_ZONE,
+    ];
+
+    expect(
+      segmentIntersectsRect(
+        BASIC_TUTORIAL_NAVIGATION_START,
+        BASIC_TUTORIAL_NAVIGATION_ZONE,
+        expanded,
+      ),
+    ).toBe(true);
+    expect(
+      route.slice(1).some((point, index) =>
+        segmentIntersectsRect(route[index]!, point, expanded),
+      ),
+    ).toBe(false);
   });
 
   it("does not advance hint time when simulation elapsed is frozen", () => {
     const world = createWorld(SIMULATION_CONFIG);
     const controller = new TutorialController();
     controller.initialize(world, SIMULATION_CONFIG);
+    activateCurrentStep(controller, world);
 
     advanceFrame(controller, world);
     expect(controller.getSnapshot().hintLevel).toBe(0);
@@ -272,6 +453,7 @@ describe("TutorialController", () => {
     const world = createWorld(SIMULATION_CONFIG);
     const controller = new TutorialController();
     controller.initialize(world, SIMULATION_CONFIG);
+    activateCurrentStep(controller, world);
 
     world.state.status = "paused";
     advanceFrame(controller, world, [], () => {
@@ -289,6 +471,26 @@ describe("TutorialController", () => {
     expect(controller.getSnapshot()).toMatchObject({
       stepActiveSeconds: 0,
       hintLevel: 0,
+    });
+  });
+
+  it("returns a paused Training upgrade task to upgrade selection", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    const controller = new TutorialController();
+    controller.initialize(world, SIMULATION_CONFIG);
+    reachUpgradeStep(controller, world);
+    activateCurrentStep(controller, world);
+    expect(world.state.status).toBe("upgradeSelect");
+
+    world.state.status = "playing";
+    advanceFrame(controller, world, [
+      { type: "game.resumed", elapsed: world.state.elapsed },
+    ]);
+
+    expect(world.state.status).toBe("upgradeSelect");
+    expect(controller.getSnapshot()).toMatchObject({
+      stepId: "chooseUpgrade",
+      phase: "active",
     });
   });
 
@@ -328,10 +530,12 @@ function reachAimStep(
   controller: TutorialController,
   world: WorldState,
 ): void {
+  activateCurrentStep(controller, world);
   advanceFrame(controller, world, [], () => {
     world.player.position.x += BASIC_TUTORIAL_MOVE_DISTANCE;
     world.state.elapsed += 0.1;
   });
+  activateCurrentStep(controller, world);
   advanceFrame(controller, world, [], () => {
     world.player.position = {
       x: BASIC_TUTORIAL_NAVIGATION_ZONE.x,
@@ -339,9 +543,30 @@ function reachAimStep(
     };
     world.state.elapsed += 0.1;
   });
+  activateCurrentStep(controller, world);
 }
 
 function reachDodgeStep(
+  controller: TutorialController,
+  world: WorldState,
+): void {
+  reachUpgradeStep(controller, world);
+  activateCurrentStep(controller, world);
+  world.state.status = "playing";
+  world.progression.pendingUpgradeChoices = [];
+  advanceFrame(controller, world, [
+    {
+      type: "upgrade.selected",
+      upgradeId: "rapidFire",
+      rank: 1,
+      level: 2,
+      effect: SIMULATION_CONFIG.upgrades.rapidFire.effect,
+    },
+  ]);
+  activateCurrentStep(controller, world);
+}
+
+function reachUpgradeStep(
   controller: TutorialController,
   world: WorldState,
 ): void {
@@ -371,6 +596,7 @@ function reachDodgeStep(
       lifetime: null,
     },
   ]);
+  activateCurrentStep(controller, world);
   world.pickups = [];
   advanceFrame(controller, world, [
     {
@@ -389,10 +615,14 @@ function reachTransferStep(
   world: WorldState,
 ): void {
   reachDodgeStep(controller, world);
+  advanceFrame(controller, world, [], () => {
+    world.state.elapsed += 1;
+  });
   world.enemyProjectiles = [];
   advanceFrame(controller, world);
   world.enemyProjectiles = [];
   advanceFrame(controller, world);
+  activateCurrentStep(controller, world);
   const healId = controller.getSnapshot().target!.id!;
   world.pickups = [];
   advanceFrame(controller, world, [
@@ -405,17 +635,29 @@ function reachTransferStep(
       hpRecovered: 12,
     },
   ]);
-  world.state.status = "playing";
-  world.progression.pendingUpgradeChoices = [];
-  advanceFrame(controller, world, [
-    {
-      type: "upgrade.selected",
-      upgradeId: "rapidFire",
-      rank: 1,
-      level: 2,
-      effect: SIMULATION_CONFIG.upgrades.rapidFire.effect,
-    },
-  ]);
+  activateCurrentStep(controller, world);
+}
+
+function segmentIntersectsRect(
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+  rect: { x: number; y: number; width: number; height: number },
+): boolean {
+  const steps = 200;
+  for (let index = 0; index <= steps; index += 1) {
+    const ratio = index / steps;
+    const x = start.x + (end.x - start.x) * ratio;
+    const y = start.y + (end.y - start.y) * ratio;
+    if (
+      x >= rect.x &&
+      x <= rect.x + rect.width &&
+      y >= rect.y &&
+      y <= rect.y + rect.height
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function advanceFrame(
@@ -423,13 +665,30 @@ function advanceFrame(
   world: WorldState,
   events: GameEvent[] = [],
   mutate: () => void = () => undefined,
+  tutorialContinuePressed = false,
 ): GameEvent[] {
   const frameBefore = {
     elapsed: world.state.elapsed,
     playerPosition: { ...world.player.position },
   };
   mutate();
-  return controller.update(world, SIMULATION_CONFIG, events, frameBefore);
+  return controller.update(world, SIMULATION_CONFIG, events, frameBefore, {
+    tutorialContinuePressed,
+  });
+}
+
+function activateCurrentStep(
+  controller: TutorialController,
+  world: WorldState,
+): void {
+  const stepId = controller.getSnapshot().stepId;
+  const added = advanceFrame(controller, world, [], () => undefined, true);
+  expect(controller.getSnapshot()).toMatchObject({ stepId, phase: "active" });
+  expect(added).toContainEqual({
+    type: "tutorial.step.activated",
+    stepId,
+    stepNumber: controller.getSnapshot().stepNumber,
+  });
 }
 
 function enemyKilled(

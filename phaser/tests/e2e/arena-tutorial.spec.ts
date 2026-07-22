@@ -1,4 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
+import { HUD_LEFT_PANEL_BOUNDS } from "../../src/adapters/phaser/PhaserHud";
+import { TUTORIAL_TRANSFER_CHECKLIST_BOUNDS } from "../../src/adapters/phaser/PhaserTutorialLayer";
+import { SIMULATION_CONFIG } from "../../src/config/gameConfig";
 import type { TutorialStepId } from "../../src/domain/tutorial";
 
 test.describe("basic Training", () => {
@@ -12,6 +15,9 @@ test.describe("basic Training", () => {
 
     await clickCanvasLogical(page, 480, 393);
     await expectTrainingStep(page, "move");
+    await expect(page.locator(".arena-tutorial-dialog--visible")).toContainText(
+      "全8課題・約3分",
+    );
     await expect
       .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().runContext))
       .toBeNull();
@@ -20,26 +26,78 @@ test.describe("basic Training", () => {
     ).toBe(20260720);
     expect(
       await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().hp),
-    ).toBe(60);
+    ).toBe(100);
 
+    await continueTutorial(page, "move");
     await completeMoveStep(page);
     await expectTrainingStep(page, "navigate");
-    await movePlayerAxisTo(page, "y", 110);
-    await movePlayerAxisTo(page, "x", 280);
+    await continueTutorial(page, "navigate");
+    const navigationTarget = await readTutorialTarget(page);
+    expect(
+      circleIntersectsRect(
+        navigationTarget.position,
+        navigationTarget.radius + 4,
+        HUD_LEFT_PANEL_BOUNDS,
+      ),
+    ).toBe(false);
+    await moveThroughCurrentTutorialGuidePath(page);
     await expectTrainingStep(page, "aimAndKill");
 
+    await continueTutorial(page, "aimAndKill");
     await shootCurrentTutorialTarget(page);
     await expectTrainingStep(page, "collectXp");
-    await moveToCurrentTutorialTarget(page);
-    await expectTrainingStep(page, "dodgeProjectile");
-
-    await holdKey(page, "KeyW", 700);
-    await expectTrainingStep(page, "collectRepair", 20_000);
+    await continueTutorial(page, "collectXp");
     await moveToCurrentTutorialTarget(page);
     await expectTrainingStep(page, "chooseUpgrade");
+    await expect(page.locator(".arena-tutorial-dialog--visible")).toContainText(
+      "XPを回収しました",
+    );
 
+    await continueTutorial(page, "chooseUpgrade");
+    await holdKey(page, "Escape", 120);
+    await expect
+      .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+      .toBe("paused");
+    await clickCanvasLogical(page, 480, 305);
+    await expect
+      .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+      .toBe("upgradeSelect");
     await holdKey(page, "Digit1", 120);
+    await expectTrainingStep(page, "dodgeProjectile");
+    await expect(page.locator(".arena-tutorial-dialog--visible")).toContainText(
+      "強化を取得しました：",
+    );
+
+    await continueTutorial(page, "dodgeProjectile");
+    await holdKey(page, "KeyW", 700);
+    await expectTrainingStep(page, "collectRepair", 20_000);
+    await continueTutorial(page, "collectRepair");
+    await moveToCurrentTutorialTarget(page);
     await expectTrainingStep(page, "transferDrill");
+    await expect(page.locator(".arena-tutorial-dialog--visible")).toContainText(
+      "個別練習はここまでです",
+    );
+    await continueTutorial(page, "transferDrill");
+    const transferRepairPosition = await page.evaluate(
+      () =>
+        window.__ARENA_DEBUG__?.getSnapshot().tutorial?.transfer.repairPosition ??
+        null,
+    );
+    if (!transferRepairPosition) {
+      throw new Error("Transfer REPAIR position is unavailable.");
+    }
+    expect(
+      circleIntersectsRect(
+        transferRepairPosition,
+        SIMULATION_CONFIG.pickup.healRadius,
+        TUTORIAL_TRANSFER_CHECKLIST_BOUNDS,
+      ),
+    ).toBe(false);
+    expect(
+      await page.evaluate(
+        () => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.transfer.pickups,
+      ),
+    ).toBe(0);
     expect(
       await page.evaluate(
         () => window.__ARENA_DEBUG__?.getSnapshot().pendingUpgradeChoices,
@@ -48,7 +106,8 @@ test.describe("basic Training", () => {
 
     await shootToward(page, { x: 0, y: 270 }, 2_200);
     await shootToward(page, { x: 960, y: 270 }, 3_200);
-    await movePlayerAxisTo(page, "y", 460);
+    await movePlayerAxisTo(page, "y", transferRepairPosition.y);
+    await movePlayerAxisTo(page, "x", transferRepairPosition.x);
     await expect
       .poll(
         () =>
@@ -67,13 +126,16 @@ test.describe("basic Training", () => {
       { x: 480, y: 540 },
     ];
     for (const point of aimPoints) {
-      if ((await getTransferKills(page)) >= 2) break;
+      if ((await getTransferKills(page)) >= 3) break;
       await shootToward(page, point, 1_500);
     }
-    await expect.poll(() => getTransferKills(page), { timeout: 5_000 }).toBeGreaterThanOrEqual(2);
 
     await finishTransferDrill(page);
     await expectTrainingStep(page, "complete");
+    await expect(page.locator("canvas")).toBeVisible();
+    await expect
+      .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+      .toBe("trainingComplete");
 
     const after = await readLocalState(page);
     expect(after).toEqual(before);
@@ -219,6 +281,40 @@ async function expectTrainingStep(
     .toBe(stepId);
 }
 
+async function continueTutorial(
+  page: Page,
+  stepId: TutorialStepId,
+): Promise<void> {
+  const dialog = page.locator(
+    `.arena-tutorial-dialog--visible[data-tutorial-step="${stepId}"]`,
+  );
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const snapshot = window.__ARENA_DEBUG__?.getSnapshot();
+        return {
+          phase: snapshot?.tutorial?.phase,
+          status: snapshot?.status,
+        };
+      }),
+    )
+    .toEqual({ phase: "briefing", status: "trainingBriefing" });
+  await expect(dialog).toBeVisible();
+  const panel = dialog.getByRole("dialog");
+  await expect(panel).toHaveAttribute(
+    "aria-describedby",
+    "arena-tutorial-dialog-objective arena-tutorial-dialog-body",
+  );
+  const continueButton = dialog.locator("[data-tutorial-action='continue']");
+  await expect(continueButton).toBeFocused();
+  await continueButton.click();
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.phase),
+    )
+    .toBe("active");
+}
+
 async function holdKey(page: Page, code: string, durationMs: number): Promise<void> {
   await page.keyboard.down(code);
   await page.waitForTimeout(durationMs);
@@ -296,6 +392,32 @@ async function moveToCurrentTutorialTarget(page: Page): Promise<void> {
   );
 }
 
+async function readTutorialTarget(page: Page) {
+  const target = await page.evaluate(
+    () => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.target ?? null,
+  );
+  if (!target) throw new Error("Tutorial target is unavailable.");
+  return target;
+}
+
+async function moveThroughCurrentTutorialGuidePath(page: Page): Promise<void> {
+  const target = await readTutorialTarget(page);
+  for (const point of [...(target.guidePath ?? []), target.position]) {
+    await movePlayerAxisTo(page, "y", point.y, 12, "navigate");
+    await movePlayerAxisTo(page, "x", point.x, 12, "navigate");
+  }
+}
+
+function circleIntersectsRect(
+  center: { x: number; y: number },
+  radius: number,
+  rect: { x: number; y: number; width: number; height: number },
+): boolean {
+  const nearestX = Math.max(rect.x, Math.min(center.x, rect.x + rect.width));
+  const nearestY = Math.max(rect.y, Math.min(center.y, rect.y + rect.height));
+  return (center.x - nearestX) ** 2 + (center.y - nearestY) ** 2 <= radius ** 2;
+}
+
 async function shootCurrentTutorialTarget(page: Page): Promise<void> {
   await page.keyboard.down("Space");
   const deadline = Date.now() + 15_000;
@@ -332,12 +454,15 @@ async function getTransferKills(page: Page): Promise<number> {
 }
 
 async function finishTransferDrill(page: Page): Promise<void> {
-  const movement = ["KeyA", "KeyW", "KeyD", "KeyS"];
-  const aimPoints = [
-    { x: 480, y: 0 },
-    { x: 960, y: 270 },
-    { x: 480, y: 540 },
-    { x: 0, y: 270 },
+  const patrolPoints = [
+    { x: 120, y: 270 },
+    { x: 120, y: 110 },
+    { x: 480, y: 110 },
+    { x: 840, y: 110 },
+    { x: 840, y: 270 },
+    { x: 840, y: 440 },
+    { x: 480, y: 440 },
+    { x: 120, y: 440 },
   ];
   const deadline = Date.now() + 90_000;
   await page.keyboard.down("Space");
@@ -347,9 +472,10 @@ async function finishTransferDrill(page: Page): Promise<void> {
         () => window.__ARENA_DEBUG__?.getSnapshot().status,
       );
       if (status === "trainingComplete") return;
-      const aimPoint = aimPoints[index % aimPoints.length]!;
-      await moveMouseLogical(page, aimPoint.x, aimPoint.y);
-      await holdKey(page, movement[index % movement.length]!, 280);
+      const point = patrolPoints[index % patrolPoints.length]!;
+      await moveMouseLogical(page, 480, 270);
+      await movePlayerAxisTo(page, "y", point.y, 10, "transferDrill");
+      await movePlayerAxisTo(page, "x", point.x, 28, "transferDrill");
     }
   } finally {
     await page.keyboard.up("Space");

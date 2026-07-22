@@ -3,20 +3,27 @@ export const TUTORIAL_STEP_IDS = [
   "navigate",
   "aimAndKill",
   "collectXp",
+  "chooseUpgrade",
   "dodgeProjectile",
   "collectRepair",
-  "chooseUpgrade",
   "transferDrill",
   "complete",
 ] as const;
 
 export type TutorialStepId = (typeof TUTORIAL_STEP_IDS)[number];
 
+export type TutorialPhase = "briefing" | "active" | "complete";
+
+export type TutorialRetryReason = "enemyProjectile" | "damage";
+
+export type TutorialUpgradeId = "rapidFire" | "swiftStep" | "vitalCore";
+
 export type TutorialTarget = {
   kind: "zone" | "enemy" | "pickup";
   id: string | null;
   position: { x: number; y: number };
   radius: number;
+  guidePath?: Array<{ x: number; y: number }>;
 };
 
 export type TutorialProgress = {
@@ -26,6 +33,7 @@ export type TutorialProgress = {
 
 export type TutorialSnapshot = {
   stepId: TutorialStepId;
+  phase: TutorialPhase;
   stepNumber: number;
   stepCount: number;
   stepActiveSeconds: number;
@@ -33,10 +41,20 @@ export type TutorialSnapshot = {
   hintLevel: 0 | 1 | 2;
   progress: TutorialProgress;
   target: TutorialTarget | null;
+  lastCompletedStepId: TutorialStepId | null;
+  selectedUpgradeId: TutorialUpgradeId | null;
   retryCount: number;
+  retryReason: TutorialRetryReason | null;
+  retryNoticeSecondsRemaining: number;
+  readySecondsRemaining: number;
   transfer: {
     survivalSeconds: number;
     kills: number;
     pickups: number;
+    spawnedPickups: number;
+    requiredKills: number;
+    enemiesRemaining: number;
+    pickupsRemaining: number;
+    repairPosition: { x: number; y: number };
   };
 };

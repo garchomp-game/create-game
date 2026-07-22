@@ -59,8 +59,13 @@ export type UiText = {
   rankingEligible: string;
   rankingIneligible: (reasons: string) => string;
   paused: string;
+  trainingPaused: string;
   trainingCompleteTitle: string;
   trainingCompleteDescription: string;
+  trainingRetry: {
+    enemyProjectile: string;
+    damage: string;
+  };
   upgradeHeading: (level: number) => string;
   extraUpgradeHeading: (extraLevel: number, cycle: number) => string;
   rank: string;
@@ -80,12 +85,16 @@ export type UiText = {
     | "collectXp"
     | "dodgeProjectile"
     | "collectRepair"
-    | "chooseUpgrade",
+    | "chooseUpgrade"
+    | "transferDrill",
     {
       title: string;
       instruction: string;
+      briefing: string;
+      actionLabel: string;
       hint1: string;
       hint2: string;
+      success: string;
     }
   >;
   damageSource: {

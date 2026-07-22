@@ -42,6 +42,7 @@ export function createDebugInput(input: Partial<InputSnapshot>): InputSnapshot {
     quitToTitlePressed: input.quitToTitlePressed ?? false,
     upgradeChoicePressed: input.upgradeChoicePressed ?? null,
     contractChoicePressed: input.contractChoicePressed ?? null,
+    tutorialContinuePressed: input.tutorialContinuePressed ?? false,
   };
 }
 

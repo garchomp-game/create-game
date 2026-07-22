@@ -968,3 +968,51 @@ Work回答は設計入力であり、採用・保留・棄却はIssue #83と本d
 - production traffic、#76、#84、#94をT1 buildへ混ぜない。
 
 rollbackはT1実装commitを戻すか、Training modeとタイトル導線を外す。RunRecord migrationとruleset更新は不要である。
+
+## 2026-07-21: Trainingを説明確認と実践へ分け、transferを総合演習として明示する
+
+決定: owner確認で、課題が説明と同時に開始することと、最後のtransferで案内が突然消えることを理解上の欠陥として確認した。各課題を`briefing` / `active`へ分け、確認操作まではsimulationを停止する。transferは「総合演習」と表示し、開始前に3条件を説明、実践中は条件進捗だけを表示する。
+
+- 説明は高解像度DOM dialog、戦場上のringと実践HUDは既存WebGL layerが所有する。
+- Enter / Spaceは新規押下だけを受け、直前課題で保持した射撃入力による自動承認を禁止する。
+- 完了画面は「チュートリアルは以上です」と明示し、Endless実践またはタイトル復帰を選ばせる。
+- 完了ボスはT1へ敵仕様とバランスを混ぜるため採用せず、既存の混成総合演習を明確化する。
+- 導入ムービーはスキップ、再視聴、実ゲームvisualとの一致が必要であり、#98のvisual採否前には制作しない。DOM dialogを将来の導入表示境界として維持する。
+
+この追補はTrainingの記録非介入、固定seed、通常World / GameEventによる成功判定を変えず、Endless / Expeditionのrulesetと数値を変更しない。
+
+## 2026-07-22: Training T1の測定ノイズを人間募集前に除く
+
+決定: Work再レビューの`revise`判定を受け、初心者T1前に総合演習HUD遮蔽、進路ガイド、retry説明、強化選択中断、事前学習汚染を修正する。全面再設計や敵・武器・Pickupのvisual変更は行わず、現行visualを学べるかというT1の独立変数を維持する。
+
+- 課題順を`移動 -> 進路変更 -> 撃破 -> XP -> 強化 -> 回避 -> 修復 -> 総合演習`へ固定し、XPとLEVEL UPの因果を分断しない。
+- 総合演習は上部中央の小型チェックリストだけを表示し、固定REPAIRを視認可能な安全領域へ置く。landscape / portrait画像とHUD非交差を自動保証する。
+- 進路変更は固定開始点と既存障害物で直進不能にし、20秒後だけ障害物外側の折れ線を救済表示する。
+- retryは課題単位の回数、理由、再開進捗を表示し、同じ課題内のヒント時計を巻き戻さない。回避開始には1秒のREADYを置く。
+- Trainingの強化選択中もPause、再開、訓練restart、タイトル復帰を有効にする。通常モードの強化選択契約は変更しない。
+- T1参加者にはTraining前の静止画、動画、30秒説明を見せない。総合演習と同武器のEndless 30秒probe後に、認識preflightと分類質問を行う。
+
+完了ボス、導入ムービー、複数失敗後のゴースト、総合演習の段階的micro-waveは採用しない。T1結果で再現する同一の理解欠陥がある場合だけ、別candidateとして扱う。変更はTraining限定であり、Endless / Expeditionのsimulation、ruleset、RunRecordを更新しない。
+
+## 2026-07-22: 総合演習を固定時間から盤面処理完了へ変更する
+
+決定: owner確認で、総合演習開始直後に固定REPAIRを吸収できることと、敵を早く倒した後に待ち時間だけが残ることを確認した。20秒の生存条件を外し、中央から開始して初期敵3体を全滅させ、演習中に生成されたXPとREPAIRをすべて回収した時点で完了する。
+
+- 固定REPAIRは中央の磁力圏外へ置き、取得のための意図的な移動を必要とする。
+- 初期敵とPickupの残数をチェックリストへ表示し、敵撃破によって増えたXPとREPAIRも完了対象へ含める。
+- 総合演習中の回復Pickupは失効させず、時間切れによる完了不能を作らない。
+- 固定時間を消しても、撃破、回避、取得を同時に扱う知識転移の役割は維持する。
+- 継続的な生存能力は総合演習へ重複させず、Training完了後のPulse Endless 30秒probeで測る。
+
+この変更はTraining限定であり、Endless / Expeditionの敵、drop、Pickup寿命、ruleset、RunRecordを変更しない。
+
+## 2026-07-22: Trainingのowner gateを完了し初心者T1を分離する
+
+決定: ガイド付きフローと総合演習終了条件の追補後、ownerが全課題から退出までを再確認し、Training候補として採用可能と判断した。owner gateは完了とし、以後の候補変更はCIまたはP0修正に限定する。
+
+- ownerの完走は操作可能性と意図した動線の確認に使い、初心者の理解度へ換算しない。
+- 最終SHAとimmutable Previewを固定した後、#81で事前教材なしの初心者T1を実施する。
+- 初心者T1中は候補HEADを変更せず、修正が必要なら当該runを打ち切って新candidateとして再固定する。
+- T1で敵弾、XP、REPAIRの誤認が残らない限り、#98のruntime視覚変更へ進まない。
+
+production traffic、Endless / Expeditionのsimulation、ruleset、保存schemaは変更しない。

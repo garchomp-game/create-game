@@ -89,7 +89,9 @@ export class PhaserMusicController {
     const music = this.activeTrack ? this.sounds.get(this.activeTrack) : null;
     if (!music) return;
     const contextVolume =
-      status === "paused" || status === "contractSelect"
+      status === "paused" ||
+      status === "contractSelect" ||
+      status === "trainingBriefing"
         ? 0.32
         : status === "title" || status === "weaponSelect"
           ? 0.55

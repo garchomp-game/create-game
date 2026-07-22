@@ -40,7 +40,56 @@ describe("createArenaScreenViewModel", () => {
       statusText: `${TEXT.ui.trainingCompleteTitle}\n${TEXT.ui.trainingCompleteDescription}`,
       detailText: null,
     });
-    expect(viewModel.menuLabels.start).toBe("エンドレスへ出撃");
+    expect(viewModel.menuLabels.start).toBe("武器を選んでエンドレスへ");
+    expect(viewModel.menuLabels.title).toBe("タイトルへ戻る");
+  });
+
+  it("labels pause actions as Training controls when a tutorial is active", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.state.status = "paused";
+
+    const viewModel = createArenaScreenViewModel(
+      world,
+      SIMULATION_CONFIG,
+      undefined,
+      {
+        stepId: "chooseUpgrade",
+        phase: "active",
+        stepNumber: 5,
+        stepCount: 8,
+        stepActiveSeconds: 0,
+        totalActiveSeconds: 10,
+        hintLevel: 0,
+        progress: { current: 0, required: 1 },
+        target: null,
+        lastCompletedStepId: "collectXp",
+        selectedUpgradeId: null,
+        retryCount: 0,
+        retryReason: null,
+        retryNoticeSecondsRemaining: 0,
+        readySecondsRemaining: 0,
+        transfer: {
+          survivalSeconds: 0,
+          kills: 0,
+          pickups: 0,
+          spawnedPickups: 1,
+          requiredKills: 3,
+          enemiesRemaining: 3,
+          pickupsRemaining: 1,
+          repairPosition: { x: 480, y: 420 },
+        },
+      },
+    );
+
+    expect(viewModel).toMatchObject({
+      kind: "paused",
+      statusText: "基本訓練を一時停止",
+      menuLabels: {
+        resume: "強化選択へ戻る",
+        restart: "基本訓練をやり直す",
+        title: "訓練を中断してタイトルへ",
+      },
+    });
   });
 
   it("formats secondary history state and its notice", () => {

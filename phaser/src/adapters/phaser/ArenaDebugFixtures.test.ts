@@ -21,6 +21,7 @@ describe("ArenaDebugFixtures", () => {
       quitToTitlePressed: false,
       upgradeChoicePressed: null,
       contractChoicePressed: null,
+      tutorialContinuePressed: false,
     });
   });
 

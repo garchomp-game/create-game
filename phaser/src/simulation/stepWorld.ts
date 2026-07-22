@@ -61,6 +61,18 @@ export function stepWorld(
     return collectResult(world, 0, rawDt, config, events);
   }
 
+  if (world.state.status === "trainingBriefing") {
+    if (input.restartPressed) {
+      events.push({ type: "game.restart.requested" });
+    } else if (input.quitToTitlePressed) {
+      events.push({ type: "game.title.requested" });
+    } else if (input.pausePressed) {
+      world.state.status = "paused";
+      events.push({ type: "game.paused", elapsed: world.state.elapsed });
+    }
+    return collectResult(world, 0, rawDt, config, events);
+  }
+
   if (world.state.status === "trainingComplete") {
     if (input.quitToTitlePressed || input.pausePressed) {
       events.push({ type: "game.title.requested" });

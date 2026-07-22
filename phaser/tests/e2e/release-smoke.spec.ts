@@ -100,6 +100,13 @@ test("starts, advances, and exits Training without creating a run record", async
       ),
     )
     .toBe("move");
+  await expect(page.locator(".arena-tutorial-dialog--visible")).toBeVisible();
+  await page.locator("[data-tutorial-action='continue']").click();
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.phase),
+    )
+    .toBe("active");
 
   await page.keyboard.down("KeyD");
   await expect

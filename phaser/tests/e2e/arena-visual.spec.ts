@@ -10,6 +10,7 @@ const TRAINING_VISUAL_FIXTURES = [
   { stepId: "aimAndKill", snapshotName: "aim" },
   { stepId: "collectXp", snapshotName: "xp" },
   { stepId: "collectRepair", snapshotName: "repair" },
+  { stepId: "transferDrill", snapshotName: "transfer" },
 ] as const satisfies readonly {
   stepId: TutorialStepId;
   snapshotName: string;
@@ -194,7 +195,14 @@ async function showTrainingPresentation(
       move: { x: number; y: number },
       aimWorld: { x: number; y: number } | null = null,
       shootHeld = false,
-    ) => debug.step({ move, aimWorld, shootHeld }, 1 / 60);
+      tutorialContinuePressed = false,
+    ) =>
+      debug.step(
+        { move, aimWorld, shootHeld, tutorialContinuePressed },
+        1 / 60,
+      );
+    const activateCurrentStep = () =>
+      stepFrame({ x: 0, y: 0 }, null, false, true);
     const runUntilStepChanges = (
       stepId: TutorialStepId,
       maxFrames: number,
@@ -221,24 +229,46 @@ async function showTrainingPresentation(
       }
     };
 
+    activateCurrentStep();
     if (requestedStep !== "move") {
       runUntilStepChanges("move", 120, () => ({
         move: { x: 1, y: 0 },
       }));
     }
-    if (requestedStep === "navigate" || requestedStep === "move") return;
+    if (requestedStep === "move") return;
+    activateCurrentStep();
+    if (requestedStep === "navigate") {
+      for (let frame = 0; frame < 1_210; frame += 1) {
+        stepFrame({ x: 0, y: 0 });
+      }
+      return;
+    }
 
-    runUntilStepChanges("navigate", 360, () => {
+    let navigationPointIndex = 0;
+    runUntilStepChanges("navigate", 600, () => {
       const snapshot = debug.getSnapshot();
-      const target = snapshot.tutorial?.target?.position;
+      const target = snapshot.tutorial?.target;
       if (!target) throw new Error("Navigation target is unavailable.");
-      const yDifference = target.y - snapshot.player.y;
-      const xDifference = target.x - snapshot.player.x;
+      const points = [...(target.guidePath ?? []), target.position];
+      let point = points[navigationPointIndex] ?? target.position;
+      if (
+        Math.hypot(
+          point.x - snapshot.player.x,
+          point.y - snapshot.player.y,
+        ) <= 8 &&
+        navigationPointIndex < points.length - 1
+      ) {
+        navigationPointIndex += 1;
+        point = points[navigationPointIndex] ?? target.position;
+      }
+      const yDifference = point.y - snapshot.player.y;
+      const xDifference = point.x - snapshot.player.x;
       if (Math.abs(yDifference) > 8) {
         return { move: { x: 0, y: Math.sign(yDifference) } };
       }
       return { move: { x: Math.sign(xDifference), y: 0 } };
     });
+    activateCurrentStep();
     if (requestedStep === "aimAndKill") return;
 
     runUntilStepChanges("aimAndKill", 360, () => {
@@ -250,6 +280,7 @@ async function showTrainingPresentation(
         shootHeld: true,
       };
     });
+    activateCurrentStep();
     if (requestedStep === "collectXp") return;
 
     runUntilStepChanges("collectXp", 420, () => {
@@ -264,12 +295,33 @@ async function showTrainingPresentation(
       return { move: { x: Math.sign(xDifference), y: 0 } };
     });
 
+    activateCurrentStep();
+    debug.step({ upgradeChoicePressed: 0 }, 1 / 60);
+    if (currentStep() !== "dodgeProjectile") {
+      throw new Error("Training fixture did not apply its fixed upgrade.");
+    }
+    activateCurrentStep();
     runUntilStepChanges("dodgeProjectile", 720, () => ({
       move: { x: 0, y: -1 },
     }));
-    if (requestedStep !== "collectRepair") {
+    activateCurrentStep();
+    if (requestedStep === "collectRepair") return;
+
+    runUntilStepChanges("collectRepair", 420, () => {
+      const snapshot = debug.getSnapshot();
+      const target = snapshot.tutorial?.target?.position;
+      if (!target) throw new Error("REPAIR target is unavailable.");
+      const yDifference = target.y - snapshot.player.y;
+      const xDifference = target.x - snapshot.player.x;
+      if (Math.abs(yDifference) > 8) {
+        return { move: { x: 0, y: Math.sign(yDifference) } };
+      }
+      return { move: { x: Math.sign(xDifference), y: 0 } };
+    });
+    if (requestedStep !== "transferDrill") {
       throw new Error(`Unsupported Training visual fixture ${requestedStep}.`);
     }
+    activateCurrentStep();
   }, targetStep);
 
   await expect

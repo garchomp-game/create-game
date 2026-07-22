@@ -16,6 +16,7 @@ export type RandomSource = () => number;
 export type GameStatus =
   | "title"
   | "weaponSelect"
+  | "trainingBriefing"
   | "playing"
   | "paused"
   | "upgradeSelect"
@@ -953,6 +954,7 @@ export type InputSnapshot = {
   quitToTitlePressed: boolean;
   upgradeChoicePressed: number | null;
   contractChoicePressed?: number | null;
+  tutorialContinuePressed?: boolean;
 };
 
 export type GameEvent =
@@ -965,6 +967,11 @@ export type GameEvent =
       stepNumber: number;
     }
   | {
+      type: "tutorial.step.activated";
+      stepId: TutorialStepId;
+      stepNumber: number;
+    }
+  | {
       type: "tutorial.step.completed";
       stepId: TutorialStepId;
       elapsed: number;
@@ -973,6 +980,7 @@ export type GameEvent =
       type: "tutorial.step.retried";
       stepId: TutorialStepId;
       retryCount: number;
+      reason: "enemyProjectile" | "damage";
     }
   | { type: "tutorial.completed"; elapsed: number }
   | { type: "game.paused"; elapsed: number }
@@ -1154,7 +1162,7 @@ export type GameEvent =
       position: Vec2;
       xpValue: 0;
       healValue: number;
-      lifetime: number;
+      lifetime: number | null;
     }
   | {
       type: "pickup.collected";

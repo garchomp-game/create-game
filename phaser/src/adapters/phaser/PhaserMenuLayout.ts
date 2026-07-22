@@ -260,7 +260,7 @@ export function getMenuButtons(
 
   if (status === "trainingComplete") {
     return [
-      { action: "start", label: "エンドレスへ出撃", x, y: 348, width: buttonWidth, height: buttonHeight },
+      { action: "start", label: label("start"), x, y: 348, width: buttonWidth, height: buttonHeight },
       { action: "title", label: label("title"), x, y: 400, width: buttonWidth, height: buttonHeight },
     ];
   }

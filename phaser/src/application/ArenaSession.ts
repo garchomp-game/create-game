@@ -1,5 +1,6 @@
 import type {
   EnemyTypeId,
+  GameEvent,
   InputSnapshot,
   SimulationConfig,
   StepWorldResult,
@@ -91,17 +92,33 @@ export class ArenaSession {
 
   step(input: InputSnapshot, deltaSeconds: number): StepWorldResult {
     const active = this.requireActive();
+    const trainingUpgradeControl = getTrainingUpgradeControl(active, input);
+    const stepInput = trainingUpgradeControl
+      ? {
+          ...input,
+          restartPressed: false,
+          pausePressed: false,
+          quitToTitlePressed: false,
+          upgradeChoicePressed: null,
+        }
+      : input;
     const frameBefore = {
       elapsed: active.world.state.elapsed,
       playerPosition: { ...active.world.player.position },
     };
     const result = stepWorld(
       active.world,
-      input,
+      stepInput,
       deltaSeconds,
       active.randomStreams,
       active.config,
     );
+    if (trainingUpgradeControl) {
+      if (trainingUpgradeControl.type === "game.paused") {
+        active.world.state.status = "paused";
+      }
+      result.events.push(trainingUpgradeControl);
+    }
     if (active.expeditionController) {
       const expeditionEvents = active.expeditionController.update(
         active.world,
@@ -120,6 +137,7 @@ export class ArenaSession {
         active.config,
         result.events,
         frameBefore,
+        input,
       );
       if (tutorialEvents.length > 0) {
         result.events.push(...tutorialEvents);
@@ -173,6 +191,27 @@ export class ArenaSession {
     if (!this.active) throw new Error("ArenaSession has not been started.");
     return this.active;
   }
+}
+
+function getTrainingUpgradeControl(
+  active: ActiveArenaSession,
+  input: InputSnapshot,
+): GameEvent | null {
+  if (
+    !active.tutorialController ||
+    active.world.state.status !== "upgradeSelect"
+  ) {
+    return null;
+  }
+  if (input.restartPressed) return { type: "game.restart.requested" };
+  if (input.quitToTitlePressed) return { type: "game.title.requested" };
+  if (input.pausePressed) {
+    return {
+      type: "game.paused",
+      elapsed: active.world.state.elapsed,
+    };
+  }
+  return null;
 }
 
 function applyStageToConfig(

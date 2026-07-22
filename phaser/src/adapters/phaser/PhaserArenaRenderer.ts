@@ -56,7 +56,12 @@ export class PhaserArenaRenderer {
     autoPilotMode: AutoPilotMode | null = null,
     tutorialSnapshot: TutorialSnapshot | null = null,
   ): void {
-    const screen = createArenaScreenViewModel(world, this.simulationConfig, uiState);
+    const screen = createArenaScreenViewModel(
+      world,
+      this.simulationConfig,
+      uiState,
+      tutorialSnapshot,
+    );
 
     const worldStartedAt = now();
     this.worldView.render(this.graphics, world, pointerWorld);

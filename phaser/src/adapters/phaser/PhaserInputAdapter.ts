@@ -96,6 +96,8 @@ export class PhaserInputAdapter {
   ): InputSnapshot {
     const pointer = this.scene.input.activePointer;
     const pointerPressed = this.pointerPressed;
+    const startJustDown = Phaser.Input.Keyboard.JustDown(this.keys.start);
+    const shootJustDown = Phaser.Input.Keyboard.JustDown(this.keys.shoot);
     this.pointerPressed = false;
     this.syncCursor(status, upgradeChoiceCount, secondaryMenu);
     if (status !== "playing") {
@@ -141,10 +143,8 @@ export class PhaserInputAdapter {
     }
     const keyboardActivated =
       menuButtons.length > 0 &&
-      (Phaser.Input.Keyboard.JustDown(this.keys.start) ||
-        (status === "title" &&
-          secondaryMenu === null &&
-          Phaser.Input.Keyboard.JustDown(this.keys.shoot)));
+      (startJustDown ||
+        (status === "title" && secondaryMenu === null && shootJustDown));
     const backActivated =
       (secondaryMenu !== null ||
         status === "weaponSelect" ||
@@ -169,6 +169,9 @@ export class PhaserInputAdapter {
           )
         : null;
     const startPressed = menuAction === "start";
+    const tutorialContinuePressed =
+      status === "trainingBriefing" &&
+      (startJustDown || shootJustDown);
     const contractChoicePressed =
       menuAction === "contractStandard"
         ? 0
@@ -181,10 +184,11 @@ export class PhaserInputAdapter {
       aimWorld: pointerAimsThisFrame ? { x: pointer.x, y: pointer.y } : null,
       startPressed,
       shootHeld:
-        this.keys.shoot.isDown ||
-        pointer.leftButtonDown() ||
-        (status === "playing" && pointerPressed) ||
-        (autoFireEnabled && status === "playing" && this.hasPointerAim),
+        status === "playing" &&
+        (this.keys.shoot.isDown ||
+          pointer.leftButtonDown() ||
+          pointerPressed ||
+          (autoFireEnabled && this.hasPointerAim)),
       restartPressed:
         Phaser.Input.Keyboard.JustDown(this.keys.restart) || menuAction === "restart",
       pausePressed:
@@ -195,6 +199,7 @@ export class PhaserInputAdapter {
         Phaser.Input.Keyboard.JustDown(this.keys.quitToTitle) || menuAction === "title",
       upgradeChoicePressed: clickedUpgradeChoice ?? this.readUpgradeChoice(),
       contractChoicePressed,
+      tutorialContinuePressed,
     };
   }
 

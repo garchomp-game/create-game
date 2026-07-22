@@ -59,6 +59,8 @@ import { LocalProfileStore } from "../storage/LocalProfileStore";
 import { LocalRunRecordStore } from "../storage/LocalRunRecordStore";
 import { DevRunExportClient } from "../telemetry/DevRunExportClient";
 import { ArenaChoiceOverlay } from "../dom/ArenaChoiceOverlay";
+import { ArenaTutorialDialog } from "../dom/ArenaTutorialDialog";
+import { createArenaTutorialViewModel } from "../../presentation/ArenaTutorialPresenter";
 
 const loadArenaDebugModules =
   import.meta.env.DEV ||
@@ -73,6 +75,7 @@ const loadArenaDebugModules =
 export class ArenaScene extends Phaser.Scene {
   private inputAdapter!: PhaserInputAdapter;
   private choiceOverlay!: ArenaChoiceOverlay;
+  private tutorialDialog!: ArenaTutorialDialog;
   private arenaRenderer!: PhaserArenaRenderer;
   private debugOverlay!: PhaserDebugOverlay;
   private feedbackLayer!: PhaserFeedbackLayer;
@@ -146,6 +149,10 @@ export class ArenaScene extends Phaser.Scene {
     });
     this.inputAdapter = new PhaserInputAdapter(this);
     this.choiceOverlay = new ArenaChoiceOverlay(this.game.canvas, this.simulationConfig);
+    this.tutorialDialog = new ArenaTutorialDialog(
+      this.game.canvas,
+      this.simulationConfig,
+    );
     this.arenaRenderer = new PhaserArenaRenderer(this, this.simulationConfig, this.viewConfig);
     this.feedbackLayer = new PhaserFeedbackLayer(this);
     this.feedbackLayer.configure(this.settings);
@@ -160,7 +167,10 @@ export class ArenaScene extends Phaser.Scene {
     this.resetGame("title");
     const requestedAutoPilotWeapon = this.getRequestedAutoPilotWeapon();
     if (requestedAutoPilotWeapon) this.startAutoPilot(requestedAutoPilotWeapon);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.choiceOverlay.destroy());
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.choiceOverlay.destroy();
+      this.tutorialDialog.destroy();
+    });
     if (loadArenaDebugModules) {
       void this.initializeDebugController();
       this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -175,6 +185,7 @@ export class ArenaScene extends Phaser.Scene {
       this.setAutoPilotEnabled(!this.autoPilotController.enabled);
     }
     const choiceInput = this.choiceOverlay.consumeInput();
+    const tutorialContinueRequested = this.tutorialDialog.consumeContinue();
     const manualInput = this.inputAdapter.read(
       this.world.state.status,
       this.world.progression.pendingUpgradeChoices.length,
@@ -186,6 +197,9 @@ export class ArenaScene extends Phaser.Scene {
     }
     if (choiceInput.contractChoice !== null) {
       manualInput.contractChoicePressed = choiceInput.contractChoice;
+    }
+    if (tutorialContinueRequested) {
+      manualInput.tutorialContinuePressed = true;
     }
     const canvasMenuAction = this.inputAdapter.consumeMenuAction();
     const menuAction = choiceInput.menuAction ?? canvasMenuAction;
@@ -238,6 +252,7 @@ export class ArenaScene extends Phaser.Scene {
     this.autoPilotController.resetForRun(status);
     this.inputAdapter.clearTransientInput();
     this.choiceOverlay.clearInput();
+    this.tutorialDialog.clearInput();
     this.performanceMonitor.reset();
     this.arenaRenderer.resetPerformance();
     const fixedSeed = this.getFixedRunSeed();
@@ -380,6 +395,12 @@ export class ArenaScene extends Phaser.Scene {
       this.session.tutorialSnapshot,
     );
     this.choiceOverlay.render(this.world, secondaryMenu === null);
+    this.tutorialDialog.render(
+      createArenaTutorialViewModel(
+        this.session.tutorialSnapshot,
+        this.world.state.status,
+      ),
+    );
     this.musicController.sync(
       this.world.state.status,
       this.world.expedition?.outcome ?? null,

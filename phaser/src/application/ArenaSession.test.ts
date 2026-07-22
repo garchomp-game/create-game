@@ -20,6 +20,7 @@ const input: InputSnapshot = {
   quitToTitlePressed: false,
   upgradeChoicePressed: null,
   contractChoicePressed: null,
+  tutorialContinuePressed: false,
 };
 
 describe("ArenaSession", () => {
@@ -169,13 +170,14 @@ describe("ArenaSession", () => {
     expect(session.recordPolicy).toBe("none");
     expect(session.tutorialSnapshot).toMatchObject({
       stepId: "move",
+      phase: "briefing",
       stepNumber: 1,
       stepCount: 8,
     });
     expect(session.world.state).toMatchObject({
-      status: "playing",
+      status: "trainingBriefing",
       weaponType: "pulse",
-      hp: 60,
+      hp: 100,
     });
     expect(session.config.waves[0]).toMatchObject({ maxEnemies: 0 });
     expect(session.config.pickup).toMatchObject({
@@ -184,11 +186,29 @@ describe("ArenaSession", () => {
       healDropMaxChance: 0,
     });
 
+    const briefingPosition = { ...session.world.player.position };
     for (let index = 0; index < 120; index += 1) {
-      session.step({ ...input, move: { x: 0, y: 0 }, shootHeld: false }, 1 / 60);
+      session.step({ ...input, shootHeld: false }, 1 / 60);
     }
+    expect(session.world.state.elapsed).toBe(0);
+    expect(session.world.player.position).toEqual(briefingPosition);
     expect(session.world.enemies).toEqual([]);
-    expect(session.tutorialSnapshot?.stepId).toBe("move");
+    expect(session.tutorialSnapshot).toMatchObject({
+      stepId: "move",
+      phase: "briefing",
+    });
+
+    session.step(
+      {
+        ...input,
+        move: { x: 0, y: 0 },
+        shootHeld: false,
+        tutorialContinuePressed: true,
+      },
+      1 / 60,
+    );
+    expect(session.world.state.status).toBe("playing");
+    expect(session.tutorialSnapshot?.phase).toBe("active");
   });
 
   it("replays Training events and world state deterministically", () => {
@@ -204,6 +224,18 @@ describe("ArenaSession", () => {
     right.start(start);
     const leftEvents: string[] = [];
     const rightEvents: string[] = [];
+    const confirmInput = {
+      ...input,
+      move: { x: 0, y: 0 },
+      shootHeld: false,
+      tutorialContinuePressed: true,
+    };
+    leftEvents.push(
+      ...left.step(confirmInput, 1 / 60).events.map((event) => JSON.stringify(event)),
+    );
+    rightEvents.push(
+      ...right.step(confirmInput, 1 / 60).events.map((event) => JSON.stringify(event)),
+    );
 
     for (let index = 0; index < 240; index += 1) {
       const replayInput = {
@@ -243,6 +275,16 @@ describe("ArenaSession", () => {
       };
     }
 
+    session.step(
+      {
+        ...input,
+        move: { x: 0, y: 0 },
+        shootHeld: false,
+        tutorialContinuePressed: true,
+      },
+      1 / 60,
+    );
+
     for (let index = 0; index < 120; index += 1) {
       session.step(
         { ...input, move: { x: 0, y: 0 }, shootHeld: false },
@@ -259,6 +301,7 @@ describe("ArenaSession", () => {
       type: "tutorial.step.retried",
       stepId: "move",
       retryCount: 1,
+      reason: "damage",
     });
     expect(session.tutorialSnapshot).toMatchObject({
       stepId: "move",
@@ -271,6 +314,33 @@ describe("ArenaSession", () => {
       encounter: 0,
       stageVariant: 0,
     });
+  });
+
+  it("opens pause controls from a Training upgrade selection without changing normal rules", () => {
+    const session = new ArenaSession(SIMULATION_CONFIG);
+    session.start({
+      seed: 20260720,
+      weaponType: "pulse",
+      modeId: "training",
+      stageId: "basic-training",
+    });
+    session.world.state.status = "upgradeSelect";
+    session.world.progression.pendingUpgradeChoices = ["rapidFire"];
+
+    const paused = session.step(
+      { ...input, pausePressed: true, upgradeChoicePressed: 0 },
+      1 / 60,
+    );
+
+    expect(paused.events).toContainEqual({
+      type: "game.paused",
+      elapsed: 0,
+    });
+    expect(session.world.state.status).toBe("paused");
+    expect(session.world.progression.pendingUpgradeChoices).toEqual([
+      "rapidFire",
+    ]);
+    expect(session.world.progression.upgradeRanks.rapidFire).toBe(0);
   });
 
   it("requires an active run before exposing state", () => {
