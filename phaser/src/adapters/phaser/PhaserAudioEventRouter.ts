@@ -13,6 +13,40 @@ export type AudioCueId =
   | "damage"
   | "gameOver";
 
+export type AudioCueSuppressionReason =
+  | "victory-terminal-dedup"
+  | "muted"
+  | "zero-volume"
+  | "cooldown"
+  | "asset-unavailable";
+
+export type AudioCueRequest = {
+  sequence: number;
+  eventType: GameEvent["type"];
+  cue: AudioCueId;
+  requestedAtMs: number;
+};
+
+export type AudioCuePlayed = AudioCueRequest & {
+  asset: string;
+  volume: number;
+  detune: number;
+};
+
+export type AudioCueSuppressed = AudioCueRequest & {
+  reason: AudioCueSuppressionReason;
+};
+
+export type AudioRoutingSnapshot = {
+  requested: AudioCueRequest[];
+  played: AudioCuePlayed[];
+  suppressed: AudioCueSuppressed[];
+};
+
+type AudioCueRoutingDecision =
+  | ({ status: "played" } & AudioCuePlayed)
+  | ({ status: "suppressed" } & AudioCueSuppressed);
+
 const EVENT_CUES: Partial<Record<GameEvent["type"], AudioCueId>> = {
   "shot.fired": "shot",
   "enemy.hit": "hit",
@@ -97,12 +131,17 @@ const CUE_COOLDOWNS: Record<AudioCueId, number> = {
 
 export class PhaserAudioEventRouter {
   private readonly lastCues: AudioCueId[] = [];
+  private readonly routingDecisions: AudioCueRoutingDecision[] = [];
   private readonly lastPlayedAt = new Map<AudioCueId, number>();
   private readonly nextVariant = new Map<AudioCueId, number>();
+  private nextRequestSequence = 0;
   private volume = 1;
   private muted = false;
 
-  constructor(private readonly scene: Phaser.Scene) {}
+  constructor(
+    private readonly scene: Phaser.Scene,
+    private readonly observeRouting = false,
+  ) {}
 
   configure(settings: Pick<ProfileSettings, "sfxVolume" | "sfxMuted">): void {
     this.volume = settings.sfxVolume;
@@ -114,41 +153,134 @@ export class PhaserAudioEventRouter {
       (event) => event.type === "expedition.completed",
     );
     for (const event of events) {
-      if (expeditionVictory && event.type === "game.over") continue;
       const cue = EVENT_CUES[event.type];
       if (!cue) continue;
 
+      const requestedAtMs = this.scene.time.now;
+      const request: AudioCueRequest | null = this.observeRouting
+        ? {
+            sequence: this.nextRequestSequence++,
+            eventType: event.type,
+            cue,
+            requestedAtMs,
+          }
+        : null;
+      if (expeditionVictory && event.type === "game.over") {
+        this.suppress(request, "victory-terminal-dedup");
+        continue;
+      }
+
       this.lastCues.push(cue);
-      this.tryPlay(cue);
+      this.tryPlay(cue, requestedAtMs, request);
     }
     this.lastCues.splice(0, Math.max(0, this.lastCues.length - 20));
   }
 
   reset(): void {
     this.lastCues.length = 0;
+    this.routingDecisions.length = 0;
     this.lastPlayedAt.clear();
     this.nextVariant.clear();
+    this.nextRequestSequence = 0;
   }
 
   getLastCues(): AudioCueId[] {
     return [...this.lastCues];
   }
 
-  private tryPlay(cue: AudioCueId): void {
-    if (this.muted || this.volume === 0) return;
-    const now = this.scene.time.now;
-    const lastPlayed = this.lastPlayedAt.get(cue) ?? Number.NEGATIVE_INFINITY;
-    if (now - lastPlayed < CUE_COOLDOWNS[cue]) return;
+  getRoutingSnapshot(): AudioRoutingSnapshot {
+    const requested: AudioCueRequest[] = [];
+    const played: AudioCuePlayed[] = [];
+    const suppressed: AudioCueSuppressed[] = [];
+    for (const decision of this.routingDecisions) {
+      const request = copyRequest(decision);
+      requested.push(request);
+      if (decision.status === "played") {
+        played.push({
+          ...request,
+          asset: decision.asset,
+          volume: decision.volume,
+          detune: decision.detune,
+        });
+      } else {
+        suppressed.push({ ...request, reason: decision.reason });
+      }
+    }
+    return { requested, played, suppressed };
+  }
+
+  private tryPlay(
+    cue: AudioCueId,
+    requestedAtMs: number,
+    request: AudioCueRequest | null,
+  ): void {
+    if (this.muted) {
+      this.suppress(request, "muted");
+      return;
+    }
+    if (this.volume === 0) {
+      this.suppress(request, "zero-volume");
+      return;
+    }
+    const lastPlayed =
+      this.lastPlayedAt.get(cue) ?? Number.NEGATIVE_INFINITY;
+    if (requestedAtMs - lastPlayed < CUE_COOLDOWNS[cue]) {
+      this.suppress(request, "cooldown");
+      return;
+    }
     const variants = CUE_ASSETS[cue];
     const variantIndex = this.nextVariant.get(cue) ?? 0;
     const asset = variants[variantIndex % variants.length];
-    if (!this.scene.cache.audio.exists(asset)) return;
-    this.lastPlayedAt.set(cue, now);
-    this.nextVariant.set(cue, (variantIndex + 1) % variants.length);
+    if (!this.scene.cache.audio.exists(asset)) {
+      this.suppress(request, "asset-unavailable");
+      return;
+    }
+    const volume = CUE_VOLUMES[cue] * this.volume;
+    const detune =
+      CUE_DETUNE[cue][variantIndex % CUE_DETUNE[cue].length];
+    this.lastPlayedAt.set(cue, requestedAtMs);
+    this.nextVariant.set(
+      cue,
+      (variantIndex + 1) % variants.length,
+    );
 
     this.scene.sound.play(asset, {
-      volume: CUE_VOLUMES[cue] * this.volume,
-      detune: CUE_DETUNE[cue][variantIndex % CUE_DETUNE[cue].length],
+      volume,
+      detune,
     });
+    if (request) {
+      this.recordDecision({
+        ...request,
+        status: "played",
+        asset,
+        volume,
+        detune,
+      });
+    }
   }
+
+  private suppress(
+    request: AudioCueRequest | null,
+    reason: AudioCueSuppressionReason,
+  ): void {
+    if (!request) return;
+    this.recordDecision({ ...request, status: "suppressed", reason });
+  }
+
+  private recordDecision(decision: AudioCueRoutingDecision): void {
+    this.routingDecisions.push(decision);
+    this.routingDecisions.splice(
+      0,
+      Math.max(0, this.routingDecisions.length - 40),
+    );
+  }
+}
+
+function copyRequest(decision: AudioCueRoutingDecision): AudioCueRequest {
+  return {
+    sequence: decision.sequence,
+    eventType: decision.eventType,
+    cue: decision.cue,
+    requestedAtMs: decision.requestedAtMs,
+  };
 }
