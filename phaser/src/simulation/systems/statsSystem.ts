@@ -140,6 +140,9 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
     } else if (event.type === "enemy.charger.killed") {
       const metrics = getChargerMetrics(world);
       metrics.killed += 1;
+      if (event.phase === "approach" && event.chargesStarted === 0) {
+        metrics.killedBeforeTelegraph += 1;
+      }
       metrics.killsByWeapon[event.weaponType] += 1;
     } else if (event.type === "player.damaged") {
       world.stats.hitsTaken += 1;
@@ -393,6 +396,7 @@ function getChargerMetrics(world: WorldState) {
     spawned: 0,
     telegraphs: 0,
     charges: 0,
+    killedBeforeTelegraph: 0,
     playerHits: 0,
     avoided: 0,
     obstacleInterruptions: 0,

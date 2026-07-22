@@ -812,6 +812,7 @@ export type ChargerEncounterRunStats = {
   spawned: number;
   telegraphs: number;
   charges: number;
+  killedBeforeTelegraph: number;
   playerHits: number;
   avoided: number;
   obstacleInterruptions: number;
@@ -1107,6 +1108,7 @@ export type GameEvent =
       enemyId: string;
       weaponType: WeaponTypeId;
       phase: ChargerActionState["phase"];
+      chargesStarted: number;
       position: Vec2;
     }
   | {
