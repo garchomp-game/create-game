@@ -955,3 +955,21 @@ Work回答は設計入力であり、採用・保留・棄却はIssue #83と本d
 - TrainingはStage 1の代替ではなく、学んだ文法を通常勝利条件へ転移させる#64を別コンテンツとして維持する。
 
 この判断は初見2runの探索的証拠に基づく仮説であり、継続率や一般的な初心者行動の証明とは扱わない。
+
+## 2026-07-22: 批判的レビューを採用し、危険反転よりcontrol観測を先行する
+
+決定: `Arena-Core-v08-Critical-Game-Design-Review-20260722.md`の`revise roadmap`判定を採用する。Arena Coreの現行コアは「四方から迫る圧力の中で、移動と照準を分離し、敵役割・障害物・回収経路を組み替えながら、倒し続けて生き延びる」と定義し、「危険を反撃機会へ変える」は未検証のv0.8拡張仮説へ戻す。
+
+前の2026-07-20判断を次の範囲で更新する。
+
+- #81のT0 / T1 transferは30秒で終了せず、死亡または90秒まで観測する。Ranged開始が60秒であるため、30 / 60 / 90秒到達、Ranged到達、発射、被曝、反応を分ける。
+- transfer前にfixture、動画、最小説明を見せない。T0とT1は同じ初心者へ連続実施しない。
+- #76のruntime candidateより先に、現行Chargerの`spawned / killed-before-telegraph / telegraph / charge / obstacle / boundary / recovery`をcontrolで集約する。
+- 最初の経験者3名中2名が予告前撃破、または熟練runの大半でcharge未発生なら#76 runtimeを停止する。Charger HPと反転効果を同時変更しない。
+- #78の選択wall-clock計測はUI採否後まで待たず、現行UIとcandidate UIの双方を比較できる共通観測にする。
+- 必須run後に5分の自由選択を置き、Endless / Expeditionが異なる再挑戦理由を作れているか、実際の選択と開始で確認する。
+- Practice、Assist、Overloadを単一の強さ順`division`へまとめず、mode、modifier、record policy、比較eligibilityを別軸にする。
+- 通常強化は現状「完成buildの個性」ではなく「取得順によるラン中の判断差」と表現する。
+- ユーザー向けの「戦術点」は「撃破点」へ改める。Endlessは撃破点、Expeditionは完遂後の総クリア時間が主記録であることを一文表示する。
+
+#93の回復nerfや新Boss攻撃、#98のvisual runtime、大規模build tree、Stage量産、世界観本実装は、対応するcontrol証拠が揃うまで進めない。詳細な採否と停止条件は[v0.8 批判的レビューの採用判断](../../design/v08-critical-review-adoption/)を正本とする。

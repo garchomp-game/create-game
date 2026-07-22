@@ -127,7 +127,7 @@ function formatGameOverText(world: WorldState, uiState?: ArenaUiState): string {
   const expeditionOutcome = world.stats.encounterMetrics.expedition?.outcome;
   const expedition = world.stats.encounterMetrics.expedition;
   const primaryResult = expedition
-    ? `${formatTimePrecise(summary.elapsed)} / 戦術 ${expedition.tacticalScore.toLocaleString()}点`
+    ? `${formatTimePrecise(summary.elapsed)} / 撃破 ${expedition.tacticalScore.toLocaleString()}点`
     : TEXT.ui.result.scoreTime(summary.score, formatTime(summary.elapsed));
   const lines = [
     expeditionOutcome === "victory"
@@ -166,6 +166,7 @@ function formatGameOverDetails(uiState?: ArenaUiState): string {
     : TEXT.ui.rankingIneligible(formatRankIneligibility(record));
   return [
     `モード: ${formatModeName(record.modeId)} / ステージ: ${formatStageName(record.stageId)}`,
+    formatRankingContract(record.modeId),
     `開始武器: ${TEXT.hud.weaponNames[record.weaponId]}`,
     formatRecordCapstone(record),
     formatRecordEncounter(record),
@@ -214,7 +215,7 @@ function formatBestComparison(
     const tacticalGap =
       getExpeditionTacticalScore(previousBest) - getExpeditionTacticalScore(record);
     return tacticalGap > 0
-      ? `${label}PBまで 戦術${tacticalGap.toLocaleString()}点`
+      ? `${label}PBまで 撃破${tacticalGap.toLocaleString()}点`
       : `${label}PB未更新`;
   }
 
@@ -369,7 +370,7 @@ function formatHistory(uiState: ArenaUiState): string {
         ? "PB対象"
         : `PB対象外: ${formatRankIneligibility(record)}`;
       const recordResult = record.modeId === "expedition"
-        ? `${record.encounterMetrics.expedition?.outcome === "victory" ? "完遂" : "敗退"} ${formatTimePrecise(record.elapsed)}  戦術${getExpeditionTacticalScore(record).toString().padStart(6)}点`
+        ? `${record.encounterMetrics.expedition?.outcome === "victory" ? "完遂" : "敗退"} ${formatTimePrecise(record.elapsed)}  撃破${getExpeditionTacticalScore(record).toString().padStart(6)}点`
         : `${record.score.toString().padStart(6)}点  ${formatTime(record.elapsed)}`;
       lines.push(
         `${start + index + 1}. ${formatRecordDate(record.capturedAt)}  ${recordResult}  ${formatModeName(record.modeId)}  Lv${record.level}/EX${record.extraLevel}/C${record.extraCycle}  ${TEXT.hud.weaponNames[record.weaponId]}  ${eligibility}`,
@@ -398,6 +399,7 @@ function formatRanking(uiState: ArenaUiState): string {
     `${formatModeName(context?.modeId)} / ${formatStageName(context?.stageId)} / ${formatDifficultyName(context?.difficultyId)}`,
     `${scope} / ${seed}`,
     `ルール: ${context?.rulesetVersion ?? uiState.releaseIdentity.rulesetVersion}`,
+    formatRankingContract(context?.modeId ?? "endless"),
     "",
   ];
   if (uiState.ranking.length === 0) {
@@ -405,7 +407,7 @@ function formatRanking(uiState: ArenaUiState): string {
   } else {
     uiState.ranking.slice(0, 10).forEach((record, index) => {
       const rankedResult = record.modeId === "expedition"
-        ? `${formatTimePrecise(record.elapsed)}  戦術${getExpeditionTacticalScore(record).toString().padStart(6)}点  ${formatTimeMedal(record.encounterMetrics.expedition?.timeMedal ?? null)}`
+        ? `${formatTimePrecise(record.elapsed)}  撃破${getExpeditionTacticalScore(record).toString().padStart(6)}点  ${formatTimeMedal(record.encounterMetrics.expedition?.timeMedal ?? null)}`
         : `${record.score.toString().padStart(6)}点  ${formatTime(record.elapsed)}`;
       lines.push(
         `${String(index + 1).padStart(2)}. ${rankedResult}  EX${record.extraLevel}/C${record.extraCycle}  ${TEXT.hud.weaponNames[record.weaponId]}  ${formatRecordDate(record.capturedAt)}`,
@@ -414,6 +416,12 @@ function formatRanking(uiState: ArenaUiState): string {
   }
   if (uiState.notice) lines.push("", uiState.notice);
   return lines.join("\n");
+}
+
+function formatRankingContract(modeId: RunRecord["modeId"]): string {
+  return modeId === "expedition"
+    ? "順位: 作戦完遂後、総クリア時間が短い順（同タイムは撃破点）"
+    : "順位: 撃破点が高い順（同点は生存時間）";
 }
 
 function formatDifficultyName(difficultyId: string | undefined): string {
