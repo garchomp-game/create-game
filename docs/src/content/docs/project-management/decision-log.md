@@ -1016,3 +1016,15 @@ rollbackはT1実装commitを戻すか、Training modeとタイトル導線を外
 - T1で敵弾、XP、REPAIRの誤認が残らない限り、#98のruntime視覚変更へ進まない。
 
 production traffic、Endless / Expeditionのsimulation、ruleset、保存schemaは変更しない。
+
+## 2026-07-22: Training T1のruntime候補と配布証拠を固定する
+
+決定: ガイド付きフローの最終runtime候補を`e872505003044b40e782c33203fb502c40057387`へ固定する。以後に行うStarlight、Issue、PRの証拠同期はruntime候補の変更として扱わず、#81の初心者T1では同SHAから作成したimmutable Previewを使う。
+
+- GitHub Actions [run 29906507015](https://github.com/garchomp-game/create-game/actions/runs/29906507015)でPhaser quality、Starlight build、Browser release smokeの3 jobが成功した。
+- Cloudflare Version IDは`f3b88d64-c430-4985-8a55-f8c0e17f4a44`、preview aliasは`v08-training-t1-e872505`で、表示された`buildCommit`は`e87250500304`と一致した。
+- 実URLsmokeでapp version、ruleset、build commit、通常run rulesetを確認し、console、page、request、HTTP errorは0件だった。
+- owner gateは完了しているが、初心者の意味理解と通常戦への転移は未証明である。採用判断は#81まで保留する。
+- production trafficは変更せず、#98のruntime視覚候補はT1で誤認が残る場合だけ開始する。
+
+文書だけを更新した後続commitをPR #99のheadに置く場合も、runtime候補SHAとPreview Version IDを併記し、後続SHAを人間T1の実行対象と誤認させない。

@@ -3,7 +3,7 @@ title: v0.8 実行計画
 description: RC6を固定したまま、設計契約、単独candidate、統合採否を依存順に進める作業計画。
 ---
 
-最終整理日: 2026-07-20
+最終整理日: 2026-07-22
 
 ## 目的
 
@@ -40,7 +40,7 @@ v0.8では機能量を増やす前に、Arena Coreの面白さの核を小さい
 | 0A | [#83](https://github.com/garchomp-game/create-game/issues/83) | 緊張・緩和、near-miss、攻略メタ、公平性の契約 | Work回答と現行カーブ棚卸し | 判断済み。PR #91とdecision logへ責務表を同期 |
 | 0B | [#66](https://github.com/garchomp-game/create-game/issues/66) | 世界観、視覚言語、素材境界 | gameplay数値を変えない比較案 | 背景、敵、警告へ展開できる1方向を選ぶ |
 | UI | [#68](https://github.com/garchomp-game/create-game/issues/68) / [#67](https://github.com/garchomp-game/create-game/issues/67) / [#70](https://github.com/garchomp-game/create-game/issues/70) | 選択画面の可読性と再開操作 | PR #84と比較手順 | candidateを採用、再調整、棄却のいずれかに固定 |
-| T1 | [#97](https://github.com/garchomp-game/create-game/issues/97) | 現行visualのTrainingで説明不足を切り分ける | Workの`revise`必須修正、ローカル全証拠、owner再確認を完了。PR / Preview固定待ち | #81で事前教材なしの総合演習とEndless 30秒probeをraw countで判断 |
+| T1 | [#97](https://github.com/garchomp-game/create-game/issues/97) | 現行visualのTrainingで説明不足を切り分ける | runtime候補`e87250500304`、owner gate、PR CI、immutable Previewを固定済み | #81で事前教材なしの総合演習とEndless 30秒probeをraw countで判断 |
 | T2 | [#98](https://github.com/garchomp-game/create-game/issues/98) | 撃つ・避ける・取るの視覚意味を変える必要があるか | Phase A fixtureは先行可。runtimeはT1で誤認が残る場合だけ | 変更不要、採用、再設計、延期、棄却を固定 |
 | 0C | [#77](https://github.com/garchomp-game/create-game/issues/77) | candidate非依存のfact、episode、純粋ledger | #83判断済み。既存event棚卸し済み | simulationを変えず共通schemaとinvalid-stateを固定 |
 | 0D | [#93](https://github.com/garchomp-game/create-game/issues/93) | Boss Attack Cardと回復・反撃窓の観測 | RC6 control。runtime候補は入れない | 3攻撃の文法、chain、shadow指標を定義 |
@@ -111,7 +111,7 @@ RC6 baseline
 1. **完了**: main `df61f14`のCIがfresh greenで、#86の証拠がSHAへ結び付いている。
 2. **完了**: #88、PR #90、PR #91をmainへ統合した。
 3. **完了**: #83の判断、#93から#95、#97 / #98の責務、#81の再利用レーンをStarlightへ同期した。
-4. **進行中**: #97のT1候補はWorkの`revise`必須修正、ローカル全自動証拠、owner再確認を完了。PR #99更新、CI、Preview、#81の初心者確認を残す。
+4. **進行中**: #97のT1 runtime候補`e87250500304`はWorkの`revise`必須修正、全自動証拠、owner gate、PR #99のCI、immutable Previewを固定済み。残る採否ゲートは#81の初心者確認だけである。
 5. #80のwarning / impact最低fixtureと#81のbaseline手順を固定している。
 6. #76で変更する仮説、値、seed、raw-count基準、stop condition、rollbackを事前登録している。
 7. production v0.6.8を変更しないことを再確認している。
