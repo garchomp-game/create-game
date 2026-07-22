@@ -3,6 +3,26 @@ import type * as Phaser from "phaser";
 import { PhaserAudioEventRouter } from "./PhaserAudioEventRouter";
 
 describe("PhaserAudioEventRouter", () => {
+  it("keeps routing observations opt-in for the production path", () => {
+    const played: string[] = [];
+    const scene = {
+      time: { now: 100 },
+      cache: { audio: { exists: () => true } },
+      sound: { play: (key: string) => played.push(key) },
+    } as unknown as Phaser.Scene;
+    const router = new PhaserAudioEventRouter(scene);
+
+    router.handleEvents([{ type: "game.over", score: 100, elapsed: 10 }]);
+
+    expect(played).toEqual(["gameOver"]);
+    expect(router.getLastCues()).toEqual(["gameOver"]);
+    expect(router.getRoutingSnapshot()).toEqual({
+      requested: [],
+      played: [],
+      suppressed: [],
+    });
+  });
+
   it("routes cues with cooldowns and keeps cue telemetry while muted", () => {
     const played: Array<{ key: string; volume: number; detune?: number }> = [];
     const scene = {
@@ -14,7 +34,7 @@ describe("PhaserAudioEventRouter", () => {
         },
       },
     } as unknown as Phaser.Scene;
-    const router = new PhaserAudioEventRouter(scene);
+    const router = new PhaserAudioEventRouter(scene, true);
 
     router.configure({ sfxVolume: 0.5, sfxMuted: false });
     router.handleEvents([{ type: "game.over", score: 100, elapsed: 10 }]);
@@ -26,6 +46,55 @@ describe("PhaserAudioEventRouter", () => {
     router.handleEvents([{ type: "game.over", score: 200, elapsed: 20 }]);
     expect(played).toHaveLength(1);
     expect(router.getLastCues()).toEqual(["gameOver", "gameOver", "gameOver"]);
+    expect(router.getRoutingSnapshot()).toEqual({
+      requested: [
+        {
+          sequence: 0,
+          eventType: "game.over",
+          cue: "gameOver",
+          requestedAtMs: 100,
+        },
+        {
+          sequence: 1,
+          eventType: "game.over",
+          cue: "gameOver",
+          requestedAtMs: 100,
+        },
+        {
+          sequence: 2,
+          eventType: "game.over",
+          cue: "gameOver",
+          requestedAtMs: 500,
+        },
+      ],
+      played: [
+        {
+          sequence: 0,
+          eventType: "game.over",
+          cue: "gameOver",
+          requestedAtMs: 100,
+          asset: "gameOver",
+          volume: 0.22,
+          detune: 0,
+        },
+      ],
+      suppressed: [
+        {
+          sequence: 1,
+          eventType: "game.over",
+          cue: "gameOver",
+          requestedAtMs: 100,
+          reason: "cooldown",
+        },
+        {
+          sequence: 2,
+          eventType: "game.over",
+          cue: "gameOver",
+          requestedAtMs: 500,
+          reason: "muted",
+        },
+      ],
+    });
   });
 
   it("cycles high-frequency cue variants and resets the sequence between runs", () => {
@@ -39,7 +108,7 @@ describe("PhaserAudioEventRouter", () => {
         },
       },
     } as unknown as Phaser.Scene;
-    const router = new PhaserAudioEventRouter(scene);
+    const router = new PhaserAudioEventRouter(scene, true);
     const shot = {
       type: "shot.fired" as const,
       volleyId: 1,
@@ -79,7 +148,7 @@ describe("PhaserAudioEventRouter", () => {
         },
       },
     } as unknown as Phaser.Scene;
-    const router = new PhaserAudioEventRouter(scene);
+    const router = new PhaserAudioEventRouter(scene, true);
 
     router.configure({ sfxVolume: 1, sfxMuted: false });
     router.handleEvents([
@@ -97,7 +166,7 @@ describe("PhaserAudioEventRouter", () => {
       cache: { audio: { exists: () => true } },
       sound: { play: (key: string) => played.push(key) },
     } as unknown as Phaser.Scene;
-    const router = new PhaserAudioEventRouter(scene);
+    const router = new PhaserAudioEventRouter(scene, true);
 
     router.handleEvents([
       {
@@ -117,5 +186,71 @@ describe("PhaserAudioEventRouter", () => {
 
     expect(played).toEqual(["upgrade"]);
     expect(router.getLastCues()).toEqual(["sweep"]);
+    expect(router.getRoutingSnapshot()).toMatchObject({
+      requested: [
+        { sequence: 0, cue: "sweep", eventType: "expedition.completed" },
+        { sequence: 1, cue: "gameOver", eventType: "game.over" },
+      ],
+      played: [{ sequence: 0, cue: "sweep", asset: "upgrade" }],
+      suppressed: [
+        {
+          sequence: 1,
+          cue: "gameOver",
+          reason: "victory-terminal-dedup",
+        },
+      ],
+    });
+  });
+
+  it.each([
+    {
+      name: "zero volume",
+      volume: 0,
+      assetAvailable: true,
+      reason: "zero-volume",
+    },
+    {
+      name: "missing asset",
+      volume: 1,
+      assetAvailable: false,
+      reason: "asset-unavailable",
+    },
+  ] as const)("records $name suppression", ({ volume, assetAvailable, reason }) => {
+    const scene = {
+      time: { now: 100 },
+      cache: { audio: { exists: () => assetAvailable } },
+      sound: { play: () => undefined },
+    } as unknown as Phaser.Scene;
+    const router = new PhaserAudioEventRouter(scene, true);
+
+    router.configure({ sfxVolume: volume, sfxMuted: false });
+    router.handleEvents([{ type: "game.over", score: 100, elapsed: 10 }]);
+
+    expect(router.getRoutingSnapshot()).toMatchObject({
+      requested: [{ sequence: 0, cue: "gameOver" }],
+      played: [],
+      suppressed: [{ sequence: 0, cue: "gameOver", reason }],
+    });
+  });
+
+  it("bounds routing observations independently from legacy cue history", () => {
+    const scene = {
+      time: { now: 100 },
+      cache: { audio: { exists: () => true } },
+      sound: { play: () => undefined },
+    } as unknown as Phaser.Scene;
+    const router = new PhaserAudioEventRouter(scene, true);
+    router.configure({ sfxVolume: 1, sfxMuted: true });
+
+    for (let index = 0; index < 45; index += 1) {
+      router.handleEvents([{ type: "game.over", score: index, elapsed: index }]);
+    }
+
+    const routing = router.getRoutingSnapshot();
+    expect(router.getLastCues()).toHaveLength(20);
+    expect(routing.requested).toHaveLength(40);
+    expect(routing.suppressed).toHaveLength(40);
+    expect(routing.requested[0]?.sequence).toBe(5);
+    expect(routing.requested.at(-1)?.sequence).toBe(44);
   });
 });
