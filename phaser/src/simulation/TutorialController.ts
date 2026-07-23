@@ -47,6 +47,7 @@ export const BASIC_TUTORIAL_UPGRADE_CHOICES = [
 const TASK_STEPS: TutorialStepId[] = [
   "move",
   "navigate",
+  "contactDamage",
   "aimAndKill",
   "collectXp",
   "chooseUpgrade",
@@ -55,7 +56,14 @@ const TASK_STEPS: TutorialStepId[] = [
   "transferDrill",
 ];
 const TRAINING_PLAYER_START = { x: 480, y: 270 } as const;
-const TRAINING_ENEMY_POSITION = { x: 480, y: 100 } as const;
+export const BASIC_TUTORIAL_COMBAT_PLAYER_POSITION = {
+  x: 200,
+  y: 270,
+} as const;
+export const BASIC_TUTORIAL_COMBAT_ENEMY_POSITION = {
+  x: 760,
+  y: 270,
+} as const;
 const TRAINING_XP_POSITION = { x: 480, y: 100 } as const;
 const TRANSFER_REQUIRED_KILLS = 3;
 const DODGE_READY_SECONDS = 1;
@@ -120,6 +128,16 @@ export class TutorialController {
     this.enterStep("move", world, config, this.pendingEvents);
   }
 
+  prepareInput(input: InputSnapshot): InputSnapshot {
+    if (this.stepId !== "contactDamage" || this.phase !== "active") return input;
+    return {
+      ...input,
+      move: { x: 0, y: 0 },
+      aimWorld: null,
+      shootHeld: false,
+    };
+  }
+
   update(
     world: WorldState,
     config: SimulationConfig,
@@ -179,6 +197,19 @@ export class TutorialController {
         break;
       case "navigate":
         if (isInsideZone(world.player.position, BASIC_TUTORIAL_NAVIGATION_ZONE)) {
+          this.advanceTo("contactDamage", world, config, added);
+        }
+        break;
+      case "contactDamage":
+        if (
+          this.targetEnemyId &&
+          events.some(
+            (event) =>
+              event.type === "player.damaged" &&
+              event.source?.kind === "contact" &&
+              event.source.enemyId === this.targetEnemyId,
+          )
+        ) {
           this.advanceTo("aimAndKill", world, config, added);
         }
         break;
@@ -424,13 +455,21 @@ export class TutorialController {
           ...point,
         })),
       };
-    } else if (this.stepId === "aimAndKill") {
+    } else if (
+      this.stepId === "contactDamage" ||
+      this.stepId === "aimAndKill"
+    ) {
       clearTransientWorld(world);
+      world.player.position = { ...BASIC_TUTORIAL_COMBAT_PLAYER_POSITION };
+      world.state.damageCooldown = 0;
+      if (this.stepId === "aimAndKill") {
+        world.state.hp = getPlayerMaxHp(world, config);
+      }
       const enemy = spawnEnemyAtPosition(
         world,
         "chaser",
         { spawnInterval: 60, speedMultiplier: 1, maxEnemies: 1 },
-        TRAINING_ENEMY_POSITION,
+        BASIC_TUTORIAL_COMBAT_ENEMY_POSITION,
         config,
       );
       this.targetEnemyId = enemy.id;
@@ -562,6 +601,7 @@ export class TutorialController {
   ): void {
     if (
       stepId === "navigate" ||
+      stepId === "contactDamage" ||
       stepId === "aimAndKill" ||
       stepId === "dodgeProjectile" ||
       stepId === "collectRepair" ||
@@ -571,6 +611,15 @@ export class TutorialController {
     }
     if (stepId === "navigate") {
       world.player.position = { ...BASIC_TUTORIAL_NAVIGATION_START };
+    }
+    if (stepId === "contactDamage") {
+      world.player.position = { ...BASIC_TUTORIAL_COMBAT_PLAYER_POSITION };
+      world.state.hp = getPlayerMaxHp(world, config);
+      world.state.damageCooldown = 0;
+    }
+    if (stepId === "aimAndKill") {
+      world.player.position = { ...BASIC_TUTORIAL_COMBAT_PLAYER_POSITION };
+      world.state.damageCooldown = 0;
     }
     if (stepId === "dodgeProjectile") {
       world.player.position = { ...TRAINING_PLAYER_START };

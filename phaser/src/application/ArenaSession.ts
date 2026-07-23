@@ -92,16 +92,18 @@ export class ArenaSession {
 
   step(input: InputSnapshot, deltaSeconds: number): StepWorldResult {
     const active = this.requireActive();
+    const tutorialInput =
+      active.tutorialController?.prepareInput(input) ?? input;
     const trainingUpgradeControl = getTrainingUpgradeControl(active, input);
     const stepInput = trainingUpgradeControl
       ? {
-          ...input,
+          ...tutorialInput,
           restartPressed: false,
           pausePressed: false,
           quitToTitlePressed: false,
           upgradeChoicePressed: null,
         }
-      : input;
+      : tutorialInput;
     const frameBefore = {
       elapsed: active.world.state.elapsed,
       playerPosition: { ...active.world.player.position },

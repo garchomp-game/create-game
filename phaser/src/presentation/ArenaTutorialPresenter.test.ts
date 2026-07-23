@@ -9,7 +9,7 @@ describe("ArenaTutorialPresenter", () => {
     expect(view).toMatchObject({
       visible: true,
       presentation: "hud",
-      eyebrow: "BASIC TRAINING  1/8",
+      eyebrow: "BASIC TRAINING  1/9",
       title: "移動",
       instruction: "WASD / 矢印キーで移動",
       hint: null,
@@ -34,7 +34,7 @@ describe("ArenaTutorialPresenter", () => {
       target: null,
       progress: null,
     });
-    expect(view?.briefing).toContain("全8課題・約3分");
+    expect(view?.briefing).toContain("全9課題・約3分");
   });
 
   it("reveals staged hints and a guide only after their thresholds", () => {
@@ -74,7 +74,7 @@ describe("ArenaTutorialPresenter", () => {
       createArenaTutorialViewModel(
         makeSnapshot({
           stepId: "transferDrill",
-          stepNumber: 8,
+          stepNumber: 9,
           transfer: {
             survivalSeconds: 7.9,
             kills: 1,
@@ -101,7 +101,7 @@ describe("ArenaTutorialPresenter", () => {
     });
     expect(
       createArenaTutorialViewModel(
-        makeSnapshot({ stepId: "chooseUpgrade", stepNumber: 5 }),
+        makeSnapshot({ stepId: "chooseUpgrade", stepNumber: 6 }),
         "upgradeSelect",
       ),
     ).toMatchObject({ visible: false });
@@ -112,7 +112,7 @@ describe("ArenaTutorialPresenter", () => {
       createArenaTutorialViewModel(
         makeSnapshot({
           stepId: "dodgeProjectile",
-          stepNumber: 6,
+          stepNumber: 7,
           phase: "briefing",
           lastCompletedStepId: "chooseUpgrade",
           selectedUpgradeId: "swiftStep",
@@ -129,7 +129,7 @@ describe("ArenaTutorialPresenter", () => {
       createArenaTutorialViewModel(
         makeSnapshot({
           stepId: "dodgeProjectile",
-          stepNumber: 6,
+          stepNumber: 7,
           retryCount: 1,
           retryReason: "enemyProjectile",
           retryNoticeSecondsRemaining: 1.4,
@@ -151,7 +151,7 @@ function makeSnapshot(
     stepId: "move",
     phase: "active",
     stepNumber: 1,
-    stepCount: 8,
+    stepCount: 9,
     stepActiveSeconds: 0,
     totalActiveSeconds: 0,
     hintLevel: 0,

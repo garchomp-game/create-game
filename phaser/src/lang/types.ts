@@ -81,6 +81,7 @@ export type UiText = {
   trainingSteps: Record<
     | "move"
     | "navigate"
+    | "contactDamage"
     | "aimAndKill"
     | "collectXp"
     | "dodgeProjectile"

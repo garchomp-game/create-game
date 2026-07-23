@@ -3,6 +3,8 @@ import { SIMULATION_CONFIG } from "../config/gameConfig";
 import type { GameEvent, WorldState } from "../domain/types";
 import { createWorld } from "./createWorld";
 import {
+  BASIC_TUTORIAL_COMBAT_ENEMY_POSITION,
+  BASIC_TUTORIAL_COMBAT_PLAYER_POSITION,
   BASIC_TUTORIAL_MOVE_DISTANCE,
   BASIC_TUTORIAL_NAVIGATION_START,
   BASIC_TUTORIAL_NAVIGATION_WAYPOINTS,
@@ -48,13 +50,71 @@ describe("TutorialController", () => {
       world.state.elapsed += 0.25;
     });
     expect(controller.getSnapshot()).toMatchObject({
-      stepId: "aimAndKill",
+      stepId: "contactDamage",
       phase: "briefing",
       target: null,
     });
     activateCurrentStep(controller, world);
+    const contact = controller.getSnapshot();
+    expect(world.player.position).toEqual(BASIC_TUTORIAL_COMBAT_PLAYER_POSITION);
+    expect(contact.target).toMatchObject({
+      kind: "enemy",
+      position: BASIC_TUTORIAL_COMBAT_ENEMY_POSITION,
+    });
+    expect(
+      controller.prepareInput({
+        move: { x: 1, y: -1 },
+        aimWorld: { x: 900, y: 270 },
+        startPressed: false,
+        shootHeld: true,
+        restartPressed: false,
+        pausePressed: true,
+        quitToTitlePressed: false,
+        upgradeChoicePressed: null,
+      }),
+    ).toMatchObject({
+      move: { x: 0, y: 0 },
+      aimWorld: null,
+      shootHeld: false,
+      pausePressed: true,
+    });
+
+    const contactDamage = SIMULATION_CONFIG.enemies.chaser.damage;
+    advanceFrame(
+      controller,
+      world,
+      [
+        {
+          type: "player.damaged",
+          damage: contactDamage,
+          hpAfter: SIMULATION_CONFIG.player.maxHp - contactDamage,
+          source: {
+            kind: "contact",
+            enemyId: contact.target!.id!,
+            enemyType: "chaser",
+          },
+        },
+      ],
+      () => {
+        world.state.hp = SIMULATION_CONFIG.player.maxHp - contactDamage;
+      },
+    );
+    expect(controller.getSnapshot()).toMatchObject({
+      stepId: "aimAndKill",
+      phase: "briefing",
+      lastCompletedStepId: "contactDamage",
+    });
+    expect(world.state.hp).toBe(SIMULATION_CONFIG.player.maxHp - contactDamage);
+    expect(world.enemies).toEqual([]);
+
+    activateCurrentStep(controller, world);
     const aim = controller.getSnapshot();
-    expect(aim.target).toMatchObject({ kind: "enemy" });
+    expect(world.player.position).toEqual(BASIC_TUTORIAL_COMBAT_PLAYER_POSITION);
+    expect(world.state.hp).toBe(SIMULATION_CONFIG.player.maxHp);
+    expect(aim.target).toMatchObject({
+      kind: "enemy",
+      position: BASIC_TUTORIAL_COMBAT_ENEMY_POSITION,
+    });
 
     const targetEnemyId = aim.target!.id!;
     const targetPosition = { ...aim.target!.position };
@@ -543,6 +603,22 @@ function reachAimStep(
     };
     world.state.elapsed += 0.1;
   });
+  activateCurrentStep(controller, world);
+  const contactEnemyId = controller.getSnapshot().target!.id!;
+  advanceFrame(controller, world, [
+    {
+      type: "player.damaged",
+      damage: SIMULATION_CONFIG.enemies.chaser.damage,
+      hpAfter:
+        SIMULATION_CONFIG.player.maxHp -
+        SIMULATION_CONFIG.enemies.chaser.damage,
+      source: {
+        kind: "contact",
+        enemyId: contactEnemyId,
+        enemyType: "chaser",
+      },
+    },
+  ]);
   activateCurrentStep(controller, world);
 }
 

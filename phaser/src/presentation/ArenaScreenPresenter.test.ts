@@ -56,7 +56,7 @@ describe("createArenaScreenViewModel", () => {
         stepId: "chooseUpgrade",
         phase: "active",
         stepNumber: 5,
-        stepCount: 8,
+        stepCount: 9,
         stepActiveSeconds: 0,
         totalActiveSeconds: 10,
         hintLevel: 0,

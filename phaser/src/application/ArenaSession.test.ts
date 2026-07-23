@@ -172,7 +172,7 @@ describe("ArenaSession", () => {
       stepId: "move",
       phase: "briefing",
       stepNumber: 1,
-      stepCount: 8,
+      stepCount: 9,
     });
     expect(session.world.state).toMatchObject({
       status: "trainingBriefing",

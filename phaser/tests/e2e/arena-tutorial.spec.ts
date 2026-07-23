@@ -8,7 +8,7 @@ test.describe("basic Training", () => {
   test("completes through public inputs without changing local run data", async ({
     page,
   }) => {
-    test.setTimeout(150_000);
+    test.setTimeout(210_000);
     await gotoArena(page);
     await seedExistingRunRecord(page);
     const before = await readLocalState(page);
@@ -16,7 +16,7 @@ test.describe("basic Training", () => {
     await clickCanvasLogical(page, 480, 393);
     await expectTrainingStep(page, "move");
     await expect(page.locator(".arena-tutorial-dialog--visible")).toContainText(
-      "全8課題・約3分",
+      "全9課題・約3分",
     );
     await expect
       .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().runContext))
@@ -41,9 +41,41 @@ test.describe("basic Training", () => {
       ),
     ).toBe(false);
     await moveThroughCurrentTutorialGuidePath(page);
-    await expectTrainingStep(page, "aimAndKill");
+    await expectTrainingStep(page, "contactDamage");
+
+    await continueTutorial(page, "contactDamage");
+    const contactStart = await page.evaluate(() => {
+      const snapshot = window.__ARENA_DEBUG__?.getSnapshot();
+      return {
+        player: snapshot?.player ?? null,
+        shotsFired: snapshot?.stats.shotsFired ?? null,
+      };
+    });
+    await page.keyboard.down("KeyD");
+    await page.keyboard.down("Space");
+    await page.waitForTimeout(400);
+    await page.keyboard.up("Space");
+    await page.keyboard.up("KeyD");
+    const contactLocked = await page.evaluate(() => {
+      const snapshot = window.__ARENA_DEBUG__?.getSnapshot();
+      return {
+        player: snapshot?.player ?? null,
+        shotsFired: snapshot?.stats.shotsFired ?? null,
+      };
+    });
+    expect(contactLocked).toEqual(contactStart);
+    await expectTrainingStep(page, "aimAndKill", 10_000);
+    await expect(page.locator(".arena-tutorial-dialog--visible")).toContainText(
+      "敵本体への接触でもHPが減ります",
+    );
+    expect(
+      await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().hp),
+    ).toBeLessThan(100);
 
     await continueTutorial(page, "aimAndKill");
+    expect(
+      await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().hp),
+    ).toBe(100);
     await shootCurrentTutorialTarget(page);
     await expectTrainingStep(page, "collectXp");
     await continueTutorial(page, "collectXp");
@@ -455,13 +487,21 @@ async function getTransferKills(page: Page): Promise<number> {
 
 async function finishTransferDrill(page: Page): Promise<void> {
   const patrolPoints = [
+    { x: 480, y: 270 },
     { x: 120, y: 270 },
+    { x: 480, y: 270 },
     { x: 120, y: 110 },
+    { x: 480, y: 270 },
     { x: 480, y: 110 },
+    { x: 480, y: 270 },
     { x: 840, y: 110 },
+    { x: 480, y: 270 },
     { x: 840, y: 270 },
+    { x: 480, y: 270 },
     { x: 840, y: 440 },
+    { x: 480, y: 270 },
     { x: 480, y: 440 },
+    { x: 480, y: 270 },
     { x: 120, y: 440 },
   ];
   const deadline = Date.now() + 90_000;

@@ -1,6 +1,7 @@
 export const TUTORIAL_STEP_IDS = [
   "move",
   "navigate",
+  "contactDamage",
   "aimAndKill",
   "collectXp",
   "chooseUpgrade",

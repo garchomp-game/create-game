@@ -7,6 +7,7 @@ import { probeWebglCanvas } from "./webglCanvasProbe";
 const TRAINING_VISUAL_FIXTURES = [
   { stepId: "move", snapshotName: "move" },
   { stepId: "navigate", snapshotName: "navigate" },
+  { stepId: "contactDamage", snapshotName: "contact" },
   { stepId: "aimAndKill", snapshotName: "aim" },
   { stepId: "collectXp", snapshotName: "xp" },
   { stepId: "collectRepair", snapshotName: "repair" },
@@ -268,6 +269,12 @@ async function showTrainingPresentation(
       }
       return { move: { x: Math.sign(xDifference), y: 0 } };
     });
+    activateCurrentStep();
+    if (requestedStep === "contactDamage") return;
+
+    runUntilStepChanges("contactDamage", 600, () => ({
+      move: { x: 0, y: 0 },
+    }));
     activateCurrentStep();
     if (requestedStep === "aimAndKill") return;
 
