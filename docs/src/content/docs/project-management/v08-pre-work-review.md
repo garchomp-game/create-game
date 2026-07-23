@@ -3,7 +3,7 @@ title: v0.8 作業開始前レビュー
 description: Training、視覚意味、敗因説明、危険反転、UI、RC6公開を混同せずに進めるための開始条件、依存、停止条件。
 ---
 
-最終整理日: 2026-07-22
+最終整理日: 2026-07-23
 
 ## このページの役割
 
@@ -37,10 +37,10 @@ description: Training、視覚意味、敗因説明、危険反転、UI、RC6公
 | 項目 | 確認値 | 意味 |
 | --- | --- | --- |
 | v0.8候補baseline | `b561aa6aeca511a03144b5593b85ecd875f47582` | 各単独candidateの比較基準 |
-| current main | `41ed5f04a9f406197978e3123c2d801cf212d7e5` | #77 Phase 0と#80 skeletonまで統合済み |
-| Draft PR #99 | runtime `e87250500304` / 文書head `201931edd382` | runtime差分は凍結。文書headとの差はStarlight 7ファイルだけ |
-| PR #99 CI | runtime run `29906507015`、文書head run `29908879099`の各3 jobがgreen | 自動実装証拠。人間採用の代替ではない |
-| PR #99 Preview | Version `f3b88d64-c430-4985-8a55-f8c0e17f4a44` | owner gateと実URLsmoke完了。#81の実行対象 |
+| current main | `f19889b71902e669999cd94db1d6672c54e7ab55` | #77 Phase 0、#80 skeleton、後続の観測境界まで統合済み |
+| PR #99 | runtime `78b79da9c5aa` / 配布build `2247bd9cd16a` | 接触ダメージ観察を含む9課題版。owner確認後にmain採用 |
+| PR #99 CI | [run `29982936685`](https://github.com/garchomp-game/create-game/actions/runs/29982936685)の3 jobがgreen | 自動実装証拠。人間理解の代替ではない |
+| PR #99 Preview | Version `7eaaf10f-fd82-4032-b363-5d4b44db8293` | 実URLsmoke完了。#81の実行対象 |
 | #77 Phase 0 | PR #102をmain `10198a9e810b`へ統合 | fact kernelの共通境界。Presenterと永続化は後続 |
 | #80 skeleton | PR #103をmain `41ed5f04a9f4`へ統合 | 3 viewport captureとdebug audio routing。最大密度意味論は後続 |
 | Draft PR #84 | HEAD `1fdaca2…` | 現main未追従。外部採否前にrebase、fresh CI、Preview再取得が必要 |
@@ -91,7 +91,7 @@ aim / XP target: (480, 100)
 4. exact SHAとimmutable Preview Versionを固定する。
 5. T1実施中はcandidate HEADを変更しない。
 
-このP1は最終runtime候補`e87250500304`で解消済みです。DOM briefing、上部小型チェックリスト、障害物外側waypoint、全課題のlandscape / portrait fixtureへ更新し、敵性能、通常モードの学習条件、#98視覚候補は混ぜていません。
+このP1は先行8課題runtime `e87250500304`で解消し、後継9課題runtime `78b79da9c5aa`でも維持しています。DOM briefing、上部小型チェックリスト、障害物外側waypoint、全課題のlandscape / portrait fixtureへ更新し、敵性能、通常モードの学習条件、#98視覚候補は混ぜていません。
 
 ### Ready化までのP2（解消済み）
 
@@ -211,7 +211,7 @@ after v0.8 decisions
 
 ### Session 1: PR #99 T1 evidence freeze
 
-**状態: 完了。** runtime候補`e87250500304`、owner gate、2回の3-job CI、immutable Previewを固定しました。残るのは#81の人間T1だけです。
+**状態: 完了。** 接触課題を含むruntime候補`78b79da9c5aa`、owner gate、3-job CI、build `2247bd9cd16a`の固定Previewを確定しました。残るのは#81の人間T1だけです。
 
 目的は、表示遮蔽を直したTraining candidateを再現可能な人間T1へ渡すことです。
 
@@ -517,7 +517,7 @@ Codexは次の場合に自律実装を止め、Issueへ事実を記録してmain
 
 ## 最終的な実行順
 
-1. **完了**: PR #99の説明パネル遮蔽を含むT1前修正を終え、runtime SHAとimmutable Previewを固定する。
+1. **完了**: PR #99の説明パネル遮蔽と接触ダメージ観察を含むT1前修正を終え、runtime SHAと固定Previewを確定してmain採用する。
 2. **完了**: #77 Phase 0と#80 skeletonを別branchで実装し、mainへ統合する。
 3. #81で固定済みPreviewを使い、事前教材なしの初心者T1を行う。
 4. T1で誤認が残る場合だけ#98 runtime T2を作る。

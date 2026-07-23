@@ -23,6 +23,7 @@ export type UpgradeChoiceButton = {
 const DEFAULT_MENU_LABELS: Record<MenuAction, string> = {
   start: "エンドレス開始",
   startExpedition: "最終遠征に挑む",
+  startTraining: "基本訓練",
   selectPulse: "パルスを選ぶ",
   selectSpread: "拡散を選ぶ",
   contractStandard: "標準を維持",
@@ -235,22 +236,33 @@ export function getMenuButtons(
   }
 
   if (status === "title") {
-    const actions: MenuAction[] = [
-      "start",
-      "startExpedition",
-      "ranking",
-      "history",
-      "settings",
-      "betaInfo",
+    const primary: MenuAction[] = ["start", "startExpedition", "startTraining"];
+    const secondary: MenuAction[] = ["ranking", "history", "settings", "betaInfo"];
+    return [
+      ...primary.map((action, index) => ({
+        action,
+        label: label(action),
+        x,
+        y: 276 + index * 48,
+        width: buttonWidth,
+        height: buttonHeight,
+      })),
+      ...secondary.map((action, index) => ({
+        action,
+        label: label(action),
+        x: arenaWidth / 2 - 270 + (index % 2) * 280,
+        y: 426 + Math.floor(index / 2) * 48,
+        width: 260,
+        height: buttonHeight,
+      })),
     ];
-    return actions.map((action, index) => ({
-      action,
-      label: label(action),
-      x,
-      y: 276 + index * 42,
-      width: buttonWidth,
-      height: buttonHeight,
-    }));
+  }
+
+  if (status === "trainingComplete") {
+    return [
+      { action: "start", label: label("start"), x, y: 348, width: buttonWidth, height: buttonHeight },
+      { action: "title", label: label("title"), x, y: 400, width: buttonWidth, height: buttonHeight },
+    ];
   }
 
   if (status === "paused") {

@@ -155,6 +155,7 @@ export class ArenaDebugController {
         quitToTitlePressed: input.quitToTitlePressed,
         upgradeChoicePressed: null,
         contractChoicePressed: null,
+        tutorialContinuePressed: false,
       },
       0,
     );
@@ -267,6 +268,7 @@ export class ArenaDebugController {
         seeds: { ...randomStreams.seeds },
       },
       status: world.state.status,
+      tutorial: this.dependencies.session.tutorialSnapshot,
       autoPilotEnabled: autoPilot.enabled,
       autoPilotMode: autoPilot.mode,
       autoPilotIntentMode: autoPilot.intentMode,

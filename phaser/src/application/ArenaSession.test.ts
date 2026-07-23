@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { SIMULATION_CONFIG } from "../config/gameConfig";
 import type { InputSnapshot } from "../domain/types";
-import { createRandomStreams } from "../math/random";
+import {
+  createRandomStreams,
+  RANDOM_STREAM_IDS,
+  type RandomStreamId,
+} from "../math/random";
 import { createWorld } from "../simulation/createWorld";
 import { stepWorld } from "../simulation/stepWorld";
 import { ArenaSession } from "./ArenaSession";
@@ -16,6 +20,7 @@ const input: InputSnapshot = {
   quitToTitlePressed: false,
   upgradeChoicePressed: null,
   contractChoicePressed: null,
+  tutorialContinuePressed: false,
 };
 
 describe("ArenaSession", () => {
@@ -150,6 +155,192 @@ describe("ArenaSession", () => {
       reachedActId: "perimeter-watch",
       actChanges: 1,
     });
+  });
+
+  it("starts deterministic basic training without normal spawns or records", () => {
+    const session = new ArenaSession(SIMULATION_CONFIG);
+    session.start({
+      seed: 20260720,
+      weaponType: "pulse",
+      modeId: "training",
+      stageId: "basic-training",
+    });
+
+    expect(session.runtimeKind).toBe("training");
+    expect(session.recordPolicy).toBe("none");
+    expect(session.tutorialSnapshot).toMatchObject({
+      stepId: "move",
+      phase: "briefing",
+      stepNumber: 1,
+      stepCount: 9,
+    });
+    expect(session.world.state).toMatchObject({
+      status: "trainingBriefing",
+      weaponType: "pulse",
+      hp: 100,
+    });
+    expect(session.config.waves[0]).toMatchObject({ maxEnemies: 0 });
+    expect(session.config.pickup).toMatchObject({
+      healDropChance: 0,
+      healDropPityBonus: 0,
+      healDropMaxChance: 0,
+    });
+
+    const briefingPosition = { ...session.world.player.position };
+    for (let index = 0; index < 120; index += 1) {
+      session.step({ ...input, shootHeld: false }, 1 / 60);
+    }
+    expect(session.world.state.elapsed).toBe(0);
+    expect(session.world.player.position).toEqual(briefingPosition);
+    expect(session.world.enemies).toEqual([]);
+    expect(session.tutorialSnapshot).toMatchObject({
+      stepId: "move",
+      phase: "briefing",
+    });
+
+    session.step(
+      {
+        ...input,
+        move: { x: 0, y: 0 },
+        shootHeld: false,
+        tutorialContinuePressed: true,
+      },
+      1 / 60,
+    );
+    expect(session.world.state.status).toBe("playing");
+    expect(session.tutorialSnapshot?.phase).toBe("active");
+  });
+
+  it("replays Training events and world state deterministically", () => {
+    const left = new ArenaSession(SIMULATION_CONFIG);
+    const right = new ArenaSession(SIMULATION_CONFIG);
+    const start = {
+      seed: 20260720,
+      weaponType: "pulse" as const,
+      modeId: "training",
+      stageId: "basic-training",
+    };
+    left.start(start);
+    right.start(start);
+    const leftEvents: string[] = [];
+    const rightEvents: string[] = [];
+    const confirmInput = {
+      ...input,
+      move: { x: 0, y: 0 },
+      shootHeld: false,
+      tutorialContinuePressed: true,
+    };
+    leftEvents.push(
+      ...left.step(confirmInput, 1 / 60).events.map((event) => JSON.stringify(event)),
+    );
+    rightEvents.push(
+      ...right.step(confirmInput, 1 / 60).events.map((event) => JSON.stringify(event)),
+    );
+
+    for (let index = 0; index < 240; index += 1) {
+      const replayInput = {
+        ...input,
+        move: index < 90 ? { x: -1, y: -1 } : { x: 0, y: 0 },
+        shootHeld: false,
+      };
+      leftEvents.push(
+        ...left.step(replayInput, 1 / 60).events.map((event) => JSON.stringify(event)),
+      );
+      rightEvents.push(
+        ...right.step(replayInput, 1 / 60).events.map((event) => JSON.stringify(event)),
+      );
+    }
+
+    expect(rightEvents).toEqual(leftEvents);
+    expect(right.world).toEqual(left.world);
+    expect(right.tutorialSnapshot).toEqual(left.tutorialSnapshot);
+  });
+
+  it("does not consume random streams while restoring a Training checkpoint", () => {
+    const session = new ArenaSession(SIMULATION_CONFIG);
+    session.start({
+      seed: 20260720,
+      weaponType: "pulse",
+      modeId: "training",
+      stageId: "basic-training",
+    });
+    const calls = Object.fromEntries(
+      RANDOM_STREAM_IDS.map((streamId) => [streamId, 0]),
+    ) as Record<RandomStreamId, number>;
+    for (const streamId of RANDOM_STREAM_IDS) {
+      const source = session.randomStreams[streamId];
+      session.randomStreams[streamId] = () => {
+        calls[streamId] += 1;
+        return source();
+      };
+    }
+
+    session.step(
+      {
+        ...input,
+        move: { x: 0, y: 0 },
+        shootHeld: false,
+        tutorialContinuePressed: true,
+      },
+      1 / 60,
+    );
+
+    for (let index = 0; index < 120; index += 1) {
+      session.step(
+        { ...input, move: { x: 0, y: 0 }, shootHeld: false },
+        1 / 60,
+      );
+    }
+    session.world.state.hp = 0;
+    const retried = session.step(
+      { ...input, move: { x: 0, y: 0 }, shootHeld: false },
+      1 / 60,
+    );
+
+    expect(retried.events).toContainEqual({
+      type: "tutorial.step.retried",
+      stepId: "move",
+      retryCount: 1,
+      reason: "damage",
+    });
+    expect(session.tutorialSnapshot).toMatchObject({
+      stepId: "move",
+      retryCount: 1,
+    });
+    expect(calls).toEqual({
+      spawn: 0,
+      upgrade: 0,
+      drop: 0,
+      encounter: 0,
+      stageVariant: 0,
+    });
+  });
+
+  it("opens pause controls from a Training upgrade selection without changing normal rules", () => {
+    const session = new ArenaSession(SIMULATION_CONFIG);
+    session.start({
+      seed: 20260720,
+      weaponType: "pulse",
+      modeId: "training",
+      stageId: "basic-training",
+    });
+    session.world.state.status = "upgradeSelect";
+    session.world.progression.pendingUpgradeChoices = ["rapidFire"];
+
+    const paused = session.step(
+      { ...input, pausePressed: true, upgradeChoicePressed: 0 },
+      1 / 60,
+    );
+
+    expect(paused.events).toContainEqual({
+      type: "game.paused",
+      elapsed: 0,
+    });
+    expect(session.world.state.status).toBe("paused");
+    expect(session.world.progression.pendingUpgradeChoices).toEqual([
+      "rapidFire",
+    ]);
+    expect(session.world.progression.upgradeRanks.rapidFire).toBe(0);
   });
 
   it("requires an active run before exposing state", () => {

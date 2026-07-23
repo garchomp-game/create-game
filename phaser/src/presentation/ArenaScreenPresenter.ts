@@ -13,6 +13,7 @@ import type {
   SimulationConfig,
   WorldState,
 } from "../domain/types";
+import type { TutorialSnapshot } from "../domain/tutorial";
 import {
   formatRunCentiseconds,
   formatTime,
@@ -31,6 +32,7 @@ export type ArenaScreenKind =
   | "gameOver"
   | "upgradeSelect"
   | "contractSelect"
+  | "trainingComplete"
   | "paused"
   | "weaponSelect"
   | "title";
@@ -49,6 +51,7 @@ export function createArenaScreenViewModel(
   world: WorldState,
   simulationConfig: SimulationConfig,
   uiState?: ArenaUiState,
+  tutorialSnapshot: TutorialSnapshot | null = null,
 ): ArenaScreenViewModel {
   const secondaryMenu = uiState?.secondaryMenu ?? null;
   const base = {
@@ -95,20 +98,47 @@ export function createArenaScreenViewModel(
       return { ...base, kind: "upgradeSelect", statusText: null, detailText: null };
     case "contractSelect":
       return { ...base, kind: "contractSelect", statusText: null, detailText: null };
-    case "paused":
+    case "trainingComplete":
+      return {
+        ...base,
+        kind: "trainingComplete",
+        statusText: `${TEXT.ui.trainingCompleteTitle}\n${TEXT.ui.trainingCompleteDescription}`,
+        detailText: null,
+        menuLabels: {
+          ...base.menuLabels,
+          start: "武器を選んでエンドレスへ",
+          title: "タイトルへ戻る",
+        },
+      };
+    case "paused": {
+      const trainingPaused = Boolean(
+        tutorialSnapshot && tutorialSnapshot.phase !== "complete",
+      );
       return {
         ...base,
         kind: "paused",
-        statusText: TEXT.ui.paused,
+        statusText: trainingPaused ? TEXT.ui.trainingPaused : TEXT.ui.paused,
         detailText: `${TEXT.hud.weaponNames[world.state.weaponType]}\n${formatCapstoneProgress(world, simulationConfig)}\n${formatRecentSelections(world)}`,
+        menuLabels: trainingPaused
+          ? {
+              ...base.menuLabels,
+              resume:
+                tutorialSnapshot?.stepId === "chooseUpgrade"
+                  ? "強化選択へ戻る"
+                  : "訓練を再開",
+              restart: "基本訓練をやり直す",
+              title: "訓練を中断してタイトルへ",
+            }
+          : base.menuLabels,
       };
+    }
     case "weaponSelect":
       return { ...base, kind: "weaponSelect", statusText: null, detailText: null };
     case "title":
       return {
         ...base,
         kind: "title",
-        statusText: `${TEXT.ui.titleScreen}\nENDLESS / EXPEDITION\n生存限界か、最終決戦か\n${RELEASE_CHANNEL_LABEL} v${uiState?.releaseIdentity.appVersion ?? APP_VERSION}`,
+        statusText: `${TEXT.ui.titleScreen}\nENDLESS / EXPEDITION / TRAINING\n生存限界か、最終決戦か\n${RELEASE_CHANNEL_LABEL} v${uiState?.releaseIdentity.appVersion ?? APP_VERSION}`,
         detailText: null,
       };
     default:

@@ -21,6 +21,21 @@ describe("ArenaMenuController", () => {
       modeId: "expedition",
       stageId: "final-expedition",
     });
+    expect(controller.handle("startTraining", createContext()).command).toEqual({
+      type: "startTraining",
+      modeId: "training",
+      stageId: "basic-training",
+    });
+    expect(
+      controller.handle("start", createContext({ status: "trainingComplete" })).command,
+    ).toEqual({
+      type: "showWeaponSelect",
+      modeId: "endless",
+      stageId: "arena-default",
+    });
+    expect(
+      controller.handle("back", createContext({ status: "trainingComplete" })).command,
+    ).toEqual({ type: "showTitle" });
     expect(
       controller.handle("selectSpread", createContext({ status: "weaponSelect" })).command,
     ).toEqual({ type: "startRun", weaponType: "spread" });

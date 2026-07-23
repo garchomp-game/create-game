@@ -151,4 +151,4 @@ UI境界[#68](https://github.com/garchomp-game/create-game/issues/68)、比較pr
 - 不可視攻撃、予告なし即死、操作不能、データ損失、重大性能劣化がない。
 - 新しいVersion Previewの実URLsmokeと採否記録がある。
 
-RC6はこの条件を満たしてmainへ統合済みです。#86の品質ゲート、#88のEncounter境界追補、PR #90のUI比較手順もmainへ統合し、最新SHAのfresh CIを取得しました。直近は#83の正本文書同期を閉じ、#97のTraining T1、必要な場合だけ#98の視覚T2を独立レーンで進めます。PR #84のUI採否と#76のruntime candidateも同じ比較buildへ混ぜません。production trafficの切替は、採用するUIと配布SHAを固定してから別途行います。
+RC6はこの条件を満たしてmainへ統合済みです。#86の品質ゲート、#88のEncounter境界追補、PR #90 / #91の比較手順と正本同期もmainへ入り、基準`b561aa6aeca5`のfresh CIを取得しました。#97のTraining T1は接触課題を含む9課題runtime `78b79da9c5aa`へ更新し、owner gate、PR #99の3 CI job、Cloudflare Version `7eaaf10f-fd82-4032-b363-5d4b44db8293`の実URLsmokeを完了してmain採用を決定しました。直近は#81の人間転移確認で、誤認が残る場合だけ#98の視覚T2へ進みます。日程待ちと並行できるのは#76の値・seed・raw-count閾値・停止条件の事前登録までです。PR #84のUI採否と#76のruntime candidateは同じ比較buildへ混ぜません。production trafficの切替は、採用するUIと配布SHAを固定してから別途行います。

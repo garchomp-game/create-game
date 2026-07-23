@@ -3,7 +3,8 @@ import type { EnemyTypeId, Obstacle, Vec2, WaveBand } from "./types";
 export type ModeDefinition = {
   id: string;
   titleKey: string;
-  runtimeKind: "endless" | "expedition";
+  runtimeKind: "endless" | "expedition" | "training";
+  recordPolicy: "standard" | "none";
   stageIds: string[];
   defaultStageId: string;
 };
@@ -18,6 +19,7 @@ export type ObstacleDefinition = Obstacle;
 
 export type ClearConditionDefinition =
   | { type: "endless" }
+  | { type: "training" }
   | { type: "survive"; durationSeconds: number }
   | { type: "bossDefeat"; bossId: string };
 

@@ -64,6 +64,8 @@ Issue: [PH-V08-025 #97](https://github.com/garchomp-game/create-game/issues/97) 
 - T2は敵本体、敵弾、自機弾、XP、回復の意味だけを扱い、simulation、magnet、damage、dropを変えない。
 - #76のgameplay candidate、#84の選択UI、#94の敗因UIをT1 / T2へ混ぜない。
 - #81で`該当人数 / 到達人数`と`not-observed / not-reached / failure`を残す。
+- T1の初心者には事前のfixture、clip、30秒説明を見せない。Training、案内なし総合演習、同武器Endless 30秒probeを終えた後に分類質問を行う。
+- 同じ課題で3回retryまたは60秒進展なしを`assisted`とし、介助なし完了へ数えない。最初の3名中2名が同じ箇所で止まった場合は募集を止めて候補を修正する。
 
 ## 1. 危険反転
 
@@ -244,7 +246,7 @@ Issue: [PH-V08-019 #81](https://github.com/garchomp-game/create-game/issues/81)
 
 1. v0.7 RC6をmainへ統合し、ゲームルール基準を固定する。
 2. #83の採用判断を正本へ同期し、#77、#93 Phase A、#94 Phase A、#95、#80 fixture骨格をsimulation非介入で分けて進める。
-3. #97のT1を現行visualで独立実装し、#81でTraining後の無提示transferを観察する。誤認が残る場合だけ#98のT2へ進む。
+3. #97のT1を現行visualで独立実装し、#81でTraining後の正解提示なし総合演習を観察する。誤認が残る場合だけ#98のT2へ進む。
 4. #66の世界観とPR #84のUI採否はgameplay candidateと別経路で進める。
 5. #89統合とmain green後、#76のCharger衝突妨害だけを別ruleset / SHAで試す。
 6. #81の同一手順でRC6と#76を別cellとして人間評価し、判断を記録する。

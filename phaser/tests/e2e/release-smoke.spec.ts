@@ -54,7 +54,7 @@ test("publishes privacy, feedback, licenses, and complete local-data deletion", 
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
     .toBe("title");
-  await clickCanvasLogical(page, 480, 499);
+  await clickCanvasLogical(page, 620, 495);
   await expect(page).toHaveURL(/\/beta-info\.html$/);
   await expect(page.getByRole("heading", { name: "ARENA CORE" })).toBeVisible();
   await expect(page.locator("#app-version")).toHaveText(APP_VERSION);
@@ -82,6 +82,60 @@ test("publishes privacy, feedback, licenses, and complete local-data deletion", 
     unrelated: localStorage.getItem("unrelated.key"),
   }));
   expect(remaining).toEqual({ arenaKeys: [], unrelated: "keep" });
+});
+
+test("starts, advances, and exits Training without creating a run record", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+    .toBe("title");
+
+  await clickCanvasLogical(page, 480, 393);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.stepId,
+      ),
+    )
+    .toBe("move");
+  await expect(page.locator(".arena-tutorial-dialog--visible")).toBeVisible();
+  await page.locator("[data-tutorial-action='continue']").click();
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.phase),
+    )
+    .toBe("active");
+
+  await page.keyboard.down("KeyD");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.stepId,
+      ),
+    )
+    .toBe("navigate");
+  await page.keyboard.up("KeyD");
+
+  await page.waitForTimeout(100);
+  await page.keyboard.down("Escape");
+  await page.waitForTimeout(160);
+  await page.keyboard.up("Escape");
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+    .toBe("paused");
+  await clickCanvasLogical(page, 480, 409);
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+    .toBe("title");
+
+  const records = await page.evaluate(() => ({
+    history: window.__ARENA_DEBUG__?.getRunHistory() ?? [],
+    rankings: window.__ARENA_DEBUG__?.getRunRankingRecords() ?? [],
+    latest: window.__ARENA_DEBUG__?.getSnapshot().latestRunRecord ?? null,
+  }));
+  expect(records).toEqual({ history: [], rankings: [], latest: null });
 });
 
 async function clickCanvasLogical(page: Page, x: number, y: number): Promise<void> {

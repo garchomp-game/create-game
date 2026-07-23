@@ -50,6 +50,14 @@ export class RunLifecycleController {
     this.lastEvents = [];
   }
 
+  discard(): void {
+    this.coordinator.discard();
+    this.latestRecord = null;
+    this.previousBest = null;
+    this.previousWeaponBest = null;
+    this.lastEvents = [];
+  }
+
   observeEvents(events: readonly GameEvent[]): void {
     for (const event of events) {
       this.lastEvents.push(structuredClone(event));

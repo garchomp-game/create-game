@@ -45,6 +45,7 @@ import type {
   WaveBand,
   WeaponTypeId,
 } from "../../domain/types";
+import type { TutorialSnapshot } from "../../domain/tutorial";
 import type {
   AutoPilotMode,
   AutoPilotOverrideReason,
@@ -78,6 +79,7 @@ export type ArenaDebugSnapshot = {
   seed: number;
   randomStreams: ArenaRandomStreamSnapshot;
   status: GameStatus;
+  tutorial: TutorialSnapshot | null;
   autoPilotEnabled: boolean;
   autoPilotMode: AutoPilotMode | null;
   autoPilotIntentMode: AutoPilotMode | null;

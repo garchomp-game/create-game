@@ -1,7 +1,21 @@
 import { expect, type Page, test } from "@playwright/test";
 import { SIMULATION_CONFIG } from "../../src/config/gameConfig";
 import type { BossAttackId } from "../../src/domain/types";
+import type { TutorialStepId } from "../../src/domain/tutorial";
 import { probeWebglCanvas } from "./webglCanvasProbe";
+
+const TRAINING_VISUAL_FIXTURES = [
+  { stepId: "move", snapshotName: "move" },
+  { stepId: "navigate", snapshotName: "navigate" },
+  { stepId: "contactDamage", snapshotName: "contact" },
+  { stepId: "aimAndKill", snapshotName: "aim" },
+  { stepId: "collectXp", snapshotName: "xp" },
+  { stepId: "collectRepair", snapshotName: "repair" },
+  { stepId: "transferDrill", snapshotName: "transfer" },
+] as const satisfies readonly {
+  stepId: TutorialStepId;
+  snapshotName: string;
+}[];
 
 async function gotoArena(page: Page): Promise<void> {
   await page.goto(`/?webglReadback=1`);
@@ -159,6 +173,174 @@ async function seedVisualRunRecords(page: Page): Promise<void> {
   await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
 }
 
+async function showTrainingPresentation(
+  page: Page,
+  targetStep: TutorialStepId,
+): Promise<void> {
+  await moveMouseToCanvasLogical(page, 480, 393);
+  await page.mouse.down();
+  await page.mouse.up();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.stepId,
+      ),
+    )
+    .toBe("move");
+
+  await page.evaluate((requestedStep) => {
+    const debug = window.__ARENA_DEBUG__;
+    if (!debug) throw new Error("Debug API is not available.");
+    const currentStep = () => debug.getSnapshot().tutorial?.stepId ?? null;
+    const stepFrame = (
+      move: { x: number; y: number },
+      aimWorld: { x: number; y: number } | null = null,
+      shootHeld = false,
+      tutorialContinuePressed = false,
+    ) =>
+      debug.step(
+        { move, aimWorld, shootHeld, tutorialContinuePressed },
+        1 / 60,
+      );
+    const activateCurrentStep = () =>
+      stepFrame({ x: 0, y: 0 }, null, false, true);
+    const runUntilStepChanges = (
+      stepId: TutorialStepId,
+      maxFrames: number,
+      inputForFrame: () => {
+        move: { x: number; y: number };
+        aimWorld?: { x: number; y: number } | null;
+        shootHeld?: boolean;
+      },
+    ) => {
+      for (
+        let frame = 0;
+        frame < maxFrames && currentStep() === stepId;
+        frame += 1
+      ) {
+        const input = inputForFrame();
+        stepFrame(
+          input.move,
+          input.aimWorld ?? null,
+          input.shootHeld ?? false,
+        );
+      }
+      if (currentStep() === stepId) {
+        throw new Error(`Training fixture did not leave ${stepId}.`);
+      }
+    };
+
+    activateCurrentStep();
+    if (requestedStep !== "move") {
+      runUntilStepChanges("move", 120, () => ({
+        move: { x: 1, y: 0 },
+      }));
+    }
+    if (requestedStep === "move") return;
+    activateCurrentStep();
+    if (requestedStep === "navigate") {
+      for (let frame = 0; frame < 1_210; frame += 1) {
+        stepFrame({ x: 0, y: 0 });
+      }
+      return;
+    }
+
+    let navigationPointIndex = 0;
+    runUntilStepChanges("navigate", 600, () => {
+      const snapshot = debug.getSnapshot();
+      const target = snapshot.tutorial?.target;
+      if (!target) throw new Error("Navigation target is unavailable.");
+      const points = [...(target.guidePath ?? []), target.position];
+      let point = points[navigationPointIndex] ?? target.position;
+      if (
+        Math.hypot(
+          point.x - snapshot.player.x,
+          point.y - snapshot.player.y,
+        ) <= 8 &&
+        navigationPointIndex < points.length - 1
+      ) {
+        navigationPointIndex += 1;
+        point = points[navigationPointIndex] ?? target.position;
+      }
+      const yDifference = point.y - snapshot.player.y;
+      const xDifference = point.x - snapshot.player.x;
+      if (Math.abs(yDifference) > 8) {
+        return { move: { x: 0, y: Math.sign(yDifference) } };
+      }
+      return { move: { x: Math.sign(xDifference), y: 0 } };
+    });
+    activateCurrentStep();
+    if (requestedStep === "contactDamage") return;
+
+    runUntilStepChanges("contactDamage", 600, () => ({
+      move: { x: 0, y: 0 },
+    }));
+    activateCurrentStep();
+    if (requestedStep === "aimAndKill") return;
+
+    runUntilStepChanges("aimAndKill", 360, () => {
+      const target = debug.getSnapshot().tutorial?.target?.position;
+      if (!target) throw new Error("Enemy target is unavailable.");
+      return {
+        move: { x: 0, y: 0 },
+        aimWorld: target,
+        shootHeld: true,
+      };
+    });
+    activateCurrentStep();
+    if (requestedStep === "collectXp") return;
+
+    runUntilStepChanges("collectXp", 420, () => {
+      const snapshot = debug.getSnapshot();
+      const target = snapshot.tutorial?.target?.position;
+      if (!target) throw new Error("XP target is unavailable.");
+      const yDifference = target.y - snapshot.player.y;
+      const xDifference = target.x - snapshot.player.x;
+      if (Math.abs(yDifference) > 10) {
+        return { move: { x: 0, y: Math.sign(yDifference) } };
+      }
+      return { move: { x: Math.sign(xDifference), y: 0 } };
+    });
+
+    activateCurrentStep();
+    debug.step({ upgradeChoicePressed: 0 }, 1 / 60);
+    if (currentStep() !== "dodgeProjectile") {
+      throw new Error("Training fixture did not apply its fixed upgrade.");
+    }
+    activateCurrentStep();
+    runUntilStepChanges("dodgeProjectile", 720, () => ({
+      move: { x: 0, y: -1 },
+    }));
+    activateCurrentStep();
+    if (requestedStep === "collectRepair") return;
+
+    runUntilStepChanges("collectRepair", 420, () => {
+      const snapshot = debug.getSnapshot();
+      const target = snapshot.tutorial?.target?.position;
+      if (!target) throw new Error("REPAIR target is unavailable.");
+      const yDifference = target.y - snapshot.player.y;
+      const xDifference = target.x - snapshot.player.x;
+      if (Math.abs(yDifference) > 8) {
+        return { move: { x: 0, y: Math.sign(yDifference) } };
+      }
+      return { move: { x: Math.sign(xDifference), y: 0 } };
+    });
+    if (requestedStep !== "transferDrill") {
+      throw new Error(`Unsupported Training visual fixture ${requestedStep}.`);
+    }
+    activateCurrentStep();
+  }, targetStep);
+
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.stepId,
+      ),
+    )
+    .toBe(targetStep);
+  await page.evaluate(() => window.__ARENA_DEBUG__?.setPaused(true));
+}
+
 test("matches the fixed title frame", async ({ page }) => {
   await gotoArena(page);
   const canvas = page.locator("canvas");
@@ -177,6 +359,27 @@ test("matches the fixed title frame", async ({ page }) => {
     maxDiffPixelRatio: 0.01,
   });
 });
+
+for (const fixture of TRAINING_VISUAL_FIXTURES) {
+  test(`keeps the Training ${fixture.stepId} target clear of its instruction panel`, async ({
+    page,
+  }) => {
+    await gotoArena(page);
+    await showTrainingPresentation(page, fixture.stepId);
+
+    await expect(page.locator("canvas")).toHaveScreenshot(
+      `arena-training-${fixture.snapshotName}.png`,
+      { maxDiffPixelRatio: 0.01 },
+    );
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(100);
+    await expect(page.locator("canvas")).toHaveScreenshot(
+      `arena-training-${fixture.snapshotName}-portrait.png`,
+      { maxDiffPixelRatio: 0.01 },
+    );
+  });
+}
 
 test("shows the observer auto pilot status without covering the HUD", async ({ page }) => {
   await gotoArena(page);
