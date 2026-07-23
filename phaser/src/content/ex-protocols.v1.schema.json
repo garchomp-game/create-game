@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arena-core.invalid/schema/ex-protocols.v1.schema.json",
+  "title": "Arena Core EX Protocol candidate catalog",
+  "description": "Documentation envelope schema. Protocol-specific closed shapes and exact values are enforced by scripts/validate-handoff.mjs and must be implemented as the runtime Zod discriminated schema.",
+  "type": "object",
+  "required": [
+    "catalogVersion",
+    "offerPolicy",
+    "progression",
+    "input",
+    "protocols"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "catalogVersion": { "const": "ex-protocols-v1" },
+    "offerPolicy": {
+      "type": "object",
+      "required": ["initial", "consumeRng", "training", "unsupportedWeapon"],
+      "properties": {
+        "initial": { "const": "fixed-all-compatible" },
+        "consumeRng": { "const": false },
+        "training": { "const": "disabled" },
+        "unsupportedWeapon": { "const": "skip-to-limit-break" }
+      },
+      "additionalProperties": false
+    },
+    "progression": {
+      "type": "object",
+      "required": [
+        "normalCoreRanks",
+        "signatureExLevel",
+        "evolutionOneExLevel",
+        "evolutionTwoExLevel",
+        "masteryUnlock",
+        "limitBreakStartsAtExLevel"
+      ],
+      "properties": {
+        "normalCoreRanks": { "const": 25 },
+        "signatureExLevel": { "const": 0 },
+        "evolutionOneExLevel": { "const": 1 },
+        "evolutionTwoExLevel": { "const": 2 },
+        "masteryUnlock": { "const": "with-evolution-two" },
+        "limitBreakStartsAtExLevel": { "const": 3 }
+      },
+      "additionalProperties": false
+    },
+    "input": {
+      "type": "object",
+      "required": [
+        "semanticAction",
+        "bindings",
+        "bufferWhileBlocked",
+        "specialBeforeNormalShooting"
+      ],
+      "properties": {
+        "semanticAction": { "const": "specialPressed" },
+        "bindings": {
+          "const": ["MouseRight", "KeyE"]
+        },
+        "bufferWhileBlocked": { "const": false },
+        "specialBeforeNormalShooting": { "const": true }
+      },
+      "additionalProperties": false
+    },
+    "protocols": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "weaponId",
+          "displayNameJa",
+          "displayNameEn",
+          "interaction",
+          "identity",
+          "signature",
+          "evolutionOne",
+          "evolutionTwo",
+          "mastery"
+        ],
+        "properties": {
+          "id": { "type": "string", "pattern": "^(pulse|spread)\\.[a-z0-9-]+$" },
+          "weaponId": { "enum": ["pulse", "spread"] },
+          "displayNameJa": { "type": "string", "minLength": 1 },
+          "displayNameEn": { "type": "string", "minLength": 1 },
+          "interaction": { "enum": ["passive", "active"] },
+          "identity": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" }
+          },
+          "signature": { "type": "object" },
+          "evolutionOne": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "object",
+              "required": ["id", "displayNameJa", "displayNameEn"]
+            }
+          },
+          "evolutionTwo": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "object",
+              "required": ["id", "displayNameJa", "displayNameEn"]
+            }
+          },
+          "mastery": {
+            "type": "object",
+            "required": ["id", "displayNameJa", "displayNameEn"]
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": false
+}

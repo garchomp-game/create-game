@@ -10,7 +10,6 @@ import {
   DEFAULT_STAGE_ID,
   RULESET_VERSION,
   TRAINING_MODE_ID,
-  resolveRunRulesetVersion,
 } from "../../config/version";
 import { BASIC_TUTORIAL_SEED } from "../../simulation/TutorialController";
 import { resolveRunOrigin, resolveSeedCategory } from "../../application/runEnvironment";
@@ -19,6 +18,10 @@ import {
   type ArenaMenuActionOutcome,
 } from "../../application/ArenaMenuController";
 import { ArenaSession } from "../../application/ArenaSession";
+import {
+  parseRulesetProfileId,
+  resolveExProtocolCandidateProfileId,
+} from "../../application/RulesetProfileRegistry";
 import { AutoPilotController } from "../../application/AutoPilotController";
 import { PerformanceMonitor } from "../../application/PerformanceMonitor";
 import { RunLifecycleController } from "../../application/RunLifecycleController";
@@ -269,6 +272,7 @@ export class ArenaScene extends Phaser.Scene {
       status,
       modeId: this.selectedModeId,
       stageId: this.selectedStageId,
+      rulesetProfileId: this.getRequestedRulesetProfileId(),
     });
     this.debugController?.resetRun();
     if (this.session.recordPolicy === "none") {
@@ -287,10 +291,7 @@ export class ArenaScene extends Phaser.Scene {
           modeId: this.session.modeId,
           stageId: this.session.stageId,
           difficultyId: DEFAULT_DIFFICULTY_ID,
-          rulesetVersion: resolveRunRulesetVersion(
-            this.session.modeId,
-            this.session.stageId,
-          ),
+          rulesetVersion: this.session.rulesetProfile.rulesetVersion,
           seedCategory: resolveSeedCategory(fixedSeed),
           weaponId: this.world.state.weaponType,
           modifierIds: [
@@ -303,13 +304,14 @@ export class ArenaScene extends Phaser.Scene {
               ? [AUTO_PILOT_PATROL_MODIFIER_ID]
               : []),
           ],
-          appVersion: APP_VERSION,
+          appVersion: this.session.rulesetProfile.appVersion,
           buildCommit: this.getBuildCommit(),
           seed: runSeed,
           runOrigin,
           rankEligibility: createRankEligibility(
             runOrigin,
-            !this.autoPilotController.enabled,
+            !this.autoPilotController.enabled &&
+              this.session.rulesetProfile.rankPolicy === "standard",
           ),
         },
         status === "playing",
@@ -318,6 +320,20 @@ export class ArenaScene extends Phaser.Scene {
     this.menuController.reset();
     this.feedbackLayer.reset();
     this.audioRouter.reset();
+  }
+
+  private getRequestedRulesetProfileId() {
+    const injected = this.registry.get("rulesetProfileId");
+    if (typeof injected === "string" && injected.length > 0) {
+      return parseRulesetProfileId(injected);
+    }
+    if (import.meta.env.VITE_ARENA_EX_PROTOCOL_CANDIDATE !== "1") {
+      return undefined;
+    }
+    return resolveExProtocolCandidateProfileId(
+      this.selectedModeId,
+      this.selectedStageId,
+    );
   }
 
   private recordResult(result: StepWorldResult, observedRawDtMs?: number): void {

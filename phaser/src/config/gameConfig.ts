@@ -10,6 +10,7 @@ export const SIMULATION_CONFIG_VERSION = RULESET_VERSION;
 const rawSimulationConfig = {
   seed: 20260619,
   features: {
+    exProtocols: false,
     pulseRicochet: true,
     pulseBoundaryRicochet: true,
     pulseFocus: true,

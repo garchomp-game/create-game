@@ -24,6 +24,7 @@ import type {
 } from "../../domain/runRecords";
 import type { RunRecordWriteResult } from "../../ports/RunRecordStorePort";
 import type {
+  LegacyRandomStreamId,
   RandomStreamId,
   RandomStreams,
 } from "../../math/random";
@@ -64,7 +65,8 @@ export type ArenaObstacleContactCounts = {
 };
 
 export type ArenaRandomStreamSnapshot = Pick<RandomStreams, "version" | "rootSeed"> & {
-  seeds: Record<RandomStreamId, number>;
+  seeds: Record<LegacyRandomStreamId, number> &
+    Partial<Record<RandomStreamId, number>>;
 };
 
 export type ArenaDebugSnapshot = {

@@ -53,7 +53,7 @@ export function createArenaRunExport(input: CreateArenaRunExportInput): ArenaRun
   return {
     capturedAt: input.capturedAt,
     game: "arena-core-phaser",
-    appVersion: APP_VERSION,
+    appVersion: context?.appVersion ?? APP_VERSION,
     rulesetVersion:
       context?.rulesetVersion ??
       resolveRunRulesetVersion(DEFAULT_MODE_ID, DEFAULT_STAGE_ID),

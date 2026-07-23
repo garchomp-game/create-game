@@ -29,6 +29,10 @@ import {
 import { getWaveBand } from "./waveDirector";
 import { getThreatTier } from "./threatDirector";
 import { getDifficultyElapsed } from "./difficultyClock";
+import {
+  chooseExProtocol,
+  chooseExProtocolEvolution,
+} from "./exProtocolProgression";
 
 export function stepWorld(
   world: WorldState,
@@ -87,6 +91,32 @@ export function stepWorld(
       events.push({ type: "game.title.requested" });
     }
     return collectResult(world, dt, rawDt, config, events);
+  }
+
+  if (world.state.status === "protocolSelect") {
+    if (input.upgradeChoicePressed !== null) {
+      chooseExProtocol(
+        world,
+        input.upgradeChoicePressed,
+        config,
+        events,
+      );
+      updateRunStats(world, events);
+    }
+    return collectResult(world, 0, rawDt, config, events);
+  }
+
+  if (world.state.status === "evolutionSelect") {
+    if (input.upgradeChoicePressed !== null) {
+      chooseExProtocolEvolution(
+        world,
+        input.upgradeChoicePressed,
+        config,
+        events,
+      );
+      updateRunStats(world, events);
+    }
+    return collectResult(world, 0, rawDt, config, events);
   }
 
   if (world.state.status === "upgradeSelect") {

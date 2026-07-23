@@ -6,6 +6,11 @@ import type {
 } from "../../domain/types";
 import { composeBuild } from "../buildComposer";
 import { canIncreaseExtraUpgrade } from "../extraProgression";
+import { delayPendingContract } from "../exProtocolProgression";
+import {
+  clearProgressionChoice,
+  getPendingLimitBreakChoices,
+} from "../progressionChoices";
 
 export function applyExtraUpgrade(
   world: WorldState,
@@ -15,7 +20,7 @@ export function applyExtraUpgrade(
   automatic = false,
 ): boolean {
   if (world.progression.buildCompletedAt === null) return false;
-  if (!world.progression.pendingUpgradeChoices.includes(extraUpgradeId)) return false;
+  if (!getPendingLimitBreakChoices(world).includes(extraUpgradeId)) return false;
   if (
     !canIncreaseExtraUpgrade(
       config,
@@ -43,8 +48,9 @@ export function applyExtraUpgrade(
   Object.assign(world.runtime, composition.modifiers);
   world.state.hp += Math.max(0, world.runtime.maxHpBonus - maxHpBonusBefore);
   world.state.hp = Math.min(world.state.hp, config.player.maxHp + world.runtime.maxHpBonus);
-  world.progression.pendingUpgradeChoices = [];
+  clearProgressionChoice(world, config);
   world.state.status = "playing";
+  if (config.features.exProtocols) delayPendingContract(world);
   events.push({
     type: "extra.upgrade.selected",
     extraUpgradeId,

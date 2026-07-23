@@ -16,6 +16,7 @@ export function updateEncounter(
   config: SimulationConfig,
   events: GameEvent[],
 ): void {
+  if (world.state.status !== "playing") return;
   if (config.features.encounterDeck) {
     updateEncounterDirector(world, random, config, events);
   }
@@ -24,7 +25,11 @@ export function updateEncounter(
     config.features.endlessContract &&
     world.encounter.director.completedCount > 0 &&
     world.encounter.contract.status === "pending" &&
-    world.state.elapsed >= config.encounter.contract.offerAt
+    world.state.elapsed >=
+      Math.max(
+        config.encounter.contract.offerAt,
+        world.encounter.contract.notBefore ?? 0,
+      )
   ) {
     world.encounter.contract.status = "offered";
     world.encounter.contract.offeredAt = world.state.elapsed;

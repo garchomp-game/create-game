@@ -5,6 +5,11 @@ import type {
 } from "./encounterDirector";
 import type { SpawnGeometryId } from "./structuredSpawning";
 import type { TutorialStepId } from "./tutorial";
+import type {
+  ExProtocolEvolutionId,
+  ExProtocolId,
+  ExProtocolProgressionState,
+} from "./exProtocols";
 
 export type Vec2 = {
   x: number;
@@ -20,6 +25,8 @@ export type GameStatus =
   | "playing"
   | "paused"
   | "upgradeSelect"
+  | "protocolSelect"
+  | "evolutionSelect"
   | "contractSelect"
   | "trainingComplete"
   | "gameOver";
@@ -63,6 +70,21 @@ export const EXTRA_UPGRADE_IDS = [
 export type ExtraUpgradeId = (typeof EXTRA_UPGRADE_IDS)[number];
 export type ProgressionChoiceId = UpgradeId | ExtraUpgradeId;
 
+export type ProgressionPendingChoice =
+  | { kind: "upgrade"; choices: UpgradeId[] }
+  | { kind: "protocol"; choices: ExProtocolId[] }
+  | {
+      kind: "evolution-one";
+      protocolId: ExProtocolId;
+      choices: ExProtocolEvolutionId[];
+    }
+  | {
+      kind: "evolution-two";
+      protocolId: ExProtocolId;
+      choices: ExProtocolEvolutionId[];
+    }
+  | { kind: "limit-break"; choices: ExtraUpgradeId[] };
+
 export const UPGRADE_CATEGORIES = [
   "weapon",
   "mobility",
@@ -73,6 +95,7 @@ export const UPGRADE_CATEGORIES = [
 export type UpgradeCategory = (typeof UPGRADE_CATEGORIES)[number];
 
 export type SimulationFeatures = {
+  exProtocols: boolean;
   pulseRicochet: boolean;
   pulseBoundaryRicochet: boolean;
   pulseFocus: boolean;
@@ -319,6 +342,7 @@ export type Obstacle = {
 export type SimulationConfig = {
   seed: number;
   features: SimulationFeatures;
+  exProtocolOfferPolicy?: "fixed-compatible" | "disabled";
   arena: ArenaSimulationConfig;
   player: PlayerSimulationConfig;
   defaultWeapon: WeaponTypeId;
@@ -495,6 +519,8 @@ export type ProgressionState = {
   upgradeRanks: Record<UpgradeId, number>;
   extraUpgradeRanks: Record<ExtraUpgradeId, number>;
   extraCycleRemaining: ExtraUpgradeId[];
+  pendingChoice?: ProgressionPendingChoice;
+  exProtocol?: ExProtocolProgressionState;
 };
 
 export type EncounterPhase = "pending" | "warning" | "active" | "recovery";
@@ -527,6 +553,7 @@ export type EncounterState = {
     selectedAt: number | null;
     enemySpeedMultiplier: number;
     scoreMultiplier: number;
+    notBefore?: number;
   };
   collapse: {
     stage: number;
@@ -1192,6 +1219,62 @@ export type GameEvent =
     }
   | { type: "upgrade.selected"; upgradeId: UpgradeId; rank: number; level: number; effect: UpgradeEffect }
   | { type: "build.completed"; level: number; elapsed: number }
+  | {
+      type: "ex.protocol.offered";
+      weaponId: WeaponTypeId;
+      exLevel: 0;
+      choices: ExProtocolId[];
+      elapsed: number;
+    }
+  | {
+      type: "ex.protocol.selected";
+      weaponId: WeaponTypeId;
+      protocolId: ExProtocolId;
+      interaction: "passive" | "active";
+      exLevel: 0;
+      elapsed: number;
+    }
+  | {
+      type: "ex.protocol.skipped";
+      weaponId: WeaponTypeId;
+      reason: "unsupported-weapon";
+      elapsed: number;
+    }
+  | {
+      type: "ex.evolution.offered";
+      protocolId: ExProtocolId;
+      tier: 1 | 2;
+      exLevel: number;
+      choices: ExProtocolEvolutionId[];
+      elapsed: number;
+    }
+  | {
+      type: "ex.level_up";
+      level: number;
+      exLevel: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.evolution.selected";
+      protocolId: ExProtocolId;
+      tier: 1 | 2;
+      evolutionId: ExProtocolEvolutionId;
+      exLevel: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.mastery.unlocked";
+      protocolId: ExProtocolId;
+      masteryId: string;
+      exLevel: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.limit_break.connected";
+      protocolId: ExProtocolId | null;
+      exLevel: number;
+      elapsed: number;
+    }
   | {
       type: "extra.level_up";
       level: number;

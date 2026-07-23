@@ -167,6 +167,7 @@ const stageDefinitionSchema = z
   .object({
     id: contentId,
     titleKey: z.string().min(1),
+    exProtocolOfferPolicy: z.enum(["fixed-compatible", "disabled"]),
     campaign: z
       .object({
         order: z.number().int().positive(),

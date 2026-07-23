@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   RANDOM_STREAM_VERSION,
+  RANDOM_STREAM_VERSION_V2,
   createRandom,
   createRandomStreams,
   deriveRandomSeed,
@@ -29,6 +30,26 @@ describe("createRandom", () => {
     });
     expect(Array.from({ length: 5 }, () => baseline.upgrade())).toEqual(
       Array.from({ length: 5 }, () => withExtraDropDraws.upgrade()),
+    );
+  });
+
+  it("adds a reserved EX Protocol stream only for RNG v2", () => {
+    const legacy = createRandomStreams(20260619);
+    const candidate = createRandomStreams(
+      20260619,
+      RANDOM_STREAM_VERSION_V2,
+    );
+
+    expect(legacy.version).toBe(RANDOM_STREAM_VERSION);
+    expect("exProtocol" in legacy).toBe(false);
+    expect("exProtocol" in legacy.seeds).toBe(false);
+    expect(candidate.version).toBe(RANDOM_STREAM_VERSION_V2);
+    expect(candidate.seeds).toMatchObject(legacy.seeds);
+    expect(candidate.seeds.exProtocol).toBe(
+      deriveRandomSeed(20260619, "exProtocol"),
+    );
+    expect(candidate.exProtocol()).toBe(
+      createRandom(candidate.seeds.exProtocol)(),
     );
   });
 
