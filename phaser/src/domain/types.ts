@@ -516,7 +516,7 @@ export type EnemyProjectile = CircleBody & {
   };
 };
 
-export type ExProtocolDamageEffect = "relay" | "breakwater";
+export type ExProtocolDamageEffect = "relay" | "tidal" | "breakwater";
 
 export type ExProtocolEnemyDamageSource = {
   kind: "ex-protocol";
@@ -949,6 +949,10 @@ export type ActiveVolleyAnalytics = {
   spreadSweepTriggered: boolean;
   reboundPostRicochetEnemyIds?: string[];
   reboundMasteryRefunded?: boolean;
+  tidalEnemyIds?: string[];
+  tidalLeftEdgeEnemyIds?: string[];
+  tidalRightEdgeEnemyIds?: string[];
+  tidalChargeGranted?: boolean;
 };
 
 export type RunAnalyticsState = {
@@ -1394,6 +1398,37 @@ export type GameEvent =
       type: "ex.relay.blocked";
       anchorEnemyId: string;
       endpointEnemyId: string;
+      elapsed: number;
+    }
+  | {
+      type: "ex.tidal.charged";
+      charge: number;
+      maxCharge: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.special.activated";
+      protocolId: ExProtocolId;
+      activationId: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.protocol.volley.fired";
+      protocolId: ExProtocolId;
+      activationId: number;
+      volleyId: number;
+      projectileIds: string[];
+      projectileCount: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.tidal.backwash.triggered";
+      activationId: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.tidal.second-crest.triggered";
+      activationId: number;
       elapsed: number;
     }
   | {

@@ -21,6 +21,11 @@ import {
   restoreReboundCapacityAfterRicochet,
 } from "../protocols/reboundOverdrive";
 import { resolveResonanceAfterNormalHit } from "../protocols/resonanceRelay";
+import {
+  isTransparentTidalDuplicate,
+  recordTidalActivationHit,
+  recordTidalNormalHit,
+} from "../protocols/tidalSweep";
 
 export function resolveCombat(
   world: WorldState,
@@ -53,6 +58,7 @@ export function resolveCombat(
 
       for (const { enemy } of intersections) {
         if (deadEnemies.has(enemy) || bullet.hitEnemyIds.includes(enemy.id)) continue;
+        if (isTransparentTidalDuplicate(world, bullet, enemy)) continue;
         resolveBulletEnemyHit(world, bullet, enemy, segment, deadEnemies, events);
         if (bullet.hitsRemaining <= 0) {
           stoppedByHitCapacity = true;
@@ -162,6 +168,11 @@ function resolveBulletEnemyHit(
   );
   const protocolDamage = redline ?? rebound;
   const damage = protocolDamage?.damage ?? normalResolvedDamage;
+  const tidalState =
+    bullet.candidate?.protocolState?.kind ===
+    "full-span-tidal-sweep"
+      ? bullet.candidate.protocolState
+      : null;
   bullet.hitEnemyIds.push(enemy.id);
   bullet.hitsRemaining -= 1;
   registerSpreadSweepHit(world, bullet, enemy, events);
@@ -171,9 +182,13 @@ function resolveBulletEnemyHit(
     {
       amount: damage,
       baselineWithoutAnyProtocol:
-        protocolDamage?.baselineWithoutAnyProtocol ?? damage,
+        tidalState
+          ? 0
+          : protocolDamage?.baselineWithoutAnyProtocol ?? damage,
       baselineForEffectAttribution:
-        protocolDamage?.baselineForEffectAttribution ?? damage,
+        tidalState
+          ? 0
+          : protocolDamage?.baselineForEffectAttribution ?? damage,
       source: {
         kind: "player-projectile",
         bulletId: bullet.id,
@@ -182,10 +197,20 @@ function resolveBulletEnemyHit(
         ricochetsUsed: segment.ricochetsUsed,
         ricochetSurfaceKind: segment.ricochetSurfaceKind,
         ricochetBoundarySide: segment.ricochetBoundarySide,
-        ...(protocolDamage
-          ? { protocolId: protocolDamage.protocolId }
-          : {}),
-        attribution: protocolDamage?.attribution ?? "normal",
+        ...(tidalState
+          ? {
+              protocolId:
+                world.progression.exProtocol?.status === "selected"
+                  ? world.progression.exProtocol.route.protocolId
+                  : undefined,
+              activationId: tidalState.activationId,
+            }
+          : protocolDamage
+            ? { protocolId: protocolDamage.protocolId }
+            : {}),
+        attribution: tidalState
+          ? "protocol-volley"
+          : protocolDamage?.attribution ?? "normal",
       },
     },
     deadEnemies,
@@ -237,6 +262,8 @@ function resolveBulletEnemyHit(
           deadEnemies,
           events,
         );
+        recordTidalNormalHit(world, bullet, enemy, events);
+        recordTidalActivationHit(world, bullet, enemy, events);
       },
     },
   );
@@ -306,6 +333,8 @@ function registerSpreadSweepHit(
 ): void {
   if (
     bullet.weaponType !== "spread" ||
+    (bullet.candidate &&
+      bullet.candidate.volleyKind !== "normal") ||
     world.runtime.spreadSweepDistinctTargets <= 0
   ) return;
 

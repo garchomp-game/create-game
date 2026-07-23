@@ -277,6 +277,7 @@ function createExProtocolRuntime(
       protocolId,
       charges: fullSpanTidalSweep.signature.initialCharges,
       nextActivationId: 1,
+      activations: {},
     };
   }
   if (protocolId === breakwaterFan.id) {

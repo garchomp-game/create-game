@@ -50,6 +50,15 @@ export type FullSpanTidalSweepRuntime = ExProtocolRuntimeBase & {
   kind: "full-span-tidal-sweep";
   charges: number;
   nextActivationId: number;
+  activations: Record<
+    number,
+    {
+      projectileIds: string[];
+      hitEnemyIds: string[];
+      backwashTriggered: boolean;
+      secondCrestTriggered: boolean;
+    }
+  >;
 };
 
 export type BreakwaterFanRuntime = ExProtocolRuntimeBase & {

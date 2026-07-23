@@ -20,6 +20,7 @@ export type PlayerProjectileDamageSource = {
   ricochetSurfaceKind: RicochetSurfaceKind | null;
   ricochetBoundarySide: ArenaBoundarySide | null;
   protocolId?: ExProtocolId;
+  activationId?: number;
   attribution:
     | "normal"
     | "protocol-restored-capacity"
@@ -124,6 +125,18 @@ function createHitEvent(
 ): GameEvent {
   const source = outcome.source;
   if (source.kind === "player-projectile") {
+    const protocolSource = toProtocolVolleySource(source);
+    if (protocolSource) {
+      return {
+        type: "enemy.protocol.hit",
+        source: protocolSource,
+        enemyId: enemy.id,
+        enemyType: enemy.typeId,
+        weaponType: source.weaponType,
+        damage: outcome.damage,
+        hpAfter: outcome.hpAfter,
+      };
+    }
     return {
       type: "enemy.hit",
       bulletId: source.bulletId,
@@ -156,6 +169,19 @@ function createKillEvent(
 ): GameEvent {
   const source = outcome.source;
   if (source.kind === "player-projectile") {
+    const protocolSource = toProtocolVolleySource(source);
+    if (protocolSource) {
+      return {
+        type: "enemy.protocol.killed",
+        source: protocolSource,
+        enemyId: enemy.id,
+        enemyType: enemy.typeId,
+        weaponType: source.weaponType,
+        scoreAwarded,
+        xpAwarded: enemy.xpValue,
+        position: { ...enemy.position },
+      };
+    }
     return {
       type: "enemy.killed",
       bulletId: source.bulletId,
@@ -177,6 +203,24 @@ function createKillEvent(
     scoreAwarded,
     xpAwarded: enemy.xpValue,
     position: { ...enemy.position },
+  };
+}
+
+function toProtocolVolleySource(
+  source: PlayerProjectileDamageSource,
+): ExProtocolEnemyDamageSource | null {
+  if (
+    source.attribution !== "protocol-volley" ||
+    !source.protocolId ||
+    source.activationId === undefined
+  ) {
+    return null;
+  }
+  return {
+    kind: "ex-protocol",
+    protocolId: source.protocolId,
+    activationId: source.activationId,
+    effect: "tidal",
   };
 }
 

@@ -1,6 +1,10 @@
 import type { GameEvent, SimulationConfig, WorldState } from "../../domain/types";
 import { updateReboundLifecycle } from "../protocols/reboundOverdrive";
 import { updateResonanceRelayLifecycle } from "../protocols/resonanceRelay";
+import {
+  activateTidalSweep,
+  updateTidalLifecycle,
+} from "../protocols/tidalSweep";
 
 export function updateExProtocolSpecialPhase(
   world: WorldState,
@@ -11,4 +15,6 @@ export function updateExProtocolSpecialPhase(
   if (!config.features.exProtocols) return;
   updateResonanceRelayLifecycle(world);
   updateReboundLifecycle(world, specialPressed, events);
+  updateTidalLifecycle(world);
+  activateTidalSweep(world, specialPressed, config, events);
 }
