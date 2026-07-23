@@ -169,35 +169,27 @@ describe("EX Protocol progression", () => {
   });
 
   it("does not consume the reserved RNG stream for fixed offers", () => {
-    const first = createCandidateSession("spread");
-    const second = createCandidateSession("spread");
-    completeNormalBuild(first.world, first.config);
-    completeNormalBuild(second.world, second.config);
-    const firstBefore = first.randomStreams.exProtocol();
-    const secondBefore = second.randomStreams.exProtocol();
-
-    completeBuild(first.world, first.config, []);
-    completeBuild(second.world, second.config, []);
-    chooseExProtocol(first.world, 2, first.config, []);
-    chooseExProtocol(second.world, 2, second.config, []);
-    first.world.progression.xp = first.world.progression.xpToNext;
-    second.world.progression.xp = second.world.progression.xpToNext;
-    updateLevelProgression(
-      first.world,
-      first.randomStreams.upgrade,
-      first.config,
-      [],
+    const candidate = createCandidateSession("spread");
+    const untouched = createCandidateSession("spread");
+    completeNormalBuild(candidate.world, candidate.config);
+    completeNormalBuild(untouched.world, untouched.config);
+    expect(candidate.randomStreams.exProtocol()).toBe(
+      untouched.randomStreams.exProtocol(),
     );
+
+    completeBuild(candidate.world, candidate.config, []);
+    chooseExProtocol(candidate.world, 2, candidate.config, []);
+    candidate.world.progression.xp =
+      candidate.world.progression.xpToNext;
     updateLevelProgression(
-      second.world,
-      second.randomStreams.upgrade,
-      second.config,
+      candidate.world,
+      candidate.randomStreams.upgrade,
+      candidate.config,
       [],
     );
 
-    expect(firstBefore).toBe(secondBefore);
-    expect(first.randomStreams.exProtocol()).toBe(
-      second.randomStreams.exProtocol(),
+    expect(candidate.randomStreams.exProtocol()).toBe(
+      untouched.randomStreams.exProtocol(),
     );
   });
 
