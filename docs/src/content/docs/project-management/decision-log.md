@@ -1111,3 +1111,12 @@ production既定値はOFFのままです。外部push、PR、main merge、Cloudf
 品質ゲートは対象micro fixture、全unit、型、短いpaired probe、横・縦の選択画面fixtureを変更中に回し、20 seed、soak、Final ExpeditionはC2の人間確認後、採用候補を固定するときに一度だけ再実行する。C1の自動QA値は比較履歴であり、C2の効果値として再利用しない。
 
 runtime `9b886a641cbf`をCloudflare Version `766175d4-891f-48d6-8bb9-37da6bb9564d`へuploadし、[固定C2 Preview](https://v08-ex-protocols-c2-9b886a6-arena-core.garchomp-game.workers.dev/)で版情報、canvas、candidate run開始、console / request error 0を確認した。production traffic、main、C1 Previewは変更しない。
+
+## 2026-07-24: C2 Previewへ結果画面の撃墜原因追補を反映する
+
+決定: Expedition勝利時に`lastDamageSource`を原因として表示せず、HPが0になった敗北時だけ具体的な撃墜原因を表示する。接触、射撃体の敵弾、アリーナ崩壊、指揮艦攻撃を平易な文へ分け、EX Protocolの数値、ruleset、記録schemaは変更しない。
+
+- runtime `f1bd1dd75758`をCloudflare Version `5c526482-f5d0-4b20-bed4-61335a188ef3`へuploadした。
+- Preview alias `v08-ex-protocols-c2-9b886a6`を新Versionへ付け替え、既存URLを維持した。
+- 対象unit 15件、型検査、勝利・敗北の画像E2E 2件、配布build、実URLの版情報、canvas、run開始、error 0件を確認した。
+- production traffic、C1 Preview、C2 gameplay commit `9b886a641cbf`は変更しない。

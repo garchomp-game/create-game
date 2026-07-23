@@ -3,7 +3,7 @@ title: EX Protocol C2 可読性・成立条件レポート
 description: 過負荷契約の廃止と6体系の発動条件・表示改訂を、人間確認へ渡す前の短い自動証拠。
 ---
 
-実施日: 2026-07-23
+初回実施日: 2026-07-23 / Preview更新日: 2026-07-24
 
 :::caution[採用判定ではない]
 C2はownerのC1フィードバックを反映した比較候補です。production traffic、main、既存C1 Previewは変更していません。20 seed、90秒soak、Final Expedition 40本は、人間確認後に候補を固定する場合だけ再実行します。
@@ -12,11 +12,14 @@ C2はownerのC1フィードバックを反映した比較候補です。producti
 ## 対象
 
 - branch: `feat/v08-ex-protocols-c1`
-- runtime commit: `9b886a641cbf`
+- C2 gameplay commit: `9b886a641cbf`
+- current Preview runtime: `f1bd1dd75758`
 - app / Endless ruleset: `0.8.0-candidate.2 / phaser-v0.8-ex-protocols-c2`
 - fixed Preview: [EX Protocol C2](https://v08-ex-protocols-c2-9b886a6-arena-core.garchomp-game.workers.dev/)
-- Cloudflare Version ID: `766175d4-891f-48d6-8bb9-37da6bb9564d`
+- Cloudflare Version ID: `5c526482-f5d0-4b20-bed4-61335a188ef3`
 - production既定: EX OFF。C1とlegacy recordは読取可能
+
+2026-07-24のPreview更新はProtocolの数値や成立条件を変えていません。Expedition勝利時に最後の被弾を原因として表示しないことと、敗北時の撃墜原因を具体的な文へ直した結果UI追補です。同一aliasを新Versionへ付け替え、版情報、canvas、candidate run開始、console / page / request error 0件を再確認しました。
 
 ## 変更した判断
 
