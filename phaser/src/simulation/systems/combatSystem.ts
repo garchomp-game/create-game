@@ -26,6 +26,7 @@ import {
   recordTidalActivationHit,
   recordTidalNormalHit,
 } from "../protocols/tidalSweep";
+import { recordBreakwaterNormalHit } from "../protocols/breakwaterFan";
 
 export function resolveCombat(
   world: WorldState,
@@ -264,6 +265,7 @@ function resolveBulletEnemyHit(
         );
         recordTidalNormalHit(world, bullet, enemy, events);
         recordTidalActivationHit(world, bullet, enemy, events);
+        recordBreakwaterNormalHit(world, bullet, enemy, events);
       },
     },
   );

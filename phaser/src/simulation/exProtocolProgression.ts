@@ -286,6 +286,8 @@ function createExProtocolRuntime(
       protocolId,
       charges: breakwaterFan.signature.initialCharges,
       cooldownUntil: 0,
+      nextActivationId: 1,
+      escapeCurrentUntil: 0,
       grossMaxHpAtSelection: grossMaxHp,
       hpCostAtSelection: Math.ceil(
         grossMaxHp * breakwaterFan.signature.costGrossHpSnapshotRatio,

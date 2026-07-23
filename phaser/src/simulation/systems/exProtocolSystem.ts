@@ -5,6 +5,7 @@ import {
   activateTidalSweep,
   updateTidalLifecycle,
 } from "../protocols/tidalSweep";
+import { activateBreakwaterFan } from "../protocols/breakwaterFan";
 
 export function updateExProtocolSpecialPhase(
   world: WorldState,
@@ -17,4 +18,5 @@ export function updateExProtocolSpecialPhase(
   updateReboundLifecycle(world, specialPressed, events);
   updateTidalLifecycle(world);
   activateTidalSweep(world, specialPressed, config, events);
+  activateBreakwaterFan(world, specialPressed, config, events);
 }

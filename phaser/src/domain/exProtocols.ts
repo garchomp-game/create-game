@@ -65,6 +65,8 @@ export type BreakwaterFanRuntime = ExProtocolRuntimeBase & {
   kind: "breakwater-fan";
   charges: number;
   cooldownUntil: number;
+  nextActivationId: number;
+  escapeCurrentUntil: number;
   grossMaxHpAtSelection: number;
   hpCostAtSelection: number;
 };

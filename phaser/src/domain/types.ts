@@ -953,6 +953,8 @@ export type ActiveVolleyAnalytics = {
   tidalLeftEdgeEnemyIds?: string[];
   tidalRightEdgeEnemyIds?: string[];
   tidalChargeGranted?: boolean;
+  breakwaterCloseEnemyIds?: string[];
+  breakwaterChargeGranted?: boolean;
 };
 
 export type RunAnalyticsState = {
@@ -1429,6 +1431,32 @@ export type GameEvent =
   | {
       type: "ex.tidal.second-crest.triggered";
       activationId: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.breakwater.charged";
+      charge: number;
+      elapsed: number;
+    }
+  | {
+      type: "player.integrity.spent";
+      protocolId: ExProtocolId;
+      amount: number;
+      hpAfter: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.breakwater.resolved";
+      activationId: number;
+      targetCount: number;
+      pushedTargets: number;
+      damage: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.breakwater.escape-current.triggered";
+      activationId: number;
+      expiresAt: number;
       elapsed: number;
     }
   | {
