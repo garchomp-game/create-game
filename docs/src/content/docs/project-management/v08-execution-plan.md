@@ -40,7 +40,7 @@ v0.8では機能量を増やす前に、Arena Coreの面白さの核を小さい
 | 0A | [#83](https://github.com/garchomp-game/create-game/issues/83) | 緊張・緩和、near-miss、攻略メタ、公平性の契約 | Work回答と現行カーブ棚卸し | 判断済み。PR #91とdecision logへ責務表を同期 |
 | 0B | [#66](https://github.com/garchomp-game/create-game/issues/66) | 世界観、視覚言語、素材境界 | gameplay数値を変えない比較案 | 背景、敵、警告へ展開できる1方向を選ぶ |
 | UI | [#68](https://github.com/garchomp-game/create-game/issues/68) / [#67](https://github.com/garchomp-game/create-game/issues/67) / [#70](https://github.com/garchomp-game/create-game/issues/70) | 選択画面の可読性と再開操作 | PR #84と比較手順 | candidateを採用、再調整、棄却のいずれかに固定 |
-| T1 | [#97](https://github.com/garchomp-game/create-game/issues/97) | 現行visualのTrainingで説明不足を切り分ける | 後継runtime候補`2a4fba8a890`とローカルQAを固定済み。owner再確認、current-head CI、新Preview待ち | 3ゲート後、#81で事前教材なしの総合演習とEndless 30秒probeをraw countで判断 |
+| T1 | [#97](https://github.com/garchomp-game/create-game/issues/97) | 現行visualのTrainingで説明不足を切り分ける | 最新main統合済みruntime候補`78b79da9c5aa`とローカルQAを固定済み。owner再確認、current-head CI、新Preview待ち | 3ゲート後、#81で事前教材なしの総合演習とEndless 30秒probeをraw countで判断 |
 | T2 | [#98](https://github.com/garchomp-game/create-game/issues/98) | 撃つ・避ける・取るの視覚意味を変える必要があるか | Phase A fixtureは先行可。runtimeはT1で誤認が残る場合だけ | 変更不要、採用、再設計、延期、棄却を固定 |
 | 0C | [#77](https://github.com/garchomp-game/create-game/issues/77) | candidate非依存のfact、episode、純粋ledger | PR #102をmain `10198a9e810b`へ統合済み | Phase 0完了。Presenterと容量上限付きsummaryは後続consumerの不足確認後 |
 | 0D | [#93](https://github.com/garchomp-game/create-game/issues/93) | Boss Attack Cardと回復・反撃窓の観測 | RC6 control。runtime候補は入れない | 3攻撃の文法、chain、shadow指標を定義 |
@@ -110,7 +110,7 @@ RC6 baseline
 
 1. **完了**: 品質ゲート、Encounter境界、比較手順、v0.8正本をmainへ統合し、main `6d490a6`の3 job greenを取得した。
 2. **完了**: #83の判断、#93から#95、#97 / #98の責務、#81の再利用レーンをStarlightへ同期した。
-3. **進行中**: #97の後継Training runtime候補`2a4fba8a890`とローカル自動証拠を固定した。owner再確認、current-head CI、新immutable Previewの後に#81の初心者T1へ進む。
+3. **進行中**: #97の最新main統合済みTraining runtime候補`78b79da9c5aa`とローカル自動証拠を固定した。owner再確認、current-head CI、新immutable Previewの後に#81の初心者T1へ進む。
 4. **完了**: #77 Phase 0のfact / episode / invalid-state schemaをmainへ統合した。
 5. **完了**: #80の共通capture skeletonと#81のbaseline手順を固定した。
 6. #76で変更する仮説、値、seed、raw-count基準、stop condition、rollbackを事前登録している。
