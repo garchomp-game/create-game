@@ -78,6 +78,7 @@ Pre-existing failures:
 - [x] Protocol-specific telemetry and performance gauges
 - [x] Probe-only policy without product AutoPilot changes
 - [x] Canonical Starlight specification and project-state synchronization
+- [x] PR-fast and workflow-dispatch release CI split
 
 ## 5. Structural differences from the handoff snapshot
 
@@ -107,6 +108,7 @@ No implementation deviation from the handoff values or semantics was intentional
 | Headless paired soak smoke | PASS |
 | Final Expedition exposure smoke | PASS: Protocol, E1, E2, Mastery, first Limit Break, boss phase 2, victory |
 | Synchronized Starlight build | PASS: 103 pages |
+| GitHub workflow YAML parse | PASS |
 | Full 20-seed balance release matrix | NOT RUN on the finalized configuration |
 | Full 90-second headless soak | NOT RUN after final reporting refinement |
 | Full 20-seed x 2-weapon Final Expedition exposure | NOT RUN |

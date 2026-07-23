@@ -15,13 +15,14 @@ npm run build
 
 ## GitHub Actions
 
-`.github/workflows/quality.yml`はpull requestとmain pushへ、次の3 statusをcommit SHA単位で付けます。
+`.github/workflows/quality.yml`はpull requestとmain pushへ、次の4 statusをcommit SHA単位で付けます。
 
 | Job | 自動実行する契約 |
 | --- | --- |
 | `Phaser quality` | `npm ci`、型検査、unit / simulation、production build、配布artifact検査 |
 | `Starlight build` | `npm ci`、telemetry無効の静的build |
 | `Browser release smoke` | Playwright同梱ChromiumとFirefoxによる公開経路、desktop / portrait、WebGL、版情報、ローカルデータ削除 |
+| `EX Protocol candidate` | 型付きreplay、保存migration、短いbalance probe、Chromiumの候補critical E2E |
 
 CIはNode 24を使い、repository内容の読取権限だけを持ちます。Cloudflare secret、deploy、production trafficは扱いません。同じbranchで新しいcommitがpushされた場合は古いrunをcancelします。ブラウザ失敗時だけtraceとscreenshotを7日間artifactへ残します。
 
@@ -233,5 +234,7 @@ npm run test:ex-protocols:final-exposure:release
 ```
 
 release balanceは20 seed、baseline + 武器互換3 Protocol、4 branch pathのLatin-squareを使います。結果はreview triggerであり、自動調整や自動採用を行いません。Protocolの自然な発動機会がないrunを効果0の失敗と混同しません。
+
+`.github/workflows/ex-protocol-release.yml`は`workflow_dispatch`専用です。20 seed balance、full headless soak、24 route、全unit、配布buildを通常PRから分離し、必要な場合だけ両武器20 seedのFinal Expedition露出も追加実行します。deployとproduction traffic変更は行いません。
 
 headless soakは機構と相対性能を検査します。production採用には、SwiftShaderではない実GPUの15分耐久と、人間による6体系の操作・可読性確認を別途必要とします。詳細は[EX Protocol候補](../../design/ex-protocols/)を参照してください。

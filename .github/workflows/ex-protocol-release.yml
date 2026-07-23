@@ -1,0 +1,92 @@
+name: EX Protocol Release Gates
+
+on:
+  workflow_dispatch:
+    inputs:
+      full_final_exposure:
+        description: Run the 20-seed x 2-weapon Final Expedition exposure matrix
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ex-protocol-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CI: true
+
+jobs:
+  release-matrix:
+    name: EX Protocol release matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: phaser
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: phaser/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run test:ex-protocols:paths
+      - run: npm run test:ex-protocols:determinism
+      - run: npm run test:ex-protocols:record-migration
+      - run: npm run test:ex-protocols:probe:release
+      - run: npm run test:ex-protocols:soak:release
+      - run: npm run build:deploy
+
+  browser-candidate:
+    name: EX Protocol browser candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: phaser
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: phaser/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Run EX Protocol browser fixtures
+        run: xvfb-run --auto-servernum npm run test:e2e:ex-protocols
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+      - name: Upload EX Protocol browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ex-protocol-release-playwright-${{ github.run_id }}-${{ github.run_attempt }}
+          path: phaser/test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  final-exposure:
+    name: EX Protocol Final Expedition exposure
+    if: ${{ inputs.full_final_exposure }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    defaults:
+      run:
+        working-directory: phaser
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: phaser/package-lock.json
+      - run: npm ci
+      - run: npm run test:ex-protocols:final-exposure:release

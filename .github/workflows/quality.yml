@@ -85,3 +85,35 @@ jobs:
           path: phaser/test-results/
           if-no-files-found: ignore
           retention-days: 7
+
+  ex-protocol-candidate:
+    name: EX Protocol candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: phaser
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: phaser/package-lock.json
+      - run: npm ci
+      - run: npm run test:ex-protocols:determinism
+      - run: npm run test:ex-protocols:record-migration
+      - run: npm run test:ex-protocols:probe
+      - run: npx playwright install --with-deps chromium
+      - name: Run EX Protocol critical browser flow
+        run: xvfb-run --auto-servernum npm run test:e2e:ex-protocols
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+      - name: Upload EX Protocol browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ex-protocol-playwright-${{ github.run_id }}-${{ github.run_attempt }}
+          path: phaser/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
