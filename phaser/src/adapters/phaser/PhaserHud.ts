@@ -1,5 +1,9 @@
 import * as Phaser from "phaser";
-import type { SimulationConfig, WorldState } from "../../domain/types";
+import type {
+  GameEvent,
+  SimulationConfig,
+  WorldState,
+} from "../../domain/types";
 import { formatTime } from "../../format/time";
 import { TEXT } from "../../lang";
 import { getWaveBand } from "../../simulation/waveDirector";
@@ -7,7 +11,10 @@ import { getThreatTier } from "../../simulation/threatDirector";
 import { getDifficultyElapsed } from "../../simulation/difficultyClock";
 import { getNextCollapseAt } from "../../simulation/systems/collapseSystem";
 import type { AutoPilotMode } from "../../simulation/autoPilot";
-import { createExProtocolHudViewModel } from "../../presentation/ExProtocolPresenter";
+import {
+  createExProtocolHudViewModel,
+  formatExProtocolEventNotice,
+} from "../../presentation/ExProtocolPresenter";
 import { getPlayerEffectiveMaxHp } from "../../simulation/systems/playerHealthSystem";
 import { HUD_LEFT_PANEL_BOUNDS } from "./PhaserHudLayout";
 
@@ -24,6 +31,7 @@ export class PhaserHud {
   private readonly bossText: Phaser.GameObjects.Text;
   private readonly autoPilotText: Phaser.GameObjects.Text;
   private protocolText: Phaser.GameObjects.Text | null = null;
+  private protocolNotice: { text: string; expiresAt: number } | null = null;
   private runConfig: SimulationConfig;
 
   constructor(scene: Phaser.Scene, private readonly simulationConfig: SimulationConfig) {
@@ -51,6 +59,7 @@ export class PhaserHud {
 
   configureForRun(config: SimulationConfig): void {
     this.runConfig = config;
+    this.protocolNotice = null;
     if (config.features.exProtocols && this.protocolText === null) {
       this.protocolText = this.createText(
         this.scene,
@@ -67,6 +76,18 @@ export class PhaserHud {
     if (!config.features.exProtocols && this.protocolText !== null) {
       this.protocolText.destroy();
       this.protocolText = null;
+    }
+  }
+
+  handleEvents(events: GameEvent[], world: WorldState): void {
+    if (!this.runConfig.features.exProtocols) return;
+    for (const event of events) {
+      const text = formatExProtocolEventNotice(event);
+      if (!text) continue;
+      this.protocolNotice = {
+        text,
+        expiresAt: world.state.elapsed + 1.6,
+      };
     }
   }
 
@@ -138,6 +159,12 @@ export class PhaserHud {
       this.runConfig,
     );
     if (protocol) {
+      const notice =
+        this.protocolNotice &&
+        this.protocolNotice.expiresAt >= world.state.elapsed
+          ? this.protocolNotice.text
+          : null;
+      if (!notice) this.protocolNotice = null;
       const panel = {
         x: HUD_LEFT_PANEL_BOUNDS.x + HUD_LEFT_PANEL_BOUNDS.width + 6,
         y: 47,
@@ -169,7 +196,7 @@ export class PhaserHud {
         .setPosition(panel.x + panel.width / 2, panel.y + 4)
         .setWordWrapWidth(panel.width - 12)
         .setText(
-          `${protocol.name}  EX Lv ${protocol.exLevel}\n${protocol.routeLabel}\n${protocol.primary}${protocol.secondary ? ` / ${protocol.secondary}` : ""}`,
+          `${protocol.name}  EX Lv ${protocol.exLevel}\n${protocol.routeLabel}\n${protocol.primary}${notice || protocol.secondary ? ` / ${notice ?? protocol.secondary}` : ""}`,
         )
         .setVisible(true);
     } else {

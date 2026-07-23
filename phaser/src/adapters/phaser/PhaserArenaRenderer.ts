@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import type {
+  GameEvent,
   SimulationConfig,
   Vec2,
   ViewConfig,
@@ -53,6 +54,10 @@ export class PhaserArenaRenderer {
   configureForRun(config: SimulationConfig): void {
     this.runConfig = config;
     this.hud.configureForRun(config);
+  }
+
+  handleEvents(events: GameEvent[], world: WorldState): void {
+    this.hud.handleEvents(events, world);
   }
 
   render(

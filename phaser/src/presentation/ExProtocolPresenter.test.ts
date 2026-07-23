@@ -12,6 +12,7 @@ import { createWorld } from "../simulation/createWorld";
 import {
   createExProtocolChoiceViewModel,
   createExProtocolHudViewModel,
+  formatExProtocolEventNotice,
   formatSelectedExProtocolRoute,
 } from "./ExProtocolPresenter";
 
@@ -106,7 +107,7 @@ describe("EX Protocol HUD presentation", () => {
     expect(createExProtocolHudViewModel(world, config)).toMatchObject({
       name: "交差導線",
       primary: "端点 ACTIVE 0.9s",
-      secondary: "ANCHOR enemy-7",
+      secondary: "端点保持中 / 別の敵へ通常弾を当てる",
     });
   });
 
@@ -212,6 +213,32 @@ describe("EX Protocol HUD presentation", () => {
       secondary: "完全防護 1/1",
     });
     expect(formatSelectedExProtocolRoute(world)).toContain("MASTERY");
+  });
+
+  it("uses player-facing notices for rejection and progression events", () => {
+    const { world } = selectProtocol("pulse", 1);
+    const progression = world.progression.exProtocol;
+    if (progression?.status !== "selected") {
+      throw new Error("Expected selected Protocol.");
+    }
+
+    expect(
+      formatExProtocolEventNotice({
+        type: "ex.special.rejected",
+        protocolId: progression.route.protocolId,
+        reason: "cooldown",
+        elapsed: 3,
+      }),
+    ).toBe("再装填中");
+    expect(
+      formatExProtocolEventNotice({
+        type: "ex.mastery.unlocked",
+        protocolId: progression.route.protocolId,
+        masteryId: "perfect-return",
+        exLevel: 2,
+        elapsed: 4,
+      }),
+    ).toBe("MASTERY 解禁: 完全帰還");
   });
 });
 

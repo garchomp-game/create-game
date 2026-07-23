@@ -60,13 +60,7 @@ export class PhaserArenaWorldView {
     }
 
     for (const item of world.bullets) {
-      const bounced = item.ricochetsUsed > 0;
-      graphics.fillStyle(bounced ? 0x67e8f9 : bullet.color, 1);
-      graphics.fillCircle(item.position.x, item.position.y, item.radius);
-      if (item.ricochetRemaining > 0 || bounced) {
-        graphics.lineStyle(2, 0x22d3ee, 0.95);
-        graphics.strokeCircle(item.position.x, item.position.y, item.radius + 2);
-      }
+      this.drawPlayerBullet(graphics, item, bullet.color);
     }
 
     for (const item of world.enemyProjectiles) {
@@ -83,6 +77,7 @@ export class PhaserArenaWorldView {
           : null,
       );
     }
+    this.drawExProtocolMarkers(graphics, world);
     this.drawOffscreenEnemyIndicators(graphics, world);
 
     this.drawAimGuide(graphics, world, pointerWorld);
@@ -90,6 +85,125 @@ export class PhaserArenaWorldView {
     graphics.fillCircle(world.player.position.x, world.player.position.y, world.player.radius);
     graphics.lineStyle(2, player.stroke, 1);
     graphics.strokeCircle(world.player.position.x, world.player.position.y, world.player.radius);
+  }
+
+  private drawPlayerBullet(
+    graphics: Phaser.GameObjects.Graphics,
+    bullet: WorldState["bullets"][number],
+    defaultColor: number,
+  ): void {
+    const bounced = bullet.ricochetsUsed > 0;
+    const protocolState = bullet.candidate?.protocolState;
+    if (!protocolState) {
+      graphics.fillStyle(bounced ? 0x67e8f9 : defaultColor, 1);
+      graphics.fillCircle(bullet.position.x, bullet.position.y, bullet.radius);
+      if (bullet.ricochetRemaining > 0 || bounced) {
+        graphics.lineStyle(2, 0x22d3ee, 0.95);
+        graphics.strokeCircle(
+          bullet.position.x,
+          bullet.position.y,
+          bullet.radius + 2,
+        );
+      }
+      return;
+    }
+
+    const { x, y } = bullet.position;
+    if (protocolState.kind === "full-span-tidal-sweep") {
+      const direction = normalize(bullet.velocity);
+      const side = { x: -direction.y, y: direction.x };
+      const length = bullet.radius + 5;
+      const width = bullet.radius + 2;
+      graphics.fillStyle(0x2dd4bf, 0.94);
+      graphics.fillTriangle(
+        x + direction.x * length,
+        y + direction.y * length,
+        x - direction.x * width + side.x * width,
+        y - direction.y * width + side.y * width,
+        x - direction.x * width - side.x * width,
+        y - direction.y * width - side.y * width,
+      );
+      graphics.lineStyle(1, 0xccfbf1, 0.95);
+      graphics.strokeCircle(x, y, bullet.radius + 4);
+      return;
+    }
+
+    if (protocolState.kind === "aegis-fan") {
+      const direction = normalize(bullet.velocity);
+      const side = { x: -direction.y, y: direction.x };
+      const half = bullet.radius + 4;
+      graphics.fillStyle(protocolState.empowered ? 0xf8fafc : 0x60a5fa, 1);
+      graphics.fillCircle(x, y, bullet.radius);
+      graphics.lineStyle(3, 0x93c5fd, 0.98);
+      graphics.lineBetween(
+        x + side.x * half,
+        y + side.y * half,
+        x - side.x * half,
+        y - side.y * half,
+      );
+      graphics.lineStyle(1, 0xdbeafe, 0.82);
+      graphics.strokeCircle(x, y, bullet.radius + 4);
+      return;
+    }
+
+    const style =
+      protocolState.kind === "resonance-relay"
+        ? { fill: bounced ? 0x67e8f9 : defaultColor, stroke: 0xc4b5fd }
+        : protocolState.kind === "rebound-overdrive"
+          ? { fill: bounced ? 0xfbbf24 : defaultColor, stroke: 0xf59e0b }
+          : { fill: 0xfb7185, stroke: 0xfda4af };
+    graphics.fillStyle(style.fill, 1);
+    graphics.fillCircle(x, y, bullet.radius);
+    graphics.lineStyle(2, style.stroke, 0.98);
+    if (protocolState.kind === "rebound-overdrive") {
+      const half = bullet.radius + 3;
+      graphics.strokePoints(
+        [
+          new Phaser.Math.Vector2(x, y - half),
+          new Phaser.Math.Vector2(x + half, y),
+          new Phaser.Math.Vector2(x, y + half),
+          new Phaser.Math.Vector2(x - half, y),
+        ],
+        true,
+      );
+    } else {
+      graphics.strokeCircle(x, y, bullet.radius + 3);
+    }
+  }
+
+  private drawExProtocolMarkers(
+    graphics: Phaser.GameObjects.Graphics,
+    world: WorldState,
+  ): void {
+    const progression = world.progression.exProtocol;
+    if (
+      progression?.status !== "selected" ||
+      progression.runtime.kind !== "resonance-relay" ||
+      !progression.runtime.anchor
+    ) return;
+
+    const anchor = progression.runtime.anchor;
+    const enemy = world.enemies.find(
+      ({ id }) => id === anchor.enemyId,
+    );
+    if (!enemy) return;
+    const pulse = 0.65 + Math.sin(world.state.elapsed * 7) * 0.12;
+    const radius = enemy.radius + 8;
+    graphics.lineStyle(2, 0xc4b5fd, pulse);
+    graphics.strokeCircle(enemy.position.x, enemy.position.y, radius);
+    graphics.lineStyle(2, 0xf8fafc, 0.8);
+    graphics.lineBetween(
+      enemy.position.x - 4,
+      enemy.position.y - radius - 3,
+      enemy.position.x + 4,
+      enemy.position.y - radius - 3,
+    );
+    graphics.lineBetween(
+      enemy.position.x - 4,
+      enemy.position.y + radius + 3,
+      enemy.position.x + 4,
+      enemy.position.y + radius + 3,
+    );
   }
 
   renderCursor(
@@ -863,4 +977,10 @@ function rotateDirection(direction: Vec2, radians: number): Vec2 {
     x: direction.x * cosine - direction.y * sine,
     y: direction.x * sine + direction.y * cosine,
   };
+}
+
+function normalize(vector: Vec2): Vec2 {
+  const length = Math.hypot(vector.x, vector.y);
+  if (length <= Number.EPSILON) return { x: 1, y: 0 };
+  return { x: vector.x / length, y: vector.y / length };
 }

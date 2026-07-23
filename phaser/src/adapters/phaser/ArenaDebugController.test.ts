@@ -169,6 +169,7 @@ function createFixture(run: { modeId?: string; stageId?: string } = {}) {
     getFeedbackSnapshot: () => ({
       impactCount: 0,
       particleCount: 0,
+      protocolEffectCount: 0,
       screenFlashAlpha: 0,
     }),
     getAudioCues: () => [],

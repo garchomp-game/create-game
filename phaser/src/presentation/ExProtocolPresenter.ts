@@ -2,15 +2,14 @@ import {
   EX_PROTOCOL_CATALOG,
   getExProtocolDefinition,
 } from "../content/exProtocolCatalog";
-import type {
-  ExProtocolRecordStats,
-} from "../domain/runRecords";
+import type { ExProtocolRecordStats } from "../domain/runRecords";
 import type {
   ExProtocolEvolutionId,
   ExProtocolId,
 } from "../domain/exProtocols";
 import type {
   ActiveVolleyAnalytics,
+  GameEvent,
   SimulationConfig,
   WorldState,
 } from "../domain/types";
@@ -122,7 +121,7 @@ export function createExProtocolHudViewModel(
         ? `端点 ACTIVE ${formatTenths(remaining)}`
         : "稼働中",
       secondary: runtime.anchor
-        ? `ANCHOR ${runtime.anchor.enemyId}`
+        ? "端点保持中 / 別の敵へ通常弾を当てる"
         : "最大集束から導線を生成",
     };
   }
@@ -249,6 +248,45 @@ export function formatExProtocolRecordRoute(
       : "MASTERY 未解禁",
   ].join(" / ");
   return `PROTOCOL: ${formatProtocolName(definition)}\n進化経路: ${route}`;
+}
+
+export function formatExProtocolEventNotice(event: GameEvent): string | null {
+  if (event.type === "ex.mastery.unlocked") {
+    const definition = requireProtocol(event.protocolId);
+    return `MASTERY 解禁: ${definition.mastery.displayNameJa}`;
+  }
+  if (event.type === "ex.limit_break.connected") {
+    return "LIMIT BREAK 接続";
+  }
+  if (event.type === "ex.relay.blocked") {
+    return "導線遮断";
+  }
+  if (event.type === "ex.special.rejected") {
+    const labels = {
+      "already-armed": "すでに武装中",
+      cooldown: "再装填中",
+      "not-charged": "CHARGE不足",
+      "insufficient-hp": "HP不足",
+    } as const;
+    return labels[event.reason];
+  }
+  if (
+    event.type === "ex.tidal.charged" ||
+    event.type === "ex.breakwater.charged"
+  ) {
+    return "CHARGE READY";
+  }
+  if (event.type === "ex.special.armed") {
+    return "反跳過給 武装";
+  }
+  if (event.type === "ex.special.activated") {
+    const definition = requireProtocol(event.protocolId);
+    return `${definition.displayNameJa} 発動`;
+  }
+  if (event.type === "ex.aegis.perfect-guard.charged") {
+    return "完全防護 READY";
+  }
+  return null;
 }
 
 function createProtocolCard(

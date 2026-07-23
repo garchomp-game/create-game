@@ -128,6 +128,10 @@ export class ArenaScene extends Phaser.Scene {
     this.load.audio("pickupAlt1", "/audio/pickup-alt-1.ogg");
     this.load.audio("levelUp", "/audio/level-up.ogg");
     this.load.audio("upgrade", "/audio/upgrade.ogg");
+    this.load.audio("protocolReady", "/audio/protocol-ready.ogg");
+    this.load.audio("protocolActivate", "/audio/protocol-activate.ogg");
+    this.load.audio("protocolGuard", "/audio/protocol-guard.ogg");
+    this.load.audio("protocolReject", "/audio/protocol-reject.ogg");
     this.load.audio("damage", "/audio/damage.ogg");
     this.load.audio("damageAlt1", "/audio/damage-alt-1.ogg");
     this.load.audio("gameOver", "/audio/game-over.ogg");
@@ -371,6 +375,7 @@ export class ArenaScene extends Phaser.Scene {
     for (const event of result.events) {
       this.logEvent(event);
     }
+    this.arenaRenderer.handleEvents(result.events, this.world);
     this.feedbackLayer.handleEvents(result.events, this.world);
     this.audioRouter.handleEvents(result.events);
     if (gameOver && this.session.recordPolicy === "standard") {

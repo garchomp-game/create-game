@@ -414,6 +414,111 @@ function makeUpgrade() {
   return finalize(buffer, 0.8, 0.006);
 }
 
+function makeProtocolReady() {
+  const buffer = createBuffer(0.34);
+  addBell(buffer, {
+    start: 0,
+    notes: [76, 83],
+    gain: 0.3,
+    pan: 0,
+    spacing: 0.075,
+  });
+  addTone(buffer, {
+    start: 0.02,
+    duration: 0.28,
+    frequency: 260,
+    endFrequency: 620,
+    gain: 0.16,
+    wave: "triangle",
+    attack: 0.02,
+    release: 0.18,
+  });
+  return finalize(buffer, 0.7, 0.004);
+}
+
+function makeProtocolActivate() {
+  const buffer = createBuffer(0.42);
+  addNoise(buffer, {
+    start: 0,
+    duration: 0.24,
+    gain: 0.32,
+    attack: 0.05,
+    release: 0.16,
+    seed: 770,
+    color: "high",
+  });
+  addTone(buffer, {
+    start: 0,
+    duration: 0.36,
+    frequency: 180,
+    endFrequency: 980,
+    gain: 0.3,
+    wave: "saw",
+    attack: 0.015,
+    release: 0.2,
+    harmonics: [{ multiple: 0.5, gain: 0.2 }],
+  });
+  addBell(buffer, { start: 0.14, notes: [69, 76], gain: 0.2, spacing: 0.04 });
+  return finalize(buffer, 0.76, 0.004);
+}
+
+function makeProtocolGuard() {
+  const buffer = createBuffer(0.25);
+  addNoise(buffer, {
+    start: 0,
+    duration: 0.075,
+    gain: 0.36,
+    release: 0.06,
+    seed: 880,
+    color: "high",
+  });
+  addTone(buffer, {
+    start: 0,
+    duration: 0.22,
+    frequency: 860,
+    endFrequency: 520,
+    gain: 0.34,
+    wave: "triangle",
+    release: 0.16,
+    harmonics: [{ multiple: 2.02, gain: 0.24 }],
+  });
+  addTone(buffer, {
+    start: 0.035,
+    duration: 0.18,
+    frequency: 1240,
+    gain: 0.16,
+    wave: "sine",
+    release: 0.14,
+    pan: 0.18,
+  });
+  return finalize(buffer, 0.68, 0.003);
+}
+
+function makeProtocolReject() {
+  const buffer = createBuffer(0.22);
+  addTone(buffer, {
+    start: 0,
+    duration: 0.1,
+    frequency: 190,
+    endFrequency: 150,
+    gain: 0.34,
+    wave: "square",
+    release: 0.07,
+    pan: -0.08,
+  });
+  addTone(buffer, {
+    start: 0.085,
+    duration: 0.12,
+    frequency: 145,
+    endFrequency: 110,
+    gain: 0.3,
+    wave: "square",
+    release: 0.09,
+    pan: 0.08,
+  });
+  return finalize(buffer, 0.58, 0.003);
+}
+
 function makeDamage(variant) {
   const buffer = createBuffer(0.31);
   addNoise(buffer, {
@@ -696,6 +801,10 @@ const assets = [
   ["pickup-alt-1", makePickup(1)],
   ["level-up", makeLevelUp()],
   ["upgrade", makeUpgrade()],
+  ["protocol-ready", makeProtocolReady()],
+  ["protocol-activate", makeProtocolActivate()],
+  ["protocol-guard", makeProtocolGuard()],
+  ["protocol-reject", makeProtocolReject()],
   ["damage", makeDamage(0)],
   ["damage-alt-1", makeDamage(1)],
   ["game-over", makeGameOver()],
