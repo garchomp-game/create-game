@@ -675,6 +675,15 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   expect(runExport?.wave.start).toBe(60);
   expect(runExport?.counts.enemyTypes).toEqual({ chaser: 0, brute: 0, fast: 0, ranged: 0 });
   expect(runExport?.counts.obstacleContacts.player).toBe(0);
+  expect(runExport?.choiceInteraction).toMatchObject({
+    schemaVersion: 1,
+    summary: { selectedCount: 0 },
+  });
+  expect(runExport?.bossShadow).toEqual({
+    schemaVersion: 1,
+    state: "not-reached",
+    reason: "bossNotSpawned",
+  });
   expect(runExport?.encounterRelief).toEqual({
     schemaVersion: 1,
     windowSeconds: 5,
@@ -688,6 +697,9 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   expect(parsedRunExport.game).toBe(runExport?.game);
   expect(parsedRunExport.configVersion).toBe(runExport?.configVersion);
   expect(parsedRunExport.resultSummary.damageTaken).toBe(runExport?.resultSummary.damageTaken);
+  expect(parsedRunExport.choiceInteraction).toEqual(runExport?.choiceInteraction);
+  expect(parsedRunExport.bossShadow).toEqual(runExport?.bossShadow);
+  expect(parsedRunExport.encounterRelief).toEqual(runExport?.encounterRelief);
 });
 
 test("validates and separates explicit development run exports", async ({ page }) => {

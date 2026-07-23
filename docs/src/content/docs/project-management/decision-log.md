@@ -985,3 +985,15 @@ Work回答は設計入力であり、採用・保留・棄却はIssue #83と本d
 - spawn抑制やdrop変更は、shadow事実と無誘導の口頭回答が立て直し不成立を示した場合だけ、別Issueの単一candidateとして事前登録する。
 
 Charger危険反転、選択UI、ボス調整を同じ比較buildへ混ぜない。
+
+## 2026-07-23: shadow計装だけをcontrol観測buildへ結合する
+
+決定: [PH-V08-028 #112](https://github.com/garchomp-game/create-game/issues/112)で、選択wall-clock、Boss攻撃、危険イベント後5秒のshadowと、現行Charger・敗因の純粋集約を同じRC6 controlへ結合する。人間がPRごとに同じrunを繰り返さず、同一run exportから事実を取得できることを目的とする。
+
+- Charger危険反転、選択UI変更、Boss調整、event spawn抑制は含めない。
+- RNG、敵数値、ruleset、RunRecord、ランキングを変更しない。
+- gameplay candidateは引き続き1 build 1件とし、この結合buildへ直接追加しない。
+- 自動QAは計装の共存だけを保証し、緩和、攻略性、面白さの人間ゲートを代替しない。
+- 独立PRのreview責務を維持し、main採用時は観測フィールドを保持して順次rebaseする。
+
+実施run、無誘導質問、JSON pathは[v0.8 control観測build 実施手順](../../playtest/v08-observation-control-runbook/)を正本とする。
