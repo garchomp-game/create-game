@@ -1,4 +1,5 @@
 import { EX_PROTOCOL_CATALOG } from "../../content/exProtocolCatalog";
+import { incrementExProtocolCounter } from "../../domain/exProtocolTelemetry";
 import type {
   AegisFanProjectileState,
   ExProtocolId,
@@ -22,6 +23,7 @@ export type AegisDamageResolution = {
   baselineWithoutAnyProtocol: number;
   baselineForEffectAttribution: number;
   attribution: "protocol-modified-normal" | "uncredited-penalty";
+  effectDetail: "aegis-perfect-guard" | null;
   protocolId: ExProtocolId;
 };
 
@@ -68,6 +70,11 @@ export function prepareAegisVolley(
   const actualEdgeMultiplier = empowered
     ? definition.mastery.nextVolleyEdgeEnemyDamageMultiplier
     : normalEdgeMultiplier;
+  incrementExProtocolCounter(
+    world.stats.exProtocolMetrics,
+    "edgeShots",
+    2,
+  );
 
   return {
     createProjectileState: (projectileIndex, baseDamage) => {
@@ -114,6 +121,7 @@ export function resolveAegisDamage(
     attribution: state.empowered
       ? "protocol-modified-normal"
       : "uncredited-penalty",
+    effectDetail: state.empowered ? "aegis-perfect-guard" : null,
     protocolId: progression.route.protocolId,
   };
 }

@@ -200,6 +200,12 @@ export function resolveBulletEnemyHit(
           : resolvedProtocolDamage
             ? { protocolId: resolvedProtocolDamage.protocolId }
             : {}),
+        ...(resolvedProtocolDamage?.effectDetail
+          ? {
+              protocolEffectDetail:
+                resolvedProtocolDamage.effectDetail,
+            }
+          : {}),
         attribution: tidalState
           ? "protocol-volley"
           : resolvedProtocolDamage?.attribution ?? "normal",

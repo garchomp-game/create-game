@@ -1,4 +1,5 @@
 import { EX_PROTOCOL_CATALOG } from "../../content/exProtocolCatalog";
+import { incrementExProtocolCounter } from "../../domain/exProtocolTelemetry";
 import type {
   ResonanceRelayProjectileState,
 } from "../../domain/exProtocols";
@@ -160,10 +161,19 @@ export function resolveResonanceAfterNormalHit(
     }
 
     const residualAnchor = definition.evolutionTwo[0];
+    const anchorFocusBeforeReset = anchorEnemy.pulseFocusStacks ?? 0;
     anchorEnemy.pulseFocusStacks =
       progression.route.evolutionTwoId === residualAnchor.id
         ? residualAnchor.remainingAnchorFocusStacks
         : definition.signature.resetAnchorFocusStacks;
+    incrementExProtocolCounter(
+      world.stats.exProtocolMetrics,
+      "focusStacksConsumed",
+      Math.max(
+        0,
+        anchorFocusBeforeReset - (anchorEnemy.pulseFocusStacks ?? 0),
+      ),
+    );
     runtime.anchor = null;
 
     const endpointPriming = definition.evolutionTwo[1];

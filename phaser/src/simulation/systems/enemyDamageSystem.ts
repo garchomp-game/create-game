@@ -10,6 +10,10 @@ import type {
 import type { ExProtocolId } from "../../domain/exProtocols";
 import { releaseCommanderPressure } from "./commanderEliteSystem";
 import { recordChargerKilled } from "./chargerEnemySystem";
+import {
+  recordExProtocolDamageOutcome,
+  type ExProtocolDamageEffectDetail,
+} from "./exProtocolStatsSystem";
 
 export type PlayerProjectileDamageSource = {
   kind: "player-projectile";
@@ -21,6 +25,7 @@ export type PlayerProjectileDamageSource = {
   ricochetBoundarySide: ArenaBoundarySide | null;
   protocolId?: ExProtocolId;
   activationId?: number;
+  protocolEffectDetail?: ExProtocolDamageEffectDetail;
   attribution:
     | "normal"
     | "protocol-modified-normal"
@@ -84,6 +89,26 @@ export function resolveEnemyDamage(
     baselineForEffectAttribution: request.baselineForEffectAttribution,
     source: request.source,
   };
+  recordExProtocolDamageOutcome(world, {
+    damage: outcome.damage,
+    hpBefore: outcome.hpBefore,
+    killed: outcome.killed,
+    baselineWithoutAnyProtocol: outcome.baselineWithoutAnyProtocol,
+    baselineForEffectAttribution:
+      outcome.baselineForEffectAttribution,
+    protocolId:
+      request.source.kind === "player-projectile"
+        ? request.source.protocolId ?? null
+        : request.source.protocolId,
+    attribution:
+      request.source.kind === "player-projectile"
+        ? request.source.attribution
+        : "protocol-source",
+    ...(request.source.kind === "player-projectile" &&
+    request.source.protocolEffectDetail
+      ? { effectDetail: request.source.protocolEffectDetail }
+      : {}),
+  });
 
   events.push(createHitEvent(enemy, outcome));
   hooks.afterHit?.(outcome);

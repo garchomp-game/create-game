@@ -144,6 +144,16 @@ export function resolveAegisCollisionFrame(
     enemyProjectilePlans,
   );
   candidates.sort(compareCollisionCandidates);
+  const plannedPlayerEndpointContacts = new Set(
+    candidates
+      .filter(
+        (
+          candidate,
+        ): candidate is PlayerEndpointHitCandidate =>
+          candidate.kind === "player-endpoint-hit",
+      )
+      .map((candidate) => candidate.enemyProjectileId),
+  );
 
   const liveBulletIds = new Set(bullets.map(({ id }) => id));
   const liveEnemyProjectileIds = new Set(
@@ -184,6 +194,7 @@ export function resolveAegisCollisionFrame(
       liveBulletIds,
       liveEnemyProjectileIds,
       deadEnemies,
+      plannedPlayerEndpointContacts,
       reserveCollisionEvent,
     );
   }
@@ -420,6 +431,7 @@ function commitCandidate(
   liveBulletIds: Set<string>,
   liveEnemyProjectileIds: Set<string>,
   deadEnemies: Set<Enemy>,
+  plannedPlayerEndpointContacts: ReadonlySet<string>,
   reserveCollisionEvent: () => void,
 ): boolean {
   if (candidate.kind === "enemy-projectile-termination") {
@@ -455,6 +467,8 @@ function commitCandidate(
       volleyId: bullet.volleyId,
       side: state.side,
       enemyProjectileCategory: projectile.candidate!.category,
+      plannedPlayerEndpointContact:
+        plannedPlayerEndpointContacts.has(projectile.id),
       elapsed: world.state.elapsed,
     });
     recordAegisInterception(world, bullet, events);

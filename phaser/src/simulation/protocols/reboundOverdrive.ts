@@ -1,4 +1,5 @@
 import { EX_PROTOCOL_CATALOG } from "../../content/exProtocolCatalog";
+import { incrementExProtocolCounter } from "../../domain/exProtocolTelemetry";
 import type {
   ReboundOverdriveProjectileState,
 } from "../../domain/exProtocols";
@@ -18,7 +19,14 @@ export type ReboundDamageResolution = {
   damage: number;
   baselineWithoutAnyProtocol: number;
   baselineForEffectAttribution: number;
-  attribution: "normal" | "protocol-restored-capacity";
+  attribution:
+    | "normal"
+    | "protocol-modified-normal"
+    | "protocol-restored-capacity";
+  effectDetail:
+    | "rebound-restored-capacity"
+    | "rebound-return-surge"
+    | null;
   protocolId: Extract<
     WorldState["progression"]["exProtocol"],
     { status: "selected" }
@@ -113,6 +121,10 @@ export function prepareReboundVolley(
   const doubleReflection = definition.evolutionTwo[0];
   progression.runtime.armedUntil = null;
   progression.runtime.armedVolleyId = volleyId;
+  incrementExProtocolCounter(
+    world.stats.exProtocolMetrics,
+    "armedVolleys",
+  );
   return {
     createProjectileState: () => ({
       kind: "rebound-overdrive",
@@ -198,7 +210,14 @@ export function resolveReboundDamage(
       : normalResolvedDamage,
     attribution: restoredCapacityHit
       ? "protocol-restored-capacity"
-      : "normal",
+      : multiplier > 1
+        ? "protocol-modified-normal"
+        : "normal",
+    effectDetail: restoredCapacityHit
+      ? "rebound-restored-capacity"
+      : multiplier > 1
+        ? "rebound-return-surge"
+        : null,
     protocolId: progression.route.protocolId,
   };
 }
@@ -222,7 +241,13 @@ export function recordReboundPostRicochetHit(
   const volley = world.analytics.activeVolleys[bullet.volleyId];
   if (!volley) return;
   const enemyIds = (volley.reboundPostRicochetEnemyIds ??= []);
-  if (!enemyIds.includes(enemy.id)) enemyIds.push(enemy.id);
+  if (!enemyIds.includes(enemy.id)) {
+    enemyIds.push(enemy.id);
+    incrementExProtocolCounter(
+      world.stats.exProtocolMetrics,
+      "postRicochetUniqueHits",
+    );
+  }
   if (
     !progression.route.masteryUnlocked ||
     volley.reboundMasteryRefunded ||

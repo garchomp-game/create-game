@@ -11,6 +11,7 @@ import type {
   ExProtocolProgressionState,
   ExProtocolProjectileState,
 } from "./exProtocols";
+import type { ExProtocolRunStats } from "./exProtocolTelemetry";
 
 export type Vec2 = {
   x: number;
@@ -932,6 +933,7 @@ export type RunStats = {
   encounterMetrics: EncounterRunStats;
   weaponMetrics: Record<WeaponTypeId, WeaponRunStats>;
   weaponComparisonMetrics: Record<WeaponTypeId, WeaponComparisonRunStats>;
+  exProtocolMetrics: ExProtocolRunStats;
 };
 
 export type EnemyNavigationRunStats = {
@@ -976,6 +978,7 @@ export type RunResultSummary = Omit<
   | "progressionMetrics"
   | "encounterMetrics"
   | "weaponComparisonMetrics"
+  | "exProtocolMetrics"
 > & {
   elapsed: number;
   score: number;
@@ -1466,6 +1469,7 @@ export type GameEvent =
       volleyId: number;
       side: "left" | "right";
       enemyProjectileCategory: EnemyProjectileCategory;
+      plannedPlayerEndpointContact: boolean;
       elapsed: number;
     }
   | {

@@ -13,7 +13,14 @@ export type RedlineDamageResolution = {
   damage: number;
   baselineWithoutAnyProtocol: number;
   baselineForEffectAttribution: number;
-  attribution: "normal" | "protocol-restored-capacity";
+  attribution:
+    | "normal"
+    | "protocol-modified-normal"
+    | "protocol-restored-capacity";
+  effectDetail:
+    | "redline-restored-capacity"
+    | "redline-mastery"
+    | null;
   protocolId: ExProtocolId;
   redlineEvent: {
     totalDamage: number;
@@ -82,6 +89,9 @@ export function resolveRedlineDamage(
       baselineWithoutAnyProtocol: 0,
       baselineForEffectAttribution: 0,
       attribution: "protocol-restored-capacity",
+      effectDetail: masteryExtraHit
+        ? "redline-mastery"
+        : "redline-restored-capacity",
       protocolId,
       redlineEvent: {
         totalDamage: damage,
@@ -100,6 +110,7 @@ export function resolveRedlineDamage(
       baselineWithoutAnyProtocol: normalResolvedDamage,
       baselineForEffectAttribution: normalResolvedDamage,
       attribution: "normal",
+      effectDetail: null,
       protocolId,
       redlineEvent: null,
     };
@@ -125,7 +136,8 @@ export function resolveRedlineDamage(
     damage,
     baselineWithoutAnyProtocol: normalResolvedDamage,
     baselineForEffectAttribution: normalResolvedDamage,
-    attribution: "normal",
+    attribution: "protocol-modified-normal",
+    effectDetail: null,
     protocolId,
     redlineEvent: {
       totalDamage: damage,
