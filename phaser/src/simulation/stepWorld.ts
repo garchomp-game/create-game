@@ -33,6 +33,7 @@ import {
   chooseExProtocol,
   chooseExProtocolEvolution,
 } from "./exProtocolProgression";
+import { updateExProtocolSpecialPhase } from "./systems/exProtocolSystem";
 
 export function stepWorld(
   world: WorldState,
@@ -172,6 +173,12 @@ export function stepWorld(
     config,
   );
   updateArenaCollapse(world, dt, config, events);
+  updateExProtocolSpecialPhase(
+    world,
+    input.specialPressed === true,
+    config,
+    events,
+  );
   updateShooting(world, input.shootHeld, config, events);
   const bulletMotions = updateBullets(world, dt, config);
   updateSpawner(world, dt, random.spawn, config, events);

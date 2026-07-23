@@ -15,6 +15,11 @@ import {
   getRedlineFocusDurationBonus,
   resolveRedlineDamage,
 } from "../protocols/redlineCore";
+import {
+  recordReboundPostRicochetHit,
+  resolveReboundDamage,
+  restoreReboundCapacityAfterRicochet,
+} from "../protocols/reboundOverdrive";
 
 export function resolveCombat(
   world: WorldState,
@@ -71,6 +76,7 @@ export function resolveCombat(
           ricochetsUsed: ricochet.ricochetsUsed,
           ricochetsRemaining: ricochet.ricochetsRemaining,
         });
+        restoreReboundCapacityAfterRicochet(world, bullet, events);
       }
     }
 
@@ -147,7 +153,13 @@ function resolveBulletEnemyHit(
     focusHit.stackBefore,
     normalResolvedDamage,
   );
-  const damage = redline?.damage ?? normalResolvedDamage;
+  const rebound = resolveReboundDamage(
+    world,
+    bullet,
+    normalResolvedDamage,
+  );
+  const protocolDamage = redline ?? rebound;
+  const damage = protocolDamage?.damage ?? normalResolvedDamage;
   bullet.hitEnemyIds.push(enemy.id);
   bullet.hitsRemaining -= 1;
   registerSpreadSweepHit(world, bullet, enemy, events);
@@ -157,9 +169,9 @@ function resolveBulletEnemyHit(
     {
       amount: damage,
       baselineWithoutAnyProtocol:
-        redline?.baselineWithoutAnyProtocol ?? damage,
+        protocolDamage?.baselineWithoutAnyProtocol ?? damage,
       baselineForEffectAttribution:
-        redline?.baselineForEffectAttribution ?? damage,
+        protocolDamage?.baselineForEffectAttribution ?? damage,
       source: {
         kind: "player-projectile",
         bulletId: bullet.id,
@@ -168,8 +180,10 @@ function resolveBulletEnemyHit(
         ricochetsUsed: segment.ricochetsUsed,
         ricochetSurfaceKind: segment.ricochetSurfaceKind,
         ricochetBoundarySide: segment.ricochetBoundarySide,
-        ...(redline ? { protocolId: redline.protocolId } : {}),
-        attribution: redline?.attribution ?? "normal",
+        ...(protocolDamage
+          ? { protocolId: protocolDamage.protocolId }
+          : {}),
+        attribution: protocolDamage?.attribution ?? "normal",
       },
     },
     deadEnemies,
@@ -200,6 +214,12 @@ function resolveBulletEnemyHit(
             elapsed: world.state.elapsed,
           });
         }
+        recordReboundPostRicochetHit(
+          world,
+          bullet,
+          enemy,
+          events,
+        );
       },
     },
   );

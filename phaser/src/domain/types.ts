@@ -947,6 +947,8 @@ export type ActiveVolleyAnalytics = {
   postRicochetEnemyIds: string[];
   spreadSweepEnemyIds: string[];
   spreadSweepTriggered: boolean;
+  reboundPostRicochetEnemyIds?: string[];
+  reboundMasteryRefunded?: boolean;
 };
 
 export type RunAnalyticsState = {
@@ -1019,6 +1021,7 @@ export type InputSnapshot = {
   upgradeChoicePressed: number | null;
   contractChoicePressed?: number | null;
   tutorialContinuePressed?: boolean;
+  specialPressed?: boolean;
 };
 
 export type GameEvent =
@@ -1336,6 +1339,40 @@ export type GameEvent =
       projectileId: string;
       totalDamage: number;
       bonusDamageAttributed: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.special.rejected";
+      protocolId: ExProtocolId;
+      reason:
+        | "already-armed"
+        | "cooldown"
+        | "not-charged"
+        | "insufficient-hp";
+      elapsed: number;
+    }
+  | {
+      type: "ex.special.armed";
+      protocolId: ExProtocolId;
+      elapsed: number;
+    }
+  | {
+      type: "ex.special.expired";
+      protocolId: ExProtocolId;
+      reason: "no-volley";
+      elapsed: number;
+    }
+  | {
+      type: "ex.rebound.restored";
+      volleyId: number;
+      restoredCapacity: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.rebound.cooldown.refunded";
+      volleyId: number;
+      remainingBefore: number;
+      remainingAfter: number;
       elapsed: number;
     }
   | {

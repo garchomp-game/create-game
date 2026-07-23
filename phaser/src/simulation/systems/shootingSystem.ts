@@ -7,6 +7,7 @@ import type {
   WorldState,
 } from "../../domain/types";
 import { createRedlineProjectileState } from "../protocols/redlineCore";
+import { prepareReboundVolley } from "../protocols/reboundOverdrive";
 
 export function updateShooting(
   world: WorldState,
@@ -22,6 +23,9 @@ export function updateShooting(
   const hitCapacity = weapon.hitCapacity + world.runtime.hitCapacityBonus;
   const directions = getProjectileDirections(aim, projectileCount, weapon.spreadAngle);
   const volleyId = world.nextVolleyId++;
+  const reboundPlan = config.features.exProtocols
+    ? prepareReboundVolley(world, volleyId)
+    : null;
   const consumesSpreadSweep =
     world.state.weaponType === "spread" &&
     world.runtime.spreadSweepDistinctTargets > 0 &&
@@ -54,7 +58,10 @@ export function updateShooting(
       lifetime: weapon.lifetime,
       damage: weapon.damage * world.runtime.projectileDamageMultiplier,
       hitsRemaining: hitCapacity,
-      ricochetRemaining: weapon.ricochetCount + world.runtime.ricochetBonus,
+      ricochetRemaining:
+        weapon.ricochetCount +
+        world.runtime.ricochetBonus +
+        (reboundPlan?.ricochetCapacityBonus ?? 0),
       ricochetsUsed: 0,
       ricochetSurfaceKind: null,
       ricochetBoundarySide: null,
@@ -73,7 +80,9 @@ export function updateShooting(
               ),
               activationId: null,
               consumedCoreSpreadSweep: consumesSpreadSweep,
-              protocolState: createRedlineProjectileState(world),
+              protocolState:
+                reboundPlan?.createProjectileState() ??
+                createRedlineProjectileState(world),
             },
           }
         : {}),
