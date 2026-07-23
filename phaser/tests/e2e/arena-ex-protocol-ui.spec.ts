@@ -215,6 +215,131 @@ test("stacks Protocol cards without clipping in portrait", async ({ page }) => {
   );
 });
 
+test("persists candidate runs as v3 with provenance and Protocol aggregate", async ({
+  page,
+}) => {
+  await gotoCandidate(page);
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
+    if (!debug) throw new Error("Debug API is not available.");
+    debug.restart();
+    debug.forceExProtocolSelect();
+  });
+  await page
+    .locator(
+      "[data-choice-kind='protocol'][data-choice-id='pulse.resonance-relay']",
+    )
+    .click();
+  await expectStatus(page, "playing");
+  await page.evaluate(() => window.__ARENA_DEBUG__?.forceGameOver());
+  await expectStatus(page, "gameOver");
+
+  const persisted = await page.evaluate(() => {
+    const raw = localStorage.getItem("arena-core.run-records.v3");
+    if (!raw) throw new Error("Candidate v3 store is missing.");
+    const envelope = JSON.parse(raw) as {
+      schemaVersion: number;
+      history: Array<Record<string, unknown>>;
+      rankings: Array<Record<string, unknown>>;
+    };
+    return {
+      envelope,
+      latest: window.__ARENA_DEBUG__?.getSnapshot().latestRunRecord,
+      v2Raw: localStorage.getItem("arena-core.run-records.v2"),
+    };
+  });
+
+  expect(persisted.envelope.schemaVersion).toBe(3);
+  expect(persisted.envelope.history[0]).toMatchObject({
+    schemaVersion: 3,
+    rulesetProfileId: "candidate-ex-endless-c1",
+    rngVersion: "arena-rng-v2",
+    exProtocol: {
+      selectedId: "pulse.resonance-relay",
+    },
+  });
+  expect(persisted.latest).toMatchObject(
+    persisted.envelope.history[0] ?? {},
+  );
+  expect(persisted.v2Raw).toBeNull();
+});
+
+test("copies a legacy v2 record into v3 without mutating legacy bytes", async ({
+  page,
+}) => {
+  await gotoCandidate(page);
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
+    if (!debug) throw new Error("Debug API is not available.");
+    debug.restart();
+    debug.forceGameOver();
+  });
+  await expectStatus(page, "gameOver");
+  const legacyRaw = await page.evaluate(() => {
+    const latest = window.__ARENA_DEBUG__?.getSnapshot().latestRunRecord;
+    if (!latest || latest.schemaVersion !== 3) {
+      throw new Error("Candidate run record is unavailable.");
+    }
+    const legacy = structuredClone(latest) as Record<string, unknown>;
+    legacy.schemaVersion = 2;
+    legacy.id = "legacy-v2-browser-fixture";
+    legacy.rulesetVersion = "phaser-v0.6.8-pulse-boundary-ricochet";
+    legacy.runOrigin = "manual";
+    legacy.rankEligibility = {
+      eligible: true,
+      reasons: [],
+    };
+    delete legacy.rulesetProfileId;
+    delete legacy.rngVersion;
+    delete legacy.exProtocol;
+    const raw = JSON.stringify({
+      schemaVersion: 2,
+      history: [legacy],
+      rankings: [legacy],
+    });
+    localStorage.setItem("arena-core.run-records.v2", raw);
+    localStorage.removeItem("arena-core.run-records.v3");
+    return raw;
+  });
+
+  await page.reload();
+  await expect
+    .poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__)))
+    .toBe(true);
+
+  const migrated = await page.evaluate(() => {
+    const v3Raw = localStorage.getItem("arena-core.run-records.v3");
+    if (!v3Raw) throw new Error("Migrated v3 store is missing.");
+    return {
+      legacyRaw: localStorage.getItem("arena-core.run-records.v2"),
+      envelope: JSON.parse(v3Raw) as {
+        history: Array<Record<string, unknown>>;
+        rankings: Array<Record<string, unknown>>;
+        legacySync: {
+          importedHistory: Record<string, string>;
+          importedRankings: Record<string, string>;
+        };
+      },
+    };
+  });
+
+  expect(migrated.legacyRaw).toBe(legacyRaw);
+  expect(migrated.envelope.history).toEqual([
+    expect.objectContaining({
+      id: "legacy-v2-browser-fixture",
+      schemaVersion: 3,
+      rulesetProfileId: "legacy-endless-v068",
+      rngVersion: "arena-rng-v1",
+      exProtocol: null,
+    }),
+  ]);
+  expect(migrated.envelope.rankings).toHaveLength(1);
+  expect(migrated.envelope.legacySync).toEqual({
+    importedHistory: { "legacy-v2-browser-fixture": "v2" },
+    importedRankings: { "legacy-v2-browser-fixture": "v2" },
+  });
+});
+
 async function gotoCandidate(page: Page): Promise<void> {
   await page.goto("/?webglReadback=1");
   await expect

@@ -48,6 +48,7 @@ import type {
   WeaponTypeId,
 } from "../../domain/types";
 import type { ExProtocolProgressionState } from "../../domain/exProtocols";
+import type { ExProtocolRunStats } from "../../domain/exProtocolTelemetry";
 import type { TutorialSnapshot } from "../../domain/tutorial";
 import type {
   AutoPilotMode,
@@ -136,10 +137,19 @@ export type ArenaDebugSnapshot = {
 };
 
 export type ArenaRunExport = {
+  exportSchemaVersion: 2;
   capturedAt: string;
   game: "arena-core-phaser";
   appVersion: string;
   rulesetVersion: string;
+  rulesetProfileId: string;
+  rngVersion: string;
+  runRecordSchemaVersion: 2 | 3 | null;
+  featureFlags: {
+    exProtocols: boolean;
+  };
+  exProtocolCatalogVersion: string | null;
+  exProtocol: ExProtocolRunStats | null;
   configVersion: string;
   buildCommit: string;
   runId: string;

@@ -2,6 +2,9 @@ export const RUN_SUMMARY_COLUMNS = [
   "captured_at",
   "app_version",
   "ruleset_version",
+  "ruleset_profile_id",
+  "rng_version",
+  "run_record_schema_version",
   "build_commit",
   "run_id",
   "run_origin",
@@ -166,6 +169,26 @@ export const RUN_SUMMARY_COLUMNS = [
   "navigation_path_ratio",
   "last_damage_kind",
   "last_damage_enemy_type",
+  "ex_protocol_id",
+  "ex_protocol_selected_at",
+  "ex_evolution_1_id",
+  "ex_evolution_1_at",
+  "ex_evolution_2_id",
+  "ex_evolution_2_at",
+  "ex_mastery_id",
+  "ex_mastery_at",
+  "first_limit_break_at",
+  "protocol_exposure_seconds",
+  "protocol_source_damage",
+  "protocol_bonus_damage_attributed",
+  "protocol_damage_share",
+  "protocol_source_kills",
+  "protocol_bonus_finisher_kills",
+  "special_presses",
+  "special_accepted",
+  "special_acceptance_rate",
+  "special_rejected_by_reason",
+  "protocol_counters",
 ] as const;
 
 export type RunSummaryColumn = (typeof RUN_SUMMARY_COLUMNS)[number];
@@ -198,6 +221,11 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
   const encounter = recordAt(value, "encounter");
   const contract = recordAt(encounter, "contract");
   const stats = recordAt(value, "stats");
+  const exProtocol = recordAt(value, "exProtocol");
+  const exProtocolMetrics = Object.keys(exProtocol).length > 0
+    ? exProtocol
+    : recordAt(stats, "exProtocolMetrics");
+  const exProtocolCounters = recordAt(exProtocolMetrics, "counters");
   const encounterMetrics = recordAt(stats, "encounterMetrics");
   const progressionMetrics = recordAt(stats, "progressionMetrics");
   const navigationMetrics = recordAt(stats, "navigationMetrics");
@@ -229,12 +257,32 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
   const projectilesFired = sumWeaponMetric(weaponMetrics, "projectilesFired");
   const projectileHits = sumWeaponMetric(weaponMetrics, "hits");
   const kills = numberAt(result, "enemiesKilled") ?? 0;
+  const protocolSourceDamage =
+    numberAt(exProtocolMetrics, "protocolSourceDamage") ?? 0;
+  const protocolBonusDamage =
+    numberAt(exProtocolMetrics, "protocolBonusDamageAttributed") ?? 0;
+  const protocolAttributedDamage =
+    protocolSourceDamage + protocolBonusDamage;
+  const totalPlayerDamage =
+    numberAt(exProtocolMetrics, "totalPlayerDamage") ?? 0;
+  const specialPresses =
+    numberAt(exProtocolMetrics, "specialPresses") ?? 0;
+  const specialAccepted =
+    numberAt(exProtocolMetrics, "specialAccepted") ?? 0;
 
   return {
     captured_at: stringAt(value, "capturedAt") ?? "",
     app_version: stringAt(value, "appVersion") ?? "",
     ruleset_version:
       stringAt(value, "rulesetVersion") ?? stringAt(value, "configVersion") ?? "",
+    ruleset_profile_id:
+      stringAt(value, "rulesetProfileId") ?? "legacy-unknown",
+    rng_version:
+      stringAt(value, "rngVersion") ??
+      stringAt(recordAt(value, "randomStreams"), "version") ??
+      "legacy-unknown",
+    run_record_schema_version:
+      numberAt(value, "runRecordSchemaVersion"),
     build_commit: stringAt(value, "buildCommit") ?? "",
     run_id: stringAt(value, "runId") ?? "",
     run_origin: stringAt(value, "runOrigin") ?? "manual",
@@ -432,6 +480,59 @@ export function createRunSummaryRow(value: unknown): RunSummaryRow | null {
       navigationFrames > 0 ? round(navigationPath / navigationFrames, 4) : null,
     last_damage_kind: stringAt(lastDamageSource, "kind") ?? "",
     last_damage_enemy_type: stringAt(lastDamageSource, "enemyType") ?? "",
+    ex_protocol_id:
+      stringAt(exProtocolMetrics, "selectedId") ?? "",
+    ex_protocol_selected_at:
+      nullableRoundedNumber(exProtocolMetrics, "selectedAtElapsed"),
+    ex_evolution_1_id:
+      stringAt(exProtocolMetrics, "evolutionOneId") ?? "",
+    ex_evolution_1_at:
+      nullableRoundedNumber(exProtocolMetrics, "evolutionOneAtElapsed"),
+    ex_evolution_2_id:
+      stringAt(exProtocolMetrics, "evolutionTwoId") ?? "",
+    ex_evolution_2_at:
+      nullableRoundedNumber(exProtocolMetrics, "evolutionTwoAtElapsed"),
+    ex_mastery_id:
+      stringAt(exProtocolMetrics, "masteryId") ?? "",
+    ex_mastery_at:
+      nullableRoundedNumber(exProtocolMetrics, "masteryAtElapsed"),
+    first_limit_break_at:
+      nullableRoundedNumberFromKeys(
+        exProtocolMetrics,
+        "firstLimitBreakAtElapsed",
+        "limitBreakFirstAtElapsed",
+      ),
+    protocol_exposure_seconds:
+      nullableRoundedNumberFromKeys(
+        exProtocolMetrics,
+        "exposureSeconds",
+        "protocolExposureSeconds",
+      ) ??
+      nullableRoundedNumber(
+        exProtocolCounters,
+        "protocolExposureSeconds",
+      ) ??
+      0,
+    protocol_source_damage: round(protocolSourceDamage, 3),
+    protocol_bonus_damage_attributed: round(protocolBonusDamage, 3),
+    protocol_damage_share:
+      totalPlayerDamage > 0
+        ? round(protocolAttributedDamage / totalPlayerDamage, 4)
+        : null,
+    protocol_source_kills:
+      numberAt(exProtocolMetrics, "protocolSourceKills") ?? 0,
+    protocol_bonus_finisher_kills:
+      numberAt(exProtocolMetrics, "protocolBonusFinisherKills") ?? 0,
+    special_presses: specialPresses,
+    special_accepted: specialAccepted,
+    special_acceptance_rate:
+      specialPresses > 0
+        ? round(specialAccepted / specialPresses, 4)
+        : null,
+    special_rejected_by_reason: stableRecordJson(
+      recordAt(exProtocolMetrics, "specialRejectedByReason"),
+    ),
+    protocol_counters: stableRecordJson(exProtocolCounters),
   };
 }
 
@@ -481,6 +582,17 @@ function nullableRoundedNumber(record: Record<string, unknown>, key: string): nu
   return value === null ? null : round(value, 3);
 }
 
+function nullableRoundedNumberFromKeys(
+  record: Record<string, unknown>,
+  ...keys: string[]
+): number | null {
+  for (const key of keys) {
+    const value = numberAt(record, key);
+    if (value !== null) return round(value, 3);
+  }
+  return null;
+}
+
 function roundedNumber(record: Record<string, unknown>, key: string): number {
   return round(numberAt(record, key) ?? 0, 3);
 }
@@ -488,6 +600,15 @@ function roundedNumber(record: Record<string, unknown>, key: string): number {
 function round(value: number, digits: number): number {
   const factor = 10 ** digits;
   return Math.round(value * factor) / factor;
+}
+
+function stableRecordJson(record: Record<string, unknown>): string {
+  const entries = Object.entries(record).sort(([left], [right]) =>
+    left.localeCompare(right),
+  );
+  return entries.length > 0
+    ? JSON.stringify(Object.fromEntries(entries))
+    : "";
 }
 
 function recordAt(record: Record<string, unknown>, key: string): Record<string, unknown> {

@@ -7,6 +7,7 @@ import {
   type RandomStreamId,
 } from "../math/random";
 import { createWorld } from "../simulation/createWorld";
+import { projectLegacyWorldForDigest } from "../simulation/legacyWorldProjection";
 import { stepWorld } from "../simulation/stepWorld";
 import { ArenaSession } from "./ArenaSession";
 
@@ -46,7 +47,11 @@ describe("ArenaSession", () => {
     expect(session.modeId).toBe("endless");
     expect(session.stageId).toBe("arena-default");
     expect(stableHash(JSON.stringify(eventDigest))).toBe("0e5c664a");
-    expect(stableHash(JSON.stringify(session.world))).toBe("47a80192");
+    expect(
+      stableHash(
+        JSON.stringify(projectLegacyWorldForDigest(session.world)),
+      ),
+    ).toBe("47a80192");
   });
 
   it("owns the active seed, config, weapon, and status without mirror state", () => {

@@ -18,8 +18,19 @@ import type {
   WeaponIdentityRunStats,
   WeaponTypeId,
 } from "./types";
+import type {
+  ExProtocolEvolutionId,
+  ExProtocolId,
+} from "./exProtocols";
+import type {
+  ExProtocolRunStats,
+  ExSpecialRejectReason,
+} from "./exProtocolTelemetry";
+import type { RulesetProfileId } from "./ruleset";
+import type { RandomStreamVersion } from "../math/random";
 
 export const RUN_RECORD_SCHEMA_VERSION = 2 as const;
+export const RUN_RECORD_SCHEMA_VERSION_V3 = 3 as const;
 export const RUN_HISTORY_LIMIT = 50;
 export const RUN_RANKING_LIMIT = 10;
 export const RUN_RANKING_GROUP_LIMIT = 16;
@@ -83,10 +94,15 @@ export type RunContext = RunComparisonKey & {
   seed: number;
   runOrigin: RunOrigin;
   rankEligibility: RankEligibility;
+  rulesetProfileId: RulesetProfileId;
+  rngVersion: RandomStreamVersion;
+  runRecordSchemaVersion:
+    | typeof RUN_RECORD_SCHEMA_VERSION
+    | typeof RUN_RECORD_SCHEMA_VERSION_V3;
+  exProtocolsEnabled: boolean;
 };
 
-export type RunRecord = RunComparisonKey & {
-  schemaVersion: typeof RUN_RECORD_SCHEMA_VERSION;
+type RunRecordBase = RunComparisonKey & {
   id: string;
   capturedAt: string;
   weaponId: WeaponTypeId;
@@ -120,6 +136,52 @@ export type RunRecord = RunComparisonKey & {
   encounterMetrics: EncounterRunStats;
 };
 
+export type RunRecordV2 = RunRecordBase & {
+  schemaVersion: typeof RUN_RECORD_SCHEMA_VERSION;
+};
+
+export type RunRecordRngVersion =
+  | RandomStreamVersion
+  | "legacy-unknown";
+
+export type RunRecordRulesetProfileId =
+  | RulesetProfileId
+  | "legacy-unknown";
+
+export type ExProtocolRecordStats = {
+  offeredIds: ExProtocolId[];
+  selectedId: ExProtocolId | null;
+  selectedAtElapsed: number | null;
+  evolutionOneId: ExProtocolEvolutionId | null;
+  evolutionOneAtElapsed: number | null;
+  evolutionTwoId: ExProtocolEvolutionId | null;
+  evolutionTwoAtElapsed: number | null;
+  masteryId: string | null;
+  masteryAtElapsed: number | null;
+  firstLimitBreakAtElapsed: number | null;
+  exposureSeconds: number;
+  protocolSourceDamage: number;
+  protocolBonusDamageAttributed: number;
+  protocolSourceKills: number;
+  protocolBonusFinisherKills: number;
+  specialPresses: number;
+  specialAccepted: number;
+  specialRejectedByReason: Partial<Record<ExSpecialRejectReason, number>>;
+  activeUseIntervalCount: number;
+  activeUseIntervalSumSeconds: number;
+  activeUseIntervalMaxSeconds: number;
+  counters: Record<string, number>;
+};
+
+export type RunRecordV3 = RunRecordBase & {
+  schemaVersion: typeof RUN_RECORD_SCHEMA_VERSION_V3;
+  rulesetProfileId: RunRecordRulesetProfileId;
+  rngVersion: RunRecordRngVersion;
+  exProtocol: ExProtocolRecordStats | null;
+};
+
+export type RunRecord = RunRecordV2 | RunRecordV3;
+
 export type CreateRunRecordInput = {
   context: RunContext;
   capturedAt: string;
@@ -130,6 +192,7 @@ export type CreateRunRecordInput = {
   extraUpgradeSelections?: ExtraUpgradeSelectionRunStat[];
   buildCompletedAt: number | null;
   encounterMetrics?: EncounterRunStats;
+  exProtocolMetrics?: ExProtocolRunStats;
 };
 
 const damageSourceSchema = z.discriminatedUnion("kind", [
@@ -435,7 +498,7 @@ const encounterMetricsSchema = z.object({
     .optional(),
 });
 
-const runRecordV2Schema = z.object({
+const runRecordV2ObjectSchema = z.object({
   schemaVersion: z.literal(RUN_RECORD_SCHEMA_VERSION),
   id: z.string().min(1),
   profileId: z.string().min(1),
@@ -488,7 +551,7 @@ const runRecordV2Schema = z.object({
   encounterMetrics: encounterMetricsSchema.default(createEmptyEncounterMetrics),
 });
 
-const runRecordV1Schema = runRecordV2Schema
+const runRecordV1Schema = runRecordV2ObjectSchema
   .omit({
     schemaVersion: true,
     upgradeRanks: true,
@@ -501,8 +564,8 @@ const runRecordV1Schema = runRecordV2Schema
     upgradeRanks: legacyUpgradeRanksSchema,
   });
 
-export const runRecordSchema: z.ZodType<RunRecord> = z.union([
-  runRecordV2Schema,
+export const runRecordV2Schema: z.ZodType<RunRecordV2> = z.union([
+  runRecordV2ObjectSchema,
   runRecordV1Schema.transform((record) => ({
     ...record,
     schemaVersion: RUN_RECORD_SCHEMA_VERSION,
@@ -525,6 +588,8 @@ export const runRecordSchema: z.ZodType<RunRecord> = z.union([
     encounterMetrics: createEmptyEncounterMetrics(),
   })),
 ]);
+
+export const runRecordSchema = runRecordV2Schema;
 
 function createEmptyCapstoneMetrics(): CapstoneRunStats {
   return {

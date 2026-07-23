@@ -60,6 +60,8 @@ import { createPhaserUiState, type PhaserUiState } from "./PhaserUiState";
 import { createBrowserStorage, createVolatileStorage } from "../storage/BrowserStorage";
 import { LocalProfileStore } from "../storage/LocalProfileStore";
 import { LocalRunRecordStore } from "../storage/LocalRunRecordStore";
+import { LocalRunRecordStoreV3 } from "../storage/LocalRunRecordStoreV3";
+import type { RunRecordStorePort } from "../../ports/RunRecordStorePort";
 import { DevRunExportClient } from "../telemetry/DevRunExportClient";
 import { ArenaChoiceOverlay } from "../dom/ArenaChoiceOverlay";
 import { ArenaTutorialDialog } from "../dom/ArenaTutorialDialog";
@@ -92,7 +94,7 @@ export class ArenaScene extends Phaser.Scene {
   private selectedModeId = DEFAULT_MODE_ID;
   private selectedStageId = DEFAULT_STAGE_ID;
   private session!: ArenaSession;
-  private runRecordStore!: LocalRunRecordStore;
+  private runRecordStore!: RunRecordStorePort;
   private runLifecycle!: RunLifecycleController;
   private profileStore!: LocalProfileStore;
   private profile!: LocalProfile;
@@ -142,7 +144,10 @@ export class ArenaScene extends Phaser.Scene {
       new FrameSpikeReporter(this.logger, metrics),
     );
     this.session = new ArenaSession(this.simulationConfig);
-    this.runRecordStore = new LocalRunRecordStore(storage);
+    this.runRecordStore =
+      import.meta.env.VITE_ARENA_EX_PROTOCOL_CANDIDATE === "1"
+        ? new LocalRunRecordStoreV3(storage)
+        : new LocalRunRecordStore(storage);
     this.runLifecycle = new RunLifecycleController(this.runRecordStore);
     this.initializeProfile(storage);
     this.menuController = new ArenaMenuController({
@@ -300,6 +305,13 @@ export class ArenaScene extends Phaser.Scene {
           stageId: this.session.stageId,
           difficultyId: DEFAULT_DIFFICULTY_ID,
           rulesetVersion: this.session.rulesetProfile.rulesetVersion,
+          rulesetProfileId: this.session.rulesetProfile.id,
+          rngVersion:
+            this.session.rulesetProfile.randomStreamVersion,
+          runRecordSchemaVersion:
+            this.session.rulesetProfile.runRecordSchemaVersion,
+          exProtocolsEnabled:
+            this.session.rulesetProfile.features.exProtocols,
           seedCategory: resolveSeedCategory(fixedSeed),
           weaponId: this.world.state.weaponType,
           modifierIds: [

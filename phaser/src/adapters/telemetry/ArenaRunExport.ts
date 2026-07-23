@@ -30,6 +30,7 @@ import type {
   ArenaRunExport,
 } from "../phaser/ArenaDebugBridge";
 import type { ArenaRenderPerformanceSnapshot } from "../phaser/PhaserArenaRenderer";
+import { EX_PROTOCOL_CATALOG_VERSION } from "../../content/exProtocolCatalog";
 
 export type CreateArenaRunExportInput = {
   capturedAt: string;
@@ -51,12 +52,28 @@ export function createArenaRunExport(input: CreateArenaRunExportInput): ArenaRun
   const { context, world } = input;
   const difficultyElapsed = getDifficultyElapsed(world);
   return {
+    exportSchemaVersion: 2,
     capturedAt: input.capturedAt,
     game: "arena-core-phaser",
     appVersion: context?.appVersion ?? APP_VERSION,
     rulesetVersion:
       context?.rulesetVersion ??
       resolveRunRulesetVersion(DEFAULT_MODE_ID, DEFAULT_STAGE_ID),
+    rulesetProfileId:
+      context?.rulesetProfileId ?? "legacy-unknown",
+    rngVersion:
+      context?.rngVersion ?? input.randomStreams.version,
+    runRecordSchemaVersion:
+      context?.runRecordSchemaVersion ?? null,
+    featureFlags: {
+      exProtocols: input.runConfig.features.exProtocols,
+    },
+    exProtocolCatalogVersion: input.runConfig.features.exProtocols
+      ? EX_PROTOCOL_CATALOG_VERSION
+      : null,
+    exProtocol: input.runConfig.features.exProtocols
+      ? structuredClone(world.stats.exProtocolMetrics)
+      : null,
     configVersion: SIMULATION_CONFIG_VERSION,
     buildCommit: input.buildCommit,
     runId: context?.id ?? "unknown",

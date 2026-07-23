@@ -2,6 +2,7 @@ import {
   fromRunCentiseconds,
   RUN_RANKING_LIMIT,
   RUN_RECORD_SCHEMA_VERSION,
+  RUN_RECORD_SCHEMA_VERSION_V3,
   RUN_TIME_PRECISION_SECONDS,
   toRunCentiseconds,
 } from "../domain/runRecords";
@@ -14,9 +15,12 @@ import type {
   RunContext,
   RunOrigin,
   RunRecord,
+  RunRecordV2,
+  ExProtocolRecordStats,
 } from "../domain/runRecords";
 import type { EncounterRunStats } from "../domain/types";
 import { createEmptyExtraUpgradeRanks } from "../simulation/extraProgression";
+import { sanitizeExProtocolCounters } from "../domain/exProtocolTelemetry";
 
 export function createRankEligibility(
   runOrigin: RunOrigin,
@@ -37,8 +41,7 @@ export function createRankEligibility(
 export function createRunRecord(input: CreateRunRecordInput): RunRecord {
   const { context, summary } = input;
 
-  return {
-    schemaVersion: RUN_RECORD_SCHEMA_VERSION,
+  const base: Omit<RunRecordV2, "schemaVersion"> = {
     id: context.id,
     profileId: context.profileId,
     capturedAt: input.capturedAt,
@@ -85,6 +88,64 @@ export function createRunRecord(input: CreateRunRecordInput): RunRecord {
     capstoneMetrics: { ...summary.capstoneMetrics },
     weaponIdentityMetrics: structuredClone(summary.weaponIdentityMetrics),
     encounterMetrics: structuredClone(input.encounterMetrics ?? createEmptyEncounterMetrics()),
+  };
+  if (
+    context.runRecordSchemaVersion ===
+    RUN_RECORD_SCHEMA_VERSION_V3
+  ) {
+    return {
+      ...base,
+      schemaVersion: RUN_RECORD_SCHEMA_VERSION_V3,
+      rulesetProfileId: context.rulesetProfileId,
+      rngVersion: context.rngVersion,
+      exProtocol: context.exProtocolsEnabled
+        ? createExProtocolRecordStats(input.exProtocolMetrics)
+        : null,
+    };
+  }
+  return {
+    ...base,
+    schemaVersion: RUN_RECORD_SCHEMA_VERSION,
+  };
+}
+
+function createExProtocolRecordStats(
+  stats: CreateRunRecordInput["exProtocolMetrics"],
+): ExProtocolRecordStats {
+  if (!stats) {
+    throw new Error(
+      "EX Protocol metrics are required for a RunRecord v3 EX run.",
+    );
+  }
+  return {
+    offeredIds: [...stats.offeredIds],
+    selectedId: stats.selectedId,
+    selectedAtElapsed: stats.selectedAtElapsed,
+    evolutionOneId: stats.evolutionOneId,
+    evolutionOneAtElapsed: stats.evolutionOneAtElapsed,
+    evolutionTwoId: stats.evolutionTwoId,
+    evolutionTwoAtElapsed: stats.evolutionTwoAtElapsed,
+    masteryId: stats.masteryId,
+    masteryAtElapsed: stats.masteryAtElapsed,
+    firstLimitBreakAtElapsed: stats.limitBreakFirstAtElapsed,
+    exposureSeconds: stats.counters.protocolExposureSeconds ?? 0,
+    protocolSourceDamage: stats.protocolSourceDamage,
+    protocolBonusDamageAttributed:
+      stats.protocolBonusDamageAttributed,
+    protocolSourceKills: stats.protocolSourceKills,
+    protocolBonusFinisherKills: stats.protocolBonusFinisherKills,
+    specialPresses: stats.specialPresses,
+    specialAccepted: stats.specialAccepted,
+    specialRejectedByReason: {
+      ...stats.specialRejectedByReason,
+    },
+    activeUseIntervalCount: stats.activeUseIntervalCount,
+    activeUseIntervalSumSeconds: stats.activeUseIntervalSumSeconds,
+    activeUseIntervalMaxSeconds: stats.activeUseIntervalMaxSeconds,
+    counters: sanitizeExProtocolCounters(
+      stats.selectedId,
+      stats.counters,
+    ),
   };
 }
 

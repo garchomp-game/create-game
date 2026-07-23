@@ -386,6 +386,13 @@ function createRecord(
       stageId,
       difficultyId: "standard",
       rulesetVersion: "rules-rc6",
+      rulesetProfileId:
+        modeId === "expedition"
+          ? "legacy-final-expedition-rc6"
+          : "legacy-endless-v068",
+      rngVersion: "arena-rng-v1",
+      runRecordSchemaVersion: 2,
+      exProtocolsEnabled: false,
       seedCategory: "random",
       weaponId: world.state.weaponType,
       modifierIds: [],

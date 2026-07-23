@@ -209,6 +209,10 @@ function makeContext(id = "run-1"): RunContext {
     stageId: "arena-default",
     difficultyId: "standard",
     rulesetVersion: "rules-v1",
+    rulesetProfileId: "legacy-endless-v068",
+    rngVersion: "arena-rng-v1",
+    runRecordSchemaVersion: 2,
+    exProtocolsEnabled: false,
     seedCategory: "fixed",
     weaponId: "pulse",
     modifierIds: [],
@@ -229,6 +233,7 @@ function makeExpeditionContext(
     modeId: "expedition",
     stageId: "final-expedition",
     rulesetVersion: "rules-rc6",
+    rulesetProfileId: "legacy-final-expedition-rc6",
     weaponId,
   };
 }

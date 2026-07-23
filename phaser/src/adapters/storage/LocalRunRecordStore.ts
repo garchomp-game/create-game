@@ -1,21 +1,21 @@
 import {
-  createRunComparisonQuery,
-  isRankableRun,
-  selectRanking,
-} from "../../application/runRecords";
-import {
   RUN_HISTORY_LIMIT,
   RUN_RANKING_GROUP_LIMIT,
   RUN_RANKING_LIMIT,
   runRecordSchema,
 } from "../../domain/runRecords";
-import type { RunComparisonKey, RunRecord } from "../../domain/runRecords";
+import type { RunRecord } from "../../domain/runRecords";
 import type {
   RunRecordLoadResult,
   RunRecordStorePort,
   RunRecordWriteResult,
   StorageLike,
 } from "../../ports/RunRecordStorePort";
+import {
+  buildRunRecordRankings,
+  mergeRunRecordCollections,
+  sortRunRecordHistory,
+} from "./runRecordCollections";
 
 const STORE_SCHEMA_VERSION = 2 as const;
 const LEGACY_STORE_SCHEMA_VERSION = 1 as const;
@@ -90,11 +90,11 @@ export class LocalRunRecordStore implements RunRecordStorePort {
       };
     }
 
-    const history = sortHistory([
+    const history = sortRunRecordHistory([
       parsedRecord.data,
       ...loaded.history.filter((item) => item.id !== parsedRecord.data.id),
     ]).slice(0, this.historyLimit);
-    const rankings = buildRankings(
+    const rankings = buildRunRecordRankings(
       [parsedRecord.data, ...loaded.rankings],
       this.rankingLimit,
       this.rankingGroupLimit,
@@ -115,7 +115,7 @@ export class LocalRunRecordStore implements RunRecordStorePort {
     const loaded = this.load();
     if (loaded.error && !loaded.recovered) return emptyWriteResult(false, loaded.error);
     const history = loaded.history.filter((record) => record.id !== recordId);
-    const rankings = buildRankings(
+    const rankings = buildRunRecordRankings(
       loaded.rankings.filter((record) => record.id !== recordId),
       this.rankingLimit,
       this.rankingGroupLimit,
@@ -203,8 +203,8 @@ export class LocalRunRecordStore implements RunRecordStorePort {
     const parsedHistory = parseRecords(historyCandidates);
     const parsedRankings = parseRecords(rankingCandidates);
     recovered ||= parsedHistory.recovered || parsedRankings.recovered;
-    const history = sortHistory(parsedHistory.records).slice(0, this.historyLimit);
-    const rankings = buildRankings(
+    const history = sortRunRecordHistory(parsedHistory.records).slice(0, this.historyLimit);
+    const rankings = buildRunRecordRankings(
       parsedRankings.records,
       this.rankingLimit,
       this.rankingGroupLimit,
@@ -275,82 +275,6 @@ function parseRecords(candidates: unknown[]): { records: RunRecord[]; recovered:
   return { records, recovered };
 }
 
-function buildRankings(
-  records: RunRecord[],
-  limit: number,
-  groupLimit: number,
-): RunRecord[] {
-  const groups = new Map<string, RunRecord[]>();
-  for (const record of deduplicate(records)) {
-    if (!isRankableRun(record)) continue;
-    const serializedKey = comparisonGroupToString(record);
-    const group = groups.get(serializedKey) ?? [];
-    group.push(record);
-    groups.set(serializedKey, group);
-  }
-
-  const selected = [...groups.entries()]
-    .sort(([leftKey, left], [rightKey, right]) =>
-      getLatestCapturedAt(right).localeCompare(getLatestCapturedAt(left)) ||
-      leftKey.localeCompare(rightKey)
-    )
-    .slice(0, Math.max(0, groupLimit))
-    .flatMap(([, group]) => {
-      const source = group[0]!;
-      const overall = selectRanking(
-        group,
-        createRunComparisonQuery(source, "overall"),
-        limit,
-      );
-      const byWeapon = [...new Set(group.map((record) => record.weaponId))]
-        .sort()
-        .flatMap((weaponId) => {
-          const weaponSource = group.find((record) => record.weaponId === weaponId)!;
-          return selectRanking(
-            group,
-            createRunComparisonQuery(weaponSource, "weapon"),
-            limit,
-          );
-        });
-      return deduplicate([...overall, ...byWeapon]);
-    });
-  return deduplicate(selected);
-}
-
-function getLatestCapturedAt(records: readonly RunRecord[]): string {
-  return records.reduce(
-    (latest, record) => record.capturedAt > latest ? record.capturedAt : latest,
-    "",
-  );
-}
-
-function comparisonGroupToString(key: RunComparisonKey & Pick<RunRecord, "seed">): string {
-  return [
-    key.profileId,
-    key.modeId,
-    key.stageId,
-    key.difficultyId,
-    key.rulesetVersion,
-    key.seedCategory,
-    key.seedCategory === "fixed" ? key.seed : "random",
-  ].join("\u001f");
-}
-
-function deduplicate(records: RunRecord[]): RunRecord[] {
-  const byId = new Map<string, RunRecord>();
-  for (const record of records) {
-    if (!byId.has(record.id)) byId.set(record.id, record);
-  }
-  return [...byId.values()];
-}
-
-function sortHistory(records: RunRecord[]): RunRecord[] {
-  return deduplicate(records).sort(
-    (left, right) =>
-      right.capturedAt.localeCompare(left.capturedAt) || right.id.localeCompare(left.id),
-  );
-}
-
 function createLoadResult(
   history: RunRecord[],
   rankings: RunRecord[],
@@ -358,7 +282,7 @@ function createLoadResult(
   error?: string,
 ): RunRecordLoadResult {
   return {
-    records: mergeCollections(history, rankings),
+    records: mergeRunRecordCollections(history, rankings),
     history,
     rankings,
     recovered,
@@ -378,7 +302,7 @@ function createWriteResult(
 ): RunRecordWriteResult {
   return {
     ok,
-    records: mergeCollections(history, rankings),
+    records: mergeRunRecordCollections(history, rankings),
     history,
     rankings,
     ...(error ? { error } : {}),
@@ -387,10 +311,6 @@ function createWriteResult(
 
 function emptyWriteResult(ok: boolean, error?: string): RunRecordWriteResult {
   return createWriteResult(ok, [], [], error);
-}
-
-function mergeCollections(history: RunRecord[], rankings: RunRecord[]): RunRecord[] {
-  return deduplicate([...history, ...rankings]);
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
