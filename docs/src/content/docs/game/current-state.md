@@ -15,6 +15,8 @@ v0.7 RC6は[フォローアップ監査](../../playtest/v07-rc6-integration-repo
 
 v0.8の最初の独立candidateとして、[#97](https://github.com/garchomp-game/create-game/issues/97)の選択式Training T1をruntime SHA `78b79da9c5aad7f7998ef7b5b1938f80850fdb6a`へ固定し、main採用を決定しました。Work再レビューで求められた説明確認、XP直後の強化、障害物外側の救済線、理由付きretry、修復直前の訓練ダメージ、上部小型チェックリスト、強化選択中断、明示的な完了画面に加え、敵本体の接触ダメージを射撃前に観察する9課題構成へ更新しました。`recordPolicy: none`により履歴、ランキング、PB、報酬を作りません。配布build `2247bd9cd16a`はPR #99の3 CI jobと[Cloudflare固定Preview](https://v08-training-t1-contact-2247bd9-arena-core.garchomp-game.workers.dev/)の実URLsmokeを通過しています。残るのは[#81](https://github.com/garchomp-game/create-game/issues/81)の事前教材なし初心者転移確認で、production trafficは変更しません。詳細は[Training T1候補](../../playtest/v08-training-t1-candidate/)を参照してください。
 
+ローカルbranch `feat/v08-ex-protocols-c1`では、Core完成後に武器互換の固定3択、E1 / E2、Masteryを追加する[EX Protocol候補](../../design/ex-protocols/)を実装しています。Pulse / Spread各3体系、全24 route、Active入力、候補専用ruleset、RunRecord v3、非破壊legacy reconcile、固有telemetry、representative E2E、probe / soakを持ちます。これは比較可能なcandidateであり、production既定はOFF、外部push / PR / deployは未実施です。release規模のprobe、実GPU、人間6体系gateが残るため、現行production状態としては数えません。
+
 ゲーム数値はv0.6.6のままです。672.20秒 / 92728点でアリーナ崩壊2段階へ到達したPulse手動ランにより、精密射撃調整の採用を完了しました。Pulseは照準・貫通・反射角で成果上限を伸ばす単線武器、Spreadは広角の複数標的処理を安定させる武器として分かれています。
 
 アリーナ内の4障害物とPulse外周反射フィールドを公開ルールとして採用しました。直近のPulse / Spread各2手動ランは約2.5万点から3.3万点、約350秒から417秒へ重なり、Pulseだけが外周追撃1332命中・625撃破を記録しています。外周反射はSpreadを直接強化せず、Pulseの貫通順と復路射線を成果へ変えるため、数値を変えず有効のまま固定します。ルール版は`phaser-v0.6.8-pulse-boundary-ricochet`へ分け、旧記録を新ランキングへ混ぜません。

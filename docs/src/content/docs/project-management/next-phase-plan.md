@@ -3,7 +3,7 @@ title: 直近フェーズ
 description: v0.7 RC6の安定化、v0.8の面白さ検証、Stage 1 / 5 / 10の3作戦検証へ進む現在の計画。
 ---
 
-最終整理日: 2026-07-20
+最終整理日: 2026-07-23
 
 ## 現在の判断
 
@@ -15,7 +15,9 @@ v0.7 RC6は、Encounter Directorの時計、Commander期限、Expedition記録sc
 
 RC5は棄却して消すのではなく、技術回帰と欠陥分類の基準証跡として保持します。選択画面の改善はRC6と同じrulesetを使う別UI candidateとして扱い、ゲームルールPRへ混ぜません。
 
-v0.8のWork再レビューは受領し、Issue #83で採否を完了しました。次のruntime変更はCharger衝突妨害による危険反転[#76](https://github.com/garchomp-game/create-game/issues/76)だけに限定し、その前にcandidate非依存の観測、記録、fixture、division契約をWave 0として固定します。
+v0.8のWork再レビューは受領し、Issue #83で採否を完了しました。production統合順では、次のruntime変更をCharger衝突妨害による危険反転[#76](https://github.com/garchomp-game/create-game/issues/76)だけに限定し、その前にcandidate非依存の観測、記録、fixture、division契約をWave 0として固定します。
+
+別経路として、2026-07-23にownerからEX Protocolの実装handoffを受領しました。`feat/v08-ex-protocols-c1`でCore完成後の固定3択、E1 / E2、Mastery、既存Limit Break、6体系、24 route、RunRecord v3、probe / soakを比較可能なcandidateへしています。これはproduction順の変更ではなく、feature OFF、専用ruleset、外部pushなしのisolated implementationです。
 
 ## 実装基点
 
@@ -107,10 +109,13 @@ v0.8はコンテンツ量を増やす前に、Arena Coreの面白さの核を単
 | 2以降 | [#81](https://github.com/garchomp-game/create-game/issues/81) | RC6、各単独candidate、統合候補へ再利用する構造化playtest |
 | 3候補 | [#93](https://github.com/garchomp-game/create-game/issues/93) | #76採否後にボス攻撃文法のruntime候補を単独比較 |
 | 後続 | [#92](https://github.com/garchomp-game/create-game/issues/92) / [#79](https://github.com/garchomp-game/create-game/issues/79) | 通常強化の基礎保証と武器教義を別candidateとして検証 |
+| 独立X | `PH-V08-027` | EX Protocol 6体系を実装可能な比較物にし、自動契約と人間gateを分ける |
 
 [#77](https://github.com/garchomp-game/create-game/issues/77)は[#76](https://github.com/garchomp-game/create-game/issues/76)固有の意味や閾値を持たず、既存eventと将来candidateの事実を同じledgerへ入力できる共通基盤にします。[#80](https://github.com/garchomp-game/create-game/issues/80)はfixture骨格を先行し、candidate固有の色・音・判定は意味確定後に足します。[#81](https://github.com/garchomp-game/create-game/issues/81)は最終QAへ限定せず、RC6 baselineと各candidateを別セル・raw countで繰り返し評価します。
 
 ゲームルールを同時に複数変更しません。#76を最初のruntime candidateとし、#93、#94、#95、#92、#79は責務と観測を先に固定しても、production挙動へは一括投入しません。
+
+EX Protocol branchはこの原則の例外としてproductionへ統合するものではありません。handoffの大きいscopeを一つの専用branchへ閉じ、candidate OFF parity、専用記録、rollbackを先に完成させます。production採用を検討する場合は、#79との追跡関係、20 seed release結果、実GPU、人間6体系gateを改めて判断します。
 
 UI境界[#68](https://github.com/garchomp-game/create-game/issues/68)、比較prototype[#67](https://github.com/garchomp-game/create-game/issues/67)、選択画面縦切り[#70](https://github.com/garchomp-game/create-game/issues/70)の採用範囲はRC6基点のDraft PR #84へ集約しました。旧RC5基点のPR #72はsupersededとして閉じ、外部可読性確認が終わるまでIssueを開いたまま維持します。
 
@@ -152,3 +157,5 @@ UI境界[#68](https://github.com/garchomp-game/create-game/issues/68)、比較pr
 - 新しいVersion Previewの実URLsmokeと採否記録がある。
 
 RC6はこの条件を満たしてmainへ統合済みです。#86の品質ゲート、#88のEncounter境界追補、PR #90 / #91の比較手順と正本同期もmainへ入り、基準`b561aa6aeca5`のfresh CIを取得しました。#97のTraining T1は接触課題を含む9課題runtime `78b79da9c5aa`へ更新し、owner gate、PR #99の3 CI job、Cloudflare Version `7eaaf10f-fd82-4032-b363-5d4b44db8293`の実URLsmokeを完了してmain採用を決定しました。直近は#81の人間転移確認で、誤認が残る場合だけ#98の視覚T2へ進みます。日程待ちと並行できるのは#76の値・seed・raw-count閾値・停止条件の事前登録までです。PR #84のUI採否と#76のruntime candidateは同じ比較buildへ混ぜません。production trafficの切替は、採用するUIと配布SHAを固定してから別途行います。
+
+EX Protocol candidateの直近作業は、正本文書とCI契約の同期、全体回帰、release規模のbalance / soak、実GPU耐久、人間6体系gateです。前半3件までは自律実行でき、実GPUと人間評価は別ゲートとして残します。詳細は[EX Protocol候補](../../design/ex-protocols/)を参照してください。

@@ -198,3 +198,40 @@ npm run probe:v07
 このprobeはPulse / Spreadへ同じ3 seedを与え、15分以内の終了、5 Act、Commander出現と撃破、ボス第2段階、3攻撃、最長展開空白、敵・弾・Pickup上限を検査します。両武器の全勝は要求せず、各武器に少なくとも1勝と1本以上の自然phase 2到達があることを確認します。同一seedを再実行し、入力、イベント列、終了worldのhashも比較します。通常の`npm test`へ含めず、統合QAとルール変更時に明示実行します。
 
 RC5は大型黄HP 8、Commander HP 500、追跡ボス、通常ウェーブ継続による技術基準です。Commander、Chargerの予告、構造化侵入、ボス3攻撃を専用ブラウザfixtureで固定します。RC6では通常probeとrepair比較probeを別コマンドとして扱い、未実行側は明示的にskipします。自動入力は人間採否を代替しないため、production昇格にはPulse / Spread各1本以上の通常UI欠陥特化ランを必要とします。RC5基準は[v0.7 RC5統合QAレポート](../../playtest/v07-qa-report/)、現行RC6は[RC6統合QAレポート](../../playtest/v07-rc6-integration-report/)を参照してください。
+
+## v0.8 EX Protocol candidate
+
+候補OFF parityと、候補ONの機構・分岐・保存・長時間負荷を別gateにします。
+
+```bash
+cd phaser
+npm run test:ex-protocols:paths
+npm run test:ex-protocols:determinism
+npm run test:ex-protocols:record-migration
+npm run test:ex-protocols:probe
+npm run test:ex-protocols:soak
+npm run test:ex-protocols:final-exposure
+npm run test:e2e:ex-protocols
+```
+
+| Gate | 保証するもの |
+| --- | --- |
+| paths | 6 Protocol x E1 2択 x E2 2択の24 route、Mastery、最初のLimit Break、record / export |
+| determinism | 型付きreplay tape、古いchoiceのfail-fast、同一seedのevent / world一致 |
+| record migration | v3 codec、v1 / v2非破壊reconcile、削除journal、ランキング分離 |
+| probe | baselineと3 Protocolの同一seed比較、効果機会、damage帰属、判断p95 |
+| soak | 高圧状態のentity上限、Tidal tracker解放、Aegis候補数、step p95 |
+| final exposure | Final ExpeditionでE1、E2、Mastery、Limit Break、boss phase 2へ到達できるか |
+| E2E | 3択 / 2択、Active入力、HUD、6体系の代表戦闘、結果route、画像 |
+
+通常PR向けの短いgateと、明示実行のrelease規模を分けます。
+
+```bash
+npm run test:ex-protocols:probe:release
+npm run test:ex-protocols:soak:release
+npm run test:ex-protocols:final-exposure:release
+```
+
+release balanceは20 seed、baseline + 武器互換3 Protocol、4 branch pathのLatin-squareを使います。結果はreview triggerであり、自動調整や自動採用を行いません。Protocolの自然な発動機会がないrunを効果0の失敗と混同しません。
+
+headless soakは機構と相対性能を検査します。production採用には、SwiftShaderではない実GPUの15分耐久と、人間による6体系の操作・可読性確認を別途必要とします。詳細は[EX Protocol候補](../../design/ex-protocols/)を参照してください。

@@ -3,7 +3,7 @@ title: v0.8 実行計画
 description: RC6を固定したまま、設計契約、単独candidate、統合採否を依存順に進める作業計画。
 ---
 
-最終整理日: 2026-07-22
+最終整理日: 2026-07-23
 
 ## 目的
 
@@ -53,8 +53,11 @@ v0.8では機能量を増やす前に、Arena Coreの面白さの核を小さい
 | 3 | [#93](https://github.com/garchomp-game/create-game/issues/93) | Bossの回復または反撃窓1件 | #76の判断記録後。必要な場合だけ | #76と別buildでcontrolと比較 |
 | 4 | [#95](https://github.com/garchomp-game/create-game/issues/95) / [#94](https://github.com/garchomp-game/create-game/issues/94) | 記録分離後の結果・再挑戦UX | division / eligibility / migration完了 | Standardを守ったまま結果導線を接続 |
 | Later | [#92](https://github.com/garchomp-game/create-game/issues/92) / [#79](https://github.com/garchomp-game/create-game/issues/79) | 通常強化offer / 武器教義 | 前段candidateの観察後。互いに別build | 候補運と教義効果を混ぜず個別採否 |
+| X | `PH-V08-027` EX Protocol candidate | Core完成後の固定3択、E1 / E2、Mastery、既存Limit Break接続 | owner handoffを独立branchで実装。production OFF | 自動契約を閉じ、人間6体系gate後に採用、分割、再設計、棄却を判断 |
 
 Wave 0はsimulation非介入の契約と観測です。並行可能でも1 Issue・1 branch・1 Draft PRを守ります。Training T1は#76のgameplay candidateと分離し、視覚T2はT1の誤認証拠がある場合だけ開始します。#81は最後だけのQAではなく、baseline、Training、単独candidate、統合buildで同じ手順を再利用する検証レーンです。
+
+Wave Xは従来計画の「#76を次の唯一のruntime変更とする」をproduction統合上は変更しません。EX Protocolを比較可能な実装へするowner-authorizedのisolated candidateであり、#76、Training Preview、production trafficへ混ぜません。candidate branchの完成とproduction採用を分け、外部PRを作る時点で[#79](https://github.com/garchomp-game/create-game/issues/79)とのsplit / superseded関係をGitHub上へ記録します。
 
 ## 依存関係
 
@@ -75,9 +78,15 @@ RC6 baseline
   +-- #66 visual direction
 
 #92 offer fairness ---- separate later build ---- #79 doctrine
+
+owner EX handoff ---- isolated PH-V08-027 branch
+                         |-- 24 routes / record v3 / probes / soak
+                         +-- human six-protocol gate ---- adoption decision
 ```
 
 #77はcandidate固有の合格値を所有せず、Simulation factsを純粋集約する共通基盤です。Phase 0はPR #102で統合済みです。#80のviewport、layer manifest、audio routing observation、snapshot harnessもPR #103で統合済みで、candidate固有の色・形・音だけを意味論確定後に固定します。#76と#93のruntime候補、#92と#79はそれぞれ同じbuildへ混ぜません。
+
+EX Protocol candidateは専用ruleset、feature flag、RunRecord v3 collectionを持ち、OFF時のRC6 / v0.6.8 profileと旧保存keyを変更しません。仕様と残gateは[EX Protocol候補](../../design/ex-protocols/)を正本とします。
 
 ## candidateごとの証拠
 
@@ -105,6 +114,7 @@ RC6 baseline
 - 武器教義の最終強化値。
 - 回復、敵密度、XP曲線の再調整。
 - Stage 1 / 5 / 10のproduction実装。
+- EX Protocolのproduction既定ON、candidate初期値の実測追従調整。
 
 ## 作業再開チェック
 
@@ -115,5 +125,6 @@ RC6 baseline
 5. **完了**: #80の共通capture skeletonと#81のbaseline手順を固定した。
 6. #76で変更する仮説、値、seed、raw-count基準、stop condition、rollbackを事前登録している。
 7. production v0.6.8を変更しないことを再確認している。
+8. EX Protocol branchを扱う場合は、20 seed release probe、90秒soak、両武器Final Expedition露出、実GPU、人間6体系gateの未実施項目をPRへ明記している。
 
-この7項目が揃うまで、#76のruntime実装を開始しません。
+最初の7項目が揃うまで、#76のruntime実装を開始しません。8はEX Protocol candidateをproductionへ進める場合の追加条件であり、ローカル実装完了と混同しません。

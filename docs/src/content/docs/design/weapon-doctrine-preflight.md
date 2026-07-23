@@ -3,13 +3,27 @@ title: 武器教義の実装前比較
 description: PulseとSpreadの現行差、計測不足、教義candidate、比較順を実装前に整理する。
 ---
 
-最終更新日: 2026-07-20
+最終更新日: 2026-07-23
 
 ## 目的
 
 [#79 Pulse / Spreadの武器教義ブランチ](https://github.com/garchomp-game/create-game/issues/79)を、単純な火力強化や新しい抽選候補の追加にしないため、現行挙動と必要な比較を固定します。
 
 このページは実装前の候補比較です。名称、倍率、発動回数、取得UIは未採用です。[#83](https://github.com/garchomp-game/create-game/issues/83)、[#76](https://github.com/garchomp-game/create-game/issues/76)、[#77](https://github.com/garchomp-game/create-game/issues/77)の判断後に1 candidateずつ事前登録します。
+
+:::note[後継candidate]
+2026-07-23に受領したEX Protocol handoffは、このpreflightを設計入力として6体系・24 routeへ具体化しました。ローカルbranchの実装候補は[EX Protocol候補](../ex-protocols/)を正本とし、本ページのP-A / S-Aだけをそのまま実装したものではありません。過去の比較理由と不足計装は履歴として維持します。
+:::
+
+## 後継candidateとの関係
+
+- Pulseは交差導線、反跳過給、赤熱炉心の3体系へ分けた。
+- Spreadは全幅潮汐掃討、防波扇、護壁扇の3体系へ分けた。
+- 各体系はE1 2択、E2 2択、Masteryを持ち、全24 routeを固定fixtureで検証する。
+- productionの通常強化表と数値循環EXは変更せず、feature OFFへ戻せる。
+- probeはeffect機会とdamage帰属を測るが、面白さと教義成立は人間ゲートで判断する。
+
+この具体化は[#79](https://github.com/garchomp-game/create-game/issues/79)のproduction採用を意味しません。既存Issueの「1武器1 branchの最小縦切り」とscopeが異なるため、PR化する場合はEX Protocol候補を別チケットとして追跡し、#79とのsuperseded / split関係を明記します。
 
 ## 現行の武器差
 

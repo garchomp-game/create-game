@@ -175,6 +175,9 @@ description: v0.4からv1.0までの目的と主要チケット。
 - [`PH-V08-024` #95](https://github.com/garchomp-game/create-game/issues/95) Standard / Assist / Practice / Overloadの記録契約。
 - [`PH-V08-025` #97](https://github.com/garchomp-game/create-game/issues/97) 選択式・再プレイ可能な基本操作Training。
 - [`PH-V08-026` #98](https://github.com/garchomp-game/create-game/issues/98) 撃つ・避ける・取るの戦闘オブジェクト視覚言語。
+- `PH-V08-027` EX Protocol 6体系candidate。ローカル実装中、GitHub Issue未作成、production OFF。
+
+`PH-V08-027`は[#79](https://github.com/garchomp-game/create-game/issues/79)のpreflightを6体系・24 routeへ具体化したowner handoffです。既存のproduction順を追い越して統合せず、専用ruleset、RunRecord v3、feature OFF rollback、自動probe、人間採否を揃えてからsplit / superseded関係を決めます。
 
 ## v0.9 3作戦キャンペーン検証
 
@@ -208,6 +211,7 @@ description: v0.4からv1.0までの目的と主要チケット。
 - [v0.7 最終遠征プロトタイプ](../../design/v07-first-expedition/)
 - [v0.7 実行計画](../v07-execution-plan/)
 - [v0.8 面白さの核の検証](../../design/core-promise-validation/)
+- [EX Protocol候補](../../design/ex-protocols/)
 - [v0.8 実行計画](../v08-execution-plan/)
 - [UI・グラフィック再設計計画](../ui-visual-redesign-plan/)
 - [中長期作業計画](../gameplay-expansion-plan/)
