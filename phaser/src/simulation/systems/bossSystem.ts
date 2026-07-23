@@ -12,6 +12,7 @@ import type {
   Vec2,
   WorldState,
 } from "../../domain/types";
+import { applyPlayerDamage } from "./playerHealthSystem";
 import type { RandomStreams } from "../../math/random";
 import { normalize } from "../../math/vector";
 import {
@@ -325,12 +326,10 @@ function executeCommandPulse(
     } else if (world.state.damageCooldown > 0 || world.state.hp <= 0) {
       result = "invulnerable";
     } else {
-      const hpBefore = world.state.hp;
-      world.state.hp = Math.max(
-        0,
-        hpBefore - phaseValue(definition.commandPulse.damage, phase),
+      damage = applyPlayerDamage(
+        world,
+        phaseValue(definition.commandPulse.damage, phase),
       );
-      damage = hpBefore - world.state.hp;
       result = damage > 0 ? "hit" : "invulnerable";
       if (damage > 0) {
         world.state.damageCooldown = config.player.damageCooldown;

@@ -13,6 +13,7 @@ import {
   recordChargerKilled,
   recordChargerPlayerHit,
 } from "./chargerEnemySystem";
+import { applyPlayerDamage } from "./playerHealthSystem";
 
 export function resolveCombat(
   world: WorldState,
@@ -84,9 +85,7 @@ export function resolveCombat(
   if (world.state.damageCooldown <= 0) {
     const touchingEnemy = world.enemies.find((enemy) => circleCircle(enemy, world.player));
     if (touchingEnemy) {
-      const hpBefore = world.state.hp;
-      world.state.hp = Math.max(0, hpBefore - touchingEnemy.damage);
-      const damage = hpBefore - world.state.hp;
+      const damage = applyPlayerDamage(world, touchingEnemy.damage);
       if (damage > 0) {
         world.state.damageCooldown = config.player.damageCooldown;
         recordChargerPlayerHit(touchingEnemy, damage, events);
@@ -303,9 +302,7 @@ function resolveEnemyProjectileHits(
 
     if (world.state.damageCooldown > 0) continue;
 
-    const hpBefore = world.state.hp;
-    world.state.hp = Math.max(0, hpBefore - projectile.damage);
-    const damage = hpBefore - world.state.hp;
+    const damage = applyPlayerDamage(world, projectile.damage);
     if (damage > 0) {
       world.state.damageCooldown = config.player.damageCooldown;
       events.push({

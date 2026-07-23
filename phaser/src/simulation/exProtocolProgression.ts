@@ -18,6 +18,11 @@ import type {
   WorldState,
 } from "../domain/types";
 import { setTypedProgressionChoice } from "./progressionChoices";
+import {
+  applyCapacityIncrease,
+  clampPlayerHpToCapacity,
+  getPlayerEffectiveMaxHp,
+} from "./systems/playerHealthSystem";
 
 export function initializeExProtocolProgression(
   world: WorldState,
@@ -105,6 +110,7 @@ export function chooseExProtocol(
     route,
     runtime: createExProtocolRuntime(protocolId, grossMaxHp),
   };
+  clampPlayerHpToCapacity(world, config);
   delete world.progression.pendingChoice;
   world.state.status = "playing";
   delayPendingContract(world);
@@ -173,6 +179,7 @@ export function chooseExProtocolEvolution(
   const evolutionId = pending.choices[choiceIndex];
   if (!evolutionId) return false;
   const tier = pending.kind === "evolution-one" ? 1 : 2;
+  const effectiveMaxHpBefore = getPlayerEffectiveMaxHp(world, config);
   if (tier === 1) {
     progression.route.evolutionOneId = evolutionId;
     progression.route.evolutionOneSelectedAt = world.state.elapsed;
@@ -182,6 +189,7 @@ export function chooseExProtocolEvolution(
     progression.route.masteryUnlocked = true;
     progression.route.masteryUnlockedAt = world.state.elapsed;
   }
+  applyCapacityIncrease(world, config, effectiveMaxHpBefore, false);
   delete world.progression.pendingChoice;
   world.state.status = "playing";
   delayPendingContract(world);

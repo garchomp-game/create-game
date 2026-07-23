@@ -1,4 +1,5 @@
 import type { GameEvent, SimulationConfig, Vec2, WorldState } from "../../domain/types";
+import { applyPlayerDamage } from "./playerHealthSystem";
 
 export type CollapseSafeBounds = {
   left: number;
@@ -41,11 +42,10 @@ export function updateArenaCollapse(
     config.encounter.collapse.baseDamage *
       config.encounter.collapse.damageGrowth ** (world.encounter.collapse.stage - 1),
   );
-  const hpBefore = world.state.hp;
-  world.state.hp = Math.max(0, hpBefore - damage);
+  const resolvedDamage = applyPlayerDamage(world, damage);
   events.push({
     type: "player.damaged",
-    damage: hpBefore - world.state.hp,
+    damage: resolvedDamage,
     hpAfter: world.state.hp,
     source: { kind: "collapse", stage: world.encounter.collapse.stage },
   });
