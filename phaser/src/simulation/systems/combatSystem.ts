@@ -8,11 +8,8 @@ import type {
 } from "../../domain/types";
 import { circleCircle, segmentCircleFirstIntersection } from "../../math/geometry";
 import type { BulletFrameMotions, BulletMotionSegment } from "./bulletSystem";
-import { releaseCommanderPressure } from "./commanderEliteSystem";
-import {
-  recordChargerKilled,
-  recordChargerPlayerHit,
-} from "./chargerEnemySystem";
+import { recordChargerPlayerHit } from "./chargerEnemySystem";
+import { resolveEnemyDamage } from "./enemyDamageSystem";
 import { applyPlayerDamage } from "./playerHealthSystem";
 
 export function resolveCombat(
@@ -138,57 +135,47 @@ function resolveBulletEnemyHit(
     bullet.hitEnemyIds.length,
   );
   const damage = bullet.damage + focusHit.bonusDamage;
-  enemy.hp -= damage;
   bullet.hitEnemyIds.push(enemy.id);
   bullet.hitsRemaining -= 1;
   registerSpreadSweepHit(world, bullet, enemy, events);
-  events.push({
-    type: "enemy.hit",
-    bulletId: bullet.id,
-    volleyId: bullet.volleyId,
-    enemyId: enemy.id,
-    enemyType: enemy.typeId,
-    weaponType: bullet.weaponType,
-    ricochetsUsed: segment.ricochetsUsed,
-    ricochetSurfaceKind: segment.ricochetSurfaceKind,
-    ricochetBoundarySide: segment.ricochetBoundarySide,
-    damage,
-    hpAfter: Math.max(0, enemy.hp),
-  });
-
-  if (focusHit.applied) {
-    events.push({
-      type: "pulse.focus.hit",
-      enemyId: enemy.id,
-      enemyType: enemy.typeId,
-      stackBefore: focusHit.stackBefore,
-      stackAfter: focusHit.stackAfter,
-      lineStacks: focusHit.lineStacks,
-      targetBonusDamage: focusHit.targetBonusDamage,
-      lineBonusDamage: focusHit.lineBonusDamage,
-      bonusDamage: focusHit.bonusDamage,
-      killed: enemy.hp <= 0,
-    });
-  }
-
-  if (enemy.hp > 0) return;
-
-  deadEnemies.add(enemy);
-  releaseCommanderPressure(world, enemy, bullet.weaponType, events);
-  recordChargerKilled(world, enemy, bullet.weaponType, events);
-  const scoreAwarded = Math.round(enemy.score * world.encounter.contract.scoreMultiplier);
-  world.state.score += scoreAwarded;
-  events.push({
-    type: "enemy.killed",
-    bulletId: bullet.id,
-    volleyId: bullet.volleyId,
-    enemyId: enemy.id,
-    enemyType: enemy.typeId,
-    weaponType: bullet.weaponType,
-    scoreAwarded,
-    xpAwarded: enemy.xpValue,
-    position: { ...enemy.position },
-  });
+  resolveEnemyDamage(
+    world,
+    enemy,
+    {
+      amount: damage,
+      baselineWithoutAnyProtocol: damage,
+      baselineForEffectAttribution: damage,
+      source: {
+        kind: "player-projectile",
+        bulletId: bullet.id,
+        volleyId: bullet.volleyId,
+        weaponType: bullet.weaponType,
+        ricochetsUsed: segment.ricochetsUsed,
+        ricochetSurfaceKind: segment.ricochetSurfaceKind,
+        ricochetBoundarySide: segment.ricochetBoundarySide,
+        attribution: "normal",
+      },
+    },
+    deadEnemies,
+    events,
+    {
+      afterHit: (outcome) => {
+        if (!focusHit.applied) return;
+        events.push({
+          type: "pulse.focus.hit",
+          enemyId: enemy.id,
+          enemyType: enemy.typeId,
+          stackBefore: focusHit.stackBefore,
+          stackAfter: focusHit.stackAfter,
+          lineStacks: focusHit.lineStacks,
+          targetBonusDamage: focusHit.targetBonusDamage,
+          lineBonusDamage: focusHit.lineBonusDamage,
+          bonusDamage: focusHit.bonusDamage,
+          killed: outcome.killed,
+        });
+      },
+    },
+  );
 }
 
 function applyPulseFocus(

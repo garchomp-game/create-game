@@ -99,8 +99,15 @@ export function updateFinalExpeditionBoss(
   if (!boss || boss.status !== "active") return [];
 
   const killed = baseEvents.find(
-    (event): event is Extract<GameEvent, { type: "enemy.killed" }> =>
-      event.type === "enemy.killed" && event.enemyId === boss.enemyId,
+    (
+      event,
+    ): event is Extract<
+      GameEvent,
+      { type: "enemy.killed" | "enemy.protocol.killed" }
+    > =>
+      (event.type === "enemy.killed" ||
+        event.type === "enemy.protocol.killed") &&
+      event.enemyId === boss.enemyId,
   );
   if (killed) {
     boss.status = "defeated";

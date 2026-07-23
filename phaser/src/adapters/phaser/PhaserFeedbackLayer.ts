@@ -49,12 +49,18 @@ export class PhaserFeedbackLayer {
 
   handleEvents(events: GameEvent[], world: WorldState): void {
     for (const event of events) {
-      if (event.type === "enemy.hit") {
+      if (
+        event.type === "enemy.hit" ||
+        event.type === "enemy.protocol.hit"
+      ) {
         const enemy = world.enemies.find((item) => item.id === event.enemyId);
         if (enemy) {
           this.addImpact(enemy.position, enemy.radius + 5, 0xf8fafc);
         }
-      } else if (event.type === "enemy.killed") {
+      } else if (
+        event.type === "enemy.killed" ||
+        event.type === "enemy.protocol.killed"
+      ) {
         this.addImpact(event.position, 18, 0xfacc15);
         this.addBurst(event.position, 0xfacc15);
       } else if (event.type === "player.damaged") {

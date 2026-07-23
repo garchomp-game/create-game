@@ -50,7 +50,9 @@ type AudioCueRoutingDecision =
 const EVENT_CUES: Partial<Record<GameEvent["type"], AudioCueId>> = {
   "shot.fired": "shot",
   "enemy.hit": "hit",
+  "enemy.protocol.hit": "hit",
   "enemy.killed": "kill",
+  "enemy.protocol.killed": "kill",
   "pickup.collected": "pickup",
   "player.level_up": "levelUp",
   "extra.level_up": "levelUp",

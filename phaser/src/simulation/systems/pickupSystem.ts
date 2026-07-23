@@ -69,7 +69,16 @@ function spawnPickupsFromKills(
   config: SimulationConfig,
   events: GameEvent[],
 ): void {
-  const killEvents = events.filter((event) => event.type === "enemy.killed");
+  const killEvents = events.filter(
+    (
+      event,
+    ): event is Extract<
+      GameEvent,
+      { type: "enemy.killed" | "enemy.protocol.killed" }
+    > =>
+      event.type === "enemy.killed" ||
+      event.type === "enemy.protocol.killed",
+  );
   const boss = world.expedition?.boss?.status === "active"
     ? world.expedition.boss
     : null;

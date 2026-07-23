@@ -488,6 +488,15 @@ export type EnemyProjectile = CircleBody & {
   source?: { bossId: string; bossAttackId: BossAttackId };
 };
 
+export type ExProtocolDamageEffect = "relay" | "breakwater";
+
+export type ExProtocolEnemyDamageSource = {
+  kind: "ex-protocol";
+  protocolId: ExProtocolId;
+  activationId: number;
+  effect: ExProtocolDamageEffect;
+};
+
 export type Pickup = CircleBody & {
   id: string;
   kind: "xp" | "heal";
@@ -1035,6 +1044,15 @@ export type GameEvent =
       hpAfter: number;
     }
   | {
+      type: "enemy.protocol.hit";
+      source: ExProtocolEnemyDamageSource;
+      enemyId: string;
+      enemyType: EnemyTypeId;
+      weaponType: WeaponTypeId;
+      damage: number;
+      hpAfter: number;
+    }
+  | {
       type: "bullet.ricocheted";
       bulletId: string;
       volleyId: number;
@@ -1166,6 +1184,16 @@ export type GameEvent =
       type: "enemy.killed";
       bulletId: string;
       volleyId: number;
+      enemyId: string;
+      enemyType: EnemyTypeId;
+      weaponType: WeaponTypeId;
+      scoreAwarded: number;
+      xpAwarded: number;
+      position: Vec2;
+    }
+  | {
+      type: "enemy.protocol.killed";
+      source: ExProtocolEnemyDamageSource;
       enemyId: string;
       enemyType: EnemyTypeId;
       weaponType: WeaponTypeId;

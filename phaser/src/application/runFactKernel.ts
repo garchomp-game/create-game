@@ -297,7 +297,10 @@ function summarizeEvents(
       });
       continue;
     }
-    if (entry.event.type === "enemy.killed") {
+    if (
+      entry.event.type === "enemy.killed" ||
+      entry.event.type === "enemy.protocol.killed"
+    ) {
       killTimeline.push({
         factId,
         episodeId: runEpisodeId,

@@ -90,7 +90,10 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
     } else if (event.type === "spread.sweep.consumed") {
       world.stats.capstoneMetrics.spreadSweepConsumes += 1;
       world.stats.weaponIdentityMetrics.spreadSweep.consumes += 1;
-    } else if (event.type === "enemy.killed") {
+    } else if (
+      event.type === "enemy.killed" ||
+      event.type === "enemy.protocol.killed"
+    ) {
       world.stats.enemiesKilled += 1;
       const weaponStats = world.stats.weaponMetrics[event.weaponType];
       weaponStats.kills += 1;
