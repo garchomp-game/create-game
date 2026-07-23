@@ -3,7 +3,7 @@ title: 現在地
 description: Arena Core Phaser版の実装状況、確認済み課題、次の作業。
 ---
 
-最終整理日: 2026-07-20
+最終整理日: 2026-07-23
 
 ## 現在の状態
 
@@ -230,16 +230,23 @@ RC5は基準証跡として保持し、productionへ直接昇格しません。U
 
 選択画面の高解像度化、戦場透過、数字キー、照準継続はDraft PR [#84](https://github.com/garchomp-game/create-game/pull/84)へ分離し、[UI統合Preview](https://v07-rc6-ui-playtest-arena-core.garchomp-game.workers.dev)で外部所感を集めます。これは同じRC6 rulesetを使う表示candidateであり、採用済みゲームルールへ混ぜずに評価します。
 
+## v0.8 control観測build
+
+2026-07-22の批判的レビューを受け、危険反転やBoss調整を先に実装せず、RC6 controlの事実を集める6件の独立PRをDraft PR [#113](https://github.com/garchomp-game/create-game/pull/113)へ結合しました。アプリ版`0.7.0`、Endlessルール`phaser-v0.6.8-pulse-boundary-ricochet`、最終遠征ルール`phaser-v0.7.0-final-expedition-rc6`は維持しています。
+
+同じrun exportから、現行Chargerの成立性、強化選択のwall-clockと復帰1秒、危険イベント終了後5秒、Boss攻撃別の被弾・回復・反撃窓を取得できます。敗因、進捗、比較差分は表示へ依存しない純粋ViewModelとして分離しました。ゲーム数値、RNG、`RunRecord`、ランキング契約、production trafficは変更していません。
+
+観測機能の結合commit `4bd771e`は477 unit、77 E2E、production buildを通過しました。今回のサマリ追加後も108ページのStarlight buildが成功し、先行HEADのGitHub Actions 3件もgreenです。詳細は[v0.8 control観測build サマリ](../v08-observation-control-summary/)と[実施手順](../../playtest/v08-observation-control-runbook/)を参照してください。
+
 ## 次の優先順
 
 公開ベータ基準、RC6の自動証跡、通常UIの欠陥特化採否、main統合は固定済みです。GitHub Actions、Encounter境界追補、UI比較手順に加え、Run Fact Kernelと最大密度fixture骨格をmain `f19889b`まで統合しました。2026-07-22の批判的レビューでは、現行コアを維持しつつ、未検証の危険反転をcontrol観測より先に実装しない判断へ更新しました。
 
-1. #97のTraining T1を現行visual・recordなしで維持し、#81でT0 / T1を分けた事前教材なしのEndlessを死亡または90秒まで観察する。誤認が残る場合だけ#98の視覚T2へ進む。
-2. 必須run後に5分の自由選択を置き、EndlessとExpeditionが別の再挑戦理由を作れているか観察する。
-3. #78の選択wall-clock、#93のBoss / recovery shadow、#76のCharger control viabilityをsimulation非介入で分けて整える。
-4. #94 Phase Aの主敗因、進捗、再挑戦contextを純粋ViewModelとして固定し、閾値未登録のnear-missは表示しない。
-5. Charger control viabilityを通過した場合だけ、[#76](https://github.com/garchomp-game/create-game/issues/76)の衝突妨害を値・seed・raw-count閾値の事前登録後に別rulesetで比較する。
-6. Draft PR [#84](https://github.com/garchomp-game/create-game/pull/84)の選択UIは#78の計測と人間比較を揃えて採用、再調整、棄却を決める。
-7. 採用するv0.7配布SHAを固定し、production build、実URLsmoke、rollback確認後にtrafficを昇格する。
+1. #113でEndlessのPulse / Spreadを各1本、最初の危険イベントのrecovery完了まで観察する。
+2. #113で最終遠征のPulse / Spreadを各1本、Boss第2段階またはラン終了まで観察する。
+3. 必須run後に5分の自由選択を置き、EndlessとExpeditionが別の再挑戦理由を作れているか観察する。
+4. #97のTraining T1は事前教材なしで行い、Training後のEndlessを死亡または90秒まで観察する。誤認が残る場合だけ#98の視覚T2へ進む。
+5. Charger、選択UI、Boss、イベント緩和は、control結果を受けて変更値と合格条件を事前登録し、1 build 1 candidateで比較する。
+6. 採用するv0.7配布SHAを固定し、production build、実URLsmoke、rollback確認後にtrafficを昇格する。
 
 採否の理由は[v0.8 批判的レビューの採用判断](../../design/v08-critical-review-adoption/)、直近の詳細は[直近フェーズ](../../project-management/next-phase-plan/)と[v0.8 実行計画](../../project-management/v08-execution-plan/)、技術契約は[RC6の時計と記録規則](../../engineering/expedition-rc6-clock-and-ranking-adr/)、3作戦系列は[エクスペディション3作戦検証](../../design/expedition-campaign/)、表示改善は[UI・グラフィック再設計計画](../../project-management/ui-visual-redesign-plan/)を参照してください。
