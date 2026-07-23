@@ -31,7 +31,7 @@ Charger、強化選択、危険イベント後、Boss戦、ラン終了理由を
 
 - Endless: Pulse / Spread、通常強化、循環EX、3種の危険イベント、後半契約、アリーナ崩壊。
 - 最終遠征: 5 Act、Commander、Charger、3攻撃・2段階の指揮艦Boss、時間メダル、総合 / 武器別ランキング。
-- Training: 撃つ、避ける、取る、強化を順に試し、総合演習を完了または明示退出できるガイド付き訓練。
+- Trainingは別候補の[Draft PR #99](https://github.com/garchomp-game/create-game/pull/99)で検証中であり、このcontrol観測buildには含めない。
 - ローカル記録: 履歴、比較条件別ランキング、設定、ゲストプロフィール。
 
 プレイヤーに見える変更は、遠征の旧「戦術点」を実態に合わせて「撃破点」へ改め、リザルトとランキングに順位規則を明記したことです。
@@ -82,7 +82,7 @@ E2Eのskipは明示的にopt-inとしている15分soakだけです。自動gree
 1. EndlessのPulse / Spreadを各1本、最初の危険イベントの回復窓までプレイする。
 2. 最終遠征のPulse / Spreadを各1本、Boss第2段階またはラン終了までプレイする。
 3. 必須ラン後、説明なしで5分だけ自由に選んで遊ぶ。
-4. 初心者T1は事前教材を見せず、Training後のEndlessを死亡または90秒まで観察する。
+4. 初心者T1は別候補PR #99で事前教材を見せず、Training後のEndlessを死亡または90秒まで観察する。このcontrol buildのランと混ぜない。
 
 開発サーバーでは1秒以上の手動ランが終了すると、JSONを`phaser/logs/runs/`へ自動保存します。質問、停止条件、JSON pathの正本は[v0.8 control観測build 実施手順](../../playtest/v08-observation-control-runbook/)です。
 
