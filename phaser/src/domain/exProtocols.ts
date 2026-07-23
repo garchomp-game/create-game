@@ -26,6 +26,7 @@ type ExProtocolRuntimeBase = {
 
 export type ResonanceRelayRuntime = ExProtocolRuntimeBase & {
   kind: "resonance-relay";
+  nextActivationId: number;
   anchor: {
     enemyId: string;
     expiresAt: number;

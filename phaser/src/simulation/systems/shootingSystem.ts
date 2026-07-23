@@ -8,6 +8,7 @@ import type {
 } from "../../domain/types";
 import { createRedlineProjectileState } from "../protocols/redlineCore";
 import { prepareReboundVolley } from "../protocols/reboundOverdrive";
+import { createResonanceRelayProjectileState } from "../protocols/resonanceRelay";
 
 export function updateShooting(
   world: WorldState,
@@ -82,7 +83,8 @@ export function updateShooting(
               consumedCoreSpreadSweep: consumesSpreadSweep,
               protocolState:
                 reboundPlan?.createProjectileState() ??
-                createRedlineProjectileState(world),
+                createRedlineProjectileState(world) ??
+                createResonanceRelayProjectileState(world),
             },
           }
         : {}),

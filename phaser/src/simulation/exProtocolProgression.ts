@@ -252,7 +252,12 @@ function createExProtocolRuntime(
     aegisFan,
   ] = EX_PROTOCOL_CATALOG.protocols;
   if (protocolId === resonanceRelay.id) {
-    return { kind: "resonance-relay", protocolId, anchor: null };
+    return {
+      kind: "resonance-relay",
+      protocolId,
+      nextActivationId: 1,
+      anchor: null,
+    };
   }
   if (protocolId === reboundOverdrive.id) {
     return {

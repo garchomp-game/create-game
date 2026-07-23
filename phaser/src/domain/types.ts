@@ -1376,6 +1376,27 @@ export type GameEvent =
       elapsed: number;
     }
   | {
+      type: "ex.relay.anchor.created";
+      enemyId: string;
+      volleyId: number;
+      refreshed: boolean;
+      expiresAt: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.relay.resolved";
+      activationId: number;
+      targetCount: number;
+      damage: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.relay.blocked";
+      anchorEnemyId: string;
+      endpointEnemyId: string;
+      elapsed: number;
+    }
+  | {
       type: "extra.level_up";
       level: number;
       extraLevel: number;

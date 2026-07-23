@@ -20,6 +20,7 @@ import {
   resolveReboundDamage,
   restoreReboundCapacityAfterRicochet,
 } from "../protocols/reboundOverdrive";
+import { resolveResonanceAfterNormalHit } from "../protocols/resonanceRelay";
 
 export function resolveCombat(
   world: WorldState,
@@ -144,6 +145,7 @@ function resolveBulletEnemyHit(
     segment.ricochetsUsed,
     bullet.hitEnemyIds.length,
   );
+  const endpointPositionBeforeHit = { ...enemy.position };
   const normalResolvedDamage = bullet.damage + focusHit.bonusDamage;
   const redline = resolveRedlineDamage(
     world,
@@ -218,6 +220,21 @@ function resolveBulletEnemyHit(
           world,
           bullet,
           enemy,
+          events,
+        );
+        resolveResonanceAfterNormalHit(
+          world,
+          bullet,
+          enemy,
+          {
+            priorDirectHits: bullet.hitEnemyIds.length - 1,
+            ricochetsUsed: segment.ricochetsUsed,
+            stackAfter: focusHit.stackAfter,
+            maximumStacks: world.runtime.pulseFocusMaxStacks,
+            endpointSurvived: !outcome.killed,
+            endpointPositionBeforeHit,
+          },
+          deadEnemies,
           events,
         );
       },
