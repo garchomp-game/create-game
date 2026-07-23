@@ -151,7 +151,7 @@ description: v0.4からv1.0までの目的と主要チケット。
 - スコアだけで見えない上達と武器固有の行動を記録し、次ランの目標へつなげる。
 - ボス攻撃を予告、回避、回復、反撃の文法として比較し、HP量以外の強さを作る。
 - 敗因、実測near-miss、同条件再挑戦を事実から提示し、再挑戦を強制せず近づける。
-- Standard / Assist / Practice / Overloadの記録を分離し、支援と競技PBを混在させない。
+- Standard / Assist / Practiceの記録を分離し、支援と競技PBを混在させない。C1以前のOverload記録は互換読み取りだけを維持する。
 - 選択停止、最大密度の可読性、警告音を計測し、演出追加前の品質基準を作る。
 - 現行visualのTrainingと戦闘オブジェクト視覚candidateを分け、説明不足と識別不足を切り分ける。
 - 初心者と経験者を分けた再利用可能な構造化プレイテストで各candidateを採否する。
@@ -172,7 +172,7 @@ description: v0.4からv1.0までの目的と主要チケット。
 - [`PH-V08-021` #92](https://github.com/garchomp-game/create-game/issues/92) 通常強化の候補偏りと基礎ビルド保証。
 - [`PH-V08-022` #93](https://github.com/garchomp-game/create-game/issues/93) ボス攻撃文法と回復・反撃窓の比較。
 - [`PH-V08-023` #94](https://github.com/garchomp-game/create-game/issues/94) 敗因説明、実測near-miss、同条件再挑戦。
-- [`PH-V08-024` #95](https://github.com/garchomp-game/create-game/issues/95) Standard / Assist / Practice / Overloadの記録契約。
+- [`PH-V08-024` #95](https://github.com/garchomp-game/create-game/issues/95) Standard / Assist / Practiceの記録契約と旧Overload記録の互換性。
 - [`PH-V08-025` #97](https://github.com/garchomp-game/create-game/issues/97) 選択式・再プレイ可能な基本操作Training。
 - [`PH-V08-026` #98](https://github.com/garchomp-game/create-game/issues/98) 撃つ・避ける・取るの戦闘オブジェクト視覚言語。
 - `PH-V08-027` EX Protocol 6体系candidate。ローカル実装中、GitHub Issue未作成、production OFF。

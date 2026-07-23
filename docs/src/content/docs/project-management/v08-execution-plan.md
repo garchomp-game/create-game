@@ -45,7 +45,7 @@ v0.8では機能量を増やす前に、Arena Coreの面白さの核を小さい
 | 0C | [#77](https://github.com/garchomp-game/create-game/issues/77) | candidate非依存のfact、episode、純粋ledger | PR #102をmain `10198a9e810b`へ統合済み | Phase 0完了。Presenterと容量上限付きsummaryは後続consumerの不足確認後 |
 | 0D | [#93](https://github.com/garchomp-game/create-game/issues/93) | Boss Attack Cardと回復・反撃窓の観測 | RC6 control。runtime候補は入れない | 3攻撃の文法、chain、shadow指標を定義 |
 | 0E | [#94](https://github.com/garchomp-game/create-game/issues/94) | 主敗因、factual near-miss、同条件再挑戦 | #77の共通fact境界 | 純粋集約fixtureとViewModelを固定 |
-| 0F | [#95](https://github.com/garchomp-game/create-game/issues/95) | Standard / Assist / Practice / Overloadの記録契約 | RC6の記録比較契約 | division、eligibility、migrationを先に保証 |
+| 0F | [#95](https://github.com/garchomp-game/create-game/issues/95) | Standard / Assist / Practiceの記録契約 | RC6の記録比較契約 | division、eligibility、migrationを先に保証。OverloadはC2で新規runtimeから除外 |
 | 0G | [#80](https://github.com/garchomp-game/create-game/issues/80) | 最大密度fixtureの基盤 | PR #103をmain `41ed5f04a9f4`へ統合済み | skeleton完了。最大密度scenarioと警告優先度はcandidate意味確定後 |
 | 0H | [#78](https://github.com/garchomp-game/create-game/issues/78) | 選択停止時間と再開事故の時計境界 | 責務設計は先行可。runtime接続は#70採否後 | wall-clockとsimulation timeを混ぜず計測 |
 | 1 | [#76](https://github.com/garchomp-game/create-game/issues/76) | Charger衝突妨害で危険を反撃機会へ変えられるか | 共通基盤は統合済み。定数、seed、window、raw-count基準、rollbackの事前登録待ち | RC6と別buildで回避と熟練反転をpaired比較 |

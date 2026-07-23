@@ -3,7 +3,7 @@ title: 現在地
 description: Arena Core Phaser版の実装状況、確認済み課題、次の作業。
 ---
 
-最終整理日: 2026-07-23
+最終整理日: 2026-07-24
 
 ## 現在の状態
 
@@ -15,9 +15,11 @@ v0.7 RC6は[フォローアップ監査](../../playtest/v07-rc6-integration-repo
 
 v0.8の最初の独立candidateとして、[#97](https://github.com/garchomp-game/create-game/issues/97)の選択式Training T1をruntime SHA `78b79da9c5aad7f7998ef7b5b1938f80850fdb6a`へ固定し、main採用を決定しました。Work再レビューで求められた説明確認、XP直後の強化、障害物外側の救済線、理由付きretry、修復直前の訓練ダメージ、上部小型チェックリスト、強化選択中断、明示的な完了画面に加え、敵本体の接触ダメージを射撃前に観察する9課題構成へ更新しました。`recordPolicy: none`により履歴、ランキング、PB、報酬を作りません。配布build `2247bd9cd16a`はPR #99の3 CI jobと[Cloudflare固定Preview](https://v08-training-t1-contact-2247bd9-arena-core.garchomp-game.workers.dev/)の実URLsmokeを通過しています。残るのは[#81](https://github.com/garchomp-game/create-game/issues/81)の事前教材なし初心者転移確認で、production trafficは変更しません。詳細は[Training T1候補](../../playtest/v08-training-t1-candidate/)を参照してください。
 
-branch `feat/v08-ex-protocols-c1`では、Core完成後に武器互換の固定3択、E1 / E2、Masteryを追加する[EX Protocol候補](../../design/ex-protocols/)を実装しています。Pulse / Spread各3体系、全24 route、Active入力、候補専用ruleset、RunRecord v3、非破壊legacy reconcile、固有telemetry、representative E2E、probe / soakを持ちます。20 seed比較、90秒soak、20 seed x 2武器のFinal Expedition露出を含む利用可能な自動gateはgreenです。runtime `03805713cf83`では、HTML、初期タイトル、ベータ情報、フィードバック文面を`0.8.0-candidate.1 / phaser-v0.8-ex-protocols-c1`へ統一し、最新9課題Trainingを含む[固定Preview](https://v08-ex-protocols-c1-0380571-arena-core.garchomp-game.workers.dev/)を作成しました。production既定はOFFで、外部push / PR / production traffic配分は未実施です。非SwiftShader実GPUの15分耐久と人間6体系gateが残るため、現行production状態としては数えません。実測値は[EX Protocol candidate 自動QA](../../playtest/v08-ex-protocol-candidate-report/)を参照してください。
+branch `feat/v08-ex-protocols-c1`の現候補は、Core完成後に武器互換の固定3択、E1 / E2、Masteryを追加する[EX Protocol C2](../../design/ex-protocols/)です。Pulse / Spread各3体系、全24 route、Active入力、候補専用ruleset、RunRecord v3、非破壊legacy reconcile、固有telemetry、representative E2E、probe / soakを持ちます。20 seed比較、90秒soak、20 seed x 2武器のFinal Expedition露出を含む利用可能な自動gateはgreenです。
 
-ownerの初回確認では、通常Endlessだけでも手動・AutoPilotとも有限終了へ収束するため過負荷契約が冗長であり、Protocolの比喩名から発動条件を読み取りにくく、Relay / Redline / Tidal / Breakwaterの成立条件が厳しいと判断しました。後継C2は`0.8.0-candidate.2 / phaser-v0.8-ex-protocols-c2`へ分離し、Endless契約を無効化、カードを「発動条件・効果・制約」へ書き換え、Relayの撃破地点記録、RedlineのMAX到達弾、Tidal 3体、Breakwater 2体、Rebound受付2秒へ限定調整しています。[固定Preview](https://v08-ex-protocols-c2-9b886a6-arena-core.garchomp-game.workers.dev/)はruntime `9b886a641cbf`を表示し、短い実URLsmokeまで完了しました。C1 profileと記録は読取可能な履歴として残します。詳細は[C2 可読性・成立条件レポート](../../playtest/v08-ex-protocol-c2-readability-report/)を参照してください。
+C2は`0.8.0-candidate.2 / phaser-v0.8-ex-protocols-c2`へ分離し、通常Endlessだけで有限終了へ収束することから240秒のOverload契約を無効化しました。カードを「発動条件・効果・制約」へ書き換え、Relayの撃破地点記録、RedlineのMAX到達弾、Tidal 3体、Breakwater 2体、Rebound受付2秒へ限定調整しています。[固定Preview](https://v08-ex-protocols-c2-9b886a6-arena-core.garchomp-game.workers.dev/)はruntime `9b886a641cbf`を表示し、短い実URLsmokeまで完了しました。production既定はOFFで、外部push / PR / production traffic配分は未実施です。非SwiftShader実GPUの15分耐久と人間6体系gateが残るため、現行production状態としては数えません。詳細は[C2 可読性・成立条件レポート](../../playtest/v08-ex-protocol-c2-readability-report/)を参照してください。
+
+C1 `0.8.0-candidate.1 / phaser-v0.8-ex-protocols-c1`と[固定Preview](https://v08-ex-protocols-c1-0380571-arena-core.garchomp-game.workers.dev/)は比較履歴です。C1 profileと保存記録は読取可能なまま残し、実測値は[EX Protocol C1自動QA](../../playtest/v08-ex-protocol-candidate-report/)で固定します。
 
 ゲーム数値はv0.6.6のままです。672.20秒 / 92728点でアリーナ崩壊2段階へ到達したPulse手動ランにより、精密射撃調整の採用を完了しました。Pulseは照準・貫通・反射角で成果上限を伸ばす単線武器、Spreadは広角の複数標的処理を安定させる武器として分かれています。
 

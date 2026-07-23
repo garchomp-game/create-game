@@ -123,9 +123,11 @@ Training T1は現行visualのまま、説明不足だけを切り分けます。
 
 ### 支援は明示的なdivisionで扱う
 
-Standard、Assist、Practice、Overloadは記録上のdivisionを分けます。履歴依存の隠れたDDAをStandard、fixed seed、ランキング対象へ入れません。
+レビュー時点ではStandard、Assist、Practice、Overloadを記録上のdivisionとして分ける案でした。履歴依存の隠れたDDAをStandard、fixed seed、ランキング対象へ入れない原則は維持します。
 
 Training初版はdivisionではなく`recordPolicy: none`です。Practice表示への将来統合は可能ですが、初版のblockerにしません。
+
+2026-07-24追補: Overload divisionと240秒の契約選択はC2で新規runtimeから外しました。この資料に残る4 divisionの記述はレビュー時点の履歴であり、現行契約はStandard / Assist / Practiceと旧Overload記録の互換読み取りです。
 
 ### Bossの強さをHPだけで作らない
 
@@ -308,7 +310,7 @@ v0.8でruntime candidateを1件しか扱えない場合は、観測済みの#94 
 
 ## #95と#94の所有境界
 
-#95のMilestone 6 scopeは、division、eligibility、比較scope、ADR、pure testまでです。persisted schema変更、旧記録migration、4 division runtimeは後続です。
+#95のMilestone 6 scopeは、division、eligibility、比較scope、ADR、pure testまでです。レビュー時点ではpersisted schema変更、旧記録migration、4 division runtimeを後続としていましたが、Overload runtimeはC2で廃止しました。
 
 - #94 Phase A: #95を待たない。
 - #94 Standard Phase B: #95全体を待たない。
@@ -381,7 +383,7 @@ v0.8でruntime candidateを1件しか扱えない場合は、観測済みの#94 
 - Stage 1 / 5 / 10 runtimeと10 Stage量産判断。
 - #92 offer runtime変更。
 - #79 Doctrine runtime変更。
-- #95の4 division gameplayとpersisted migration。
+- #95のdivision gameplayとpersisted migration（レビュー時点では4 division、C2以降は3 division）。
 - #66の最終asset、全敵sprite、stage別BGM。
 - 全面的なPresenter / World View再分割。
 - chunk警告だけを理由にしたbundle最適化。
