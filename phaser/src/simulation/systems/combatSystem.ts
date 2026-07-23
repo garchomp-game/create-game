@@ -11,6 +11,10 @@ import type { BulletFrameMotions, BulletMotionSegment } from "./bulletSystem";
 import { recordChargerPlayerHit } from "./chargerEnemySystem";
 import { resolveEnemyDamage } from "./enemyDamageSystem";
 import { applyPlayerDamage } from "./playerHealthSystem";
+import {
+  getRedlineFocusDurationBonus,
+  resolveRedlineDamage,
+} from "../protocols/redlineCore";
 
 export function resolveCombat(
   world: WorldState,
@@ -134,7 +138,16 @@ function resolveBulletEnemyHit(
     segment.ricochetsUsed,
     bullet.hitEnemyIds.length,
   );
-  const damage = bullet.damage + focusHit.bonusDamage;
+  const normalResolvedDamage = bullet.damage + focusHit.bonusDamage;
+  const redline = resolveRedlineDamage(
+    world,
+    bullet,
+    enemy,
+    segment.ricochetsUsed,
+    focusHit.stackBefore,
+    normalResolvedDamage,
+  );
+  const damage = redline?.damage ?? normalResolvedDamage;
   bullet.hitEnemyIds.push(enemy.id);
   bullet.hitsRemaining -= 1;
   registerSpreadSweepHit(world, bullet, enemy, events);
@@ -143,8 +156,10 @@ function resolveBulletEnemyHit(
     enemy,
     {
       amount: damage,
-      baselineWithoutAnyProtocol: damage,
-      baselineForEffectAttribution: damage,
+      baselineWithoutAnyProtocol:
+        redline?.baselineWithoutAnyProtocol ?? damage,
+      baselineForEffectAttribution:
+        redline?.baselineForEffectAttribution ?? damage,
       source: {
         kind: "player-projectile",
         bulletId: bullet.id,
@@ -153,26 +168,38 @@ function resolveBulletEnemyHit(
         ricochetsUsed: segment.ricochetsUsed,
         ricochetSurfaceKind: segment.ricochetSurfaceKind,
         ricochetBoundarySide: segment.ricochetBoundarySide,
-        attribution: "normal",
+        ...(redline ? { protocolId: redline.protocolId } : {}),
+        attribution: redline?.attribution ?? "normal",
       },
     },
     deadEnemies,
     events,
     {
       afterHit: (outcome) => {
-        if (!focusHit.applied) return;
-        events.push({
-          type: "pulse.focus.hit",
-          enemyId: enemy.id,
-          enemyType: enemy.typeId,
-          stackBefore: focusHit.stackBefore,
-          stackAfter: focusHit.stackAfter,
-          lineStacks: focusHit.lineStacks,
-          targetBonusDamage: focusHit.targetBonusDamage,
-          lineBonusDamage: focusHit.lineBonusDamage,
-          bonusDamage: focusHit.bonusDamage,
-          killed: outcome.killed,
-        });
+        if (focusHit.applied) {
+          events.push({
+            type: "pulse.focus.hit",
+            enemyId: enemy.id,
+            enemyType: enemy.typeId,
+            stackBefore: focusHit.stackBefore,
+            stackAfter: focusHit.stackAfter,
+            lineStacks: focusHit.lineStacks,
+            targetBonusDamage: focusHit.targetBonusDamage,
+            lineBonusDamage: focusHit.lineBonusDamage,
+            bonusDamage: focusHit.bonusDamage,
+            killed: outcome.killed,
+          });
+        }
+        if (redline?.redlineEvent) {
+          events.push({
+            type: "ex.redline.hit",
+            projectileId: bullet.id,
+            totalDamage: redline.redlineEvent.totalDamage,
+            bonusDamageAttributed:
+              redline.redlineEvent.bonusDamageAttributed,
+            elapsed: world.state.elapsed,
+          });
+        }
       },
     },
   );
@@ -222,6 +249,7 @@ function applyPulseFocus(
   const bonusDamage = targetBonusDamage + lineBonusDamage;
   enemy.pulseFocusStacks = stackAfter;
   enemy.pulseFocusExpiresAt = world.state.elapsed + world.runtime.pulseFocusDuration;
+  enemy.pulseFocusExpiresAt += getRedlineFocusDurationBonus(world);
   return {
     applied: true,
     stackBefore,

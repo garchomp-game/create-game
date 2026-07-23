@@ -6,6 +6,7 @@ import type {
   Vec2,
   WorldState,
 } from "../../domain/types";
+import { createRedlineProjectileState } from "../protocols/redlineCore";
 
 export function updateShooting(
   world: WorldState,
@@ -72,6 +73,7 @@ export function updateShooting(
               ),
               activationId: null,
               consumedCoreSpreadSweep: consumesSpreadSweep,
+              protocolState: createRedlineProjectileState(world),
             },
           }
         : {}),

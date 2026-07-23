@@ -64,6 +64,42 @@ export type AegisFanRuntime = ExProtocolRuntimeBase & {
   perfectGuardCharges: number;
 };
 
+export type ResonanceRelayProjectileState = {
+  kind: "resonance-relay";
+};
+
+export type ReboundOverdriveProjectileState = {
+  kind: "rebound-overdrive";
+  capacityRestored: boolean;
+  postRicochet: boolean;
+};
+
+export type RedlineCoreProjectileState = {
+  kind: "redline-core";
+  capacityRestored: boolean;
+  redlineResolvedDamage: number | null;
+  masteryExtraHitConsumed: boolean;
+};
+
+export type TidalSweepProjectileState = {
+  kind: "full-span-tidal-sweep";
+  activationId: number;
+};
+
+export type AegisFanProjectileState = {
+  kind: "aegis-fan";
+  side: "left" | "right";
+  interceptsRemaining: number;
+  empowered: boolean;
+};
+
+export type ExProtocolProjectileState =
+  | ResonanceRelayProjectileState
+  | ReboundOverdriveProjectileState
+  | RedlineCoreProjectileState
+  | TidalSweepProjectileState
+  | AegisFanProjectileState;
+
 export type ExProtocolRuntime =
   | ResonanceRelayRuntime
   | ReboundOverdriveRuntime

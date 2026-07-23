@@ -9,6 +9,7 @@ import type {
   ExProtocolEvolutionId,
   ExProtocolId,
   ExProtocolProgressionState,
+  ExProtocolProjectileState,
 } from "./exProtocols";
 
 export type Vec2 = {
@@ -428,6 +429,7 @@ export type CandidateBulletMetadata = {
   projectileRole: ProjectileRole;
   activationId: number | null;
   consumedCoreSpreadSweep: boolean;
+  protocolState: ExProtocolProjectileState | null;
 };
 
 export type Bullet = CircleBody & {
@@ -1327,6 +1329,13 @@ export type GameEvent =
       type: "ex.limit_break.connected";
       protocolId: ExProtocolId | null;
       exLevel: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.redline.hit";
+      projectileId: string;
+      totalDamage: number;
+      bonusDamageAttributed: number;
       elapsed: number;
     }
   | {
