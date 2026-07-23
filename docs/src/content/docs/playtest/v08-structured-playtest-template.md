@@ -87,6 +87,15 @@ Run 1とRun 2は同じseed、weapon、ruleset、divisionを復元します。奇
 
 T1はTraining自体の説明効果を測るため、通常の認識preflightより先に実施します。固定SHA、desktop landscape、同じ自動射撃設定を使い、開始前には静止画、動画、30秒説明、敵弾・XP・REPAIRの分類名を見せません。
 
+| 固定条件 | 値 |
+| --- | --- |
+| Preview | [v08-training-t1-contact-2247bd9](https://v08-training-t1-contact-2247bd9-arena-core.garchomp-game.workers.dev/) |
+| runtime / build | `78b79da9c5aa` / `2247bd9cd16a` |
+| mode / stage / weapon / seed | `training / basic-training / pulse / 20260720` |
+| app / ruleset / record policy | `0.7.0 / phaser-v0.7.0-final-expedition-rc6 / none` |
+
+このURL以外、旧8課題Preview、ローカルdev serverはT1の初回母数へ使いません。候補を修正した場合はその場で募集を止め、新しいSHAとPreviewで別cellとして再固定します。
+
 1. 「Trainingを選び、画面の案内に従って進めてください」とだけ伝える。
 2. 説明を追加せず、全9課題と案内なしの総合演習を観察する。
 3. 完了直後、同じPulseでEndlessを開始し、30秒の無提示probeを行う。
