@@ -112,7 +112,7 @@ candidate branchで次を個別に用意しています。
 | Final Expedition | 両武器20 seed用のProtocol露出probe。smokeではPulseがE2、Mastery、最初のLimit Break、boss phase 2、勝利へ到達 |
 | UI | 6 Protocolの代表戦闘fixtureとdesktop画像、選択、HUD、結果route |
 
-短いcandidate gateはgreenです。最終設定での20 seed release matrix、90秒release soak、両武器40本のFinal Expedition露出、実GPU 15分耐久はrelease / nightlyまたは手動ゲートとして未完了です。
+短いcandidate gateに加え、最終設定での20 seed release matrix、90秒release soak、両武器40本のFinal Expedition露出までgreenです。実測値とreview triggerは[EX Protocol candidate 自動QA](../../playtest/v08-ex-protocol-candidate-report/)へ分離しました。残る自動化外のgateは、非SwiftShader実GPUの15分耐久と6体系の人間評価です。
 
 probe専用policyは固定Protocol routeとActive使用機会だけを補助し、製品AutoPilotの移動安全性や武器別生存方針を変更しません。probeのscore差だけで数値を自動調整しません。
 

@@ -158,4 +158,4 @@ UI境界[#68](https://github.com/garchomp-game/create-game/issues/68)、比較pr
 
 RC6はこの条件を満たしてmainへ統合済みです。#86の品質ゲート、#88のEncounter境界追補、PR #90 / #91の比較手順と正本同期もmainへ入り、基準`b561aa6aeca5`のfresh CIを取得しました。#97のTraining T1は接触課題を含む9課題runtime `78b79da9c5aa`へ更新し、owner gate、PR #99の3 CI job、Cloudflare Version `7eaaf10f-fd82-4032-b363-5d4b44db8293`の実URLsmokeを完了してmain採用を決定しました。直近は#81の人間転移確認で、誤認が残る場合だけ#98の視覚T2へ進みます。日程待ちと並行できるのは#76の値・seed・raw-count閾値・停止条件の事前登録までです。PR #84のUI採否と#76のruntime candidateは同じ比較buildへ混ぜません。production trafficの切替は、採用するUIと配布SHAを固定してから別途行います。
 
-EX Protocol candidateの直近作業は、正本文書とCI契約の同期、全体回帰、release規模のbalance / soak、実GPU耐久、人間6体系gateです。前半3件までは自律実行でき、実GPUと人間評価は別ゲートとして残します。詳細は[EX Protocol候補](../../design/ex-protocols/)を参照してください。
+EX Protocol candidateは、正本文書とCI契約、全体回帰、20 seed balance、90秒headless soak、両武器40本のFinal Expedition露出まで完了しました。自動結果だけではscalarを変更せず、次は非SwiftShader実GPUの15分耐久と人間6体系gateを別々に実施します。実測は[EX Protocol candidate 自動QA](../../playtest/v08-ex-protocol-candidate-report/)、仕様は[EX Protocol候補](../../design/ex-protocols/)を参照してください。

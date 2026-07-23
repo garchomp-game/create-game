@@ -4,8 +4,8 @@ Updated: 2026-07-23
 
 ## 1. Outcome
 
-- Implementation status: `candidate complete / release verification in progress`
-- Candidate acceptance: `not evaluated`
+- Implementation status: `candidate complete / available automatic gates passed`
+- Candidate acceptance: `pending hardware and human gates`
 - Production adoption: `not requested`
 - Production deploy performed: `NO`
 - Production EX Protocol default: `OFF`
@@ -28,13 +28,13 @@ The six Protocol systems, 24 evolution routes, progression, input, UI, feedback,
 
 | Command | Before | Latest candidate evidence | Notes |
 | --- | --- | --- | --- |
-| `npm run typecheck` | PASS | PASS | Re-run after Phase 8 |
-| `npm test` | 69 files / 468 passed / 2 skipped | 87 files / 557 passed / 2 skipped | Full re-run pending after final docs / CI edits |
-| `npm run build:deploy` | PASS | PASS before Phase 8 | Final re-run pending |
-| `npm run test:e2e:release -- --workers=1` | 9 passed | Pending final re-run | Existing release route unchanged with flag OFF |
-| docs build | 102 pages PASS | 103 pages PASS | EX Protocol canonical page added |
-| `npm run probe:v07` | 1 passed / 1 skipped | Pending final parity re-run | RC6 control must remain unchanged |
-| `npm run probe:v07:repair` | 1 passed / 1 skipped | Pending final parity re-run | Candidate A gate must remain unchanged |
+| `npm run typecheck` | PASS | PASS | Final candidate source |
+| `npm test` | 69 files / 468 passed / 2 skipped | 87 files / 557 passed / 2 skipped | Full suite |
+| `npm run build:deploy` | PASS | PASS | 231 modules、31 files、2.82 MiB |
+| `npm run test:e2e:release -- --workers=1` | 9 passed | 9 passed | Chrome landscape / portrait and Firefox |
+| docs build | 102 pages PASS | 104 pages PASS | Canonical specification and automatic QA report |
+| `npm run probe:v07` | 1 passed / 1 skipped | 1 passed / 1 skipped | RC6 control remains 3/6 victories |
+| `npm run probe:v07:repair` | 1 passed / 1 skipped | 1 passed / 1 skipped | Candidate A rejection remains unchanged |
 
 Pre-existing failures:
 
@@ -97,7 +97,7 @@ No implementation deviation from the handoff values or semantics was intentional
 
 | Gate | Result |
 | --- | --- |
-| Feature-OFF profile and listener boundary | Unit covered; final full parity re-run pending |
+| Feature-OFF profile and listener boundary | PASS, including RC6 normal / repair parity |
 | Catalog JSON / schema / runtime validation | PASS |
 | 24 routes | 25 passed |
 | Typed deterministic replay | 9 passed |
@@ -107,14 +107,16 @@ No implementation deviation from the handoff values or semantics was intentional
 | Visual montage inspection | PASS, no incoherent HUD / EX / Protocol / enemy overlap observed |
 | Headless paired soak smoke | PASS |
 | Final Expedition exposure smoke | PASS: Protocol, E1, E2, Mastery, first Limit Break, boss phase 2, victory |
-| Synchronized Starlight build | PASS: 103 pages |
+| Synchronized Starlight build | PASS: 104 pages |
 | GitHub workflow YAML parse | PASS |
-| Full 20-seed balance release matrix | NOT RUN on the finalized configuration |
-| Full 90-second headless soak | NOT RUN after final reporting refinement |
-| Full 20-seed x 2-weapon Final Expedition exposure | NOT RUN |
+| Full 20-seed balance release matrix | PASS: 2 tests; no automatic dominant / weak trigger |
+| Full 90-second headless soak | PASS: all absolute / paired budgets |
+| Full 20-seed x 2-weapon Final Expedition exposure | PASS: 40 / 40 Core completion and release exposure gate |
 | Real-GPU 15-minute soak | NOT RUN |
 
-Exploratory probes showed natural effect opportunities for Rebound, Tidal, Aegis, and some Breakwater cases. Relay and Redline can receive no opportunity under the shared fair aim policy. The report must distinguish insufficient opportunity from ineffective behavior; this is not an automatic balance failure.
+The 20-seed matrix found no automatic 15% dominant or 20% weak trigger. Relay and Redline had zero opportunity under the shared fair aim policy, which is insufficient probe coverage rather than evidence that the mechanics failed. Rebound, Tidal, Breakwater, and Aegis produced effects but had median direct damage share below 5%; defensive, capacity, and positioning value must be judged in the human gate instead of being reduced to direct damage.
+
+The 90-second high-pressure soak stayed within every entity, tracker, collision, and step-time budget. The 40-run Final Expedition matrix reached at least 60 seconds of Protocol exposure in 100% of runs, with a 389.13-second median; E1, E2 plus Mastery, and the first Limit Break were reached in every run. Detailed values are in `docs/src/content/docs/playtest/v08-ex-protocol-candidate-report.md`.
 
 ## 7. Human gates
 
@@ -145,14 +147,11 @@ Rollback is the candidate ruleset profile plus `VITE_ARENA_EX_PROTOCOL_CANDIDATE
 
 ## 9. Remaining release work
 
-1. Complete docs and CI synchronization.
-2. Re-run the full unit, type, deploy build, release E2E, candidate E2E, docs, and RC6 parity gates.
-3. Run the finalized 20-seed balance release matrix and 90-second headless soak.
-4. Run the full Final Expedition exposure matrix as release / nightly evidence, or record it as an explicit deferred gate.
-5. Run a non-SwiftShader 15-minute hardware soak.
-6. Perform the six-Protocol human game-design and readability gate.
-7. Only then decide whether to create an external issue / PR and how it relates to #79.
+1. Run a non-SwiftShader 15-minute hardware soak.
+2. Perform the six-Protocol human game-design and readability gate.
+3. Decide whether each review trigger needs no change or a separately pre-registered candidate.
+4. Only then decide whether to create an external issue / PR and how it relates to #79.
 
 ## 10. Final statement
 
-> EX Protocol candidate is functionally implemented and isolated from production. Adoption remains undecided until release-scale automation, hardware evidence, and human game-design gates are complete.
+> EX Protocol candidate is functionally implemented, isolated from production, and green on every available automatic gate. Adoption remains undecided until hardware evidence and human game-design gates are complete.

@@ -47,7 +47,18 @@ describe("EX Protocol Final Expedition exposure", () => {
         ),
       );
       const summary = summarizeExposure(results);
-      console.log(JSON.stringify({ summary, results }, null, 2));
+      console.log(
+        JSON.stringify(
+          {
+            summary,
+            ...(process.env.ARENA_EX_PROTOCOL_FINAL_EXPOSURE_VERBOSE === "1"
+              ? { results }
+              : {}),
+          },
+          null,
+          2,
+        ),
+      );
 
       expect(summary.coreCompletingRuns).toBeGreaterThan(0);
       expect(
