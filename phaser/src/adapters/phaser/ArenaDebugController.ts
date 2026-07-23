@@ -38,7 +38,15 @@ import {
   getArenaEnemyTypeCounts,
   getArenaObstacleContactCounts,
 } from "../telemetry/ArenaRunExport";
-import type { AudioCueId } from "./PhaserAudioEventRouter";
+import type {
+  AudioCueId,
+  AudioRoutingSnapshot,
+} from "./PhaserAudioEventRouter";
+import {
+  applyArenaCaptureScenario,
+  readArenaCaptureLayers,
+  type ArenaCaptureScenarioId,
+} from "./ArenaCaptureScenarios";
 import type {
   ArenaDebugApi,
   ArenaRunExport,
@@ -83,6 +91,7 @@ export type ArenaDebugControllerDependencies = {
   getFixedSeed(): number | null;
   getFeedbackSnapshot(): FeedbackSnapshot;
   getAudioCues(): AudioCueId[];
+  getAudioRoutingSnapshot(): AudioRoutingSnapshot;
   getMusicSnapshot(): MusicSnapshot;
   clearTransientInput(): void;
   recordResult(result: StepWorldResult): void;
@@ -96,6 +105,7 @@ export type ArenaDebugControllerDependencies = {
 export class ArenaDebugController {
   private pausedState = false;
   private soakProtectionEnabled = false;
+  private activeCaptureScenarioId: ArenaCaptureScenarioId | null = null;
 
   constructor(private readonly dependencies: ArenaDebugControllerDependencies) {}
 
@@ -105,6 +115,7 @@ export class ArenaDebugController {
 
   resetRun(): void {
     this.soakProtectionEnabled = false;
+    this.activeCaptureScenarioId = null;
   }
 
   prepareSoakProtection(): void {
@@ -207,6 +218,8 @@ export class ArenaDebugController {
         this.setExpeditionChargerFixture(),
       setExpeditionBossFixture: (attackId = "targeted-salvo", phase = 1) =>
         this.setExpeditionBossFixture(attackId, phase),
+      loadCaptureScenario: (scenarioId) =>
+        this.loadCaptureScenario(scenarioId),
       armExpeditionBossDefeat: () => this.armExpeditionBossDefeat(),
       step: (input = {}, deltaSeconds = 1 / 60) =>
         this.stepWorld(input, deltaSeconds),
@@ -302,8 +315,15 @@ export class ArenaDebugController {
       enemyProjectileCount: world.enemyProjectiles.length,
       pickupCount: world.pickups.length,
       obstacleContacts: getArenaObstacleContactCounts(world),
+      captureScenario: this.activeCaptureScenarioId
+        ? {
+            id: this.activeCaptureScenarioId,
+            layers: readArenaCaptureLayers(world, config),
+          }
+        : null,
       feedback: this.dependencies.getFeedbackSnapshot(),
       audioCues: this.dependencies.getAudioCues(),
+      audioRouting: this.dependencies.getAudioRoutingSnapshot(),
       music: this.dependencies.getMusicSnapshot(),
       lastEvents: this.dependencies.runLifecycle.getLastEvents(),
     };
@@ -554,6 +574,18 @@ export class ArenaDebugController {
     }
   }
 
+  private loadCaptureScenario(scenarioId: ArenaCaptureScenarioId): boolean {
+    this.markMutation();
+    const loaded = applyArenaCaptureScenario(
+      this.world,
+      this.config,
+      scenarioId,
+    );
+    this.activeCaptureScenarioId = loaded ? scenarioId : null;
+    if (loaded) this.dependencies.render();
+    return loaded;
+  }
+
   private armExpeditionBossDefeat(): void {
     this.markMutation();
     if (armExpeditionBossDefeatFixture(this.world)) {
@@ -567,6 +599,7 @@ export class ArenaDebugController {
   }
 
   private markMutation(clearInput = true): void {
+    this.activeCaptureScenarioId = null;
     this.dependencies.runLifecycle.markDebugMutation();
     if (clearInput) this.dependencies.clearTransientInput();
   }

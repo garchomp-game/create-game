@@ -156,7 +156,10 @@ export class ArenaScene extends Phaser.Scene {
     this.arenaRenderer = new PhaserArenaRenderer(this, this.simulationConfig, this.viewConfig);
     this.feedbackLayer = new PhaserFeedbackLayer(this);
     this.feedbackLayer.configure(this.settings);
-    this.audioRouter = new PhaserAudioEventRouter(this);
+    this.audioRouter = new PhaserAudioEventRouter(
+      this,
+      loadArenaDebugModules !== null,
+    );
     this.audioRouter.configure(this.settings);
     this.musicController = new PhaserMusicController(this);
     this.musicController.configure(this.settings);
@@ -448,6 +451,7 @@ export class ArenaScene extends Phaser.Scene {
       getFixedSeed: () => this.getFixedRunSeed(),
       getFeedbackSnapshot: () => this.feedbackLayer.getSnapshot(),
       getAudioCues: () => this.audioRouter.getLastCues(),
+      getAudioRoutingSnapshot: () => this.audioRouter.getRoutingSnapshot(),
       getMusicSnapshot: () => this.musicController.getSnapshot(),
       clearTransientInput: () => this.inputAdapter.clearTransientInput(),
       recordResult: (result) => this.recordResult(result),

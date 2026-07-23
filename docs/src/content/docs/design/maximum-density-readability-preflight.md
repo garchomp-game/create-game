@@ -3,13 +3,71 @@ title: 最大密度の可読性・警告音 事前監査
 description: 現行fixture、描画順、音声routeを棚卸しし、最大密度で守る情報と最小実装単位を定義する。
 ---
 
-最終更新日: 2026-07-20
+最終更新日: 2026-07-21
 
 ## 目的
 
 [#80 最大密度の視覚fixtureと警告音分離](https://github.com/garchomp-game/create-game/issues/80)へ着手する前に、現行の証拠で保証できることと、まだ保証できないことを分けます。
 
 このページは実装前の監査です。viewport、layer slot、audio channel、snapshot harness、RC6 baseline fixtureの骨格は先行できます。色、音色、最終asset、警告文は[#66](https://github.com/garchomp-game/create-game/issues/66)と各candidateの意味が決まってから固定します。危険反転candidateのringは[#76](https://github.com/garchomp-game/create-game/issues/76)の単独buildだけへ追加します。
+
+## 共通capture skeleton
+
+2026-07-21時点の最初の実装単位は、最大密度4状態ではなく`rc6-control` 1件です。これはcapture harness自体のcontrolであり、RC6実ランの最大密度や採用候補を表しません。
+
+### 決定論的scenario loader
+
+debug / test専用の共通loaderが、既存のBoss phase 2 fixtureへ固定entityを追加します。乱数を消費せず、同じExpedition初期worldから同じID、配列順、位置、layer countを生成します。
+
+| layer | `rc6-control` |
+| --- | ---: |
+| player | 1 |
+| obstacle | 4 |
+| Bossを含むenemy | 9 |
+| player projectile | 4 |
+| enemy projectile | 6 |
+| XP / REPAIR | 4 / 2 |
+| Boss telegraph | 1 |
+
+`ArenaDebugSnapshot.captureScenario`はscenario IDと現在のlayer countを返します。これは描画対象modelが存在することを確認する観測口であり、各spriteが人間に識別できるという合格判定ではありません。
+
+### capture matrix
+
+共通harnessは同じscenarioを次の3 viewportへloadし、ページ全体を比較します。
+
+- desktop: 960 x 540
+- portrait: 390 x 844
+- landscape wide: 1365 x 600
+
+各captureで、layer count、Boss phase / attack、frame sample、raw frame p95、render layer時間、static background draw count、WebGL非背景pixel、page errorを確認します。portraitは現行PC向けCanvasを縮小したcontrolであり、このPRだけでmobile可読性を合格にしません。
+
+### audio routing観測
+
+既存cue、asset、volume、cooldown、再生順は変更せず、debug / testでだけ有効になる直近40 requestのbounded snapshotを追加します。通常production pathではrouting用objectを生成しません。
+
+- `requested`: event type、cue、scene時刻。
+- `played`: 実際に渡したasset、volume、detune。
+- `suppressed`: victory terminal重複、mute、音量0、cooldown、asset未読込の理由。
+
+すべてのrequestは`played`または`suppressed`の片方へ一度だけ解決されます。semantic priorityや同時発音上限はまだ導入せず、最終の音優先度を先回りしません。
+
+### 非介入境界
+
+- scenario builderはdebug moduleからだけloadし、production gameplayへ接続しない。
+- 既存の小規模visual fixtureと画像を置換しない。
+- simulation event、RNG、score、drop、hitbox、RunRecord、rulesetを変更しない。
+- 色、音色、最終asset、候補固有の成功意味を決めない。
+
+### 自動証拠
+
+- unit: 66 files、431 passed、2 skipped。
+- browser E2E: 76 passed、15分hardware soak 1件はopt-in skip。
+- production build: 203 modules。
+- Starlight: 100 pages。
+- Standard deterministic fixture: event hash `0e5c664a`、world hash `47a80192`を維持。
+- 3 viewportすべてでWebGL非背景pixel、page error 0、layer manifest一致を確認。
+
+次の実装前に、RC6 fixed runの同時count分布を取得し、4つの最大密度fixture値をIssueへ登録します。
 
 ## 現行証拠
 
@@ -55,7 +113,7 @@ playerはworld内で最後に描かれるため輪郭を失いにくい一方、
 - 危険予告、Boss攻撃予告、Charger予告、level upが`levelUp`。
 - Act変更、Boss出現、Commander出現、強化選択が`upgrade`。
 
-異なるcueは同一frameでもそれぞれ再生できます。重要度による排他、ducking、同時発音上限はなく、event配列順が体感へ影響します。`getLastCues()`は再生要求を記録するため、mute、cache未読込、cooldownで実際に鳴らなかったcueも含みます。
+異なるcueは同一frameでもそれぞれ再生できます。重要度による排他、ducking、同時発音上限はなく、event配列順が体感へ影響します。`getLastCues()`は互換性のため従来どおり再生要求を返し、追加したrouting snapshotがmute、cache未読込、cooldownを分離します。
 
 ## 守る情報の優先順位
 

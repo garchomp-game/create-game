@@ -40,16 +40,16 @@ v0.8では機能量を増やす前に、Arena Coreの面白さの核を小さい
 | 0A | [#83](https://github.com/garchomp-game/create-game/issues/83) | 緊張・緩和、near-miss、攻略メタ、公平性の契約 | Work回答と現行カーブ棚卸し | 判断済み。PR #91とdecision logへ責務表を同期 |
 | 0B | [#66](https://github.com/garchomp-game/create-game/issues/66) | 世界観、視覚言語、素材境界 | gameplay数値を変えない比較案 | 背景、敵、警告へ展開できる1方向を選ぶ |
 | UI | [#68](https://github.com/garchomp-game/create-game/issues/68) / [#67](https://github.com/garchomp-game/create-game/issues/67) / [#70](https://github.com/garchomp-game/create-game/issues/70) | 選択画面の可読性と再開操作 | PR #84と比較手順 | candidateを採用、再調整、棄却のいずれかに固定 |
-| T1 | [#97](https://github.com/garchomp-game/create-game/issues/97) | 現行visualのTrainingで説明不足を切り分ける | runtime候補`e87250500304`、owner gate、PR CI、immutable Previewを固定済み | #81で事前教材なしの総合演習とEndless 30秒probeをraw countで判断 |
+| T1 | [#97](https://github.com/garchomp-game/create-game/issues/97) | 現行visualのTrainingで説明不足を切り分ける | 後継runtime候補`2a4fba8a890`とローカルQAを固定済み。owner再確認、current-head CI、新Preview待ち | 3ゲート後、#81で事前教材なしの総合演習とEndless 30秒probeをraw countで判断 |
 | T2 | [#98](https://github.com/garchomp-game/create-game/issues/98) | 撃つ・避ける・取るの視覚意味を変える必要があるか | Phase A fixtureは先行可。runtimeはT1で誤認が残る場合だけ | 変更不要、採用、再設計、延期、棄却を固定 |
-| 0C | [#77](https://github.com/garchomp-game/create-game/issues/77) | candidate非依存のfact、episode、純粋ledger | #83判断済み。既存event棚卸し済み | simulationを変えず共通schemaとinvalid-stateを固定 |
+| 0C | [#77](https://github.com/garchomp-game/create-game/issues/77) | candidate非依存のfact、episode、純粋ledger | PR #102をmain `10198a9e810b`へ統合済み | Phase 0完了。Presenterと容量上限付きsummaryは後続consumerの不足確認後 |
 | 0D | [#93](https://github.com/garchomp-game/create-game/issues/93) | Boss Attack Cardと回復・反撃窓の観測 | RC6 control。runtime候補は入れない | 3攻撃の文法、chain、shadow指標を定義 |
 | 0E | [#94](https://github.com/garchomp-game/create-game/issues/94) | 主敗因、factual near-miss、同条件再挑戦 | #77の共通fact境界 | 純粋集約fixtureとViewModelを固定 |
 | 0F | [#95](https://github.com/garchomp-game/create-game/issues/95) | Standard / Assist / Practice / Overloadの記録契約 | RC6の記録比較契約 | division、eligibility、migrationを先に保証 |
-| 0G | [#80](https://github.com/garchomp-game/create-game/issues/80) | 最大密度fixtureの基盤 | RC6 baseline | viewport、layer、audio channel、snapshot harnessを先行固定 |
+| 0G | [#80](https://github.com/garchomp-game/create-game/issues/80) | 最大密度fixtureの基盤 | PR #103をmain `41ed5f04a9f4`へ統合済み | skeleton完了。最大密度scenarioと警告優先度はcandidate意味確定後 |
 | 0H | [#78](https://github.com/garchomp-game/create-game/issues/78) | 選択停止時間と再開事故の時計境界 | 責務設計は先行可。runtime接続は#70採否後 | wall-clockとsimulation timeを混ぜず計測 |
-| 1 | [#76](https://github.com/garchomp-game/create-game/issues/76) | Charger衝突妨害で危険を反撃機会へ変えられるか | #89統合、main green、#77最小schema、#80最低fixture、定数事前登録 | RC6と別buildで回避と熟練反転をpaired比較 |
-| 2 | [#81](https://github.com/garchomp-game/create-game/issues/81) | candidateを理解し行動へ変えられるか | RC6 baseline手順と#76単独build | 初心者・経験者を分け、raw countで採否 |
+| 1 | [#76](https://github.com/garchomp-game/create-game/issues/76) | Charger衝突妨害で危険を反撃機会へ変えられるか | 共通基盤は統合済み。定数、seed、window、raw-count基準、rollbackの事前登録待ち | RC6と別buildで回避と熟練反転をpaired比較 |
+| 2 | [#81](https://github.com/garchomp-game/create-game/issues/81) | candidateを理解し行動へ変えられるか | T1は固定Previewで開始可。後続cellは各単独build固定後 | 初心者・経験者を分け、raw countで採否 |
 | 3 | [#93](https://github.com/garchomp-game/create-game/issues/93) | Bossの回復または反撃窓1件 | #76の判断記録後。必要な場合だけ | #76と別buildでcontrolと比較 |
 | 4 | [#95](https://github.com/garchomp-game/create-game/issues/95) / [#94](https://github.com/garchomp-game/create-game/issues/94) | 記録分離後の結果・再挑戦UX | division / eligibility / migration完了 | Standardを守ったまま結果導線を接続 |
 | Later | [#92](https://github.com/garchomp-game/create-game/issues/92) / [#79](https://github.com/garchomp-game/create-game/issues/79) | 通常強化offer / 武器教義 | 前段candidateの観察後。互いに別build | 候補運と教義効果を混ぜず個別採否 |
@@ -77,7 +77,7 @@ RC6 baseline
 #92 offer fairness ---- separate later build ---- #79 doctrine
 ```
 
-#77はcandidate固有の合格値を所有せず、Simulation factsを純粋集約する共通基盤です。#80はviewport、layer、audio channel、snapshot harnessを先行でき、candidate固有の色・形・音だけを意味論確定後に固定します。#76と#93のruntime候補、#92と#79はそれぞれ同じbuildへ混ぜません。
+#77はcandidate固有の合格値を所有せず、Simulation factsを純粋集約する共通基盤です。Phase 0はPR #102で統合済みです。#80のviewport、layer manifest、audio routing observation、snapshot harnessもPR #103で統合済みで、candidate固有の色・形・音だけを意味論確定後に固定します。#76と#93のruntime候補、#92と#79はそれぞれ同じbuildへ混ぜません。
 
 ## candidateごとの証拠
 
@@ -108,11 +108,11 @@ RC6 baseline
 
 ## 作業再開チェック
 
-1. **完了**: main `df61f14`のCIがfresh greenで、#86の証拠がSHAへ結び付いている。
-2. **完了**: #88、PR #90、PR #91をmainへ統合した。
-3. **完了**: #83の判断、#93から#95、#97 / #98の責務、#81の再利用レーンをStarlightへ同期した。
-4. **進行中**: #97のT1 runtime候補`e87250500304`はWorkの`revise`必須修正、全自動証拠、owner gate、PR #99のCI、immutable Previewを固定済み。残る採否ゲートは#81の初心者確認だけである。
-5. #80のwarning / impact最低fixtureと#81のbaseline手順を固定している。
+1. **完了**: 品質ゲート、Encounter境界、比較手順、v0.8正本をmainへ統合し、main `6d490a6`の3 job greenを取得した。
+2. **完了**: #83の判断、#93から#95、#97 / #98の責務、#81の再利用レーンをStarlightへ同期した。
+3. **進行中**: #97の後継Training runtime候補`2a4fba8a890`とローカル自動証拠を固定した。owner再確認、current-head CI、新immutable Previewの後に#81の初心者T1へ進む。
+4. **完了**: #77 Phase 0のfact / episode / invalid-state schemaをmainへ統合した。
+5. **完了**: #80の共通capture skeletonと#81のbaseline手順を固定した。
 6. #76で変更する仮説、値、seed、raw-count基準、stop condition、rollbackを事前登録している。
 7. production v0.6.8を変更しないことを再確認している。
 

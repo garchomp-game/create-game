@@ -1,4 +1,11 @@
-import type { AudioCueId } from "./PhaserAudioEventRouter";
+import type {
+  AudioCueId,
+  AudioRoutingSnapshot,
+} from "./PhaserAudioEventRouter";
+import type {
+  ArenaCaptureLayerSnapshot,
+  ArenaCaptureScenarioId,
+} from "./ArenaCaptureScenarios";
 import type { FeedbackSnapshot } from "./PhaserFeedbackLayer";
 import type { MusicSnapshot } from "./PhaserMusicController";
 import type { SecondaryMenu } from "./PhaserMenuLayout";
@@ -111,8 +118,13 @@ export type ArenaDebugSnapshot = {
   enemyProjectileCount: number;
   pickupCount: number;
   obstacleContacts: ArenaObstacleContactCounts;
+  captureScenario: {
+    id: ArenaCaptureScenarioId;
+    layers: ArenaCaptureLayerSnapshot;
+  } | null;
   feedback: FeedbackSnapshot;
   audioCues: AudioCueId[];
+  audioRouting: AudioRoutingSnapshot;
   music: MusicSnapshot;
   lastEvents: GameEvent[];
 };
@@ -198,6 +210,7 @@ export type ArenaDebugApi = {
   setExpeditionCommanderFixture(): void;
   setExpeditionChargerFixture(): void;
   setExpeditionBossFixture(attackId?: BossAttackId, phase?: 1 | 2): void;
+  loadCaptureScenario(scenarioId: ArenaCaptureScenarioId): boolean;
   armExpeditionBossDefeat(): void;
   step(input?: Partial<InputSnapshot>, deltaSeconds?: number): void;
 };
