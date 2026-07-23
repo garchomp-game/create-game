@@ -28,13 +28,13 @@ const CANDIDATE_CONFIG: SimulationConfig = {
 };
 
 describe("Breakwater Fan", () => {
-  it("charges from three distinct close-range targets in one normal volley", () => {
+  it("charges from two distinct close-range targets in one normal volley", () => {
     const world = createBreakwaterWorld();
     const events: GameEvent[] = [];
     updateShooting(world, true, CANDIDATE_CONFIG, events);
     const bullet = world.bullets[0]!;
 
-    for (let index = 0; index < 3; index += 1) {
+    for (let index = 0; index < 2; index += 1) {
       recordBreakwaterNormalHit(
         world,
         bullet,

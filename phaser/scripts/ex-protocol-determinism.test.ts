@@ -84,7 +84,7 @@ function createSignatureSession(
   session.start({
     seed: 20260723,
     weaponType: weaponId,
-    rulesetProfileId: "candidate-ex-endless-c1",
+    rulesetProfileId: "candidate-ex-endless-c2",
   });
   prepareFinalNormalChoice(session.world);
   const cursor = new ExProtocolReplayCursor(tape);

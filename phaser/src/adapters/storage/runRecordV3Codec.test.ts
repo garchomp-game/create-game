@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { SIMULATION_CONFIG } from "../../config/gameConfig";
 import {
   ENDLESS_RULESET_VERSION,
+  EX_PROTOCOL_C1_ENDLESS_RULESET_VERSION,
+  EX_PROTOCOL_CANDIDATE_APP_VERSION,
   EX_PROTOCOL_ENDLESS_RULESET_VERSION,
 } from "../../config/version";
 import {
@@ -31,6 +33,17 @@ describe("RunRecord v3 codec", () => {
       ok: true,
       record,
     });
+  });
+
+  it("keeps candidate-one records readable after candidate-two is introduced", () => {
+    const record: RunRecordV3 = {
+      ...makeCandidateRecord(),
+      appVersion: "0.8.0-candidate.1",
+      rulesetVersion: EX_PROTOCOL_C1_ENDLESS_RULESET_VERSION,
+      rulesetProfileId: "candidate-ex-endless-c1",
+    };
+
+    expect(decodeRunRecordV3(record)).toEqual({ ok: true, record });
   });
 
   it("rejects invalid route membership, order, and unknown counters", () => {
@@ -145,9 +158,9 @@ function makeCandidateRecord(): RunRecordV3 {
   const record = createRunRecord({
     context: {
       ...makeRecordInput().context,
-      appVersion: "0.8.0-candidate.1",
+      appVersion: EX_PROTOCOL_CANDIDATE_APP_VERSION,
       rulesetVersion: EX_PROTOCOL_ENDLESS_RULESET_VERSION,
-      rulesetProfileId: "candidate-ex-endless-c1",
+      rulesetProfileId: "candidate-ex-endless-c2",
       rngVersion: "arena-rng-v2",
       runRecordSchemaVersion: RUN_RECORD_SCHEMA_VERSION_V3,
       exProtocolsEnabled: true,

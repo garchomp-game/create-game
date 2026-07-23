@@ -9,6 +9,10 @@ description: 6体系・24 route候補の回帰、20 seed比較、90秒soak、Fin
 このレポートはcandidateの自動QAです。production既定はOFFで、外部push、PR、main統合、production traffic配分は行っていません。Cloudflare Version Previewは確認用であり、実GPU耐久と人間による操作・可読性・選択品質は未実施です。
 :::
 
+:::note[C1の履歴]
+このページの値は`candidate.1 / protocols-c1`の固定結果です。owner確認後、過負荷契約の廃止と発動条件・説明の単純化を行ったC2を別rulesetに分離しました。C1の数値をC2の効果値として扱いません。
+:::
+
 ## 対象
 
 - branch: `feat/v08-ex-protocols-c1`

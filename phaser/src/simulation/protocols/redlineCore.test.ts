@@ -24,6 +24,31 @@ const CANDIDATE_CONFIG: SimulationConfig = {
 };
 
 describe("Redline Core", () => {
+  it("amplifies the hit that reaches maximum focus", () => {
+    const world = createRedlineWorld();
+    const events: GameEvent[] = [];
+    updateShooting(world, true, CANDIDATE_CONFIG, events);
+    const bullet = world.bullets[0]!;
+    const enemy = createEnemy("enemy-trigger", bullet.position, 100);
+    enemy.pulseFocusStacks = 2;
+    enemy.pulseFocusExpiresAt = 10;
+    world.enemies = [enemy];
+
+    resolveCombat(world, CANDIDATE_CONFIG, events);
+
+    const baseDamage = CANDIDATE_CONFIG.weapons.pulse.damage;
+    const focusedDamage =
+      baseDamage +
+      baseDamage * world.runtime.pulseFocusBonusPerStack * 2;
+    expect(enemy.hp).toBeCloseTo(100 - focusedDamage * 1.4);
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        type: "ex.redline.hit",
+        totalDamage: focusedDamage * 1.4,
+      }),
+    );
+  });
+
   it("amplifies a pre-existing maximum-focus hit and restores capacity once", () => {
     const world = createRedlineWorld();
     const events: GameEvent[] = [];

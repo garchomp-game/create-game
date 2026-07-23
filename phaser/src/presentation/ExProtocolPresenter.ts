@@ -16,7 +16,7 @@ import type {
 import { getPlayerCapacity } from "../simulation/systems/playerHealthSystem";
 
 export type ExProtocolChoiceFactViewModel = {
-  label: "TRIGGER" | "EFFECT" | "COST / LIMIT";
+  label: "発動条件" | "効果" | "制約";
   text: string;
 };
 
@@ -66,8 +66,8 @@ export function createExProtocolChoiceViewModel(
   ) {
     return {
       kind: "protocol",
-      title: "EX Lv 0 / PROTOCOL SELECT",
-      subtitle: "通常ビルドに接続する戦闘教義を選択",
+      title: "EX Lv 0 / 固有能力を選択",
+      subtitle: "通常ビルドへ追加する能力を1つ選択",
       footer: "1 / 2 / 3 で選択",
       cards: pending.choices.map(createProtocolCard),
     };
@@ -118,11 +118,11 @@ export function createExProtocolHudViewModel(
     return {
       ...base,
       primary: runtime.anchor
-        ? `端点 ACTIVE ${formatTenths(remaining)}`
-        : "稼働中",
+        ? `記録 ${formatTenths(remaining)}`
+        : "集束MAXで記録",
       secondary: runtime.anchor
-        ? "端点保持中 / 別の敵へ通常弾を当てる"
-        : "最大集束から導線を生成",
+        ? "別の敵へ当てると連鎖"
+        : "同じ敵へ連続命中",
     };
   }
   if (runtime.kind === "rebound-overdrive") {
@@ -157,7 +157,7 @@ export function createExProtocolHudViewModel(
     return {
       ...base,
       primary: "稼働中",
-      secondary: `予約HP ${capacity.reservedHp}/${capacity.grossMaxHp} (${ratio}%)`,
+      secondary: `集束MAX命中を強化 / 最大HP -${ratio}%`,
     };
   }
   if (runtime.kind === "full-span-tidal-sweep") {
@@ -211,10 +211,10 @@ export function createExProtocolHudViewModel(
   }
   return {
     ...base,
-    primary: "稼働中",
+    primary: "自動迎撃",
     secondary: progression.route.masteryUnlocked
       ? `完全防護 ${runtime.perfectGuardCharges}/${aegisFan.mastery.maxCharges}`
-      : "外縁弾で標準敵弾を迎撃",
+      : "左右端の弾が通常敵弾を消す",
   };
 }
 
@@ -302,7 +302,7 @@ function createProtocolCard(
     summary: copy.summary,
     facts: copy.facts,
     inputHint:
-      definition.interaction === "active" ? "RMB / E で能動発動" : null,
+      definition.interaction === "active" ? "RMB / E で発動" : null,
     ariaLabel: [
       title,
       copy.role,
@@ -332,7 +332,7 @@ function createEvolutionCard(
     role: `${definition.displayNameJa} / EVOLUTION ${tier === 1 ? "I" : "II"}`,
     title,
     summary: effect,
-    facts: [{ label: "EFFECT", text: effect }],
+    facts: [{ label: "効果", text: effect }],
     inputHint: null,
     ariaLabel: `${title}。EFFECT: ${effect}`,
   };
@@ -343,100 +343,100 @@ function getProtocolCopy(
 ): Pick<ExProtocolChoiceCardViewModel, "role" | "summary" | "facts"> {
   if (protocolId === resonanceRelay.id) {
     return {
-      role: "射線編集・集束消費",
-      summary: "最大集束した2体を導線で結び、射線上の敵へ連鎖する。",
+      role: "自動 / 集束連鎖",
+      summary: "集束MAXの地点と次に撃った敵を結び、間の敵へ連鎖する。",
       facts: [
         {
-          label: "TRIGGER",
-          text: `最大集束した敵を${resonanceRelay.signature.anchorLifetimeSeconds}秒間端点にし、後続の通常Pulse射撃を別の敵へ当てる。`,
+          label: "発動条件",
+          text: `同じ敵への連続命中で集束MAXにすると、その場所を${resonanceRelay.signature.anchorLifetimeSeconds}秒記録。時間内に別の敵へ通常Pulse弾を当てる。倒した敵の場所も記録する。`,
         },
         {
-          label: "EFFECT",
-          text: `間にいる最大${resonanceRelay.signature.maxIntermediateTargets}体へ通常弾の${formatPercent(resonanceRelay.signature.damageMultiplier)}ダメージ。`,
+          label: "効果",
+          text: `記録地点と次の敵の間にいる最大${resonanceRelay.signature.maxIntermediateTargets}体へ、通常弾の${formatPercent(resonanceRelay.signature.damageMultiplier)}ダメージ。`,
         },
         {
-          label: "COST / LIMIT",
-          text: "障害物で遮断。同じ射撃内では成立せず、成立時は端点の集束を失う。",
+          label: "制約",
+          text: "障害物で遮断される。同じ射撃内では発動せず、発動すると記録と元の敵の集束を消費する。",
         },
       ],
     };
   }
   if (protocolId === reboundOverdrive.id) {
     return {
-      role: "能動反射・貫通再装填",
-      summary: "次の通常射撃を武装し、反射時に貫通枠を再装填する。",
+      role: "手動 / 反射弾強化",
+      summary: "次の1射を強化し、跳ね返った瞬間にその弾の貫通力を戻す。",
       facts: [
         {
-          label: "TRIGGER",
-          text: `RMB / Eで次の通常Pulse射撃を${reboundOverdrive.signature.armDurationSeconds}秒間武装。Cooldown ${reboundOverdrive.signature.cooldownSeconds}秒。`,
+          label: "発動条件",
+          text: `RMB / Eを押し、${reboundOverdrive.signature.armDurationSeconds}秒以内に通常Pulse弾を撃つ。その弾を壁か障害物で跳ね返す。`,
         },
         {
-          label: "EFFECT",
-          text: "最初の反射時、残り貫通数を発射時の値まで回復。",
+          label: "効果",
+          text: "最初に跳ね返った瞬間、その弾の残り貫通回数を発射時の値まで戻す。",
         },
         {
-          label: "COST / LIMIT",
-          text: "時間切れ・空振り・未反射でもcooldownを返却せず、同じ敵の再命中制限は維持。",
+          label: "制約",
+          text: `${reboundOverdrive.signature.cooldownSeconds}秒間は再使用できない。時間切れ・空振り・未反射でも待ち時間は発生する。`,
         },
       ],
     };
   }
   if (protocolId === redlineCore.id) {
     return {
-      role: "HP上限予約・精密火力",
-      summary: "生存余力を予約し、最大集束への直撃を高火力化する。",
+      role: "自動 / HP交換火力",
+      summary: "最大HPを減らす代わりに、集束MAXになる命中を高火力化する。",
       facts: [
         {
-          label: "TRIGGER",
-          text: "最大集束へ到達済みの敵へ、反射前の通常Pulse弾を直撃。",
+          label: "発動条件",
+          text: "同じ敵へ通常Pulse弾を連続で当て、集束をMAXにする。MAXになった一撃から発動する。",
         },
         {
-          label: "EFFECT",
-          text: `命中を${formatPercent(redlineCore.signature.redlineDamageMultiplier)}へ増幅し、同じ弾で一度だけ貫通数を${redlineCore.signature.capacityRestore}回復。`,
+          label: "効果",
+          text: `その命中を${formatPercent(redlineCore.signature.redlineDamageMultiplier)}へ増幅し、同じ弾の貫通回数を一度だけ${redlineCore.signature.capacityRestore}回復する。`,
         },
         {
-          label: "COST / LIMIT",
-          text: `gross最大HPの${formatPercent(1 - redlineCore.signature.effectiveMaxHpMultiplier)}を予約。実効最大HPは${formatPercent(redlineCore.signature.effectiveMaxHpMultiplier)}。`,
+          label: "制約",
+          text: `選んだ時点から最大HPが${formatPercent(redlineCore.signature.effectiveMaxHpMultiplier)}になる。反射後の命中では発動しない。`,
         },
       ],
     };
   }
   if (protocolId === fullSpanTidalSweep.id) {
     return {
-      role: "全幅捕捉・能動斉射",
-      summary: "Spread全幅で敵群を捉え、広角の潮汐斉射へ変換する。",
+      role: "手動 / 多数命中斉射",
+      summary: "1回のSpread射撃で3体に当てると、広角9発の斉射を使える。",
       facts: [
         {
-          label: "TRIGGER",
-          text: `通常Spreadの両外縁弾を別々の敵へ当て、合計${fullSpanTidalSweep.signature.chargeDistinctTargets}体を捉えてcharge。RMB / Eで発動。`,
+          label: "発動条件",
+          text: `1回の通常Spread射撃を別々の敵${fullSpanTidalSweep.signature.chargeDistinctTargets}体へ当てるとCHARGE。RMB / Eで発動する。`,
         },
         {
-          label: "EFFECT",
-          text: `前方${fullSpanTidalSweep.signature.arcRadians}radへ${fullSpanTidalSweep.signature.projectileCount}発。各弾${formatPercent(fullSpanTidalSweep.signature.damageMultiplier)}、最大${fullSpanTidalSweep.signature.hitCapacity}体。`,
+          label: "効果",
+          text: `前方約${formatDegrees(fullSpanTidalSweep.signature.arcRadians)}°へ${fullSpanTidalSweep.signature.projectileCount}発。各弾は通常弾の${formatPercent(fullSpanTidalSweep.signature.damageMultiplier)}ダメージで、敵${fullSpanTidalSweep.signature.hitCapacity}体まで貫通する。`,
         },
         {
-          label: "COST / LIMIT",
-          text: `開始0、最大${fullSpanTidalSweep.signature.maxCharges} charge。再使用には再chargeが必要。潮汐弾自身ではchargeしない。`,
+          label: "制約",
+          text: `開始時はCHARGE 0、最大${fullSpanTidalSweep.signature.maxCharges}。発動後は通常Spread射撃でもう一度ためる必要がある。`,
         },
       ],
     };
   }
   if (protocolId === breakwaterFan.id) {
     return {
-      role: "近距離破囲・HP支出",
-      summary: "近距離の捕捉を、HPを支払う即時の前方制圧へ変換する。",
+      role: "手動 / 緊急離脱",
+      summary: "近くの2体へ当てて準備し、HPを使って前方の敵を押し返す。",
       facts: [
         {
-          label: "TRIGGER",
-          text: `${breakwaterFan.signature.chargeRangePx}px以内の別々の敵${breakwaterFan.signature.chargeDistinctTargets}体へ命中してcharge。RMB / Eで発動。`,
+          label: "発動条件",
+          text: `プレイヤーから${breakwaterFan.signature.chargeRangePx}px以内で、1回の通常Spread射撃を別々の敵${breakwaterFan.signature.chargeDistinctTargets}体へ当てるとCHARGE。RMB / Eで発動する。`,
         },
         {
-          label: "EFFECT",
+          label: "効果",
           text: `前方${breakwaterFan.signature.coneAngleDegrees}°・${breakwaterFan.signature.rangePx}px内の最大${breakwaterFan.signature.maxTargets}体を攻撃し、通常敵をpush。`,
         },
         {
-          label: "COST / LIMIT",
-          text: `選択時gross最大HPの${formatPercent(breakwaterFan.signature.costGrossHpSnapshotRatio)}を支出。Cooldown ${breakwaterFan.signature.cooldownSeconds}秒。対象0でも消費。`,
+          label: "制約",
+          text: `発動ごとに、選択時の最大HPの${formatPercent(breakwaterFan.signature.costGrossHpSnapshotRatio)}を現在HPから消費する。HPは1未満にならず、対象0でも消費する。再使用まで${breakwaterFan.signature.cooldownSeconds}秒。`,
         },
       ],
     };
@@ -445,20 +445,20 @@ function getProtocolCopy(
     throw new Error(`Unsupported EX Protocol "${protocolId}".`);
   }
   return {
-    role: "外縁火力・方向防御交換",
-    summary: "左右外縁弾の火力を、防御方向を作る迎撃能力へ交換する。",
+    role: "自動 / 敵弾迎撃",
+    summary: "Spreadの左右端2発が、前方で交差した通常敵弾を自動で消す。",
     facts: [
       {
-        label: "TRIGGER",
-        text: "通常Spread射撃の左右外縁弾が自動で迎撃弾になる。",
+        label: "発動条件",
+        text: "操作不要。通常Spread射撃の左右端2発が自動で迎撃弾になる。",
       },
       {
-        label: "EFFECT",
-        text: `各外縁弾は標準敵弾を${aegisFan.signature.interceptsPerEdgeProjectile}発迎撃。`,
+        label: "効果",
+        text: `左右端の弾は、それぞれ通常敵弾を${aegisFan.signature.interceptsPerEdgeProjectile}発まで消す。`,
       },
       {
-        label: "COST / LIMIT",
-        text: `外縁弾の対敵ダメージは${formatPercent(aegisFan.signature.edgeEnemyDamageMultiplier)}。迎撃時に消失し、Boss弾・反射後・背面は防げない。`,
+        label: "制約",
+        text: `左右端の弾が敵へ与えるダメージは${formatPercent(aegisFan.signature.edgeEnemyDamageMultiplier)}。迎撃すると弾は消え、ボス弾・反射後・背後の敵弾は防げない。`,
       },
     ],
   };
@@ -471,21 +471,21 @@ function formatEvolutionEffect(
 ): string {
   if (protocolId === resonanceRelay.id) {
     if (tier === 1 && evolutionId === resonanceRelay.evolutionOne[0].id) {
-      return `端点の持続時間: ${resonanceRelay.signature.anchorLifetimeSeconds}秒 → ${resonanceRelay.evolutionOne[0].anchorLifetimeSeconds}秒`;
+      return `地点を記録する時間: ${resonanceRelay.signature.anchorLifetimeSeconds}秒 → ${resonanceRelay.evolutionOne[0].anchorLifetimeSeconds}秒`;
     }
     if (tier === 1 && evolutionId === resonanceRelay.evolutionOne[1].id) {
       return `導線の最大中間対象: ${resonanceRelay.signature.maxIntermediateTargets}体 → ${resonanceRelay.evolutionOne[1].maxIntermediateTargets}体`;
     }
     if (tier === 2 && evolutionId === resonanceRelay.evolutionTwo[0].id) {
-      return `導線成立後、元の端点に集束${resonanceRelay.evolutionTwo[0].remainingAnchorFocusStacks}を残す`;
+      return `連鎖成立後、元の敵に集束${resonanceRelay.evolutionTwo[0].remainingAnchorFocusStacks}を残す`;
     }
     if (tier === 2 && evolutionId === resonanceRelay.evolutionTwo[1].id) {
-      return `遮られず成立した導線の終点に集束+${resonanceRelay.evolutionTwo[1].endpointBonusFocusStacks}`;
+      return `連鎖が成立した次の敵に集束+${resonanceRelay.evolutionTwo[1].endpointBonusFocusStacks}`;
     }
   }
   if (protocolId === reboundOverdrive.id) {
     if (tier === 1 && evolutionId === reboundOverdrive.evolutionOne[0].id) {
-      return `Cooldown: ${reboundOverdrive.signature.cooldownSeconds}秒 → ${reboundOverdrive.evolutionOne[0].cooldownSeconds}秒`;
+      return `再使用まで: ${reboundOverdrive.signature.cooldownSeconds}秒 → ${reboundOverdrive.evolutionOne[0].cooldownSeconds}秒`;
     }
     if (tier === 1 && evolutionId === reboundOverdrive.evolutionOne[1].id) {
       return `最初の反射時、発射時の貫通数に加えて+${reboundOverdrive.evolutionOne[1].capacityBonus}まで回復`;
@@ -516,7 +516,7 @@ function formatEvolutionEffect(
       tier === 1 &&
       evolutionId === fullSpanTidalSweep.evolutionOne[0].id
     ) {
-      return `潮汐射撃の扇角: ${fullSpanTidalSweep.signature.arcRadians}rad → ${fullSpanTidalSweep.evolutionOne[0].arcRadians}rad`;
+      return `潮汐射撃の扇角: 約${formatDegrees(fullSpanTidalSweep.signature.arcRadians)}° → 約${formatDegrees(fullSpanTidalSweep.evolutionOne[0].arcRadians)}°`;
     }
     if (
       tier === 1 &&
@@ -665,6 +665,10 @@ function formatProtocolName(
 
 function formatPercent(multiplier: number): string {
   return `${Math.round(multiplier * 100)}%`;
+}
+
+function formatDegrees(radians: number): string {
+  return `${Math.round((radians * 180) / Math.PI)}`;
 }
 
 function formatTenths(seconds: number): string {

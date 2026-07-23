@@ -102,7 +102,7 @@ v0.8はコンテンツ量を増やす前に、Arena Coreの面白さの核を単
 | 0C | [#77](https://github.com/garchomp-game/create-game/issues/77) | candidate非依存のsimulation facts、純粋ledger集計、Presenter境界 |
 | 0D | [#93](https://github.com/garchomp-game/create-game/issues/93) | ボス攻撃文法、回復窓、反撃窓の観測契約 |
 | 0E | [#94](https://github.com/garchomp-game/create-game/issues/94) | 主敗因、実測near-miss、同条件再挑戦の事実契約 |
-| 0F | [#95](https://github.com/garchomp-game/create-game/issues/95) | Standard / Assist / Practice / OverloadとPB分離、旧記録migration |
+| 0F | [#95](https://github.com/garchomp-game/create-game/issues/95) | Standard / Assist / PracticeとPB分離、旧記録migration。OverloadはC2で廃止 |
 | 0G | [#80](https://github.com/garchomp-game/create-game/issues/80) | candidate非依存の最大密度fixture骨格。色・音・意味は後続 |
 | 0H | [#78](https://github.com/garchomp-game/create-game/issues/78) | 二時計と責務境界。runtimeは#70採否後 |
 | 1 | [#76](https://github.com/garchomp-game/create-game/issues/76) | Charger衝突妨害による危険反転だけをpaired比較 |

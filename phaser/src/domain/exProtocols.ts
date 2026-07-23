@@ -29,6 +29,7 @@ export type ResonanceRelayRuntime = ExProtocolRuntimeBase & {
   nextActivationId: number;
   anchor: {
     enemyId: string;
+    position: { x: number; y: number };
     expiresAt: number;
     createdByVolleyId: number;
   } | null;

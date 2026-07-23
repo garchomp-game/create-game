@@ -73,6 +73,23 @@ describe("ArenaSession", () => {
     });
   });
 
+  it("retires the Endless contract only in the EX candidate profile", () => {
+    const legacy = new ArenaSession(SIMULATION_CONFIG);
+    legacy.start({ seed: 1, weaponType: "pulse" });
+    expect(legacy.config.features.endlessContract).toBe(true);
+
+    const candidate = new ArenaSession(SIMULATION_CONFIG);
+    candidate.start({
+      seed: 1,
+      weaponType: "pulse",
+      rulesetProfileId: "candidate-ex-endless-c2",
+    });
+    expect(candidate.config.features).toMatchObject({
+      exProtocols: true,
+      endlessContract: false,
+    });
+  });
+
   it("starts the final expedition with isolated runtime features and progress state", () => {
     const session = new ArenaSession(SIMULATION_CONFIG);
     session.start({

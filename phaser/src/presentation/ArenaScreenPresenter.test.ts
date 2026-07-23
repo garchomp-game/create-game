@@ -235,7 +235,7 @@ describe("createArenaScreenViewModel", () => {
     uiState.latestRunRecord = {
       ...record,
       schemaVersion: 3,
-      rulesetProfileId: "candidate-ex-endless-c1",
+      rulesetProfileId: "candidate-ex-endless-c2",
       rngVersion: "arena-rng-v2",
       exProtocol: {
         offeredIds: [

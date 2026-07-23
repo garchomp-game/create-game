@@ -17,6 +17,8 @@ v0.8の最初の独立candidateとして、[#97](https://github.com/garchomp-gam
 
 branch `feat/v08-ex-protocols-c1`では、Core完成後に武器互換の固定3択、E1 / E2、Masteryを追加する[EX Protocol候補](../../design/ex-protocols/)を実装しています。Pulse / Spread各3体系、全24 route、Active入力、候補専用ruleset、RunRecord v3、非破壊legacy reconcile、固有telemetry、representative E2E、probe / soakを持ちます。20 seed比較、90秒soak、20 seed x 2武器のFinal Expedition露出を含む利用可能な自動gateはgreenです。runtime `03805713cf83`では、HTML、初期タイトル、ベータ情報、フィードバック文面を`0.8.0-candidate.1 / phaser-v0.8-ex-protocols-c1`へ統一し、最新9課題Trainingを含む[固定Preview](https://v08-ex-protocols-c1-0380571-arena-core.garchomp-game.workers.dev/)を作成しました。production既定はOFFで、外部push / PR / production traffic配分は未実施です。非SwiftShader実GPUの15分耐久と人間6体系gateが残るため、現行production状態としては数えません。実測値は[EX Protocol candidate 自動QA](../../playtest/v08-ex-protocol-candidate-report/)を参照してください。
 
+ownerの初回確認では、通常Endlessだけでも手動・AutoPilotとも有限終了へ収束するため過負荷契約が冗長であり、Protocolの比喩名から発動条件を読み取りにくく、Relay / Redline / Tidal / Breakwaterの成立条件が厳しいと判断しました。後継C2は`0.8.0-candidate.2 / phaser-v0.8-ex-protocols-c2`へ分離し、Endless契約を無効化、カードを「発動条件・効果・制約」へ書き換え、Relayの撃破地点記録、RedlineのMAX到達弾、Tidal 3体、Breakwater 2体、Rebound受付2秒へ限定調整しています。C1 profileと記録は読取可能な履歴として残します。
+
 ゲーム数値はv0.6.6のままです。672.20秒 / 92728点でアリーナ崩壊2段階へ到達したPulse手動ランにより、精密射撃調整の採用を完了しました。Pulseは照準・貫通・反射角で成果上限を伸ばす単線武器、Spreadは広角の複数標的処理を安定させる武器として分かれています。
 
 アリーナ内の4障害物とPulse外周反射フィールドを公開ルールとして採用しました。直近のPulse / Spread各2手動ランは約2.5万点から3.3万点、約350秒から417秒へ重なり、Pulseだけが外周追撃1332命中・625撃破を記録しています。外周反射はSpreadを直接強化せず、Pulseの貫通順と復路射線を成果へ変えるため、数値を変えず有効のまま固定します。ルール版は`phaser-v0.6.8-pulse-boundary-ricochet`へ分け、旧記録を新ランキングへ混ぜません。
@@ -29,7 +31,7 @@ branch `feat/v08-ex-protocols-c1`では、Core完成後に武器互換の固定3
 | 戦闘 | プレイヤー弾の連続衝突・貫通順、敵接触、敵弾、障害物・Pulse外周反射、遮蔽物による射線管理 |
 | 敵 | 追跡、重量、高速、遠距離の4種類。直線追跡と共有経路場を切り替える |
 | 成長 | XP回収、分類付き3択強化、武器別25ランクの通常ビルド、外周対応の反響回路 / 掃射循環、循環型EXレベル |
-| 進行 | 時間帯別ウェーブ、無制限の脅威ティア、3種の危険イベント、240秒の後半契約、600秒からのアリーナ崩壊。Draft候補に記録なしTraining |
+| 進行 | 時間帯別ウェーブ、無制限の脅威ティア、3種の危険イベント、legacyでは240秒の後半契約、600秒からのアリーナ崩壊。EX C2では後半契約を無効化。Draft候補に記録なしTraining |
 | 記録 | `RunRecord` v2、profile別の総合 / 武器別PB、random / fixed実seed、mode別ruleset、比較条件別上位10件、保存中のranked record最新時刻による比較group最大16件 |
 | 画面 | Phaser 4 WebGLのタイトル、一時停止、2列リザルト、履歴、ランキング、設定、ベータ情報、可変桁HUD、DOM開始武器 / 強化 / 契約。Draft候補にTraining案内 / 完了画面 |
 | 設定 | BGM、効果音、揺れ、点滅、自動射撃の保存と初期化 |

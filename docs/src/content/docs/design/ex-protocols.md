@@ -6,7 +6,7 @@ description: 通常ビルド完成後に武器固有の判断を追加する、6
 最終更新日: 2026-07-23
 
 :::caution[候補の状態]
-このページはbranch `feat/v08-ex-protocols-c1`のcandidate仕様です。production既定値はOFFで、Version Previewだけを公開し、PR、main統合、production traffic配分、採用判断は行っていません。自動試験は実装整合性を保証しますが、面白さと武器ごとの弱点維持は人間ゲートが必要です。
+このページはbranch `feat/v08-ex-protocols-c1`のC2 candidate仕様です。production既定値はOFFで、PR、main統合、production traffic配分、採用判断は行っていません。C1 Previewと自動QAは比較履歴として残し、C2はownerの可読性・成立頻度フィードバックを受けた別rulesetです。
 :::
 
 ## 目的
@@ -38,16 +38,16 @@ Core最後の選択後はsimulationを1 frameも進めず、`upgrade.selected ->
 
 | Protocol | 種別 | 操作変化 | 残す弱点 |
 | --- | --- | --- | --- |
-| 交差導線 / Resonance Relay | Passive / Line Control | 最大集束した端点と後続直撃を結び、障害物に遮られない線上の中間敵へ追加damage | 端点準備、別volley、射線が必要。横に散った群れへ自動対応しない |
-| 反跳過給 / Rebound Overdrive | Active / Ricochet | `右クリック`または`E`で次の通常弾を武装し、実際の反射後だけ貫通容量を再装填 | 反射面と経路がなければ不発。汎用DPS buttonにしない |
-| 赤熱炉心 / Redline Core | Passive / High Risk | effective最大HPを70%へ予約し、最大集束済みの直撃を強化 | 最大HP低下を恒久的に負い、集束途中や反射後hitは強化しない |
+| 交差導線 / Resonance Relay | Passive / Line Control | 集束MAXになった地点を1.5秒記録し、後続直撃との間にいる敵へ追加damage。撃破地点も記録する | 別volleyと障害物に遮られない射線が必要。横に散った群れへ自動対応しない |
+| 反跳過給 / Rebound Overdrive | Active / Ricochet | `右クリック`または`E`で2秒以内の次弾を武装し、実際の反射後だけ貫通容量を再装填 | 反射面と経路がなければ不発。汎用DPS buttonにしない |
+| 赤熱炉心 / Redline Core | Passive / High Risk | effective最大HPを70%へ予約し、集束MAXへ到達する直撃から強化 | 最大HP低下を恒久的に負い、集束途中や反射後hitは強化しない |
 
 ### Spread
 
 | Protocol | 種別 | 操作変化 | 残す弱点 |
 | --- | --- | --- | --- |
-| 全幅潮汐掃討 / Full-span Tidal Sweep | Active / Sweep | 通常5弾すべてで別々の敵を捉えてchargeし、9弾の広域斉射へ変換 | 全幅捕捉が必要。単体へ9重hitせず、再使用には再chargeが必要 |
-| 防波扇 / Breakwater Fan | Active / Front Control | 近距離3体hitでchargeし、HPを支払って前方扇形だけをdamageとpushで開く | 全周防御ではなく、HP 1未満になる発動と障害物越しを拒否 |
+| 全幅潮汐掃討 / Full-span Tidal Sweep | Active / Sweep | 1回の通常Spread射撃を別々の3体へ当ててchargeし、9弾の広域斉射へ変換 | 単体へ9重hitせず、再使用には通常射撃での再chargeが必要 |
+| 防波扇 / Breakwater Fan | Active / Front Control | 190px以内で1回の通常Spread射撃を別々の2体へ当ててchargeし、HPを支払って前方だけをdamageとpushで開く | 全周防御ではなく、HP 1未満になる発動と障害物越しを拒否 |
 | 護壁扇 / Aegis Fan | Passive / Defense | 扇の外側2弾の対敵火力を下げ、反射前の正面標準敵弾を迎撃 | boss弾、接触、崩壊、背面を無効化しない。外側弾の火力を失う |
 
 ProtocolとEvolutionの表示順は固定し、RNGを消費しません。IDとscalar値のruntime正本は`phaser/src/content/ex-protocols.v1.json`、意味と解決順は各Protocol systemとfixtureです。実測に合わせて数値を無断調整しません。
@@ -61,7 +61,7 @@ ProtocolとEvolutionの表示順は固定し、RNGを消費しません。IDとs
 | Training | `disabled` | 基本操作の学習へ後半選択とspecialを混ぜない |
 | 未対応stage / 旧ruleset | 起動時に拒否または旧profile維持 | 暗黙fallbackと記録混在を防ぐ |
 
-候補profileはEndlessを`phaser-v0.8-ex-protocols-c1`、Final Expeditionを`phaser-v0.8-final-expedition-ex-protocols-c1`へ分けます。production profileの`features.exProtocols`は`false`です。
+候補profileはEndlessを`phaser-v0.8-ex-protocols-c2`、Final Expeditionを`phaser-v0.8-final-expedition-ex-protocols-c2`へ分けます。C1 profileは保存済みRunRecordの読取用に残し、production profileの`features.exProtocols`は`false`です。
 
 ## 操作契約
 
@@ -73,15 +73,15 @@ ProtocolとEvolutionの表示順は固定し、RNGを消費しません。IDとs
 - Active未選択、候補OFF、Training、title、resultではlistener自体または効果を有効にしない。
 - Active選択中の拒否理由は`already-armed`、`cooldown`、`not-charged`、`insufficient-hp`の優先順で1件だけ記録する。
 
-## 240秒契約との調停
+## 過負荷契約の扱い
 
-Protocol、Evolution、Limit Breakを解決した後は、契約表示まで最低8秒の`playing`を保証します。240秒を超えていても即座に契約へ重ねません。
+C2では240秒の過負荷契約を表示しません。通常Endlessだけでも脅威、危険イベント、アリーナ崩壊により手動・AutoPilotとも有限終了へ収束し、敵速度とスコア倍率を同時に変える追加選択は比較条件と選択停止を増やす方が大きいと判断しました。
 
-同じ`playing`更新で契約とEX levelが成立した場合は契約を先に表示します。契約解決後、保持XPが閾値へ達していれば次の`playing`更新でEX選択へ進みます。
+legacy v0.6.8とC1のprofile、保存済み`contractChoice`は読取互換のため残します。過負荷UIとsimulation実装を破壊的に削除せず、C2 profileの`features.endlessContract: false`で到達不能にします。
 
 ## 表示とフィードバック
 
-- Protocolは役割、発動条件、効果、代償または制限の順で表示する。
+- Protocolは「自動 / 手動」と役割を先に示し、「発動条件」「効果」「制約」の平易な日本語で表示する。
 - Evolutionは現在のSignatureと取得後の数値を表示する。
 - HUDはProtocol名、状態、charge、cooldown、Redline予約HPを表示する。
 - Active成功、拒否、charge、Mastery成立は、短い文字、形状、固有音を組み合わせ、色だけに依存しない。
@@ -112,7 +112,9 @@ candidate branchで次を個別に用意しています。
 | Final Expedition | 両武器20 seed用のProtocol露出probe。smokeではPulseがE2、Mastery、最初のLimit Break、boss phase 2、勝利へ到達 |
 | UI | 6 Protocolの代表戦闘fixtureとdesktop画像、選択、HUD、結果route |
 
-短いcandidate gateに加え、最終設定での20 seed release matrix、90秒release soak、両武器40本のFinal Expedition露出までgreenです。実測値とreview triggerは[EX Protocol candidate 自動QA](../../playtest/v08-ex-protocol-candidate-report/)へ分離しました。残る自動化外のgateは、非SwiftShader実GPUの15分耐久と6体系の人間評価です。
+C1では短いcandidate gateに加え、20 seed release matrix、90秒release soak、両武器40本のFinal Expedition露出までgreenです。実測値とreview triggerは[EX Protocol candidate 自動QA](../../playtest/v08-ex-protocol-candidate-report/)へ分離しました。
+
+C2はC1の`opportunity=0`とowner feedbackを根拠に、発動条件と説明だけを改訂した比較候補です。対象micro fixture、全unit、型、短い2 seed probe、選択画面の横・縦browser fixtureを先に通し、20 seed、soak、Final Expeditionは採用候補を固定するときにまとめて再実行します。
 
 probe専用policyは固定Protocol routeとActive使用機会だけを補助し、製品AutoPilotの移動安全性や武器別生存方針を変更しません。probeのscore差だけで数値を自動調整しません。
 

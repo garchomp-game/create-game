@@ -52,6 +52,7 @@ export function resolveRedlineDamage(
   enemy: Enemy,
   ricochetsUsed: number,
   stackBefore: number,
+  stackAfter: number,
   normalResolvedDamage: number,
 ): RedlineDamageResolution | null {
   const progression = world.progression.exProtocol;
@@ -103,7 +104,9 @@ export function resolveRedlineDamage(
   const qualifiesForRedline =
     ricochetsUsed === 0 &&
     world.runtime.pulseFocusMaxStacks > 0 &&
-    stackBefore >= world.runtime.pulseFocusMaxStacks;
+    (definition.signature.requiresStackBeforeAtMaximum
+      ? stackBefore
+      : stackAfter) >= world.runtime.pulseFocusMaxStacks;
   if (!qualifiesForRedline) {
     return {
       damage: normalResolvedDamage,

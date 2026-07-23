@@ -60,7 +60,7 @@ test("selects Protocol, Evolution I/II, and enters Limit Break", async ({
   const evolutionOne = overlay.locator("[data-choice-kind='evolution']");
   await expect(evolutionOne).toHaveCount(2);
   await expect(overlay).toContainText("EVOLUTION I");
-  await expect(evolutionOne.nth(0)).toContainText("0.9秒 → 1.5秒");
+  await expect(evolutionOne.nth(0)).toContainText("1.5秒 → 2.25秒");
 
   await evolutionOne.nth(0).focus();
   await page.keyboard.press("1");
@@ -275,7 +275,7 @@ test("persists candidate runs as v3 with provenance and Protocol aggregate", asy
   expect(persisted.envelope.schemaVersion).toBe(3);
   expect(persisted.envelope.history[0]).toMatchObject({
     schemaVersion: 3,
-    rulesetProfileId: "candidate-ex-endless-c1",
+    rulesetProfileId: "candidate-ex-endless-c2",
     rngVersion: "arena-rng-v2",
     exProtocol: {
       selectedId: "pulse.resonance-relay",

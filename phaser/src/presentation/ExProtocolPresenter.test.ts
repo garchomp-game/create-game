@@ -25,22 +25,22 @@ describe("EX Protocol choice presentation", () => {
 
     expect(viewModel).toMatchObject({
       kind: "protocol",
-      title: "EX Lv 0 / PROTOCOL SELECT",
+      title: "EX Lv 0 / 固有能力を選択",
       cards: [
         { id: "pulse.resonance-relay", inputHint: null },
         {
           id: "pulse.rebound-overdrive",
-          inputHint: "RMB / E で能動発動",
+          inputHint: "RMB / E で発動",
         },
         { id: "pulse.redline-core", inputHint: null },
       ],
     });
     expect(viewModel?.cards[0]?.facts.map((fact) => fact.label)).toEqual([
-      "TRIGGER",
-      "EFFECT",
-      "COST / LIMIT",
+      "発動条件",
+      "効果",
+      "制約",
     ]);
-    expect(viewModel?.cards[1]?.facts[0]?.text).toContain("1.25秒");
+    expect(viewModel?.cards[1]?.facts[0]?.text).toContain("2秒以内");
     expect(viewModel?.cards[2]?.facts[2]?.text).toContain("70%");
   });
 
@@ -62,7 +62,7 @@ describe("EX Protocol choice presentation", () => {
       ],
     });
     expect(evolutionOne?.cards[0]?.summary).toBe(
-      "端点の持続時間: 0.9秒 → 1.5秒",
+      "地点を記録する時間: 1.5秒 → 2.25秒",
     );
 
     chooseExProtocolEvolution(world, 0, config, []);
@@ -100,14 +100,15 @@ describe("EX Protocol HUD presentation", () => {
     world.state.elapsed = 4;
     progression.runtime.anchor = {
       enemyId: "enemy-7",
+      position: { x: 400, y: 270 },
       expiresAt: 4.85,
       createdByVolleyId: 10,
     };
 
     expect(createExProtocolHudViewModel(world, config)).toMatchObject({
       name: "交差導線",
-      primary: "端点 ACTIVE 0.9s",
-      secondary: "端点保持中 / 別の敵へ通常弾を当てる",
+      primary: "記録 0.9s",
+      secondary: "別の敵へ当てると連鎖",
     });
   });
 
@@ -137,7 +138,7 @@ describe("EX Protocol HUD presentation", () => {
     expect(createExProtocolHudViewModel(world, config)).toMatchObject({
       name: "赤熱炉心",
       primary: "稼働中",
-      secondary: "予約HP 30/100 (30%)",
+      secondary: "集束MAX命中を強化 / 最大HP -30%",
     });
   });
 
@@ -163,7 +164,7 @@ describe("EX Protocol HUD presentation", () => {
     expect(createExProtocolHudViewModel(world, config)).toMatchObject({
       name: "全幅潮汐掃討",
       primary: "発動可能  [RMB / E]  CHARGE 1/1",
-      secondary: "捕捉 3/5",
+      secondary: "捕捉 3/3",
     });
   });
 
@@ -191,7 +192,7 @@ describe("EX Protocol HUD presentation", () => {
     expect(createExProtocolHudViewModel(world, config)).toMatchObject({
       name: "防波扇",
       primary: "CHARGE 1/1",
-      secondary: "再装填 4.3s / 捕捉 2/3",
+      secondary: "再装填 4.3s / 捕捉 2/2",
     });
   });
 
@@ -209,7 +210,7 @@ describe("EX Protocol HUD presentation", () => {
 
     expect(createExProtocolHudViewModel(world, config)).toMatchObject({
       name: "護壁扇",
-      primary: "稼働中",
+      primary: "自動迎撃",
       secondary: "完全防護 1/1",
     });
     expect(formatSelectedExProtocolRoute(world)).toContain("MASTERY");
@@ -252,7 +253,7 @@ function createCandidate(weaponType: WeaponTypeId): {
     weaponType,
     rulesetProfileId:
       weaponType === "spread" || weaponType === "pulse"
-        ? "candidate-ex-endless-c1"
+        ? "candidate-ex-endless-c2"
         : undefined,
   });
   return { world: session.world, config: session.config };

@@ -272,12 +272,13 @@ function applyStageToConfig(
             ...baseConfig.features,
             exProtocols: rulesetProfile.features.exProtocols,
             encounterDeck: false,
-            endlessContract: false,
+            endlessContract: rulesetProfile.features.endlessContract,
             arenaCollapse: false,
           }
         : {
             ...baseConfig.features,
             exProtocols: rulesetProfile.features.exProtocols,
+            endlessContract: rulesetProfile.features.endlessContract,
           },
     arena: {
       width: stage.arena.width,

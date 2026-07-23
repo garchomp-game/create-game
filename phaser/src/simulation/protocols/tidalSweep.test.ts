@@ -30,21 +30,21 @@ const CANDIDATE_CONFIG: SimulationConfig = {
 };
 
 describe("Full-span Tidal Sweep", () => {
-  it("charges from five distinct normal targets captured by both outer projectiles", () => {
+  it("charges from three distinct normal targets without requiring both outer projectiles", () => {
     const world = createTidalWorld();
-    world.runtime.projectileCountBonus = 2;
     const events: GameEvent[] = [];
     updateShooting(world, true, CANDIDATE_CONFIG, events);
-    expect(world.bullets).toHaveLength(5);
+    expect(world.bullets).toHaveLength(3);
+    const bullet = world.bullets[1]!;
 
-    world.bullets.forEach((bullet, index) => {
+    for (let index = 0; index < 3; index += 1) {
       recordTidalNormalHit(
         world,
         bullet,
         createEnemy(`enemy-${index}`, 100 + index * 20, 270),
         events,
       );
-    });
+    }
 
     expect(getRuntime(world).charges).toBe(1);
     expect(events).toContainEqual(

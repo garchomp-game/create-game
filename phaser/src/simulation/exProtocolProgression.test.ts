@@ -193,7 +193,7 @@ describe("EX Protocol progression", () => {
     );
   });
 
-  it("gives an already displayed choice priority and delays the 240s contract", () => {
+  it("keeps the EX choice flow and never offers the retired 240s contract", () => {
     const session = createCandidateSession("pulse");
     const { world, config } = session;
     completeNormalBuild(world, config);
@@ -211,25 +211,18 @@ describe("EX Protocol progression", () => {
     expect(world.encounter.contract.status).toBe("pending");
 
     chooseExProtocol(world, 0, config, []);
-    expect(world.encounter.contract.notBefore).toBe(248);
+    world.state.elapsed = 300;
     updateEncounter(
       world,
       session.randomStreams.encounter,
       config,
       [],
     );
+    expect(world.state.status).toBe("playing");
     expect(world.encounter.contract.status).toBe("pending");
-    world.state.elapsed = 248;
-    updateEncounter(
-      world,
-      session.randomStreams.encounter,
-      config,
-      [],
-    );
-    expect(world.state.status).toBe("contractSelect");
   });
 
-  it("lets the contract win when its threshold and Core completion share a playing frame", () => {
+  it("lets Core completion win at the former contract threshold", () => {
     const session = createCandidateSession("pulse");
     const { world, config } = session;
     completeNormalBuild(world, config);
@@ -239,8 +232,9 @@ describe("EX Protocol progression", () => {
 
     session.step(idleInput, 0.05);
 
-    expect(world.state.status).toBe("contractSelect");
-    expect(world.progression.buildCompletedAt).toBeNull();
+    expect(world.state.status).toBe("protocolSelect");
+    expect(world.progression.pendingChoice?.kind).toBe("protocol");
+    expect(world.encounter.contract.status).toBe("pending");
   });
 
   it("skips unsupported debug weapons without a soft lock", () => {
@@ -287,7 +281,7 @@ function createCandidateSession(
   session.start({
     seed: 20260723,
     weaponType,
-    rulesetProfileId: "candidate-ex-endless-c1",
+    rulesetProfileId: "candidate-ex-endless-c2",
   });
   if (session.randomStreams.version !== "arena-rng-v2") {
     throw new Error("Candidate session did not resolve RNG v2.");

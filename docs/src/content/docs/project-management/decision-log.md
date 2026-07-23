@@ -1095,3 +1095,17 @@ production既定値はOFFのままです。外部push、PR、main merge、Cloudf
 - 実URL、HTML meta、ベータ情報、canvas表示、console error 0を確認した。production traffic、main、既存Training固定Previewは変更しない。
 
 固定URLは[EX Protocol C1 Preview](https://v08-ex-protocols-c1-0380571-arena-core.garchomp-game.workers.dev/)とする。
+
+## 2026-07-23: 過負荷契約を外しEX Protocol C2の条件と説明を単純化する
+
+決定: ownerのC1確認と既存20 seed計測を受け、C1の値を上書きせず`0.8.0-candidate.2 / phaser-v0.8-ex-protocols-c2`を別candidateとして作る。通常Endlessだけで手動・AutoPilotとも有限終了へ収束するため、C2では240秒の過負荷契約を表示しない。
+
+- C1で`opportunity=0`だった交差導線は、集束MAXの記録時間を0.9秒から1.5秒へ延ばし、敵を倒した場合も撃破地点から後続連鎖を解決できるようにする。
+- 赤熱炉心は、集束MAXへ到達済みの次弾ではなく、集束MAXへ到達する命中から発動する。
+- 反跳過給の次弾受付を1.25秒から2秒へ延ばす。cooldown、未反射時の不発、反射経路を要求する教義は維持する。
+- 全幅潮汐掃討は同一通常volleyの別敵3体、防波扇は190px以内の別敵2体でchargeする。damage、HP cost、cooldown、単体多重hit制限は変更しない。
+- 護壁扇は成立頻度ではなく説明の問題と判断し、数値を変更せず「左右端の弾が通常敵弾を自動で消す」と明記する。
+- 選択カードは英語ラベルと内部用語を避け、「自動 / 手動」「発動条件」「効果」「制約」を平易な日本語で表示する。
+- C1 profile、ruleset、RunRecord、`contractChoice`は読取互換のため残す。旧挙動を破壊的に削除せず、C2 profileのfeature flagで契約を到達不能にする。
+
+品質ゲートは対象micro fixture、全unit、型、短いpaired probe、横・縦の選択画面fixtureを変更中に回し、20 seed、soak、Final ExpeditionはC2の人間確認後、採用候補を固定するときに一度だけ再実行する。C1の自動QA値は比較履歴であり、C2の効果値として再利用しない。

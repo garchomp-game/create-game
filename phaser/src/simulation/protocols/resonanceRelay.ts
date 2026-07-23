@@ -52,14 +52,19 @@ export function updateResonanceRelayLifecycle(world: WorldState): void {
   const runtime = progression.runtime;
   const anchor = runtime.anchor;
   if (!anchor) return;
+  if (world.state.elapsed >= anchor.expiresAt) {
+    runtime.anchor = null;
+    return;
+  }
   const anchorEnemy = world.enemies.find(
     (enemy) => enemy.id === anchor.enemyId,
   );
-  if (
-    world.state.elapsed >= anchor.expiresAt ||
-    !anchorEnemy ||
-    anchorEnemy.hp <= 0
-  ) {
+  if (anchorEnemy && anchorEnemy.hp > 0) {
+    anchor.position = { ...anchorEnemy.position };
+    return;
+  }
+  const definition = EX_PROTOCOL_CATALOG.protocols[0];
+  if (!definition.signature.resolveRelayFromLethalEndpointSnapshot) {
     runtime.anchor = null;
   }
 }
@@ -90,14 +95,16 @@ export function resolveResonanceAfterNormalHit(
       ) ?? null
     : null;
   const endpointEligible =
-    anchorEnemy !== null &&
-    anchorEnemy.id !== endpoint.id &&
-    bullet.volleyId > priorAnchor!.createdByVolleyId &&
+    priorAnchor !== null &&
+    priorAnchor.enemyId !== endpoint.id &&
+    bullet.volleyId > priorAnchor.createdByVolleyId &&
     hit.priorDirectHits === 0 &&
     hit.ricochetsUsed === 0;
 
-  if (endpointEligible) {
-    const anchorPosition = { ...anchorEnemy.position };
+  if (endpointEligible && priorAnchor) {
+    const anchorPosition = anchorEnemy
+      ? { ...anchorEnemy.position }
+      : { ...priorAnchor.position };
     const endpointPosition = { ...hit.endpointPositionBeforeHit };
     const definition = EX_PROTOCOL_CATALOG.protocols[0];
     const blocked = !hasClearNavigationPath(
@@ -109,7 +116,7 @@ export function resolveResonanceAfterNormalHit(
     if (blocked) {
       events.push({
         type: "ex.relay.blocked",
-        anchorEnemyId: anchorEnemy.id,
+        anchorEnemyId: priorAnchor.enemyId,
         endpointEnemyId: endpoint.id,
         elapsed: world.state.elapsed,
       });
@@ -119,7 +126,7 @@ export function resolveResonanceAfterNormalHit(
     const candidates = findRelayCandidates(
       world,
       bullet,
-      anchorEnemy,
+      priorAnchor.enemyId,
       endpoint,
       anchorPosition,
       endpointPosition,
@@ -161,17 +168,19 @@ export function resolveResonanceAfterNormalHit(
     }
 
     const residualAnchor = definition.evolutionTwo[0];
-    const anchorFocusBeforeReset = anchorEnemy.pulseFocusStacks ?? 0;
-    anchorEnemy.pulseFocusStacks =
-      progression.route.evolutionTwoId === residualAnchor.id
-        ? residualAnchor.remainingAnchorFocusStacks
-        : definition.signature.resetAnchorFocusStacks;
+    const anchorFocusBeforeReset = anchorEnemy?.pulseFocusStacks ?? 0;
+    if (anchorEnemy) {
+      anchorEnemy.pulseFocusStacks =
+        progression.route.evolutionTwoId === residualAnchor.id
+          ? residualAnchor.remainingAnchorFocusStacks
+          : definition.signature.resetAnchorFocusStacks;
+    }
     incrementExProtocolCounter(
       world.stats.exProtocolMetrics,
       "focusStacksConsumed",
       Math.max(
         0,
-        anchorFocusBeforeReset - (anchorEnemy.pulseFocusStacks ?? 0),
+        anchorFocusBeforeReset - (anchorEnemy?.pulseFocusStacks ?? 0),
       ),
     );
     runtime.anchor = null;
@@ -199,7 +208,14 @@ export function resolveResonanceAfterNormalHit(
       hit.maximumStacks > 0 &&
       (endpoint.pulseFocusStacks ?? hit.stackAfter) >= hit.maximumStacks
     ) {
-      commitAnchor(world, bullet, endpoint, events, false);
+      commitAnchor(
+        world,
+        bullet,
+        endpoint,
+        hit.endpointPositionBeforeHit,
+        events,
+        false,
+      );
     }
     return;
   }
@@ -212,15 +228,17 @@ export function resolveResonanceAfterNormalHit(
     return;
   }
   if (
-    hit.endpointSurvived &&
     hit.maximumStacks > 0 &&
     hit.stackAfter >= hit.maximumStacks &&
-    hit.ricochetsUsed === 0
+    hit.ricochetsUsed === 0 &&
+    (hit.endpointSurvived ||
+      EX_PROTOCOL_CATALOG.protocols[0].signature.createAnchorFromLethalHit)
   ) {
     commitAnchor(
       world,
       bullet,
       endpoint,
+      hit.endpointPositionBeforeHit,
       events,
       priorAnchor?.enemyId === endpoint.id,
     );
@@ -231,6 +249,7 @@ function commitAnchor(
   world: WorldState,
   bullet: Bullet,
   enemy: Enemy,
+  position: Vec2,
   events: GameEvent[],
   refreshed: boolean,
 ): void {
@@ -250,6 +269,7 @@ function commitAnchor(
   const expiresAt = world.state.elapsed + lifetime;
   progression.runtime.anchor = {
     enemyId: enemy.id,
+    position: { ...position },
     expiresAt,
     createdByVolleyId: bullet.volleyId,
   };
@@ -266,7 +286,7 @@ function commitAnchor(
 function findRelayCandidates(
   world: WorldState,
   bullet: Bullet,
-  anchor: Enemy,
+  anchorEnemyId: string,
   endpoint: Enemy,
   start: Vec2,
   end: Vec2,
@@ -275,7 +295,7 @@ function findRelayCandidates(
   const candidates: RelayCandidate[] = [];
   for (const enemy of world.enemies) {
     if (
-      enemy === anchor ||
+      enemy.id === anchorEnemyId ||
       enemy === endpoint ||
       enemy.hp <= 0 ||
       enemy.boss ||

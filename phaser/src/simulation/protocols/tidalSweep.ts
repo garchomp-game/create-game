@@ -147,9 +147,14 @@ export function recordTidalNormalHit(
   const distinctOuterPair = leftIds.some((leftId) =>
     rightIds.some((rightId) => rightId !== leftId),
   );
+  const outerRequirementMet =
+    !definition.signature.requireBothOuterProjectiles ||
+    (definition.signature.requireDistinctOuterTargets
+      ? distinctOuterPair
+      : leftIds.length > 0 && rightIds.length > 0);
   if (
     enemyIds.length < definition.signature.chargeDistinctTargets ||
-    !distinctOuterPair
+    !outerRequirementMet
   ) {
     return;
   }

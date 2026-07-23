@@ -111,7 +111,7 @@ function createSession(weaponType: "pulse" | "spread"): ArenaSession {
   session.start({
     seed: 20260723,
     weaponType,
-    rulesetProfileId: "candidate-ex-endless-c1",
+    rulesetProfileId: "candidate-ex-endless-c2",
   });
   return session;
 }

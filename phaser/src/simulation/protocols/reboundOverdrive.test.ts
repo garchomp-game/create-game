@@ -66,7 +66,7 @@ describe("Rebound Overdrive", () => {
 
     updateReboundLifecycle(world, true, events);
     updateReboundLifecycle(world, true, events);
-    world.state.elapsed = 1.26;
+    world.state.elapsed = 2.01;
     updateReboundLifecycle(world, false, events);
 
     expect(events.map((event) => event.type)).toEqual([

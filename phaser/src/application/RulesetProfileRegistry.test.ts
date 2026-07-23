@@ -12,18 +12,18 @@ describe("RulesetProfileRegistry", () => {
       randomStreamVersion: "arena-rng-v1",
       runRecordSchemaVersion: 2,
       rankPolicy: "standard",
-      features: { exProtocols: false },
+      features: { exProtocols: false, endlessContract: true },
     });
     expect(
       resolveRulesetProfile("expedition", "final-expedition"),
     ).toMatchObject({
       id: "legacy-final-expedition-rc6",
-      features: { exProtocols: false },
+      features: { exProtocols: false, endlessContract: false },
     });
     expect(resolveRulesetProfile("training", "basic-training")).toMatchObject({
       id: "legacy-training-v07",
       rankPolicy: "none",
-      features: { exProtocols: false },
+      features: { exProtocols: false, endlessContract: false },
     });
   });
 
@@ -32,23 +32,37 @@ describe("RulesetProfileRegistry", () => {
       resolveRulesetProfile(
         "endless",
         "arena-default",
-        "candidate-ex-endless-c1",
+        "candidate-ex-endless-c2",
       ),
     ).toMatchObject({
-      rulesetVersion: "phaser-v0.8-ex-protocols-c1",
+      rulesetVersion: "phaser-v0.8-ex-protocols-c2",
       randomStreamVersion: "arena-rng-v2",
       runRecordSchemaVersion: 3,
       rankPolicy: "non-standard",
-      features: { exProtocols: true },
+      features: { exProtocols: true, endlessContract: false },
     });
     expect(() =>
       resolveRulesetProfile(
         "training",
         "basic-training",
-        "candidate-ex-endless-c1",
+        "candidate-ex-endless-c2",
       ),
     ).toThrow(/not valid/);
-    expect(getRulesetProfiles()).toHaveLength(5);
+    expect(getRulesetProfiles()).toHaveLength(7);
+  });
+
+  it("retains the candidate-one profile tuple for stored record decoding", () => {
+    expect(
+      resolveRulesetProfile(
+        "endless",
+        "arena-default",
+        "candidate-ex-endless-c1",
+      ),
+    ).toMatchObject({
+      appVersion: "0.8.0-candidate.1",
+      rulesetVersion: "phaser-v0.8-ex-protocols-c1",
+      features: { exProtocols: true, endlessContract: true },
+    });
   });
 
   it("rejects forged profile IDs", () => {

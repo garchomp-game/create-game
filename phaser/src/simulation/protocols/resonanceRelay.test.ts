@@ -171,6 +171,71 @@ describe("Resonance Relay", () => {
       ),
     ).toBe(false);
   });
+
+  it("resolves from the stored position of a lethal maximum-focus hit", () => {
+    const world = createResonanceWorld();
+    const events: GameEvent[] = [];
+    updateShooting(world, true, CANDIDATE_CONFIG, events);
+    const bullet = world.bullets[0]!;
+    const anchor = createEnemy(
+      "enemy-lethal-anchor",
+      bullet.position.x,
+      270,
+      1,
+      1,
+    );
+    anchor.pulseFocusStacks = 2;
+    anchor.pulseFocusExpiresAt = 10;
+    world.enemies = [anchor];
+
+    resolveCombat(world, CANDIDATE_CONFIG, events);
+
+    expect(world.enemies).toHaveLength(0);
+    expect(getRuntime(world).anchor).toMatchObject({
+      enemyId: anchor.id,
+      position: anchor.position,
+      expiresAt: 1.5,
+    });
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        type: "ex.relay.anchor.created",
+        enemyId: anchor.id,
+      }),
+    );
+
+    world.player.position = { x: 800, y: 270 };
+    world.state.lastAim = { x: -1, y: 0 };
+    world.state.shotTimer = 0;
+    updateShooting(world, true, CANDIDATE_CONFIG, events);
+    const endpointBullet = world.bullets[0]!;
+    const endpoint = createEnemy(
+      "enemy-endpoint",
+      endpointBullet.position.x,
+      270,
+      100,
+      3,
+    );
+    const intermediate = createEnemy(
+      "enemy-intermediate",
+      450,
+      270,
+      100,
+      2,
+    );
+    world.enemies = [endpoint, intermediate];
+
+    resolveCombat(world, CANDIDATE_CONFIG, events);
+
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        type: "ex.relay.resolved",
+        targetCount: 1,
+      }),
+    );
+    expect(intermediate.hp).toBeCloseTo(
+      100 - CANDIDATE_CONFIG.weapons.pulse.damage * 0.55,
+    );
+  });
 });
 
 function createResonanceWorld(): WorldState {

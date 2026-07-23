@@ -142,6 +142,7 @@ export function resolveBulletEnemyHit(
     enemy,
     segment.ricochetsUsed,
     focusHit.stackBefore,
+    focusHit.stackAfter,
     normalResolvedDamage,
   );
   const rebound = resolveReboundDamage(

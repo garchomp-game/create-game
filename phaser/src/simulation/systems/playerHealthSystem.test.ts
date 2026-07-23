@@ -64,7 +64,7 @@ function createRedlineSession(): ArenaSession {
   session.start({
     seed: 20260723,
     weaponType: "pulse",
-    rulesetProfileId: "candidate-ex-endless-c1",
+    rulesetProfileId: "candidate-ex-endless-c2",
   });
   for (const upgradeId of Object.keys(
     session.world.progression.upgradeRanks,

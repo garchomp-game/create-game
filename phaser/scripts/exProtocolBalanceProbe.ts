@@ -128,7 +128,7 @@ export function createCompletedExProtocolProbeSession(options: {
     seed: options.seed,
     weaponType: options.weaponId,
     rulesetProfileId: protocol
-      ? "candidate-ex-endless-c1"
+      ? "candidate-ex-endless-c2"
       : undefined,
   });
   const startElapsedSeconds = options.startElapsedSeconds ?? 300;

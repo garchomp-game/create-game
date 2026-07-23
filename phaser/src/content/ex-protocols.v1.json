@@ -30,7 +30,7 @@
       "interaction": "passive",
       "identity": ["focus", "line"],
       "signature": {
-        "anchorLifetimeSeconds": 0.9,
+        "anchorLifetimeSeconds": 1.5,
         "relayHalfWidthPx": 6,
         "maxIntermediateTargets": 3,
         "damageMultiplier": 0.55,
@@ -43,14 +43,14 @@
         "endpointRequiresFirstEnemyHit": true,
         "refreshAnchorOnSurvivingMaxFocusDirectHit": true,
         "resolveRelayFromLethalEndpointSnapshot": true,
-        "createAnchorFromLethalHit": false
+        "createAnchorFromLethalHit": true
       },
       "evolutionOne": [
         {
           "id": "extended-coupling",
           "displayNameJa": "延長結合",
           "displayNameEn": "Extended Coupling",
-          "anchorLifetimeSeconds": 1.5
+          "anchorLifetimeSeconds": 2.25
         },
         {
           "id": "dense-conduit",
@@ -90,7 +90,7 @@
       "interaction": "active",
       "identity": ["ricochet", "line"],
       "signature": {
-        "armDurationSeconds": 1.25,
+        "armDurationSeconds": 2,
         "cooldownSeconds": 6,
         "capacityRestoreMode": "at-least-capacity-at-fire",
         "capacityBonus": 0,
@@ -146,7 +146,7 @@
         "effectiveMaxHpMultiplier": 0.7,
         "redlineDamageMultiplier": 1.4,
         "capacityRestore": 1,
-        "requiresStackBeforeAtMaximum": true,
+        "requiresStackBeforeAtMaximum": false,
         "directPreRicochetHitOnly": true
       },
       "evolutionOne": [
@@ -197,10 +197,10 @@
       "interaction": "active",
       "identity": ["sweep", "multi-target"],
       "signature": {
-        "chargeDistinctTargets": 5,
+        "chargeDistinctTargets": 3,
         "initialCharges": 0,
-        "requireBothOuterProjectiles": true,
-        "requireDistinctOuterTargets": true,
+        "requireBothOuterProjectiles": false,
+        "requireDistinctOuterTargets": false,
         "maxCharges": 1,
         "projectileCount": 9,
         "arcRadians": 1.05,
@@ -259,9 +259,9 @@
       "interaction": "active",
       "identity": ["front-control", "hp-cost"],
       "signature": {
-        "chargeDistinctTargets": 3,
+        "chargeDistinctTargets": 2,
         "initialCharges": 0,
-        "chargeRangePx": 160,
+        "chargeRangePx": 190,
         "maxCharges": 1,
         "cooldownSeconds": 6,
         "costGrossHpSnapshotRatio": 0.1,

@@ -41,7 +41,7 @@ describe("EX Protocol Final Expedition exposure", () => {
       const results = weapons.flatMap((weaponId) =>
         seeds.map((seed) =>
           executeExpedition(weaponId, seed, {
-            rulesetProfileId: "candidate-ex-final-expedition-c1",
+            rulesetProfileId: "candidate-ex-final-expedition-c2",
             exProtocolPath: PATHS[weaponId],
           }).result,
         ),

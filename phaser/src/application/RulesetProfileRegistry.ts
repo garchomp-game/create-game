@@ -4,6 +4,9 @@ import {
   DEFAULT_MODE_ID,
   DEFAULT_STAGE_ID,
   ENDLESS_RULESET_VERSION,
+  EX_PROTOCOL_C1_APP_VERSION,
+  EX_PROTOCOL_C1_ENDLESS_RULESET_VERSION,
+  EX_PROTOCOL_C1_FINAL_RULESET_VERSION,
   EX_PROTOCOL_CANDIDATE_APP_VERSION,
   EX_PROTOCOL_ENDLESS_RULESET_VERSION,
   EX_PROTOCOL_FINAL_RULESET_VERSION,
@@ -32,7 +35,7 @@ const RULESET_PROFILES = [
     randomStreamVersion: RANDOM_STREAM_VERSION,
     runRecordSchemaVersion: 2,
     rankPolicy: "standard",
-    features: { exProtocols: false },
+    features: { exProtocols: false, endlessContract: true },
   },
   {
     id: "legacy-final-expedition-rc6",
@@ -43,7 +46,7 @@ const RULESET_PROFILES = [
     randomStreamVersion: RANDOM_STREAM_VERSION,
     runRecordSchemaVersion: 2,
     rankPolicy: "standard",
-    features: { exProtocols: false },
+    features: { exProtocols: false, endlessContract: false },
   },
   {
     id: "legacy-training-v07",
@@ -54,10 +57,32 @@ const RULESET_PROFILES = [
     randomStreamVersion: RANDOM_STREAM_VERSION,
     runRecordSchemaVersion: 2,
     rankPolicy: "none",
-    features: { exProtocols: false },
+    features: { exProtocols: false, endlessContract: false },
   },
   {
     id: "candidate-ex-endless-c1",
+    modeId: DEFAULT_MODE_ID,
+    stageId: DEFAULT_STAGE_ID,
+    appVersion: EX_PROTOCOL_C1_APP_VERSION,
+    rulesetVersion: EX_PROTOCOL_C1_ENDLESS_RULESET_VERSION,
+    randomStreamVersion: RANDOM_STREAM_VERSION_V2,
+    runRecordSchemaVersion: 3,
+    rankPolicy: "non-standard",
+    features: { exProtocols: true, endlessContract: true },
+  },
+  {
+    id: "candidate-ex-final-expedition-c1",
+    modeId: EXPEDITION_MODE_ID,
+    stageId: FINAL_EXPEDITION_STAGE_ID,
+    appVersion: EX_PROTOCOL_C1_APP_VERSION,
+    rulesetVersion: EX_PROTOCOL_C1_FINAL_RULESET_VERSION,
+    randomStreamVersion: RANDOM_STREAM_VERSION_V2,
+    runRecordSchemaVersion: 3,
+    rankPolicy: "non-standard",
+    features: { exProtocols: true, endlessContract: false },
+  },
+  {
+    id: "candidate-ex-endless-c2",
     modeId: DEFAULT_MODE_ID,
     stageId: DEFAULT_STAGE_ID,
     appVersion: EX_PROTOCOL_CANDIDATE_APP_VERSION,
@@ -65,10 +90,10 @@ const RULESET_PROFILES = [
     randomStreamVersion: RANDOM_STREAM_VERSION_V2,
     runRecordSchemaVersion: 3,
     rankPolicy: "non-standard",
-    features: { exProtocols: true },
+    features: { exProtocols: true, endlessContract: false },
   },
   {
-    id: "candidate-ex-final-expedition-c1",
+    id: "candidate-ex-final-expedition-c2",
     modeId: EXPEDITION_MODE_ID,
     stageId: FINAL_EXPEDITION_STAGE_ID,
     appVersion: EX_PROTOCOL_CANDIDATE_APP_VERSION,
@@ -76,7 +101,7 @@ const RULESET_PROFILES = [
     randomStreamVersion: RANDOM_STREAM_VERSION_V2,
     runRecordSchemaVersion: 3,
     rankPolicy: "non-standard",
-    features: { exProtocols: true },
+    features: { exProtocols: true, endlessContract: false },
   },
 ] as const satisfies readonly RulesetProfile[];
 
@@ -136,13 +161,13 @@ export function resolveExProtocolCandidateProfileId(
   stageId: string,
 ): RulesetProfileId | undefined {
   if (modeId === DEFAULT_MODE_ID && stageId === DEFAULT_STAGE_ID) {
-    return "candidate-ex-endless-c1";
+    return "candidate-ex-endless-c2";
   }
   if (
     modeId === EXPEDITION_MODE_ID &&
     stageId === FINAL_EXPEDITION_STAGE_ID
   ) {
-    return "candidate-ex-final-expedition-c1";
+    return "candidate-ex-final-expedition-c2";
   }
   return undefined;
 }
