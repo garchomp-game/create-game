@@ -59,6 +59,16 @@ v0.8 EX Protocol C1は最新9課題Trainingを含む別candidateとして、prod
 | Cloudflare Version ID | `03136d33-db46-462c-a1c9-b742f459000d` |
 | 実URL確認日 | 2026-07-23 |
 
+ownerのC1確認後、過負荷契約を外し発動条件と説明を単純化したC2も、productionへ配分せず別Previewへ固定します。
+
+| 項目 | 値 |
+| --- | --- |
+| Preview URL | `https://v08-ex-protocols-c2-9b886a6-arena-core.garchomp-game.workers.dev` |
+| アプリ / 既定ruleset | `0.8.0-candidate.2` / `phaser-v0.8-ex-protocols-c2` |
+| Runtime commit | `9b886a641cbf` |
+| Cloudflare Version ID | `766175d4-891f-48d6-8bb9-37da6bb9564d` |
+| 実URL確認日 | 2026-07-23 |
+
 静的ファイルの取得ではWorkerスクリプトを実行しません。ランキング、共有履歴、アカウントAPIは公開ベータ後に`/api/*`として追加し、それまではプロフィール、履歴、ローカルランキングをブラウザの`localStorage`へ保存します。
 
 ## 初回認証

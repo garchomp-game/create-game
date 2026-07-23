@@ -114,7 +114,7 @@ candidate branchで次を個別に用意しています。
 
 C1では短いcandidate gateに加え、20 seed release matrix、90秒release soak、両武器40本のFinal Expedition露出までgreenです。実測値とreview triggerは[EX Protocol candidate 自動QA](../../playtest/v08-ex-protocol-candidate-report/)へ分離しました。
 
-C2はC1の`opportunity=0`とowner feedbackを根拠に、発動条件と説明だけを改訂した比較候補です。対象micro fixture、全unit、型、短い2 seed probe、選択画面の横・縦browser fixtureを先に通し、20 seed、soak、Final Expeditionは採用候補を固定するときにまとめて再実行します。
+C2はC1の`opportunity=0`とowner feedbackを根拠に、発動条件と説明だけを改訂した比較候補です。対象micro fixture、全unit、型、短い2 seed probe、選択画面の横・縦browser fixtureを先に通しました。結果は[C2 可読性・成立条件レポート](../../playtest/v08-ex-protocol-c2-readability-report/)へ分離し、20 seed、soak、Final Expeditionは採用候補を固定するときにまとめて再実行します。
 
 probe専用policyは固定Protocol routeとActive使用機会だけを補助し、製品AutoPilotの移動安全性や武器別生存方針を変更しません。probeのscore差だけで数値を自動調整しません。
 
