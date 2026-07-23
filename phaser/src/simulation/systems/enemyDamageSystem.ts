@@ -23,8 +23,10 @@ export type PlayerProjectileDamageSource = {
   activationId?: number;
   attribution:
     | "normal"
+    | "protocol-modified-normal"
     | "protocol-restored-capacity"
-    | "protocol-volley";
+    | "protocol-volley"
+    | "uncredited-penalty";
 };
 
 export type EnemyDamageSource =

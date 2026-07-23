@@ -9,6 +9,7 @@ import type {
 import { createRedlineProjectileState } from "../protocols/redlineCore";
 import { prepareReboundVolley } from "../protocols/reboundOverdrive";
 import { createResonanceRelayProjectileState } from "../protocols/resonanceRelay";
+import { prepareAegisVolley } from "../protocols/aegisFan";
 
 export function updateShooting(
   world: WorldState,
@@ -26,6 +27,14 @@ export function updateShooting(
   const volleyId = world.nextVolleyId++;
   const reboundPlan = config.features.exProtocols
     ? prepareReboundVolley(world, volleyId)
+    : null;
+  const aegisPlan = config.features.exProtocols
+    ? prepareAegisVolley(
+        world,
+        volleyId,
+        directions.length,
+        events,
+      )
     : null;
   const consumesSpreadSweep =
     world.state.weaponType === "spread" &&
@@ -57,7 +66,10 @@ export function updateShooting(
       },
       radius: weapon.radius,
       lifetime: weapon.lifetime,
-      damage: weapon.damage * world.runtime.projectileDamageMultiplier,
+      damage:
+        weapon.damage *
+        world.runtime.projectileDamageMultiplier *
+        (aegisPlan?.getDamageMultiplier(projectileIndex) ?? 1),
       hitsRemaining: hitCapacity,
       ricochetRemaining:
         weapon.ricochetCount +
@@ -84,7 +96,13 @@ export function updateShooting(
               protocolState:
                 reboundPlan?.createProjectileState() ??
                 createRedlineProjectileState(world) ??
-                createResonanceRelayProjectileState(world),
+                createResonanceRelayProjectileState(world) ??
+                aegisPlan?.createProjectileState(
+                  projectileIndex,
+                  weapon.damage *
+                    world.runtime.projectileDamageMultiplier,
+                ) ??
+                null,
             },
           }
         : {}),

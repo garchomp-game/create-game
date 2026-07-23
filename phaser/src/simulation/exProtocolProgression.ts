@@ -299,6 +299,7 @@ function createExProtocolRuntime(
       kind: "aegis-fan",
       protocolId,
       perfectGuardCharges: aegisFan.mastery.initialCharges,
+      guardMomentumUntil: 0,
     };
   }
   throw new Error(`Unsupported EX Protocol runtime "${protocolId}".`);

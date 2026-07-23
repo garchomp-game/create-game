@@ -2,6 +2,7 @@ import type { SimulationConfig, Vec2, WorldState } from "../../domain/types";
 import { clamp } from "../../math/geometry";
 import { moveCircleWithObstacles } from "./movement";
 import { getBreakwaterMovementMultiplier } from "../protocols/breakwaterFan";
+import { getAegisMovementMultiplier } from "../protocols/aegisFan";
 
 export function updatePlayer(
   world: WorldState,
@@ -18,7 +19,8 @@ export function updatePlayer(
   const speed =
     config.player.speed *
     world.runtime.playerSpeedMultiplier *
-    getBreakwaterMovementMultiplier(world);
+    getBreakwaterMovementMultiplier(world) *
+    getAegisMovementMultiplier(world);
   moveCircleWithObstacles(world, world.player, scaledMove.x * speed * dt, 0);
   moveCircleWithObstacles(world, world.player, 0, scaledMove.y * speed * dt);
 

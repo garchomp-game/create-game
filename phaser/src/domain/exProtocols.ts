@@ -74,6 +74,7 @@ export type BreakwaterFanRuntime = ExProtocolRuntimeBase & {
 export type AegisFanRuntime = ExProtocolRuntimeBase & {
   kind: "aegis-fan";
   perfectGuardCharges: number;
+  guardMomentumUntil: number;
 };
 
 export type ResonanceRelayProjectileState = {
@@ -103,6 +104,8 @@ export type AegisFanProjectileState = {
   side: "left" | "right";
   interceptsRemaining: number;
   empowered: boolean;
+  baselineWithoutAnyProtocolDamage: number;
+  baselineForEffectAttributionDamage: number;
 };
 
 export type ExProtocolProjectileState =

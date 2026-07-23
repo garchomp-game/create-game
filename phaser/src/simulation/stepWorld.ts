@@ -34,6 +34,8 @@ import {
   chooseExProtocolEvolution,
 } from "./exProtocolProgression";
 import { updateExProtocolSpecialPhase } from "./systems/exProtocolSystem";
+import { isAegisFanSelected } from "./protocols/aegisFan";
+import { resolveAegisCollisionFrame } from "./systems/aegisCollisionSystem";
 
 export function stepWorld(
   world: WorldState,
@@ -180,14 +182,22 @@ export function stepWorld(
     events,
   );
   updateShooting(world, input.shootHeld, config, events);
-  const bulletMotions = updateBullets(world, dt, config);
+  const useAegisCollisionArbitration =
+    config.features.exProtocols && isAegisFanSelected(world);
+  const bulletMotions = useAegisCollisionArbitration
+    ? undefined
+    : updateBullets(world, dt, config);
   updateSpawner(world, dt, random.spawn, config, events);
   if ((world.eliteState?.commanderIds.length ?? 0) > 0) {
     updateCommanderElites(world, random.spawn, config, events);
   }
   updateEnemies(world, dt, config, events);
-  updateEnemyProjectiles(world, dt, config);
-  resolveCombat(world, config, events, bulletMotions);
+  if (useAegisCollisionArbitration) {
+    resolveAegisCollisionFrame(world, dt, config, events);
+  } else {
+    updateEnemyProjectiles(world, dt, config);
+    resolveCombat(world, config, events, bulletMotions);
+  }
   updatePickups(world, config, events, dt);
   updateLevelProgression(world, random.upgrade, config, events);
   updateGameOver(world, events);

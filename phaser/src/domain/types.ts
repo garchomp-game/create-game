@@ -955,6 +955,8 @@ export type ActiveVolleyAnalytics = {
   tidalChargeGranted?: boolean;
   breakwaterCloseEnemyIds?: string[];
   breakwaterChargeGranted?: boolean;
+  aegisInterceptedSides?: Array<"left" | "right">;
+  aegisPerfectGuardGranted?: boolean;
 };
 
 export type RunAnalyticsState = {
@@ -1457,6 +1459,23 @@ export type GameEvent =
       type: "ex.breakwater.escape-current.triggered";
       activationId: number;
       expiresAt: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.aegis.intercepted";
+      volleyId: number;
+      side: "left" | "right";
+      enemyProjectileCategory: EnemyProjectileCategory;
+      elapsed: number;
+    }
+  | {
+      type: "ex.aegis.perfect-guard.charged";
+      charge: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.aegis.empowered.volley";
+      volleyId: number;
       elapsed: number;
     }
   | {

@@ -27,6 +27,7 @@ import {
   recordTidalNormalHit,
 } from "../protocols/tidalSweep";
 import { recordBreakwaterNormalHit } from "../protocols/breakwaterFan";
+import { resolveAegisDamage } from "../protocols/aegisFan";
 
 export function resolveCombat(
   world: WorldState,
@@ -96,29 +97,7 @@ export function resolveCombat(
   world.bullets = remainingBullets;
   world.enemies = world.enemies.filter((enemy) => !deadEnemies.has(enemy));
   resolveEnemyProjectileHits(world, config, events);
-
-  if (world.state.damageCooldown <= 0) {
-    const touchingEnemy = world.enemies.find((enemy) => circleCircle(enemy, world.player));
-    if (touchingEnemy) {
-      const damage = applyPlayerDamage(world, touchingEnemy.damage);
-      if (damage > 0) {
-        world.state.damageCooldown = config.player.damageCooldown;
-        recordChargerPlayerHit(touchingEnemy, damage, events);
-        events.push({
-          type: "player.damaged",
-          damage,
-          hpAfter: world.state.hp,
-          source: {
-            kind: "contact",
-            enemyId: touchingEnemy.id,
-            enemyType: touchingEnemy.typeId,
-            ...(touchingEnemy.boss ? { bossId: touchingEnemy.boss.bossId } : {}),
-            ...(touchingEnemy.bossAttackSource ?? {}),
-          },
-        });
-      }
-    }
-  }
+  resolveEnemyContactDamage(world, config, events);
 }
 
 function createStationaryMotion(bullet: Bullet): { segments: BulletMotionSegment[]; survives: true } {
@@ -127,17 +106,20 @@ function createStationaryMotion(bullet: Bullet): { segments: BulletMotionSegment
       {
         start: { ...bullet.position },
         end: { ...bullet.position },
+        frameT0: 0,
+        frameT1: 0,
         ricochetsUsed: bullet.ricochetsUsed,
         ricochetSurfaceKind: bullet.ricochetSurfaceKind,
         ricochetBoundarySide: bullet.ricochetBoundarySide,
         ricochetAfter: null,
+        terminalAfter: false,
       },
     ],
     survives: true,
   };
 }
 
-function resolveBulletEnemyHit(
+export function resolveBulletEnemyHit(
   world: WorldState,
   bullet: Bullet,
   enemy: Enemy,
@@ -168,7 +150,14 @@ function resolveBulletEnemyHit(
     normalResolvedDamage,
   );
   const protocolDamage = redline ?? rebound;
-  const damage = protocolDamage?.damage ?? normalResolvedDamage;
+  const aegis = resolveAegisDamage(
+    world,
+    bullet,
+    normalResolvedDamage,
+  );
+  const resolvedProtocolDamage = protocolDamage ?? aegis;
+  const damage =
+    resolvedProtocolDamage?.damage ?? normalResolvedDamage;
   const tidalState =
     bullet.candidate?.protocolState?.kind ===
     "full-span-tidal-sweep"
@@ -185,11 +174,13 @@ function resolveBulletEnemyHit(
       baselineWithoutAnyProtocol:
         tidalState
           ? 0
-          : protocolDamage?.baselineWithoutAnyProtocol ?? damage,
+          : resolvedProtocolDamage?.baselineWithoutAnyProtocol ??
+            damage,
       baselineForEffectAttribution:
         tidalState
           ? 0
-          : protocolDamage?.baselineForEffectAttribution ?? damage,
+          : resolvedProtocolDamage
+              ?.baselineForEffectAttribution ?? damage,
       source: {
         kind: "player-projectile",
         bulletId: bullet.id,
@@ -206,12 +197,12 @@ function resolveBulletEnemyHit(
                   : undefined,
               activationId: tidalState.activationId,
             }
-          : protocolDamage
-            ? { protocolId: protocolDamage.protocolId }
+          : resolvedProtocolDamage
+            ? { protocolId: resolvedProtocolDamage.protocolId }
             : {}),
         attribution: tidalState
           ? "protocol-volley"
-          : protocolDamage?.attribution ?? "normal",
+          : resolvedProtocolDamage?.attribution ?? "normal",
       },
     },
     deadEnemies,
@@ -269,6 +260,60 @@ function resolveBulletEnemyHit(
       },
     },
   );
+}
+
+export function resolveEnemyProjectilePlayerHit(
+  world: WorldState,
+  projectile: EnemyProjectile,
+  config: SimulationConfig,
+  events: GameEvent[],
+): void {
+  if (world.state.damageCooldown > 0) return;
+
+  const damage = applyPlayerDamage(world, projectile.damage);
+  if (damage <= 0) return;
+  world.state.damageCooldown = config.player.damageCooldown;
+  events.push({
+    type: "player.damaged",
+    damage,
+    hpAfter: world.state.hp,
+    source: {
+      kind: "projectile",
+      projectileId: projectile.id,
+      ...(projectile.source ?? {}),
+    },
+  });
+}
+
+export function resolveEnemyContactDamage(
+  world: WorldState,
+  config: SimulationConfig,
+  events: GameEvent[],
+): void {
+  if (world.state.damageCooldown > 0) return;
+  const touchingEnemy = world.enemies.find((enemy) =>
+    circleCircle(enemy, world.player),
+  );
+  if (!touchingEnemy) return;
+
+  const damage = applyPlayerDamage(world, touchingEnemy.damage);
+  if (damage <= 0) return;
+  world.state.damageCooldown = config.player.damageCooldown;
+  recordChargerPlayerHit(touchingEnemy, damage, events);
+  events.push({
+    type: "player.damaged",
+    damage,
+    hpAfter: world.state.hp,
+    source: {
+      kind: "contact",
+      enemyId: touchingEnemy.id,
+      enemyType: touchingEnemy.typeId,
+      ...(touchingEnemy.boss
+        ? { bossId: touchingEnemy.boss.bossId }
+        : {}),
+      ...(touchingEnemy.bossAttackSource ?? {}),
+    },
+  });
 }
 
 function applyPulseFocus(
@@ -385,20 +430,7 @@ function resolveEnemyProjectileHits(
 
     if (world.state.damageCooldown > 0) continue;
 
-    const damage = applyPlayerDamage(world, projectile.damage);
-    if (damage > 0) {
-      world.state.damageCooldown = config.player.damageCooldown;
-      events.push({
-        type: "player.damaged",
-        damage,
-        hpAfter: world.state.hp,
-        source: {
-          kind: "projectile",
-          projectileId: projectile.id,
-          ...(projectile.source ?? {}),
-        },
-      });
-    }
+    resolveEnemyProjectilePlayerHit(world, projectile, config, events);
   }
 
   world.enemyProjectiles = remainingProjectiles;
