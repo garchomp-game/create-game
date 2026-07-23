@@ -3,6 +3,9 @@ import {
   getExProtocolDefinition,
 } from "../content/exProtocolCatalog";
 import type {
+  ExProtocolRecordStats,
+} from "../domain/runRecords";
+import type {
   ExProtocolEvolutionId,
   ExProtocolId,
 } from "../domain/exProtocols";
@@ -221,6 +224,31 @@ export function formatSelectedExProtocolRoute(world: WorldState): string {
   if (progression?.status !== "selected") return "PROTOCOL 未選択";
   const definition = requireProtocol(progression.route.protocolId);
   return `${formatProtocolName(definition)} / ${formatRouteLabel(world)}`;
+}
+
+export function formatExProtocolRecordRoute(
+  record: ExProtocolRecordStats | null,
+): string {
+  if (!record?.selectedId) return "";
+  const definition = requireProtocol(record.selectedId);
+  const evolutionOne = definition.evolutionOne.find(
+    ({ id }) => id === record.evolutionOneId,
+  );
+  const evolutionTwo = definition.evolutionTwo.find(
+    ({ id }) => id === record.evolutionTwoId,
+  );
+  const route = [
+    evolutionOne
+      ? `E1 ${evolutionOne.displayNameJa}`
+      : "E1 未到達",
+    evolutionTwo
+      ? `E2 ${evolutionTwo.displayNameJa}`
+      : "E2 未到達",
+    record.masteryId
+      ? `MASTERY ${definition.mastery.displayNameJa}`
+      : "MASTERY 未解禁",
+  ].join(" / ");
+  return `PROTOCOL: ${formatProtocolName(definition)}\n進化経路: ${route}`;
 }
 
 function createProtocolCard(

@@ -23,6 +23,7 @@ import { TEXT } from "../lang";
 import { getUpgradeRequirementProgress } from "../simulation/buildComposer";
 import { createRunResultSummary } from "../simulation/resultSummary";
 import type { ArenaUiState } from "./ArenaUiState";
+import { formatExProtocolRecordRoute } from "./ExProtocolPresenter";
 
 export type ArenaScreenKind =
   | "none"
@@ -203,6 +204,9 @@ function formatGameOverDetails(uiState?: ArenaUiState): string {
   return [
     `モード: ${formatModeName(record.modeId)} / ステージ: ${formatStageName(record.stageId)}`,
     `開始武器: ${TEXT.hud.weaponNames[record.weaponId]}`,
+    record.schemaVersion === 3
+      ? formatExProtocolRecordRoute(record.exProtocol)
+      : "",
     formatRecordCapstone(record),
     formatRecordEncounter(record),
     formatBuildLine(record),
