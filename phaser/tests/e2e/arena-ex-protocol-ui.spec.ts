@@ -1,4 +1,8 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
+import {
+  EX_PROTOCOL_CANDIDATE_APP_VERSION,
+  EX_PROTOCOL_ENDLESS_RULESET_VERSION,
+} from "../../src/config/version";
 
 test.skip(
   process.env.VITE_ARENA_EX_PROTOCOL_CANDIDATE !== "1",
@@ -6,6 +10,25 @@ test.skip(
 );
 
 test.use({ deviceScaleFactor: 2 });
+
+test("publishes the EX Protocol candidate identity", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator('meta[name="arena-app-version"]')).toHaveAttribute(
+    "content",
+    EX_PROTOCOL_CANDIDATE_APP_VERSION,
+  );
+  await expect(
+    page.locator('meta[name="arena-ruleset-version"]'),
+  ).toHaveAttribute("content", EX_PROTOCOL_ENDLESS_RULESET_VERSION);
+
+  await page.goto("/beta-info.html");
+  await expect(page.locator("#app-version")).toHaveText(
+    EX_PROTOCOL_CANDIDATE_APP_VERSION,
+  );
+  await expect(page.locator("#ruleset-version")).toHaveText(
+    EX_PROTOCOL_ENDLESS_RULESET_VERSION,
+  );
+});
 
 test("selects Protocol, Evolution I/II, and enters Limit Break", async ({
   page,

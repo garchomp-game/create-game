@@ -7,6 +7,7 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build",
     "build:deploy": "npm run build && npm run verify:deploy",
+    "build:deploy:ex-protocols": "VITE_ARENA_EX_PROTOCOL_CANDIDATE=1 npm run build:deploy",
     "build:e2e": "tsc --noEmit && VITE_ARENA_FIXED_SEED=1 VITE_ARENA_RUN_ORIGIN=test VITE_ARENA_ENABLE_TEST_HOOKS=1 VITE_PHASER_PRESERVE_DRAWING_BUFFER=1 vite build",
     "audio:generate": "node scripts/generate-audio.mjs",
     "deploy:cloudflare": "npm run build:deploy && wrangler deploy",

@@ -15,6 +15,25 @@ export const TRAINING_MODE_ID = "training";
 export const BASIC_TRAINING_STAGE_ID = "basic-training";
 export const DEFAULT_DIFFICULTY_ID = "standard";
 
+export type BuildReleaseIdentity = {
+  appVersion: string;
+  rulesetVersion: string;
+};
+
+export function resolveBuildReleaseIdentity(
+  exProtocolCandidateEnabled: boolean,
+): BuildReleaseIdentity {
+  return exProtocolCandidateEnabled
+    ? {
+        appVersion: EX_PROTOCOL_CANDIDATE_APP_VERSION,
+        rulesetVersion: EX_PROTOCOL_ENDLESS_RULESET_VERSION,
+      }
+    : {
+        appVersion: APP_VERSION,
+        rulesetVersion: RULESET_VERSION,
+      };
+}
+
 export function resolveRunRulesetVersion(modeId: string, stageId: string): string {
   if (modeId === DEFAULT_MODE_ID && stageId === DEFAULT_STAGE_ID) {
     return ENDLESS_RULESET_VERSION;

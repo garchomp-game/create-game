@@ -3,7 +3,7 @@ import { mkdir, readFile, readdir, rename, unlink, writeFile } from "node:fs/pro
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig, type Plugin } from "vite";
-import { APP_VERSION, RULESET_VERSION } from "./src/config/version";
+import { resolveBuildReleaseIdentity } from "./src/config/version";
 import {
   createRunSummaryRow,
   serializeRunSummary,
@@ -14,6 +14,9 @@ const RUN_EXPORT_ENDPOINT = "/__arena/run-export";
 const MAX_RUN_EXPORT_BYTES = 2 * 1024 * 1024;
 const MAX_RUN_EXPORT_FILES = { manual: 200, debug: 100, test: 20 } as const;
 const BUILD_COMMIT = readBuildCommit();
+const BUILD_RELEASE_IDENTITY = resolveBuildReleaseIdentity(
+  process.env.VITE_ARENA_EX_PROTOCOL_CANDIDATE === "1",
+);
 const PROJECT_ROOT = path.dirname(fileURLToPath(import.meta.url));
 
 function arenaReleaseIdentityPlugin(): Plugin {
@@ -23,12 +26,18 @@ function arenaReleaseIdentityPlugin(): Plugin {
       return [
         {
           tag: "meta",
-          attrs: { name: "arena-app-version", content: APP_VERSION },
+          attrs: {
+            name: "arena-app-version",
+            content: BUILD_RELEASE_IDENTITY.appVersion,
+          },
           injectTo: "head",
         },
         {
           tag: "meta",
-          attrs: { name: "arena-ruleset-version", content: RULESET_VERSION },
+          attrs: {
+            name: "arena-ruleset-version",
+            content: BUILD_RELEASE_IDENTITY.rulesetVersion,
+          },
           injectTo: "head",
         },
         {
@@ -244,8 +253,12 @@ function getErrorMessage(error: unknown): string {
 export default defineConfig({
   plugins: [arenaReleaseIdentityPlugin(), arenaRunExportLogPlugin()],
   define: {
-    "import.meta.env.VITE_APP_VERSION": JSON.stringify(APP_VERSION),
-    "import.meta.env.VITE_RULESET_VERSION": JSON.stringify(RULESET_VERSION),
+    "import.meta.env.VITE_APP_VERSION": JSON.stringify(
+      BUILD_RELEASE_IDENTITY.appVersion,
+    ),
+    "import.meta.env.VITE_RULESET_VERSION": JSON.stringify(
+      BUILD_RELEASE_IDENTITY.rulesetVersion,
+    ),
     "import.meta.env.VITE_GIT_COMMIT": JSON.stringify(BUILD_COMMIT),
   },
   build: {

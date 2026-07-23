@@ -4,11 +4,9 @@ import {
   VIEW_CONFIG,
 } from "../../config/gameConfig";
 import {
-  APP_VERSION,
   DEFAULT_DIFFICULTY_ID,
   DEFAULT_MODE_ID,
   DEFAULT_STAGE_ID,
-  RULESET_VERSION,
   TRAINING_MODE_ID,
 } from "../../config/version";
 import { BASIC_TUTORIAL_SEED } from "../../simulation/TutorialController";
@@ -636,8 +634,8 @@ export class ArenaScene extends Phaser.Scene {
       ),
       notice: menuState.notice,
       releaseIdentity: {
-        appVersion: APP_VERSION,
-        rulesetVersion: RULESET_VERSION,
+        appVersion: import.meta.env.VITE_APP_VERSION,
+        rulesetVersion: import.meta.env.VITE_RULESET_VERSION,
         buildCommit: this.getBuildCommit(),
       },
     });

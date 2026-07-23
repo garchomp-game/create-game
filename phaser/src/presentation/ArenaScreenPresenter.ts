@@ -4,7 +4,7 @@ import {
   getExpeditionTacticalScore,
   isRankableRun,
 } from "../application/runRecords";
-import { APP_VERSION, RELEASE_CHANNEL_LABEL } from "../config/version";
+import { RELEASE_CHANNEL_LABEL } from "../config/version";
 import { toRunCentiseconds } from "../domain/runRecords";
 import type { RankIneligibilityReason, RunRecord } from "../domain/runRecords";
 import type {
@@ -145,7 +145,7 @@ export function createArenaScreenViewModel(
       return {
         ...base,
         kind: "title",
-        statusText: `${TEXT.ui.titleScreen}\nENDLESS / EXPEDITION / TRAINING\n生存限界か、最終決戦か\n${RELEASE_CHANNEL_LABEL} v${uiState?.releaseIdentity.appVersion ?? APP_VERSION}`,
+        statusText: `${TEXT.ui.titleScreen}\nENDLESS / EXPEDITION / TRAINING\n生存限界か、最終決戦か\n${RELEASE_CHANNEL_LABEL} v${uiState?.releaseIdentity.appVersion ?? import.meta.env.VITE_APP_VERSION}`,
         detailText: null,
       };
     default:
