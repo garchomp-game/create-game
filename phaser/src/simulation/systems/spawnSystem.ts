@@ -87,8 +87,9 @@ export function spawnEnemyAtPosition(
   const definition = config.enemies[typeId];
   const difficultyElapsed = getDifficultyElapsed(world);
   const threat = getThreatMultipliers(config, difficultyElapsed);
+  const creationOrdinal = world.nextEnemyId++;
   const enemy: Enemy = {
-    id: `enemy-${world.nextEnemyId++}`,
+    id: `enemy-${creationOrdinal}`,
     typeId,
     position: { ...position },
     radius: definition.radius,
@@ -103,6 +104,9 @@ export function spawnEnemyAtPosition(
     behavior: definition.behavior,
     attackTimer: definition.ranged ? definition.ranged.attackInterval * 0.5 : 0,
     enteredArena: false,
+    ...(config.features.exProtocols
+      ? { candidate: { creationOrdinal } }
+      : {}),
   };
   world.enemies.push(enemy);
   return enemy;

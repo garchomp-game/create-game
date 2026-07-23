@@ -1,4 +1,11 @@
-import type { Bullet, GameEvent, SimulationConfig, Vec2, WorldState } from "../../domain/types";
+import type {
+  Bullet,
+  GameEvent,
+  ProjectileRole,
+  SimulationConfig,
+  Vec2,
+  WorldState,
+} from "../../domain/types";
 
 export function updateShooting(
   world: WorldState,
@@ -27,10 +34,11 @@ export function updateShooting(
     spreadSweepTriggered: false,
   };
   const bulletIds: string[] = [];
-  for (const direction of directions) {
+  for (const [projectileIndex, direction] of directions.entries()) {
     const offset = config.player.radius + weapon.radius + 2;
+    const creationOrdinal = world.nextBulletId++;
     const bullet: Bullet = {
-      id: `bullet-${world.nextBulletId++}`,
+      id: `bullet-${creationOrdinal}`,
       volleyId,
       weaponType: world.state.weaponType,
       position: {
@@ -50,6 +58,23 @@ export function updateShooting(
       ricochetSurfaceKind: null,
       ricochetBoundarySide: null,
       hitEnemyIds: [],
+      ...(config.features.exProtocols
+        ? {
+            candidate: {
+              creationOrdinal,
+              hitCapacityAtFire: hitCapacity,
+              volleyKind: "normal" as const,
+              projectileIndex,
+              projectileCount: directions.length,
+              projectileRole: getProjectileRole(
+                projectileIndex,
+                directions.length,
+              ),
+              activationId: null,
+              consumedCoreSpreadSweep: consumesSpreadSweep,
+            },
+          }
+        : {}),
     };
     world.bullets.push(bullet);
     bulletIds.push(bullet.id);
@@ -70,6 +95,23 @@ export function updateShooting(
   if (consumesSpreadSweep) {
     events.push({ type: "spread.sweep.consumed", volleyId });
   }
+}
+
+export function getProjectileRole(
+  projectileIndex: number,
+  projectileCount: number,
+): ProjectileRole {
+  if (projectileCount <= 1) return "center";
+  if (projectileIndex === 0 || projectileIndex === projectileCount - 1) {
+    return "edge";
+  }
+  if (
+    projectileCount % 2 === 1 &&
+    projectileIndex === Math.floor(projectileCount / 2)
+  ) {
+    return "center";
+  }
+  return "inner";
 }
 
 export function getProjectileDirections(

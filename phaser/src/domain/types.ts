@@ -415,6 +415,21 @@ export type Player = CircleBody & {
   id: "player";
 };
 
+export type VolleyKind = "normal" | "ex.tidal";
+
+export type ProjectileRole = "center" | "inner" | "edge" | "protocol";
+
+export type CandidateBulletMetadata = {
+  creationOrdinal: number;
+  hitCapacityAtFire: number;
+  volleyKind: VolleyKind;
+  projectileIndex: number;
+  projectileCount: number;
+  projectileRole: ProjectileRole;
+  activationId: number | null;
+  consumedCoreSpreadSweep: boolean;
+};
+
 export type Bullet = CircleBody & {
   id: string;
   volleyId: number;
@@ -428,6 +443,7 @@ export type Bullet = CircleBody & {
   ricochetSurfaceKind: RicochetSurfaceKind | null;
   ricochetBoundarySide: ArenaBoundarySide | null;
   hitEnemyIds: string[];
+  candidate?: CandidateBulletMetadata;
 };
 
 export type Enemy = CircleBody & {
@@ -448,6 +464,9 @@ export type Enemy = CircleBody & {
   action?: ChargerActionState;
   pulseFocusStacks?: number;
   pulseFocusExpiresAt?: number;
+  candidate?: {
+    creationOrdinal: number;
+  };
 };
 
 export type CommanderEliteState = {
@@ -480,12 +499,19 @@ export type ChargerActionState = {
   hitPlayerDuringCharge: boolean;
 };
 
+export type EnemyProjectileCategory = "standard" | "boss" | "beam" | "hazard";
+
 export type EnemyProjectile = CircleBody & {
   id: string;
   velocity: Vec2;
   lifetime: number;
   damage: number;
   source?: { bossId: string; bossAttackId: BossAttackId };
+  candidate?: {
+    creationOrdinal: number;
+    category: EnemyProjectileCategory;
+    interceptible: boolean;
+  };
 };
 
 export type ExProtocolDamageEffect = "relay" | "breakwater";

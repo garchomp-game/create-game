@@ -36,8 +36,9 @@ export function spawnFinalExpeditionBoss(
   world.enemies.length = 0;
   world.enemyProjectiles.length = 0;
 
+  const creationOrdinal = world.nextEnemyId++;
   const enemy: Enemy = {
-    id: `enemy-${world.nextEnemyId++}`,
+    id: `enemy-${creationOrdinal}`,
     typeId: definition.baseEnemyTypeId,
     position: { ...definition.spawnPosition },
     radius: definition.radius,
@@ -50,6 +51,9 @@ export function spawnFinalExpeditionBoss(
     attackTimer: Number.POSITIVE_INFINITY,
     enteredArena: true,
     boss: { bossId: definition.id },
+    ...(world.progression.exProtocol
+      ? { candidate: { creationOrdinal } }
+      : {}),
   };
   world.enemies.push(enemy);
 
@@ -477,8 +481,9 @@ function spawnBossSalvo(
     const offsetRatio = available <= 1 ? 0 : index / (available - 1) - 0.5;
     const direction = rotate(aim, spread * offsetRatio);
     const spawnOffset = enemy.radius + radius + 4;
+    const creationOrdinal = world.nextEnemyProjectileId++;
     const projectile: EnemyProjectile = {
-      id: `enemy-projectile-${world.nextEnemyProjectileId++}`,
+      id: `enemy-projectile-${creationOrdinal}`,
       position: {
         x: enemy.position.x + direction.x * spawnOffset,
         y: enemy.position.y + direction.y * spawnOffset,
@@ -491,6 +496,15 @@ function spawnBossSalvo(
         bossId: world.expedition!.boss!.bossId,
         bossAttackId: attackId,
       },
+      ...(config.features.exProtocols
+        ? {
+            candidate: {
+              creationOrdinal,
+              category: "boss" as const,
+              interceptible: false,
+            },
+          }
+        : {}),
     };
     world.enemyProjectiles.push(projectile);
     projectileIds.push(projectile.id);
