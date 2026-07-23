@@ -1712,7 +1712,11 @@ export type GameMetric =
         | "wave.spawn_budget"
         | "wave.max_enemies"
         | "endless.threat_tier"
-        | "endless.collapse_stage";
+        | "endless.collapse_stage"
+        | "ex.protocol.activation_trackers"
+        | "ex.aegis.collision_candidates"
+        | "ex.aegis.interception_candidates"
+        | "ex.aegis.collision_resolved";
       value: number;
     }
   | { type: "timing"; name: "frame.dt_ms" | "frame.raw_dt_ms"; valueMs: number };

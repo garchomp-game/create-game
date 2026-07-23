@@ -38,6 +38,12 @@ export const MIN_FRAME_T_ADVANCE = 1e-6;
 export const MAX_COLLISION_EVENTS_PER_FRAME = 2048;
 export const MAX_AEGIS_INTERCEPTION_CANDIDATES = 4096;
 
+export type AegisCollisionFrameStats = {
+  candidateCount: number;
+  interceptionCandidateCount: number;
+  resolvedEventCount: number;
+};
+
 type CandidateBase = {
   frameT: number;
   priority: 0 | 1 | 2 | 3 | 4;
@@ -100,7 +106,7 @@ export function resolveAegisCollisionFrame(
   dt: number,
   config: SimulationConfig,
   events: GameEvent[],
-): void {
+): AegisCollisionFrameStats {
   if (!config.features.exProtocols || !isAegisFanSelected(world)) {
     throw new Error(
       "Aegis global collision arbitration requires the selected Aegis Protocol.",
@@ -135,7 +141,7 @@ export function resolveAegisCollisionFrame(
     );
   }
 
-  const candidates = createCollisionCandidates(
+  const candidatePlan = createCollisionCandidates(
     world,
     bullets,
     enemyProjectiles,
@@ -143,6 +149,7 @@ export function resolveAegisCollisionFrame(
     bulletPlans,
     enemyProjectilePlans,
   );
+  const candidates = candidatePlan.candidates;
   candidates.sort(compareCollisionCandidates);
   const plannedPlayerEndpointContacts = new Set(
     candidates
@@ -229,6 +236,12 @@ export function resolveAegisCollisionFrame(
     });
   world.enemies = enemies.filter((enemy) => !deadEnemies.has(enemy));
   resolveEnemyContactDamage(world, config, events);
+  return {
+    candidateCount: candidates.length,
+    interceptionCandidateCount:
+      candidatePlan.interceptionCandidateCount,
+    resolvedEventCount: resolvedEvents,
+  };
 }
 
 function createCollisionCandidates(
@@ -241,7 +254,10 @@ function createCollisionCandidates(
     string,
     EnemyProjectileFrameMotion
   >,
-): CollisionCandidate[] {
+): {
+  candidates: CollisionCandidate[];
+  interceptionCandidateCount: number;
+} {
   const candidates: CollisionCandidate[] = [];
   let localOrdinal = 0;
 
@@ -417,7 +433,10 @@ function createCollisionCandidates(
     }
   }
 
-  return candidates;
+  return {
+    candidates,
+    interceptionCandidateCount: interceptionCandidates,
+  };
 }
 
 function commitCandidate(

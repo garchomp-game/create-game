@@ -340,6 +340,93 @@ test("copies a legacy v2 record into v3 without mutating legacy bytes", async ({
   });
 });
 
+const PROTOCOL_COMBAT_CASES = [
+  {
+    weaponId: "pulse",
+    protocolId: "pulse.resonance-relay",
+    runtimeKind: "resonance-relay",
+    snapshot: "arena-ex-resonance-relay-combat.png",
+  },
+  {
+    weaponId: "pulse",
+    protocolId: "pulse.rebound-overdrive",
+    runtimeKind: "rebound-overdrive",
+    snapshot: "arena-ex-rebound-overdrive-combat.png",
+  },
+  {
+    weaponId: "pulse",
+    protocolId: "pulse.redline-core",
+    runtimeKind: "redline-core",
+    snapshot: "arena-ex-redline-core-combat.png",
+  },
+  {
+    weaponId: "spread",
+    protocolId: "spread.full-span-tidal-sweep",
+    runtimeKind: "full-span-tidal-sweep",
+    snapshot: "arena-ex-tidal-sweep-combat.png",
+  },
+  {
+    weaponId: "spread",
+    protocolId: "spread.breakwater-fan",
+    runtimeKind: "breakwater-fan",
+    snapshot: "arena-ex-breakwater-fan-combat.png",
+  },
+  {
+    weaponId: "spread",
+    protocolId: "spread.aegis-fan",
+    runtimeKind: "aegis-fan",
+    snapshot: "arena-ex-aegis-fan-combat.png",
+  },
+] as const;
+
+for (const fixture of PROTOCOL_COMBAT_CASES) {
+  test(`renders ${fixture.protocolId} in a representative combat scene`, async ({
+    page,
+  }) => {
+    await gotoCandidate(page);
+    await page.evaluate((weaponId) => {
+      const debug = window.__ARENA_DEBUG__;
+      if (!debug) throw new Error("Debug API is not available.");
+      debug.startAutoPilot(weaponId);
+      debug.setAutoPilotEnabled(false);
+      debug.forceExProtocolSelect();
+    }, fixture.weaponId);
+    await page
+      .locator(
+        `[data-choice-kind='protocol'][data-choice-id='${fixture.protocolId}']`,
+      )
+      .click();
+    await expectStatus(page, "playing");
+    await page.evaluate(() => {
+      window.__ARENA_DEBUG__?.setEnemyVisualFixture("wave3");
+    });
+    if (fixture.runtimeKind === "rebound-overdrive") {
+      await page.keyboard.press("e");
+    }
+
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            window.__ARENA_DEBUG__?.getSnapshot().exProtocol?.runtime
+              .kind,
+        ),
+      )
+      .toBe(fixture.runtimeKind);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () => window.__ARENA_DEBUG__?.getSnapshot().enemyCount ?? 0,
+        ),
+      )
+      .toBeGreaterThan(0);
+    await expect(page.locator("#game")).toHaveScreenshot(
+      fixture.snapshot,
+      { maxDiffPixelRatio: 0.01 },
+    );
+  });
+}
+
 async function gotoCandidate(page: Page): Promise<void> {
   await page.goto("/?webglReadback=1");
   await expect

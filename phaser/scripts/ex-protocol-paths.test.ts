@@ -29,6 +29,7 @@ import {
   completeBuild,
   updateLevelProgression,
 } from "../src/simulation/systems/levelSystem";
+import { getPlayerCapacity } from "../src/simulation/systems/playerHealthSystem";
 import { chooseUpgrade } from "../src/simulation/systems/upgradeSystem";
 import {
   recordExProtocolEvent,
@@ -84,7 +85,7 @@ type AegisDefinition = ExProtocolCatalog["protocols"][5];
 describe("EX Protocol path matrix", () => {
   it("generates exactly 24 unique paths from the closed catalog", () => {
     expect(PATHS).toHaveLength(24);
-    expect(new Set(PATHS.map(({ id }) => id))).toHaveLength(24);
+    expect(new Set(PATHS.map(({ id }) => id)).size).toBe(24);
     expect(
       PATHS.filter(({ protocol }) => protocol.weaponId === "pulse"),
     ).toHaveLength(12);
@@ -486,11 +487,23 @@ function exerciseResonance(
     }),
   );
   const residual = protocol.evolutionTwo[0];
+  const endpointPriming = protocol.evolutionTwo[1];
   expect(anchor.pulseFocusStacks).toBe(
     getSelectedRoute(world).evolutionTwoId === residual.id
       ? residual.remainingAnchorFocusStacks
       : protocol.signature.resetAnchorFocusStacks,
   );
+  if (
+    getSelectedRoute(world).evolutionTwoId === endpointPriming.id
+  ) {
+    expect(endpoint.pulseFocusStacks).toBe(
+      world.runtime.pulseFocusMaxStacks,
+    );
+    expect(runtime.anchor?.enemyId).toBe(endpoint.id);
+  } else {
+    expect(endpoint.pulseFocusStacks).toBe(1);
+    expect(runtime.anchor).toBeNull();
+  }
   expect(intermediates[0]!.hp).toBeCloseTo(
     100 -
       config.weapons.pulse.damage *
@@ -588,6 +601,21 @@ function exerciseRedline(
   config: SimulationConfig,
   protocol: RedlineDefinition,
 ): void {
+  const stabilized = protocol.evolutionOne[0];
+  const capacity = getPlayerCapacity(world, config);
+  const expectedCapacityMultiplier =
+    getSelectedRoute(world).evolutionOneId === stabilized.id
+      ? stabilized.effectiveMaxHpMultiplier
+      : protocol.signature.effectiveMaxHpMultiplier;
+  expect(capacity.effectiveMaxHp).toBe(
+    Math.max(
+      1,
+      Math.floor(capacity.grossMaxHp * expectedCapacityMultiplier),
+    ),
+  );
+  expect(capacity.reservedHp).toBe(
+    capacity.grossMaxHp - capacity.effectiveMaxHp,
+  );
   world.player.position = { x: 100, y: 270 };
   world.state.lastAim = { x: 1, y: 0 };
   world.runtime.pulseFocusMaxStacks = 3;
@@ -665,6 +693,24 @@ function exerciseTidal(
     activateTidalSweep(world, true, config, events));
   expect(world.bullets).toHaveLength(
     protocol.signature.projectileCount,
+  );
+  const firstDirection = normalized(world.bullets[0]!.velocity);
+  const lastDirection = normalized(world.bullets.at(-1)!.velocity);
+  const actualArc = Math.acos(
+    Math.max(
+      -1,
+      Math.min(
+        1,
+        firstDirection.x * lastDirection.x +
+          firstDirection.y * lastDirection.y,
+      ),
+    ),
+  );
+  const wideWake = protocol.evolutionOne[0];
+  expect(actualArc).toBeCloseTo(
+    getSelectedRoute(world).evolutionOneId === wideWake.id
+      ? wideWake.arcRadians
+      : protocol.signature.arcRadians,
   );
   const deepWake = protocol.evolutionOne[1];
   const expectedCapacity =
@@ -926,4 +972,13 @@ function requireRuntime<
     typeof progression.runtime,
     { kind: TKind }
   >;
+}
+
+function normalized(vector: { x: number; y: number }): {
+  x: number;
+  y: number;
+} {
+  const length = Math.hypot(vector.x, vector.y);
+  if (length <= Number.EPSILON) return { x: 1, y: 0 };
+  return { x: vector.x / length, y: vector.y / length };
 }
