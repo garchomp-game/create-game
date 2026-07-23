@@ -28,6 +28,19 @@ CIはNode 24を使い、repository内容の読取権限だけを持ちます。C
 
 CIではPlaywright同梱Chromium、ローカルでは既定で`/usr/bin/google-chrome`を使います。`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`を指定した場合は両環境でその値を優先します。GitHub-hosted Ubuntuのheadless FirefoxでWebGL context生成に失敗したため、CIのFirefoxだけを`ARENA_FIREFOX_HEADED=1`でheadedにし、`xvfb-run`とMesa software renderingの下で同じWebGL smokeを実行します。Firefoxの検査やWebGL要件はskipしません。
 
+## 開発速度とQA強度
+
+通常運用では作業時間そのものへ厳しい上限を置かず、Ultraを含む長時間の自律実装も許容します。短縮対象は必要な実装や検証ではなく、同じ証拠の重複取得と、変更範囲に対して過剰な横断QAです。
+
+- 実装中は型検査、変更箇所のunit、短いCPU fixtureを中心にし、触れた画面やフローだけをE2Eで確認する。
+- 関心事単位のsliceが成立した時点で、全unitまたは関連E2Eを一度実行する。
+- seed matrix、長時間probe、全ブラウザ、実GPU耐久、人間採否はcandidate SHAを固定してからまとめて実行する。
+- 同じSHA、設定、コマンドのgreen証拠は再実行せず、docs-only commit後にruntime QAを繰り返さない。
+- 保存migration、RNG、共通simulation、feature ON / OFF境界、配布identityは影響が広いため、該当する統合確認を最後まで延期しない。
+- 失敗、予想外の差分、共有責務への変更が見つかった場合だけ、一段広いgateへ拡張する。
+
+この段階分けは品質基準を下げるものではありません。実装サイクル中の待ち時間を抑え、最終candidateには従来どおり再現可能な全体証拠を残すための運用です。
+
 全E2E画像、v0.7 probe、15分GPU耐久、通常UI採否は毎PRへ含めません。描画、ゲームルール、長時間性能、人間の所感に応じて、以下の手動ゲートを追加します。
 
 実時間15分のブラウザ耐久試験は、バランスによる死亡を防ぐデバッグ保護付きの描画・メモリ試験として明示的に実行します。
