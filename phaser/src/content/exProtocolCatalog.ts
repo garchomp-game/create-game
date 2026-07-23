@@ -4,7 +4,7 @@ import type {
   ExProtocolId,
 } from "../domain/exProtocols";
 import type { WeaponTypeId } from "../domain/types";
-import rawCatalog from "./ex-protocols.v1.json";
+import rawCatalog from "./ex-protocols.v1.json" with { type: "json" };
 
 const finiteNumber = z.number().finite();
 const positiveNumber = finiteNumber.positive();

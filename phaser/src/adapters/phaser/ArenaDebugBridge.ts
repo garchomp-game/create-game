@@ -37,6 +37,7 @@ import type {
   GameEvent,
   GameStatus,
   InputSnapshot,
+  ProgressionPendingChoice,
   RunResultSummary,
   RunStats,
   RuntimeModifiers,
@@ -46,6 +47,7 @@ import type {
   WaveBand,
   WeaponTypeId,
 } from "../../domain/types";
+import type { ExProtocolProgressionState } from "../../domain/exProtocols";
 import type { TutorialSnapshot } from "../../domain/tutorial";
 import type {
   AutoPilotMode,
@@ -105,6 +107,8 @@ export type ArenaDebugSnapshot = {
   upgradeRanks: Record<UpgradeId, number>;
   extraUpgradeRanks: Record<ExtraUpgradeId, number>;
   extraCycleRemaining: ExtraUpgradeId[];
+  pendingProgressionChoice: ProgressionPendingChoice | null;
+  exProtocol: ExProtocolProgressionState | null;
   runtime: RuntimeModifiers;
   buildComposition: BuildComposition;
   encounter: EncounterState;
@@ -199,6 +203,8 @@ export type ArenaDebugApi = {
   grantXp(amount: number): void;
   forceUpgradeSelect(): void;
   forceExtraUpgradeSelect(): void;
+  forceExProtocolSelect(): void;
+  forceExEvolutionSelect(tier?: 1 | 2): void;
   restart(): void;
   startAutoPilot(weaponType?: WeaponTypeId): void;
   setAutoPilotEnabled(enabled: boolean): void;

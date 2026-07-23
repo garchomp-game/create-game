@@ -26,6 +26,35 @@ const idleInput: InputSnapshot = {
 };
 
 describe("EX Protocol progression", () => {
+  it("lets pause win over a same-frame special press", () => {
+    const session = createCandidateSession("pulse");
+    completeNormalBuild(session.world, session.config);
+    completeBuild(session.world, session.config, []);
+    chooseExProtocol(session.world, 1, session.config, []);
+
+    const result = session.step(
+      {
+        ...idleInput,
+        pausePressed: true,
+        specialPressed: true,
+      },
+      1 / 60,
+    );
+
+    expect(session.world.state.status).toBe("paused");
+    expect(result.events.some((event) => event.type === "ex.special.armed")).toBe(
+      false,
+    );
+    expect(session.world.progression.exProtocol).toMatchObject({
+      status: "selected",
+      runtime: {
+        kind: "rebound-overdrive",
+        armedUntil: null,
+        cooldownUntil: 0,
+      },
+    });
+  });
+
   it("routes Core 25 through Signature, E1, E2 + Mastery, then Limit Break", () => {
     const session = createCandidateSession("pulse");
     const { world, config } = session;

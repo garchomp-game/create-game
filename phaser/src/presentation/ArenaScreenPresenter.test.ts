@@ -11,6 +11,23 @@ import { createArenaScreenViewModel } from "./ArenaScreenPresenter";
 import type { ArenaUiState } from "./ArenaUiState";
 
 describe("createArenaScreenViewModel", () => {
+  it.each([
+    ["protocolSelect", "protocolSelect"],
+    ["evolutionSelect", "evolutionSelect"],
+  ] as const)("presents %s as an EX choice screen", (status, kind) => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.state.status = status;
+
+    expect(
+      createArenaScreenViewModel(world, SIMULATION_CONFIG),
+    ).toMatchObject({
+      kind,
+      status,
+      statusText: null,
+      detailText: null,
+    });
+  });
+
   it("presents the title screen without Phaser objects", () => {
     const world = createWorld(SIMULATION_CONFIG);
     world.state.status = "title";

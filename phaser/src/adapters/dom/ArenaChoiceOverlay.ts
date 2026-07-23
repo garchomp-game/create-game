@@ -11,6 +11,11 @@ import { TEXT } from "../../lang";
 import { getUpgradeRequirementProgress } from "../../simulation/buildComposer";
 import { isExtraUpgradeId } from "../../simulation/extraProgression";
 import { createUpgradePreview, formatUpgradePreview } from "../../simulation/upgradePreview";
+import {
+  createExProtocolChoiceViewModel,
+  formatSelectedExProtocolRoute,
+  type ExProtocolChoiceCardViewModel,
+} from "../../presentation/ExProtocolPresenter";
 
 export type ArenaChoiceInput = {
   menuAction: MenuAction | null;
@@ -44,6 +49,8 @@ export class ArenaChoiceOverlay {
       enabled &&
       (world.state.status === "weaponSelect" ||
         world.state.status === "upgradeSelect" ||
+        world.state.status === "protocolSelect" ||
+        world.state.status === "evolutionSelect" ||
         world.state.status === "contractSelect");
     this.root.classList.toggle("arena-choice-overlay--visible", visible);
     this.root.setAttribute("aria-hidden", visible ? "false" : "true");
@@ -60,7 +67,12 @@ export class ArenaChoiceOverlay {
 
     if (world.state.status === "weaponSelect") this.renderWeaponChoices(world);
     else if (world.state.status === "upgradeSelect") this.renderUpgradeChoices(world);
-    else this.renderContractChoices();
+    else if (
+      world.state.status === "protocolSelect" ||
+      world.state.status === "evolutionSelect"
+    ) {
+      this.renderExProtocolChoices(world);
+    } else this.renderContractChoices();
   }
 
   consumeInput(): ArenaChoiceInput {
@@ -120,11 +132,15 @@ export class ArenaChoiceOverlay {
   private renderUpgradeChoices(world: WorldState): void {
     const choices = world.progression.pendingUpgradeChoices;
     this.visibleChoiceCount = choices.length;
-    const extra = world.progression.buildCompletedAt !== null;
-    const title = extra
-      ? `EXTRA LEVEL ${world.progression.extraLevel}`
+    const limitBreak =
+      world.progression.pendingChoice?.kind === "limit-break";
+    const title = limitBreak
+      ? `EX Lv ${world.progression.extraLevel} / LIMIT BREAK CYCLE ${world.progression.extraCycle}`
       : `レベル ${world.progression.level} 強化選択`;
-    const shell = this.createShell(title, this.createProgressText(world));
+    const subtitle = limitBreak
+      ? `${formatSelectedExProtocolRoute(world)} / 未取得 ${world.progression.extraCycleRemaining.length}`
+      : this.createProgressText(world);
+    const shell = this.createShell(title, subtitle);
     const grid = element(
       "div",
       `arena-choice-grid arena-choice-grid--${choices.length === 2 ? "two" : "three"}`,
@@ -132,6 +148,42 @@ export class ArenaChoiceOverlay {
     choices.forEach((choiceId, index) => grid.append(this.createUpgradeButton(world, choiceId, index)));
     shell.append(grid);
     this.root.append(shell);
+  }
+
+  private renderExProtocolChoices(world: WorldState): void {
+    const viewModel = createExProtocolChoiceViewModel(world);
+    if (!viewModel) {
+      throw new Error(
+        `Missing EX Protocol choice view model for "${world.state.status}".`,
+      );
+    }
+    this.visibleChoiceCount = viewModel.cards.length;
+    const shell = this.createShell(viewModel.title, viewModel.subtitle);
+    shell.classList.add(
+      "arena-choice-shell--ex",
+      `arena-choice-shell--${viewModel.kind}`,
+    );
+    const grid = element(
+      "div",
+      `arena-choice-grid arena-choice-grid--${viewModel.cards.length === 2 ? "two" : "three"}`,
+    );
+    for (const [index, card] of viewModel.cards.entries()) {
+      grid.append(
+        this.createExProtocolButton(world, viewModel.kind, card, index),
+      );
+    }
+    shell.append(grid);
+    if (viewModel.footer) {
+      shell.append(
+        element("p", "arena-choice-footer", viewModel.footer),
+      );
+    }
+    this.root.append(shell);
+    queueMicrotask(() => {
+      this.root
+        .querySelector<HTMLButtonElement>("[data-choice-index='0']")
+        ?.focus({ preventScroll: true });
+    });
   }
 
   private renderContractChoices(): void {
@@ -276,6 +328,57 @@ export class ArenaChoiceOverlay {
     return button;
   }
 
+  private createExProtocolButton(
+    world: WorldState,
+    kind: "protocol" | "evolution",
+    card: ExProtocolChoiceCardViewModel,
+    index: number,
+  ): HTMLButtonElement {
+    const button = element(
+      "button",
+      `arena-choice-card arena-choice-card--ex arena-choice-card--${world.state.weaponType}`,
+    );
+    button.type = "button";
+    button.dataset.choiceKind = kind;
+    button.dataset.choiceIndex = String(index);
+    button.dataset.choiceId = card.id;
+    button.setAttribute("aria-label", card.ariaLabel);
+    button.append(
+      element("span", "arena-choice-role", card.role),
+      element("strong", "arena-choice-card-title", card.title),
+      element("span", "arena-choice-card-description", card.summary),
+    );
+    for (const fact of card.facts) {
+      const row = element("span", "arena-choice-fact");
+      row.append(
+        element("span", "arena-choice-fact-label", fact.label),
+        element("span", "arena-choice-fact-text", fact.text),
+      );
+      button.append(row);
+    }
+    if (card.inputHint) {
+      button.append(
+        element("span", "arena-choice-input-hint", card.inputHint),
+      );
+    }
+    button.addEventListener("click", () => {
+      const pending = world.progression.pendingChoice;
+      const choices =
+        pending?.kind === "protocol" ||
+        pending?.kind === "evolution-one" ||
+        pending?.kind === "evolution-two"
+          ? pending.choices
+          : [];
+      if (choices[index] !== card.id) {
+        throw new Error(
+          `EX choice command "${card.id}" no longer matches index ${index}.`,
+        );
+      }
+      this.pendingInput.upgradeChoice = index;
+    });
+    return button;
+  }
+
   private createProgressText(world: WorldState): string {
     if (world.progression.buildCompletedAt !== null) {
       return `通常ビルド完成 / EXサイクル C${world.progression.extraCycle} / 未取得 ${world.progression.extraCycleRemaining.length}`;
@@ -353,6 +456,7 @@ function getCapstoneId(weaponId: WeaponTypeId): UpgradeId | null {
 }
 
 function createSignature(world: WorldState): string {
+  const pendingChoice = world.progression.pendingChoice;
   return [
     world.state.status,
     world.state.weaponType,
@@ -361,6 +465,24 @@ function createSignature(world: WorldState): string {
     world.progression.extraCycle,
     world.progression.buildCompletedAt,
     world.progression.pendingUpgradeChoices.join(","),
+    pendingChoice?.kind ?? "",
+    pendingChoice && "choices" in pendingChoice
+      ? pendingChoice.choices.join(",")
+      : "",
+    pendingChoice &&
+    (pendingChoice.kind === "evolution-one" ||
+      pendingChoice.kind === "evolution-two")
+      ? pendingChoice.protocolId
+      : "",
+    world.progression.exProtocol?.status ?? "",
+    world.progression.exProtocol?.status === "selected"
+      ? [
+          world.progression.exProtocol.route.protocolId,
+          world.progression.exProtocol.route.evolutionOneId,
+          world.progression.exProtocol.route.evolutionTwoId,
+          world.progression.exProtocol.route.masteryUnlocked,
+        ].join(",")
+      : "",
     Object.values(world.progression.upgradeRanks).join(","),
     Object.values(world.progression.extraUpgradeRanks).join(","),
   ].join(":");

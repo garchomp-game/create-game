@@ -30,12 +30,14 @@ export class PhaserArenaRenderer {
   private screenHudRenderMaxMs = 0;
   private feedbackRenderTotalMs = 0;
   private feedbackRenderMaxMs = 0;
+  private runConfig: SimulationConfig;
 
   constructor(
     scene: Phaser.Scene,
     private readonly simulationConfig: SimulationConfig,
     viewConfig: ViewConfig,
   ) {
+    this.runConfig = simulationConfig;
     this.background = new PhaserTacticalBackground(
       scene,
       simulationConfig,
@@ -48,6 +50,11 @@ export class PhaserArenaRenderer {
     this.screenView = new PhaserArenaScreenView(scene, simulationConfig);
   }
 
+  configureForRun(config: SimulationConfig): void {
+    this.runConfig = config;
+    this.hud.configureForRun(config);
+  }
+
   render(
     world: WorldState,
     pointerWorld: Vec2 | null = null,
@@ -58,7 +65,7 @@ export class PhaserArenaRenderer {
   ): void {
     const screen = createArenaScreenViewModel(
       world,
-      this.simulationConfig,
+      this.runConfig,
       uiState,
       tutorialSnapshot,
     );

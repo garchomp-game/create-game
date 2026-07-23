@@ -150,7 +150,10 @@ export class ArenaScene extends Phaser.Scene {
       profileStore: this.profileStore,
       logger: this.logger,
     });
-    this.inputAdapter = new PhaserInputAdapter(this);
+    this.inputAdapter = new PhaserInputAdapter(
+      this,
+      this.simulationConfig.features.exProtocols,
+    );
     this.choiceOverlay = new ArenaChoiceOverlay(this.game.canvas, this.simulationConfig);
     this.tutorialDialog = new ArenaTutorialDialog(
       this.game.canvas,
@@ -174,6 +177,7 @@ export class ArenaScene extends Phaser.Scene {
     const requestedAutoPilotWeapon = this.getRequestedAutoPilotWeapon();
     if (requestedAutoPilotWeapon) this.startAutoPilot(requestedAutoPilotWeapon);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.inputAdapter.destroy();
       this.choiceOverlay.destroy();
       this.tutorialDialog.destroy();
     });
@@ -274,6 +278,10 @@ export class ArenaScene extends Phaser.Scene {
       stageId: this.selectedStageId,
       rulesetProfileId: this.getRequestedRulesetProfileId(),
     });
+    this.inputAdapter.configureExProtocolInput(
+      this.runConfig.features.exProtocols,
+    );
+    this.arenaRenderer.configureForRun(this.runConfig);
     this.debugController?.resetRun();
     if (this.session.recordPolicy === "none") {
       this.runLifecycle.discard();

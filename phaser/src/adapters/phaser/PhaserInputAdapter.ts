@@ -28,19 +28,54 @@ type ArenaKeys = {
   upgrade3: Phaser.Input.Keyboard.Key;
   autoPilot: Phaser.Input.Keyboard.Key;
   debug: Phaser.Input.Keyboard.Key;
+  special?: Phaser.Input.Keyboard.Key;
 };
 
 export class PhaserInputAdapter {
   private readonly scene: Phaser.Scene;
   private readonly keys: ArenaKeys;
+  private exProtocolInputEnabled = false;
   private hasPointerAim = false;
   private pointerPressed = false;
+  private specialPointerPressed = false;
   private currentCursor = "";
   private pendingMenuAction: MenuAction | null = null;
   private focusedMenuIndex = 0;
   private menuContextKey = "";
 
-  constructor(scene: Phaser.Scene) {
+  private readonly handlePointerMove = (): void => {
+    this.hasPointerAim = true;
+  };
+
+  private readonly handlePointerDown = (
+    pointer: Phaser.Input.Pointer,
+  ): void => {
+    if (pointer.leftButtonDown() || pointer.button === 0) {
+      this.pointerPressed = true;
+    }
+  };
+
+  private readonly handleSpecialPointerDown = (
+    pointer: Phaser.Input.Pointer,
+  ): void => {
+    if (!pointer.rightButtonDown() && pointer.button !== 2) return;
+    this.hasPointerAim = true;
+    this.specialPointerPressed = true;
+  };
+
+  private readonly handleContextMenu = (event: MouseEvent): void => {
+    event.preventDefault();
+  };
+
+  private readonly handleWindowBlur = (): void => {
+    this.clearTransientInput();
+  };
+
+  private readonly handleVisibilityChange = (): void => {
+    if (document.visibilityState !== "visible") this.clearTransientInput();
+  };
+
+  constructor(scene: Phaser.Scene, exProtocolInputEnabled = false) {
     this.scene = scene;
     const keyboard = scene.input.keyboard;
     if (!keyboard) {
@@ -80,12 +115,62 @@ export class PhaserInputAdapter {
       Phaser.Input.Keyboard.KeyCodes.ESC,
     ]);
 
-    scene.input.on(Phaser.Input.Events.POINTER_MOVE, () => {
-      this.hasPointerAim = true;
-    });
-    scene.input.on(Phaser.Input.Events.POINTER_DOWN, (pointer: Phaser.Input.Pointer) => {
-      if (pointer.leftButtonDown() || pointer.button === 0) this.pointerPressed = true;
-    });
+    scene.input.on(
+      Phaser.Input.Events.POINTER_MOVE,
+      this.handlePointerMove,
+    );
+    scene.input.on(
+      Phaser.Input.Events.POINTER_DOWN,
+      this.handlePointerDown,
+    );
+    this.configureExProtocolInput(exProtocolInputEnabled);
+  }
+
+  configureExProtocolInput(enabled: boolean): void {
+    if (enabled === this.exProtocolInputEnabled) return;
+    this.clearTransientInput();
+    const keyboard = this.scene.input.keyboard;
+    if (!keyboard) {
+      throw new Error("Phaser keyboard input is not available.");
+    }
+    this.exProtocolInputEnabled = enabled;
+    if (enabled) {
+      this.keys.special = keyboard.addKey(
+        Phaser.Input.Keyboard.KeyCodes.E,
+      );
+      keyboard.addCapture(Phaser.Input.Keyboard.KeyCodes.E);
+      this.scene.input.on(
+        Phaser.Input.Events.POINTER_DOWN,
+        this.handleSpecialPointerDown,
+      );
+      this.scene.game.canvas.addEventListener(
+        "contextmenu",
+        this.handleContextMenu,
+      );
+      window.addEventListener("blur", this.handleWindowBlur);
+      document.addEventListener(
+        "visibilitychange",
+        this.handleVisibilityChange,
+      );
+      return;
+    }
+    if (this.keys.special) {
+      keyboard.removeKey(this.keys.special, true, true);
+      delete this.keys.special;
+    }
+    this.scene.input.off(
+      Phaser.Input.Events.POINTER_DOWN,
+      this.handleSpecialPointerDown,
+    );
+    this.scene.game.canvas.removeEventListener(
+      "contextmenu",
+      this.handleContextMenu,
+    );
+    window.removeEventListener("blur", this.handleWindowBlur);
+    document.removeEventListener(
+      "visibilitychange",
+      this.handleVisibilityChange,
+    );
   }
 
   read(
@@ -96,9 +181,11 @@ export class PhaserInputAdapter {
   ): InputSnapshot {
     const pointer = this.scene.input.activePointer;
     const pointerPressed = this.pointerPressed;
+    const specialPointerPressed = this.specialPointerPressed;
     const startJustDown = Phaser.Input.Keyboard.JustDown(this.keys.start);
     const shootJustDown = Phaser.Input.Keyboard.JustDown(this.keys.shoot);
     this.pointerPressed = false;
+    this.specialPointerPressed = false;
     this.syncCursor(status, upgradeChoiceCount, secondaryMenu);
     if (status !== "playing") {
       this.hasPointerAim = false;
@@ -178,6 +265,13 @@ export class PhaserInputAdapter {
         : menuAction === "contractOverdrive"
           ? 1
           : null;
+    const pausePressed =
+      Phaser.Input.Keyboard.JustDown(this.keys.pause) ||
+      Phaser.Input.Keyboard.JustDown(this.keys.escape) ||
+      menuAction === "resume";
+    const specialKeyboardPressed = this.keys.special
+      ? Phaser.Input.Keyboard.JustDown(this.keys.special)
+      : false;
 
     return {
       move: this.readMove(),
@@ -191,15 +285,17 @@ export class PhaserInputAdapter {
           (autoFireEnabled && this.hasPointerAim)),
       restartPressed:
         Phaser.Input.Keyboard.JustDown(this.keys.restart) || menuAction === "restart",
-      pausePressed:
-        Phaser.Input.Keyboard.JustDown(this.keys.pause) ||
-        Phaser.Input.Keyboard.JustDown(this.keys.escape) ||
-        menuAction === "resume",
+      pausePressed,
       quitToTitlePressed:
         Phaser.Input.Keyboard.JustDown(this.keys.quitToTitle) || menuAction === "title",
       upgradeChoicePressed: clickedUpgradeChoice ?? this.readUpgradeChoice(),
       contractChoicePressed,
       tutorialContinuePressed,
+      specialPressed:
+        this.exProtocolInputEnabled &&
+        status === "playing" &&
+        !pausePressed &&
+        (specialPointerPressed || specialKeyboardPressed),
     };
   }
 
@@ -240,8 +336,23 @@ export class PhaserInputAdapter {
 
   clearTransientInput(): void {
     this.pointerPressed = false;
+    this.specialPointerPressed = false;
+    this.keys.special?.reset();
     this.hasPointerAim = false;
     this.pendingMenuAction = null;
+  }
+
+  destroy(): void {
+    this.clearTransientInput();
+    this.scene.input.off(
+      Phaser.Input.Events.POINTER_MOVE,
+      this.handlePointerMove,
+    );
+    this.scene.input.off(
+      Phaser.Input.Events.POINTER_DOWN,
+      this.handlePointerDown,
+    );
+    this.configureExProtocolInput(false);
   }
 
   syncCursor(

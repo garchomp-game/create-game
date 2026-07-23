@@ -9,7 +9,7 @@ import type {
   WorldState,
 } from "../../domain/types";
 import { getCollapseSafeBounds } from "../../simulation/systems/collapseSystem";
-import { HUD_LEFT_PANEL_BOUNDS } from "./PhaserHud";
+import { HUD_LEFT_PANEL_BOUNDS } from "./PhaserHudLayout";
 
 export class PhaserArenaWorldView {
   constructor(

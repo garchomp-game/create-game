@@ -31,6 +31,8 @@ export type ArenaScreenKind =
   | "settings"
   | "gameOver"
   | "upgradeSelect"
+  | "protocolSelect"
+  | "evolutionSelect"
   | "contractSelect"
   | "trainingComplete"
   | "paused"
@@ -96,6 +98,10 @@ export function createArenaScreenViewModel(
       };
     case "upgradeSelect":
       return { ...base, kind: "upgradeSelect", statusText: null, detailText: null };
+    case "protocolSelect":
+      return { ...base, kind: "protocolSelect", statusText: null, detailText: null };
+    case "evolutionSelect":
+      return { ...base, kind: "evolutionSelect", statusText: null, detailText: null };
     case "contractSelect":
       return { ...base, kind: "contractSelect", statusText: null, detailText: null };
     case "trainingComplete":

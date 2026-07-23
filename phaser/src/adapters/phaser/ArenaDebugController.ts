@@ -26,6 +26,10 @@ import {
   selectUpgradeChoices,
   updateLevelProgression,
 } from "../../simulation/systems/levelSystem";
+import {
+  chooseExProtocolEvolution,
+  offerExProtocolEvolution,
+} from "../../simulation/exProtocolProgression";
 import { updateRunStats } from "../../simulation/systems/statsSystem";
 import { getWaveBand } from "../../simulation/waveDirector";
 import type { ArenaSession } from "../../application/ArenaSession";
@@ -184,6 +188,9 @@ export class ArenaDebugController {
       grantXp: (amount) => this.grantXp(amount),
       forceUpgradeSelect: () => this.forceUpgradeSelect(),
       forceExtraUpgradeSelect: () => this.forceExtraUpgradeSelect(),
+      forceExProtocolSelect: () => this.forceExProtocolSelect(),
+      forceExEvolutionSelect: (tier = 1) =>
+        this.forceExEvolutionSelect(tier),
       restart: () => {
         this.dependencies.resetGame("playing", this.debugRunOrigin);
         this.dependencies.render();
@@ -294,6 +301,12 @@ export class ArenaDebugController {
       upgradeRanks: { ...world.progression.upgradeRanks },
       extraUpgradeRanks: { ...world.progression.extraUpgradeRanks },
       extraCycleRemaining: [...world.progression.extraCycleRemaining],
+      pendingProgressionChoice: world.progression.pendingChoice
+        ? structuredClone(world.progression.pendingChoice)
+        : null,
+      exProtocol: world.progression.exProtocol
+        ? structuredClone(world.progression.exProtocol)
+        : null,
       runtime: { ...world.runtime },
       buildComposition: composeBuild(
         config,
@@ -497,6 +510,57 @@ export class ArenaDebugController {
       this.config,
       events,
     );
+    updateRunStats(this.world, events);
+    this.dependencies.recordResult({ events, metrics: [] });
+    this.dependencies.render();
+  }
+
+  private forceExProtocolSelect(): void {
+    if (
+      !this.config.features.exProtocols ||
+      this.world.state.status === "gameOver"
+    ) {
+      return;
+    }
+    this.markMutation();
+    for (const upgradeId of UPGRADE_IDS) {
+      this.world.progression.upgradeRanks[upgradeId] =
+        this.config.upgrades[upgradeId].maxRank;
+    }
+    const composition = composeBuild(
+      this.config,
+      this.world.state.weaponType,
+      this.world.progression.upgradeRanks,
+      [],
+      this.world.progression.extraUpgradeRanks,
+    );
+    Object.assign(this.world.runtime, composition.modifiers);
+    this.world.state.hp =
+      this.config.player.maxHp + this.world.runtime.maxHpBonus;
+    this.world.state.status = "playing";
+    const events: GameEvent[] = [];
+    completeBuild(this.world, this.config, events);
+    updateRunStats(this.world, events);
+    this.dependencies.recordResult({ events, metrics: [] });
+    this.dependencies.render();
+  }
+
+  private forceExEvolutionSelect(tier: 1 | 2): void {
+    if (!this.config.features.exProtocols) return;
+    const progression = this.world.progression.exProtocol;
+    if (progression?.status !== "selected") return;
+    this.markMutation();
+    const events: GameEvent[] = [];
+    if (tier === 2 && progression.route.evolutionOneId === null) {
+      this.world.progression.extraLevel = 1;
+      if (!offerExProtocolEvolution(this.world, 1, events)) return;
+      if (!chooseExProtocolEvolution(this.world, 0, this.config, events)) {
+        return;
+      }
+    }
+    this.world.progression.extraLevel = tier;
+    this.world.state.status = "playing";
+    if (!offerExProtocolEvolution(this.world, tier, events)) return;
     updateRunStats(this.world, events);
     this.dependencies.recordResult({ events, metrics: [] });
     this.dependencies.render();

@@ -97,6 +97,14 @@ export class PhaserArenaScreenView {
       graphics.fillRect(0, 0, width, height);
       return;
     }
+    if (
+      screen.kind === "protocolSelect" ||
+      screen.kind === "evolutionSelect"
+    ) {
+      graphics.fillStyle(0x020617, 0.62);
+      graphics.fillRect(0, 0, width, height);
+      return;
+    }
     if (screen.kind === "contractSelect") {
       graphics.fillStyle(0x020617, 0.94);
       graphics.fillRect(0, 0, width, height);

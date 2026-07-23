@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { HUD_LEFT_PANEL_BOUNDS } from "../../src/adapters/phaser/PhaserHud";
+import { HUD_LEFT_PANEL_BOUNDS } from "../../src/adapters/phaser/PhaserHudLayout";
 import { TUTORIAL_TRANSFER_CHECKLIST_BOUNDS } from "../../src/adapters/phaser/PhaserTutorialLayer";
 import { SIMULATION_CONFIG } from "../../src/config/gameConfig";
 import type { TutorialStepId } from "../../src/domain/tutorial";

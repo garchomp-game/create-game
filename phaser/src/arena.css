@@ -254,6 +254,80 @@
   border-color: #fb7185;
 }
 
+.arena-choice-shell--ex {
+  gap: calc(10px * var(--arena-scale));
+  padding: calc(20px * var(--arena-scale)) calc(34px * var(--arena-scale));
+}
+
+.arena-choice-shell--ex .arena-choice-grid {
+  gap: calc(12px * var(--arena-scale));
+}
+
+.arena-choice-shell--evolution .arena-choice-grid {
+  flex: 0 0 calc(260px * var(--arena-scale));
+  margin: auto 0;
+}
+
+.arena-choice-card--ex {
+  justify-content: flex-start;
+  gap: calc(6px * var(--arena-scale));
+  padding: calc(16px * var(--arena-scale));
+}
+
+.arena-choice-card--ex .arena-choice-role {
+  font-size: 11px;
+}
+
+.arena-choice-card--ex .arena-choice-card-title {
+  font-size: 18px;
+}
+
+.arena-choice-card--ex .arena-choice-card-description {
+  color: #e2e8f0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.arena-choice-fact {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(calc(66px * var(--arena-scale)), auto) minmax(0, 1fr);
+  gap: calc(7px * var(--arena-scale));
+  color: #cbd5e1;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.arena-choice-fact-label {
+  color: #67e8f9;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.arena-choice-card--spread .arena-choice-fact-label {
+  color: #fbbf24;
+}
+
+.arena-choice-fact-text {
+  overflow-wrap: anywhere;
+}
+
+.arena-choice-input-hint {
+  margin-top: auto;
+  color: #facc15;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.arena-choice-footer {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+}
+
 .arena-choice-role {
   display: block;
   color: #94a3b8;
@@ -339,6 +413,15 @@
   font-size: 12px;
 }
 
+.arena-choice-overlay--compact .arena-choice-card--ex .arena-choice-card-title {
+  font-size: 16px;
+}
+
+.arena-choice-overlay--compact .arena-choice-card--ex .arena-choice-card-description,
+.arena-choice-overlay--compact .arena-choice-fact {
+  font-size: 10px;
+}
+
 .arena-choice-overlay--portrait .arena-choice-shell {
   gap: calc(12px * var(--arena-scale));
   padding: calc(24px * var(--arena-scale));
@@ -361,4 +444,17 @@
 
 .arena-choice-overlay--portrait .arena-choice-card-title {
   font-size: 21px;
+}
+
+.arena-choice-overlay--portrait .arena-choice-shell--ex {
+  overflow-y: auto;
+}
+
+.arena-choice-overlay--portrait .arena-choice-shell--ex .arena-choice-grid {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.arena-choice-overlay--portrait .arena-choice-card--ex {
+  min-height: calc(220px * var(--arena-scale));
 }

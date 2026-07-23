@@ -7,15 +7,12 @@ import { getThreatTier } from "../../simulation/threatDirector";
 import { getDifficultyElapsed } from "../../simulation/difficultyClock";
 import { getNextCollapseAt } from "../../simulation/systems/collapseSystem";
 import type { AutoPilotMode } from "../../simulation/autoPilot";
-
-export const HUD_LEFT_PANEL_BOUNDS = {
-  x: 16,
-  y: 14,
-  width: 348,
-  height: 82,
-} as const;
+import { createExProtocolHudViewModel } from "../../presentation/ExProtocolPresenter";
+import { getPlayerEffectiveMaxHp } from "../../simulation/systems/playerHealthSystem";
+import { HUD_LEFT_PANEL_BOUNDS } from "./PhaserHudLayout";
 
 export class PhaserHud {
+  private readonly scene: Phaser.Scene;
   private readonly graphics: Phaser.GameObjects.Graphics;
   private readonly hpText: Phaser.GameObjects.Text;
   private readonly hpValueText: Phaser.GameObjects.Text;
@@ -26,8 +23,12 @@ export class PhaserHud {
   private readonly encounterText: Phaser.GameObjects.Text;
   private readonly bossText: Phaser.GameObjects.Text;
   private readonly autoPilotText: Phaser.GameObjects.Text;
+  private protocolText: Phaser.GameObjects.Text | null = null;
+  private runConfig: SimulationConfig;
 
   constructor(scene: Phaser.Scene, private readonly simulationConfig: SimulationConfig) {
+    this.scene = scene;
+    this.runConfig = simulationConfig;
     this.graphics = scene.add.graphics().setDepth(10);
     this.hpText = this.createText(scene, 28, 20);
     this.hpValueText = this.createText(scene, 352, 20).setOrigin(1, 0);
@@ -45,6 +46,28 @@ export class PhaserHud {
       .setOrigin(0.5)
       .setColor("#67e8f9")
       .setText("AI観戦");
+    this.configureForRun(simulationConfig);
+  }
+
+  configureForRun(config: SimulationConfig): void {
+    this.runConfig = config;
+    if (config.features.exProtocols && this.protocolText === null) {
+      this.protocolText = this.createText(
+        this.scene,
+        this.simulationConfig.arena.width / 2,
+        51,
+      )
+        .setOrigin(0.5, 0)
+        .setAlign("center")
+        .setFontSize(11)
+        .setLineSpacing(1)
+        .setWordWrapWidth(280);
+      return;
+    }
+    if (!config.features.exProtocols && this.protocolText !== null) {
+      this.protocolText.destroy();
+      this.protocolText = null;
+    }
   }
 
   render(
@@ -66,7 +89,7 @@ export class PhaserHud {
       width: 270,
       height: 82,
     };
-    const maxHp = this.simulationConfig.player.maxHp + world.runtime.maxHpBonus;
+    const maxHp = getPlayerEffectiveMaxHp(world, this.runConfig);
     const hpRatio = maxHp > 0 ? world.state.hp / maxHp : 0;
     const buildComplete = world.progression.buildCompletedAt !== null;
     const xpRatio =
@@ -74,8 +97,8 @@ export class PhaserHud {
         ? world.progression.xp / world.progression.xpToNext
         : 0;
     const difficultyElapsed = getDifficultyElapsed(world);
-    const wave = getWaveBand(this.simulationConfig, difficultyElapsed);
-    const threatTier = getThreatTier(this.simulationConfig, difficultyElapsed);
+    const wave = getWaveBand(this.runConfig, difficultyElapsed);
+    const threatTier = getThreatTier(this.runConfig, difficultyElapsed);
     this.graphics.fillStyle(0x020617, 0.76);
     this.graphics.fillRoundedRect(leftPanel.x, leftPanel.y, leftPanel.width, leftPanel.height, 6);
     this.graphics.fillRoundedRect(rightPanel.x, rightPanel.y, rightPanel.width, rightPanel.height, 6);
@@ -110,6 +133,48 @@ export class PhaserHud {
     this.autoPilotText
       .setText(formatAutoPilotMode(autoPilotMode))
       .setVisible(autoPilotEnabled);
+    const protocol = createExProtocolHudViewModel(
+      world,
+      this.runConfig,
+    );
+    if (protocol) {
+      const panel = {
+        x: HUD_LEFT_PANEL_BOUNDS.x + HUD_LEFT_PANEL_BOUNDS.width + 6,
+        y: 47,
+        width:
+          this.simulationConfig.arena.width -
+          286 -
+          (HUD_LEFT_PANEL_BOUNDS.x + HUD_LEFT_PANEL_BOUNDS.width) -
+          12,
+        height: 55,
+      };
+      this.graphics.fillStyle(0x020617, 0.88);
+      this.graphics.fillRoundedRect(
+        panel.x,
+        panel.y,
+        panel.width,
+        panel.height,
+        5,
+      );
+      this.graphics.lineStyle(1, protocol.accent, 0.95);
+      this.graphics.strokeRoundedRect(
+        panel.x + 0.5,
+        panel.y + 0.5,
+        panel.width - 1,
+        panel.height - 1,
+        5,
+      );
+      this.protocolText
+        ?.setColor(`#${protocol.accent.toString(16).padStart(6, "0")}`)
+        .setPosition(panel.x + panel.width / 2, panel.y + 4)
+        .setWordWrapWidth(panel.width - 12)
+        .setText(
+          `${protocol.name}  EX Lv ${protocol.exLevel}\n${protocol.routeLabel}\n${protocol.primary}${protocol.secondary ? ` / ${protocol.secondary}` : ""}`,
+        )
+        .setVisible(true);
+    } else {
+      this.protocolText?.setVisible(false);
+    }
 
     this.drawBar(28, 40, 324, 8, hpRatio, getHpBarColor(hpRatio));
     this.drawBar(28, 73, 324, 8, xpRatio, 0x38bdf8);
@@ -235,6 +300,7 @@ export class PhaserHud {
     this.encounterText.setVisible(visible && Boolean(this.encounterText.text));
     this.bossText.setVisible(false);
     this.autoPilotText.setVisible(false);
+    this.protocolText?.setVisible(false);
   }
 
   private getEncounterLabel(world: WorldState): string {
@@ -279,7 +345,7 @@ export class PhaserHud {
     if (scheduledAt !== null && encounterId !== null && director.phase === "active") {
       const end =
         scheduledAt +
-        this.simulationConfig.encounter.director.definitions[encounterId].activeDuration;
+        this.runConfig.encounter.director.definitions[encounterId].activeDuration;
       labels.push(
         TEXT.hud.encounterActive(
           TEXT.hud.encounterNames[encounterId],
@@ -288,7 +354,7 @@ export class PhaserHud {
       );
     }
     if (scheduledAt !== null && encounterId !== null && director.phase === "recovery") {
-      const definition = this.simulationConfig.encounter.director.definitions[encounterId];
+      const definition = this.runConfig.encounter.director.definitions[encounterId];
       const end =
         scheduledAt +
         definition.activeDuration +
@@ -300,15 +366,15 @@ export class PhaserHud {
         ),
       );
     }
-    if (this.simulationConfig.features.arenaCollapse) {
+    if (this.runConfig.features.arenaCollapse) {
       const nextAt = getNextCollapseAt(
-        this.simulationConfig,
+        this.runConfig,
         world.encounter.collapse.stage,
       );
       const untilNext = nextAt - world.state.elapsed;
       if (
         untilNext >= 0 &&
-        untilNext <= this.simulationConfig.encounter.collapse.warningDuration
+        untilNext <= this.runConfig.encounter.collapse.warningDuration
       ) {
         labels.push(TEXT.hud.collapseWarning(Math.ceil(untilNext)));
       } else if (world.encounter.collapse.stage > 0) {

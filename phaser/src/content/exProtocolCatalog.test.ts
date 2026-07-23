@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import rawCatalog from "./ex-protocols.v1.json";
+import rawCatalog from "./ex-protocols.v1.json" with { type: "json" };
 import {
   EX_PROTOCOL_CATALOG,
   getCompatibleExProtocols,
