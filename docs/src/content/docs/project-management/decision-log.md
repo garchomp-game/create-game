@@ -1083,3 +1083,15 @@ production既定値はOFFのままです。外部push、PR、main merge、Cloudf
 - 残るgateは非SwiftShader実GPUの15分耐久と、6 Protocolの操作、可読性、選択品質、武器弱点維持を確認する人間評価である。
 
 数値は[EX Protocol candidate 自動QA](../../playtest/v08-ex-protocol-candidate-report/)へ固定する。結果を見て同じcandidateのscalarを追従変更せず、変更が必要なら再現条件と採否閾値を持つ別candidateとして扱う。外部push、PR、main merge、Cloudflare deployは引き続き行わない。
+
+## 2026-07-23: EX Protocol C1をtrafficなしのVersion Previewへ固定する
+
+決定: 人間gate用の比較物としてruntime `03805713cf83`をCloudflare Version Previewへuploadする。production trafficは配分せず、candidate acceptedやproduction採用とは扱わない。
+
+- Previewは最新mainの9課題Trainingを祖先に持ち、6 Protocol、専用音源、RunRecord v3、代表戦闘fixtureを含む。
+- candidate build時のHTML、初期タイトル、ベータ情報、フィードバック文面を`0.8.0-candidate.1 / phaser-v0.8-ex-protocols-c1`へ統一する。
+- 候補専用配布buildを`build:deploy:ex-protocols`へ分離し、release workflowがfeature OFF artifactを誤検査しないようにする。
+- 全unitは559 passed / 2 skipped、candidate browserは13 passed、candidate有効状態の9課題Trainingは2 passed、従来release smokeは9 passedだった。
+- 実URL、HTML meta、ベータ情報、canvas表示、console error 0を確認した。production traffic、main、既存Training固定Previewは変更しない。
+
+固定URLは[EX Protocol C1 Preview](https://v08-ex-protocols-c1-0380571-arena-core.garchomp-game.workers.dev/)とする。

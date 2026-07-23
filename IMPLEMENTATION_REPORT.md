@@ -8,6 +8,7 @@ Updated: 2026-07-23
 - Candidate acceptance: `pending hardware and human gates`
 - Production adoption: `not requested`
 - Production deploy performed: `NO`
+- Version Preview uploaded: `YES`
 - Production EX Protocol default: `OFF`
 - External push / PR / main merge: `NO`
 
@@ -18,6 +19,7 @@ The six Protocol systems, 24 evolution routes, progression, input, UI, feedback,
 - Repository: `garchomp-game/create-game`
 - Branch: `feat/v08-ex-protocols-c1`
 - Implementation HEAD before documentation: `12a77956d430`
+- Preview runtime HEAD: `03805713cf83`
 - Base HEAD: `565d401a92f661cff9a4936cee2ebf2c9420d5c3`
 - Local implementation commits: 17
 - Applicable `AGENTS.md`: user-provided personal Codex notes; no repository-local file
@@ -29,7 +31,7 @@ The six Protocol systems, 24 evolution routes, progression, input, UI, feedback,
 | Command | Before | Latest candidate evidence | Notes |
 | --- | --- | --- | --- |
 | `npm run typecheck` | PASS | PASS | Final candidate source |
-| `npm test` | 69 files / 468 passed / 2 skipped | 87 files / 557 passed / 2 skipped | Full suite |
+| `npm test` | 69 files / 468 passed / 2 skipped | 87 files / 559 passed / 2 skipped | Full suite |
 | `npm run build:deploy` | PASS | PASS | 231 modules、31 files、2.82 MiB |
 | `npm run test:e2e:release -- --workers=1` | 9 passed | 9 passed | Chrome landscape / portrait and Firefox |
 | docs build | 102 pages PASS | 104 pages PASS | Canonical specification and automatic QA report |
@@ -103,7 +105,8 @@ No implementation deviation from the handoff values or semantics was intentional
 | Typed deterministic replay | 9 passed |
 | Record migration / deletion journal | 18 passed |
 | Probe policy and smoke balance matrix | 6 passed in latest smoke |
-| Representative six-Protocol browser E2E | 12 passed |
+| Representative six-Protocol browser E2E | 13 passed, including candidate release identity |
+| Candidate-enabled nine-step Training E2E | 2 passed |
 | Visual montage inspection | PASS, no incoherent HUD / EX / Protocol / enemy overlap observed |
 | Headless paired soak smoke | PASS |
 | Final Expedition exposure smoke | PASS: Protocol, E1, E2, Mastery, first Limit Break, boss phase 2, victory |
@@ -141,7 +144,8 @@ Automated score, survival, damage share, and effect counts are review triggers. 
 - [x] Normal save and automatic reconciliation preserve v1 / v2 keys
 - [x] Explicit user deletion is the only legacy synchronization path
 - [x] No external backend or telemetry transport was added
-- [x] No external push, PR, main merge, deploy, or production traffic change
+- [x] No external push, PR, main merge, or production traffic change
+- [x] Candidate-only Cloudflare Version Preview; no traffic allocation
 
 Rollback is the candidate ruleset profile plus `VITE_ARENA_EX_PROTOCOL_CANDIDATE`. OFF restores Core -> existing Limit Break, legacy records, legacy input, and legacy rendering.
 

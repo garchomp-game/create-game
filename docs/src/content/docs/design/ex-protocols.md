@@ -6,7 +6,7 @@ description: 通常ビルド完成後に武器固有の判断を追加する、6
 最終更新日: 2026-07-23
 
 :::caution[候補の状態]
-このページはローカルbranch `feat/v08-ex-protocols-c1`のcandidate仕様です。production既定値はOFFで、外部公開、PR、main統合、採用判断は行っていません。自動試験は実装整合性を保証しますが、面白さと武器ごとの弱点維持は人間ゲートが必要です。
+このページはbranch `feat/v08-ex-protocols-c1`のcandidate仕様です。production既定値はOFFで、Version Previewだけを公開し、PR、main統合、production traffic配分、採用判断は行っていません。自動試験は実装整合性を保証しますが、面白さと武器ごとの弱点維持は人間ゲートが必要です。
 :::
 
 ## 目的

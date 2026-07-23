@@ -6,13 +6,13 @@ description: 6体系・24 route候補の回帰、20 seed比較、90秒soak、Fin
 実施日: 2026-07-23
 
 :::caution[採用判定ではない]
-このレポートはローカルcandidateの自動QAです。production既定はOFFで、外部push、PR、deployは行っていません。実GPU耐久と人間による操作・可読性・選択品質は未実施です。
+このレポートはcandidateの自動QAです。production既定はOFFで、外部push、PR、main統合、production traffic配分は行っていません。Cloudflare Version Previewは確認用であり、実GPU耐久と人間による操作・可読性・選択品質は未実施です。
 :::
 
 ## 対象
 
 - branch: `feat/v08-ex-protocols-c1`
-- runtime implementation: `12a77956d430`
+- runtime implementation: `03805713cf83`
 - base: `565d401a92f6`
 - candidate Endless ruleset: `phaser-v0.8-ex-protocols-c1`
 - candidate Final ruleset: `phaser-v0.8-final-expedition-ex-protocols-c1`
@@ -23,7 +23,7 @@ description: 6体系・24 route候補の回帰、20 seed比較、90秒soak、Fin
 | Gate | 結果 |
 | --- | --- |
 | TypeScript | PASS |
-| 全unit | 87 files / 557 passed / 2 skipped |
+| 全unit | 87 files / 559 passed / 2 skipped |
 | 24 route | 25 passed |
 | 型付きreplay / 決定論 | 9 passed |
 | RunRecord v3 / legacy migration | 18 passed |
@@ -31,7 +31,8 @@ description: 6体系・24 route候補の回帰、20 seed比較、90秒soak、Fin
 | 90秒headless release soak | PASS |
 | 配布build / artifact検査 | PASS、231 modules、31 files、2.82 MiB |
 | release browser smoke | Chrome横・縦、Firefoxの9 passed |
-| EX candidate browser | 12 passed。選択、入力、Training無効化、保存、6体系代表戦闘 |
+| EX candidate browser | 13 passed。版表示、選択、入力、Training無効化、保存、6体系代表戦闘 |
+| EX有効buildのTraining | 2 passed。9課題完走、記録非介入、中断・再開 |
 | Starlight | 104 pages PASS |
 | RC6 normal parity | 3/6勝、Pulse 1 / Spread 2、決定論維持 |
 | RC6 repair parity | candidate gate `false / true / true / true`、2400 HP候補を棄却維持 |
@@ -107,6 +108,6 @@ release gateの60秒以上露出率90%以上、露出中央値120秒以上を満
 
 ## 現在の判断
 
-利用可能な自動gateはgreenです。scalar変更を行う根拠はまだありません。candidate accepted、production ON、外部公開は、hardwareとhuman gateの後に別判断します。
+利用可能な自動gateはgreenです。scalar変更を行う根拠はまだありません。[固定Preview](https://v08-ex-protocols-c1-0380571-arena-core.garchomp-game.workers.dev/)は人間gate用の比較物であり、candidate acceptedとproduction ONはhardwareとhuman gateの後に別判断します。
 
 仕様は[EX Protocol候補](../../design/ex-protocols/)、実行契約は[品質戦略](../../engineering/quality-strategy/)を参照してください。
