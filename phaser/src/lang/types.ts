@@ -75,7 +75,7 @@ export type UiText = {
     levelKills: (level: number, kills: number) => string;
     shotsRecovered: (shots: number, recovered: number) => string;
     heals: (effective: number, collected: number) => string;
-    cause: (cause: string) => string;
+    defeatCause: (cause: string) => string;
   };
   menu: Record<MenuActionLabel, string>;
   trainingSteps: Record<

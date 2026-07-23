@@ -188,8 +188,14 @@ function formatGameOverText(world: WorldState, uiState?: ArenaUiState): string {
     );
   }
 
-  if (summary.lastDamageSource) {
-    lines.push(TEXT.ui.result.cause(formatDamageSource(summary.lastDamageSource)));
+  const isFatalDefeat =
+    summary.hp <= 0 && expeditionOutcome !== "victory";
+  if (isFatalDefeat && summary.lastDamageSource) {
+    lines.push(
+      TEXT.ui.result.defeatCause(
+        formatFatalDamageSource(summary.lastDamageSource),
+      ),
+    );
   }
 
   return lines.filter(Boolean).join("\n");
@@ -508,12 +514,15 @@ function createMenuLabels(
   };
 }
 
-function formatDamageSource(source: PlayerDamageSource): string {
+function formatFatalDamageSource(source: PlayerDamageSource): string {
   if (source.kind !== "collapse" && source.bossAttackId) {
-    return `指揮艦 ${formatBossAttack(source.bossAttackId)}`;
+    const attackName = formatBossAttack(source.bossAttackId);
+    return source.kind === "contact"
+      ? `指揮艦の「${attackName}」に接触し、HPが0になりました`
+      : `指揮艦の「${attackName}」を受け、HPが0になりました`;
   }
   if (source.kind === "contact") {
-    if (source.bossId) return "指揮艦 接触";
+    if (source.bossId) return "指揮艦に接触し、HPが0になりました";
     return TEXT.ui.damageSource.enemyContact(TEXT.ui.enemyNames[source.enemyType]);
   }
   if (source.kind === "projectile") return TEXT.ui.damageSource.enemyProjectile;

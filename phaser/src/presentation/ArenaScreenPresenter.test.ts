@@ -284,7 +284,14 @@ describe("createArenaScreenViewModel", () => {
   it("keeps Expedition completion bonuses on separate readable lines", () => {
     const world = createWorld(SIMULATION_CONFIG);
     world.state.status = "gameOver";
+    world.state.hp = 37;
     world.state.score = 141_292;
+    world.stats.lastDamageSource = {
+      kind: "projectile",
+      projectileId: "boss-projectile-before-victory",
+      bossId: "first-command-ship",
+      bossAttackId: "targeted-salvo",
+    };
     world.stats.encounterMetrics.expedition = {
       outcome: "victory",
       reachedActId: "command-ship",
@@ -320,6 +327,7 @@ describe("createArenaScreenViewModel", () => {
         "指揮艦撃破 00:00",
       ]),
     );
+    expect(viewModel.statusText).not.toContain("撃墜原因");
   });
 
   it("formats Expedition PB deltas from integer centiseconds", () => {
@@ -362,6 +370,48 @@ describe("createArenaScreenViewModel", () => {
     expect(tied.statusText).toContain("総合PBと同記録");
   });
 
+  it("explains the fatal source that ended an Endless run", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.state.status = "gameOver";
+    world.state.hp = 0;
+    world.stats.lastDamageSource = {
+      kind: "contact",
+      enemyId: "enemy-fast-1",
+      enemyType: "fast",
+    };
+
+    expect(
+      createArenaScreenViewModel(
+        world,
+        SIMULATION_CONFIG,
+        createUiState(),
+      ).statusText,
+    ).toContain("撃墜原因: 高速体に接触し、HPが0になりました");
+
+    world.stats.lastDamageSource = {
+      kind: "projectile",
+      projectileId: "enemy-projectile-1",
+    };
+    expect(
+      createArenaScreenViewModel(
+        world,
+        SIMULATION_CONFIG,
+        createUiState(),
+      ).statusText,
+    ).toContain("撃墜原因: 射撃体の敵弾を受け、HPが0になりました");
+
+    world.stats.lastDamageSource = { kind: "collapse", stage: 2 };
+    expect(
+      createArenaScreenViewModel(
+        world,
+        SIMULATION_CONFIG,
+        createUiState(),
+      ).statusText,
+    ).toContain(
+      "撃墜原因: 安全領域外で崩壊ダメージを受け、HPが0になりました（第2段階）",
+    );
+  });
+
   it("names the boss attack that ended an Expedition", () => {
     const world = createWorld(SIMULATION_CONFIG);
     world.state.status = "gameOver";
@@ -402,7 +452,9 @@ describe("createArenaScreenViewModel", () => {
     );
 
     expect(viewModel.statusText).toContain("遠征失敗");
-    expect(viewModel.statusText).toContain("指揮艦 照準斉射");
+    expect(viewModel.statusText).toContain(
+      "撃墜原因: 指揮艦の「照準斉射」を受け、HPが0になりました",
+    );
 
     const record = createRecord(world, "expedition", "final-expedition");
     const details = createArenaScreenViewModel(
@@ -421,8 +473,14 @@ describe("createArenaScreenViewModel", () => {
       bossAttackId: "escort-pincer",
     };
     expect(
-      createArenaScreenViewModel(world, SIMULATION_CONFIG, createUiState()).statusText,
-    ).toContain("指揮艦 挟撃護衛");
+      createArenaScreenViewModel(
+        world,
+        SIMULATION_CONFIG,
+        createUiState(),
+      ).statusText,
+    ).toContain(
+      "撃墜原因: 指揮艦の「挟撃護衛」に接触し、HPが0になりました",
+    );
   });
 });
 

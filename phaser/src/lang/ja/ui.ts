@@ -40,7 +40,7 @@ export const uiText: UiText = {
     levelKills: (level, kills) => `レベル: ${level}   撃破: ${kills}`,
     shotsRecovered: (shots, recovered) => `射撃: ${shots}   回復: ${recovered}`,
     heals: (effective, collected) => `回復取得: ${effective}/${collected}`,
-    cause: (cause) => `原因: ${cause}`,
+    defeatCause: (cause) => `撃墜原因: ${cause}`,
   },
   menu: {
     start: "エンドレス開始",
@@ -166,9 +166,10 @@ export const uiText: UiText = {
     },
   },
   damageSource: {
-    enemyContact: (enemyName) => `${enemyName}との接触`,
-    enemyProjectile: "敵弾",
-    collapse: (stage) => `アリーナ崩壊（${stage}段階）`,
+    enemyContact: (enemyName) => `${enemyName}に接触し、HPが0になりました`,
+    enemyProjectile: "射撃体の敵弾を受け、HPが0になりました",
+    collapse: (stage) =>
+      `安全領域外で崩壊ダメージを受け、HPが0になりました（第${stage}段階）`,
   },
   enemyNames: {
     chaser: "追跡体",
