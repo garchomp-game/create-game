@@ -5,8 +5,7 @@ const isLongSoak = process.env.ARENA_LONG_SOAK === "1";
 const isHardwareSoak = isLongSoak && process.env.ARENA_HARDWARE_SOAK === "1";
 const useHeadedFirefox = process.env.ARENA_FIREFOX_HEADED === "1";
 const chromiumExecutablePath =
-  process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ??
-  (process.env.CI ? undefined : "/usr/bin/google-chrome");
+  process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -54,8 +53,7 @@ export default defineConfig({
         locale: "ja-JP",
         viewport: { width: 390, height: 844 },
         launchOptions: {
-          executablePath:
-            process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ?? "/usr/bin/google-chrome",
+          ...(chromiumExecutablePath ? { executablePath: chromiumExecutablePath } : {}),
           args: ["--disable-features=Translate,TranslateUI", "--disable-translate"],
         },
       },

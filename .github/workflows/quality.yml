@@ -106,6 +106,8 @@ jobs:
       - run: npm run test:ex-protocols:record-migration
       - run: npm run test:ex-protocols:probe
       - run: npx playwright install --with-deps chromium
+      - name: Install deterministic Japanese fixture font
+        run: sudo apt-get install --yes fonts-noto-cjk
       - name: Run EX Protocol critical browser flow
         run: xvfb-run --auto-servernum npm run test:e2e:ex-protocols
         env:
