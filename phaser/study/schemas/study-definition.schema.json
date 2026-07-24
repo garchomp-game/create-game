@@ -1,0 +1,1028 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arena-core.local/schemas/study-definition.v1.json",
+  "title": "Arena Core Study Definition v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "definitionVersion",
+    "sessionKind",
+    "expectedStepIds",
+    "scenes",
+    "steps",
+    "o1ScopePolicy",
+    "hintPolicy",
+    "inputPolicy",
+    "entryPolicy",
+    "contextPromptPolicy",
+    "retentionPolicy"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "study-definition.v1"
+    },
+    "definitionVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "sessionKind": {
+      "enum": [
+        "o1",
+        "full-training",
+        "context-prompt",
+        "retention"
+      ]
+    },
+    "expectedStepIds": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/token"
+      }
+    },
+    "scenes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/scene"
+      }
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/step"
+      }
+    },
+    "o1ScopePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conditionalRepairFifthEnabled",
+        "approvalDecisionId",
+        "maximumStepsPerScene"
+      ],
+      "properties": {
+        "conditionalRepairFifthEnabled": {
+          "type": "boolean"
+        },
+        "approvalDecisionId": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/token"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "maximumStepsPerScene": {
+          "const": 2
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "conditionalRepairFifthEnabled": {
+                "const": true
+              }
+            },
+            "required": [
+              "conditionalRepairFifthEnabled"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "approvalDecisionId": {
+                "$ref": "#/$defs/token"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "conditionalRepairFifthEnabled": {
+                "const": false
+              }
+            },
+            "required": [
+              "conditionalRepairFifthEnabled"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "approvalDecisionId": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "hintPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "maximumLevel",
+        "h1ActiveNoProgressMs",
+        "h2ActiveNoProgressMs",
+        "repeatedWrongActionThreshold",
+        "excludedContexts"
+      ],
+      "properties": {
+        "maximumLevel": {
+          "const": 2
+        },
+        "h1ActiveNoProgressMs": {
+          "const": 5000
+        },
+        "h2ActiveNoProgressMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 60000
+        },
+        "repeatedWrongActionThreshold": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 10
+        },
+        "excludedContexts": {
+          "type": "array",
+          "minItems": 4,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "pause",
+              "blur",
+              "loading",
+              "choice"
+            ]
+          }
+        }
+      }
+    },
+    "inputPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bindingSource",
+        "allowedInputPresets",
+        "autoFirePolicy"
+      ],
+      "properties": {
+        "bindingSource": {
+          "const": "runtime-binding-snapshot"
+        },
+        "allowedInputPresets": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/token"
+          }
+        },
+        "autoFirePolicy": {
+          "enum": [
+            "supported",
+            "required-off"
+          ]
+        }
+      }
+    },
+    "entryPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "mode": {
+          "enum": [
+            "recommended-offer",
+            "default-start"
+          ]
+        },
+        "primaryCtaId": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/token"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "skipVisible": {
+          "type": "boolean"
+        },
+        "allowedStartSources": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "primary-cta",
+              "default-start"
+            ]
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            },
+            "required": [
+              "enabled"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "mode",
+              "primaryCtaId",
+              "skipVisible",
+              "allowedStartSources"
+            ],
+            "properties": {
+              "mode": {
+                "enum": [
+                  "recommended-offer",
+                  "default-start"
+                ]
+              },
+              "primaryCtaId": {
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/token"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "skipVisible": {
+                "const": true
+              },
+              "allowedStartSources": {
+                "type": "array"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "const": "recommended-offer"
+              }
+            },
+            "required": [
+              "mode"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "primaryCtaId": {
+                "$ref": "#/$defs/token"
+              },
+              "allowedStartSources": {
+                "const": [
+                  "primary-cta"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "const": "default-start"
+              }
+            },
+            "required": [
+              "mode"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "primaryCtaId": {
+                "type": "null"
+              },
+              "allowedStartSources": {
+                "const": [
+                  "default-start"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "contextPromptPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "prompts"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "prompts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/contextPrompt"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            },
+            "required": [
+              "enabled"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "prompts": {
+                "type": "array",
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "const": false
+              }
+            },
+            "required": [
+              "enabled"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "prompts": {
+                "type": "array",
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    "retentionPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "modeSource",
+        "requiredCheckpointSeconds",
+        "requiredBehaviors"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "modeSource": {
+          "enum": [
+            "selected-mode",
+            "fixed-mode"
+          ]
+        },
+        "fixedMode": {
+          "$ref": "#/$defs/token"
+        },
+        "requiredCheckpointSeconds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              30,
+              60,
+              90
+            ]
+          }
+        },
+        "requiredBehaviors": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "move",
+              "aim",
+              "shoot",
+              "avoid-enemy-projectile",
+              "collect-xp",
+              "collect-repair",
+              "choose-upgrade",
+              "use-active-protocol"
+            ]
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            },
+            "required": [
+              "enabled"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "requiredCheckpointSeconds": {
+                "type": "array",
+                "minItems": 1
+              },
+              "requiredBehaviors": {
+                "type": "array",
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "properties": {
+              "modeSource": {
+                "const": "fixed-mode"
+              }
+            },
+            "required": [
+              "modeSource"
+            ]
+          },
+          "then": {
+            "type": "object",
+            "required": [
+              "fixedMode"
+            ],
+            "properties": {
+              "fixedMode": {
+                "$ref": "#/$defs/token"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "sessionKind": {
+            "const": "o1"
+          }
+        },
+        "required": [
+          "sessionKind"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "entryPolicy": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            }
+          },
+          "expectedStepIds": {
+            "type": "array",
+            "minItems": 1
+          },
+          "scenes": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 5,
+            "contains": {
+              "type": "object",
+              "properties": {
+                "purpose": {
+                  "const": "move"
+                }
+              },
+              "required": [
+                "purpose"
+              ]
+            },
+            "minContains": 1,
+            "maxContains": 1
+          },
+          "steps": {
+            "type": "array",
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "sessionKind": {
+            "const": "o1"
+          },
+          "scenes": {
+            "type": "array",
+            "maxItems": 4
+          }
+        },
+        "required": [
+          "sessionKind",
+          "scenes"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "o1ScopePolicy": {
+            "type": "object",
+            "properties": {
+              "conditionalRepairFifthEnabled": {
+                "const": false
+              }
+            }
+          },
+          "scenes": {
+            "type": "array",
+            "not": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "purpose": {
+                    "const": "repair"
+                  }
+                },
+                "required": [
+                  "purpose"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "sessionKind": {
+            "enum": [
+              "full-training",
+              "context-prompt",
+              "retention"
+            ]
+          }
+        },
+        "required": [
+          "sessionKind"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "entryPolicy": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "const": false
+              }
+            }
+          },
+          "o1ScopePolicy": {
+            "type": "object",
+            "properties": {
+              "conditionalRepairFifthEnabled": {
+                "const": false
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "sessionKind": {
+            "const": "context-prompt"
+          }
+        },
+        "required": [
+          "sessionKind"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "contextPromptPolicy": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "const": true
+              },
+              "prompts": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "sessionKind": {
+            "const": "retention"
+          }
+        },
+        "required": [
+          "sessionKind"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "retentionPolicy": {
+            "type": "object",
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "sessionKind": {
+            "const": "full-training"
+          }
+        },
+        "required": [
+          "sessionKind"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "expectedStepIds": {
+            "type": "array",
+            "minItems": 9,
+            "maxItems": 9
+          },
+          "steps": {
+            "type": "array",
+            "minItems": 9,
+            "maxItems": 9
+          },
+          "scenes": {
+            "type": "array",
+            "minItems": 9,
+            "maxItems": 9
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "sessionKind": {
+            "enum": [
+              "context-prompt",
+              "retention"
+            ]
+          }
+        },
+        "required": [
+          "sessionKind"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "expectedStepIds": {
+            "type": "array",
+            "maxItems": 0
+          },
+          "steps": {
+            "type": "array",
+            "maxItems": 0
+          },
+          "scenes": {
+            "type": "array",
+            "maxItems": 0
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "sessionKind": {
+            "const": "o1"
+          },
+          "scenes": {
+            "type": "array",
+            "minItems": 5
+          }
+        },
+        "required": [
+          "sessionKind",
+          "scenes"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "o1ScopePolicy": {
+            "type": "object",
+            "properties": {
+              "conditionalRepairFifthEnabled": {
+                "const": true
+              }
+            }
+          },
+          "scenes": {
+            "type": "array",
+            "minItems": 5,
+            "maxItems": 5,
+            "prefixItems": [
+              {
+                "type": "object",
+                "properties": {
+                  "purpose": {
+                    "const": "move"
+                  }
+                },
+                "required": [
+                  "purpose"
+                ]
+              },
+              {
+                "type": "object",
+                "not": {
+                  "properties": {
+                    "purpose": {
+                      "const": "repair"
+                    }
+                  },
+                  "required": [
+                    "purpose"
+                  ]
+                }
+              },
+              {
+                "type": "object",
+                "not": {
+                  "properties": {
+                    "purpose": {
+                      "const": "repair"
+                    }
+                  },
+                  "required": [
+                    "purpose"
+                  ]
+                }
+              },
+              {
+                "type": "object",
+                "not": {
+                  "properties": {
+                    "purpose": {
+                      "const": "repair"
+                    }
+                  },
+                  "required": [
+                    "purpose"
+                  ]
+                }
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "purpose": {
+                    "const": "repair"
+                  }
+                },
+                "required": [
+                  "purpose"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "token": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:-]+$"
+    },
+    "parameterValue": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9._:-]+$"
+        },
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        {
+          "type": "boolean"
+        }
+      ]
+    },
+    "guardParameter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key",
+        "value"
+      ],
+      "properties": {
+        "key": {
+          "$ref": "#/$defs/token"
+        },
+        "value": {
+          "$ref": "#/$defs/parameterValue"
+        }
+      }
+    },
+    "scene": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sceneId",
+        "purpose"
+      ],
+      "properties": {
+        "sceneId": {
+          "$ref": "#/$defs/token"
+        },
+        "purpose": {
+          "$ref": "#/$defs/token"
+        }
+      }
+    },
+    "contextPrompt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "promptId",
+        "triggerIds",
+        "successEvidenceTypes"
+      ],
+      "properties": {
+        "promptId": {
+          "$ref": "#/$defs/token"
+        },
+        "triggerIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/token"
+          }
+        },
+        "successEvidenceTypes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/token"
+          }
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stepId",
+        "sceneId",
+        "fixtureId",
+        "relevantActionIds",
+        "meaningfulProgressCriteria",
+        "wrongActionReasons",
+        "successEvidenceTypes",
+        "guardParameters"
+      ],
+      "properties": {
+        "stepId": {
+          "$ref": "#/$defs/token"
+        },
+        "sceneId": {
+          "$ref": "#/$defs/token"
+        },
+        "fixtureId": {
+          "$ref": "#/$defs/token"
+        },
+        "relevantActionIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/token"
+          }
+        },
+        "meaningfulProgressCriteria": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/token"
+          }
+        },
+        "wrongActionReasons": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "no-input",
+              "wrong-binding",
+              "wrong-target",
+              "wrong-direction",
+              "unsafe-action",
+              "repeated-ineffective-action",
+              "other-bounded"
+            ]
+          }
+        },
+        "successEvidenceTypes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/token"
+          }
+        },
+        "guardParameters": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/guardParameter"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "study-definition.v1",
+  "definitionVersion": 1,
+  "sessionKind": "o1",
+  "expectedStepIds": [
+    "move-to-beacon"
+  ],
+  "scenes": [
+    {
+      "sceneId": "o1-scene-move",
+      "purpose": "move"
+    }
+  ],
+  "steps": [
+    {
+      "stepId": "move-to-beacon",
+      "sceneId": "o1-scene-move",
+      "fixtureId": "o1-beacon-1",
+      "relevantActionIds": [
+        "move"
+      ],
+      "meaningfulProgressCriteria": [
+        "distance-to-beacon-reduced"
+      ],
+      "wrongActionReasons": [
+        "wrong-binding",
+        "no-input"
+      ],
+      "successEvidenceTypes": [
+        "destination-entered"
+      ],
+      "guardParameters": [
+        {
+          "key": "destinationZoneId",
+          "value": "o1-beacon-zone"
+        }
+      ]
+    }
+  ],
+  "o1ScopePolicy": {
+    "conditionalRepairFifthEnabled": false,
+    "approvalDecisionId": null,
+    "maximumStepsPerScene": 2
+  },
+  "hintPolicy": {
+    "maximumLevel": 2,
+    "h1ActiveNoProgressMs": 5000,
+    "h2ActiveNoProgressMs": 5000,
+    "repeatedWrongActionThreshold": 2,
+    "excludedContexts": [
+      "pause",
+      "blur",
+      "loading",
+      "choice"
+    ]
+  },
+  "inputPolicy": {
+    "bindingSource": "runtime-binding-snapshot",
+    "allowedInputPresets": [
+      "keyboard-mouse"
+    ],
+    "autoFirePolicy": "supported"
+  },
+  "entryPolicy": {
+    "enabled": true,
+    "mode": "recommended-offer",
+    "primaryCtaId": "start-basic-check",
+    "skipVisible": true,
+    "allowedStartSources": [
+      "primary-cta"
+    ]
+  },
+  "contextPromptPolicy": {
+    "enabled": false,
+    "prompts": []
+  },
+  "retentionPolicy": {
+    "enabled": true,
+    "modeSource": "selected-mode",
+    "requiredCheckpointSeconds": [
+      30,
+      60,
+      90
+    ],
+    "requiredBehaviors": [
+      "move"
+    ]
+  }
+}

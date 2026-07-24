@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "onboarding-study-log.v1",
+  "eventId": "00000012-0000-4000-8000-000000000012",
+  "sequence": 12,
+  "sessionId": "11111111-1111-4111-8111-111111111111",
+  "assignmentId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  "occurredAt": "2026-07-24T00:00:00.000Z",
+  "activeElapsedMs": 18420,
+  "eventName": "onboarding_step_succeeded",
+  "study": {
+    "studyId": "o1-entry-comparison-v1",
+    "protocolVersion": 1,
+    "hypothesisId": "O1-ENTRY-001",
+    "cellId": "O1-A",
+    "arm": "A",
+    "sessionKind": "o1",
+    "definitionDigest": "sha256:77731c5ec1c4abcb37bf5ec97722c2426b39c08665555609f6267f11db79b452"
+  },
+  "build": {
+    "headSha": "2222222222222222222222222222222222222222",
+    "buildMarker": "example-candidate-2222222",
+    "artifactDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "appVersion": "example-candidate",
+    "rulesetVersion": "example-ruleset"
+  },
+  "context": {
+    "onboardingVersion": 1,
+    "stepId": "move-to-beacon",
+    "attempt": 1,
+    "hintLevel": 1,
+    "selectedMode": "endless",
+    "autoFire": true,
+    "inputPreset": "keyboard-mouse",
+    "fullscreen": false,
+    "viewport": "1920x1080",
+    "uiScale": 100,
+    "highContrast": false
+  },
+  "payload": {
+    "evidenceType": "destination-entered",
+    "sourceEventId": "domain-event-reference",
+    "fixtureEntityId": "o1-beacon-1"
+  }
+}

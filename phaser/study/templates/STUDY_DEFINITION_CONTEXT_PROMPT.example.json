@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "study-definition.v1",
+  "definitionVersion": 1,
+  "sessionKind": "context-prompt",
+  "expectedStepIds": [],
+  "scenes": [],
+  "steps": [],
+  "o1ScopePolicy": {
+    "conditionalRepairFifthEnabled": false,
+    "approvalDecisionId": null,
+    "maximumStepsPerScene": 2
+  },
+  "hintPolicy": {
+    "maximumLevel": 2,
+    "h1ActiveNoProgressMs": 5000,
+    "h2ActiveNoProgressMs": 5000,
+    "repeatedWrongActionThreshold": 2,
+    "excludedContexts": [
+      "pause",
+      "blur",
+      "loading",
+      "choice"
+    ]
+  },
+  "inputPolicy": {
+    "bindingSource": "runtime-binding-snapshot",
+    "allowedInputPresets": [
+      "keyboard-mouse"
+    ],
+    "autoFirePolicy": "supported"
+  },
+  "entryPolicy": {
+    "enabled": false
+  },
+  "contextPromptPolicy": {
+    "enabled": true,
+    "prompts": [
+      {
+        "promptId": "repair-first-use",
+        "triggerIds": [
+          "hp-low-repair-present"
+        ],
+        "successEvidenceTypes": [
+          "repair-collected"
+        ]
+      }
+    ]
+  },
+  "retentionPolicy": {
+    "enabled": false,
+    "modeSource": "selected-mode",
+    "requiredCheckpointSeconds": [],
+    "requiredBehaviors": []
+  }
+}
