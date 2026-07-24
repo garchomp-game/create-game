@@ -1093,3 +1093,22 @@ Charger危険反転、選択UI、ボス調整を同じ比較buildへ混ぜない
 - 独立PRのreview責務を維持し、main採用時は観測フィールドを保持して順次rebaseする。
 
 実施run、無誘導質問、JSON pathは[v0.8 control観測build 実施手順](../../playtest/v08-observation-control-runbook/)を正本とする。
+
+## 2026-07-24: 9課題TrainingのT1.1測定baselineを再固定する
+
+決定: Onboarding Readiness Packと最新`main`を再照合し、総合演習の固定
+`8/8`とchecklistによる初期Ranged遮蔽だけをT1.1で修正する。
+旧固定Previewは9課題実装の履歴証拠として残すが、#81の新しい初心者母数へ使わない。
+
+- `TutorialSnapshot.stepNumber / stepCount`から第9課題を`9/9`表示する。
+- terminal `complete`は課題数へ含めず、完了snapshotも`stepCount: 9`を維持する。
+- checklist background / textをdynamic worldの背面へ置き、敵、敵弾、Pickup、
+  自機のsilhouetteを欠けさせない。
+- 通常課題のoverlay、retry notice、copy、hint、座標、成功guardを変更しない。
+- O1、戦闘object visual、context prompt、キャラクター案内役を同じbuildへ含めない。
+- Standard simulation、RNG、score、ranking、RunRecord、Profileを変更しない。
+
+runtime候補は`dc174ec`。全unit 520件、production build、transferの
+landscape / portrait visual、9課題公開入力E2Eを確認した。
+次の採否ownerは#81の人間raw countであり、それまでは#98 runtime visualと
+O1入口の製品defaultを確定しない。
