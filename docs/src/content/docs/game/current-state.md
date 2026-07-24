@@ -239,7 +239,7 @@ RC5は基準証跡として保持し、productionへ直接昇格しません。U
 
 同じrun exportから、現行Chargerの成立性、強化選択のwall-clockと復帰1秒、危険イベント終了後5秒、Boss攻撃別の被弾・回復・反撃窓を取得できます。修復候補では連続choiceの復帰episodeをqueueで保持し、敗因、進捗、比較差分の純粋ViewModelを`runOutcomeInsight`としてdebug exportへ接続しました。Workers観測PreviewからはブラウザdownloadでJSONを取得できます。ゲーム数値、RNG、`RunRecord`、ランキング契約、production trafficは変更していません。
 
-旧結合commit `4bd771e`の477 unit、77 E2E、production buildは履歴証拠として保持しますが、修復候補の合格証拠へ流用しません。修復候補では74 files / 506 unit / 2 skipped、TypeScript、production buildと配布検査、観測用build、Run Outcome exportとJSON downloadの対象E2E 2件、Starlight 111ページがgreenです。SHA freeze後の全E2E、release smoke、GitHub Actions、T4、人間control観測は残っています。詳細は[v0.8 control観測build サマリ](../v08-observation-control-summary/)と[実施手順](../../playtest/v08-observation-control-runbook/)を参照してください。
+旧結合commit `4bd771e`の477 unit、77 E2E、production buildは履歴証拠として保持しますが、修復候補の合格証拠へ流用しません。runtime merge `b35e42e4388a`、tested HEAD `f35cb1227d3b`で、74 files / 506 unit / 2 skipped、TypeScript、production buildと配布検査、観測用build、Playwright 90 passed / 1 skipped、Starlight 111ページがgreenです。ローカル観測artifactでもmarker一致、game over JSON、`runOutcomeInsight: available`、console error 0件を確認しました。Cloudflare Version Preview、GitHub Actions、人間control観測は残っています。詳細は[v0.8 control観測build サマリ](../v08-observation-control-summary/)と[実施手順](../../playtest/v08-observation-control-runbook/)を参照してください。
 
 ## 次の優先順
 

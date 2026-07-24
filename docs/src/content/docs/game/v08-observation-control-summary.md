@@ -23,6 +23,8 @@ Charger、強化選択、危険イベント後、Boss戦、ラン終了理由を
 | 基点 | `main` / `565d401a92f6` |
 | 結合候補 | [Draft PR #113](https://github.com/garchomp-game/create-game/pull/113)の修復候補 |
 | ローカル修復branch | `agent/v08-observation-control-repair` |
+| runtime merge | `b35e42e4388a` |
+| tested HEAD | `f35cb1227d3bd2d1257b081306695dbefcca1b0f` |
 | production | v0.6.8を継続。今回の版は未配布 |
 
 アプリ版やrulesetを更新していないのは、敵数値、武器、出現、回復、スコア比較規則を変えていないためです。今回の計装ランを既存RC6 controlと別ルールの記録として扱いません。
@@ -71,13 +73,13 @@ Run Outcome ViewModelは将来のリザルト改善に使う事実層です。st
 | TypeScript | pass |
 | Phaser production build / 配布検査 | pass / 27 files |
 | 観測用build | pass。debug moduleを専用chunkへ分離 |
-| 対象Playwright E2E | Run Outcome exportとJSON downloadの2件pass |
+| Playwright E2E | 90 passed / 1 skipped、WebGL worker 2 |
+| 観測artifact smoke | marker一致、game over JSON、`runOutcomeInsight: available`、console error 0 |
 | Starlight | 111 pages build pass |
-| 全Playwright / release smoke | SHA freeze後のT3で再取得 |
 | GitHub Actions | 新しいcanonical PR作成後に再取得 |
 | `main`との結合 | 9課題Trainingを保持してローカル統合済み |
 
-旧PRのQA値は現在HEADの合格証拠へ流用しません。exact候補のT2からT4と人間control観測を完了するまでDraftのままです。自動greenは計装と既存導線の回帰を保証しますが、面白さ、緊張と緩和、攻撃の学習性は保証しません。
+旧PRのQA値は現在HEADの合格証拠へ流用しません。15分soakは明示opt-inのためskipです。Cloudflare Version Preview、GitHub Actions、人間control観測を完了するまでDraftのままです。自動greenは計装と既存導線の回帰を保証しますが、面白さ、緊張と緩和、攻撃の学習性は保証しません。
 
 ## 残る人間観測
 
