@@ -11,6 +11,7 @@ import {
   resolveRunRulesetVersion,
 } from "../../config/version";
 import type { RunContext, RunOrigin } from "../../domain/runRecords";
+import type { EncounterReliefReport } from "../../domain/encounterRelief";
 import type {
   CircleBody,
   EnemyTypeId,
@@ -30,6 +31,9 @@ import type {
   ArenaRunExport,
 } from "../phaser/ArenaDebugBridge";
 import type { ArenaRenderPerformanceSnapshot } from "../phaser/PhaserArenaRenderer";
+import type { ChoiceInteractionReport } from "../../application/ChoiceInteractionMonitor";
+import type { BossShadowReport } from "../../domain/bossShadow";
+import type { RunOutcomeInsightViewModel } from "../../domain/runOutcomeInsights";
 
 export type CreateArenaRunExportInput = {
   capturedAt: string;
@@ -44,6 +48,10 @@ export type CreateArenaRunExportInput = {
   world: WorldState;
   performance: ArenaPerformanceSnapshot;
   renderPerformance: ArenaRenderPerformanceSnapshot;
+  choiceInteraction: ChoiceInteractionReport;
+  bossShadow: BossShadowReport;
+  encounterRelief: EncounterReliefReport;
+  runOutcomeInsight: RunOutcomeInsightViewModel | null;
   lastEvents: readonly GameEvent[];
 };
 
@@ -76,6 +84,8 @@ export function createArenaRunExport(input: CreateArenaRunExportInput): ArenaRun
     status: world.state.status,
     performance: { ...input.performance },
     renderPerformance: structuredClone(input.renderPerformance),
+    choiceInteraction: structuredClone(input.choiceInteraction),
+    bossShadow: structuredClone(input.bossShadow),
     elapsed: world.state.elapsed,
     difficultyElapsed,
     wave: { ...getWaveBand(input.runConfig, difficultyElapsed) },
@@ -107,6 +117,10 @@ export function createArenaRunExport(input: CreateArenaRunExportInput): ArenaRun
       world.progression.extraUpgradeRanks,
     ),
     encounter: structuredClone(world.encounter),
+    encounterRelief: structuredClone(input.encounterRelief),
+    runOutcomeInsight: input.runOutcomeInsight
+      ? structuredClone(input.runOutcomeInsight)
+      : null,
     expedition: world.expedition ? structuredClone(world.expedition) : null,
     lastEvents: input.lastEvents.map((event) => structuredClone(event)),
   };

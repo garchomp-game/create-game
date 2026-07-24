@@ -5,6 +5,8 @@ import { createWorld } from "../../simulation/createWorld";
 import { createRandomStreams } from "../../math/random";
 import { getWaveBand } from "../../simulation/waveDirector";
 import { createArenaRunExport } from "./ArenaRunExport";
+import { createEmptyChoiceInteractionReport } from "../../application/ChoiceInteractionMonitor";
+import { createEmptyBossShadowReport } from "../../application/BossEncounterShadowMonitor";
 
 describe("createArenaRunExport", () => {
   it("builds a detached development export from the current world", () => {
@@ -31,6 +33,17 @@ describe("createArenaRunExport", () => {
         staticBackground: { drawCount: 1 },
         renderedFrames: 720,
       },
+      choiceInteraction: {
+        schemaVersion: 1,
+        samples: [],
+        summary: { selectedCount: 0 },
+      },
+      bossShadow: {
+        schemaVersion: 1,
+        state: "not-reached",
+        reason: "bossNotSpawned",
+      },
+      runOutcomeInsight: null,
       elapsed: 12,
       difficultyElapsed: 12,
       lastEvents: [{ type: "game.started" }],
@@ -100,6 +113,15 @@ function createTestInput(world: WorldState) {
       screenHud: { averageMs: 0.12, maxMs: 0.6 },
       feedback: { averageMs: 0.04, maxMs: 0.2 },
     },
+    choiceInteraction: createEmptyChoiceInteractionReport(),
+    bossShadow: createEmptyBossShadowReport(),
+    encounterRelief: {
+      schemaVersion: 1 as const,
+      windowSeconds: 5 as const,
+      state: "not-reached" as const,
+      reason: "recoveryNotObserved" as const,
+    },
+    runOutcomeInsight: null,
     lastEvents: [{ type: "game.started" as const }],
   };
 }

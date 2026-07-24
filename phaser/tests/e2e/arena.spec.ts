@@ -675,6 +675,26 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   expect(runExport?.wave.start).toBe(60);
   expect(runExport?.counts.enemyTypes).toEqual({ chaser: 0, brute: 0, fast: 0, ranged: 0 });
   expect(runExport?.counts.obstacleContacts.player).toBe(0);
+  expect(runExport?.choiceInteraction).toMatchObject({
+    schemaVersion: 1,
+    summary: { selectedCount: 0 },
+  });
+  expect(runExport?.bossShadow).toEqual({
+    schemaVersion: 1,
+    state: "not-reached",
+    reason: "bossNotSpawned",
+  });
+  expect(runExport?.encounterRelief).toEqual({
+    schemaVersion: 1,
+    windowSeconds: 5,
+    state: "not-reached",
+    reason: "recoveryNotObserved",
+  });
+  expect(runExport?.runOutcomeInsight).toEqual({
+    schemaVersion: 1,
+    state: "not-reached",
+    reason: "runNotTerminated",
+  });
   expect(new Date(runExport!.capturedAt).toString()).not.toBe("Invalid Date");
 
   const runExportJson = await page.evaluate(() => window.__ARENA_DEBUG__?.getRunExportJson());
@@ -682,6 +702,25 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   expect(parsedRunExport.game).toBe(runExport?.game);
   expect(parsedRunExport.configVersion).toBe(runExport?.configVersion);
   expect(parsedRunExport.resultSummary.damageTaken).toBe(runExport?.resultSummary.damageTaken);
+  expect(parsedRunExport.choiceInteraction).toEqual(runExport?.choiceInteraction);
+  expect(parsedRunExport.bossShadow).toEqual(runExport?.bossShadow);
+  expect(parsedRunExport.encounterRelief).toEqual(runExport?.encounterRelief);
+  expect(parsedRunExport.runOutcomeInsight).toEqual(runExport?.runOutcomeInsight);
+});
+
+test("downloads a run JSON from a Preview-compatible debug build", async ({ page }) => {
+  await gotoArena(page);
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+
+  const downloadPromise = page.waitForEvent("download");
+  const result = await page.evaluate(() => window.__ARENA_DEBUG__?.downloadRunExport());
+  const download = await downloadPromise;
+
+  expect(result).toMatchObject({ ok: true });
+  expect(download.suggestedFilename()).toBe(result?.filename);
+  expect(download.suggestedFilename()).toMatch(
+    /^arena-core-endless-arena-default-20260619-.+\.json$/,
+  );
 });
 
 test("validates and separates explicit development run exports", async ({ page }) => {
@@ -1257,9 +1296,35 @@ test("replays the encounter deck timeline and excludes overdrive contracts from 
     if (scheduled === null) throw new Error("Encounter was not scheduled.");
     debug?.setElapsed(scheduled + 40);
     debug?.step({}, 1 / 60);
+  }, scheduledAt!);
+  const partialRelief = await page.evaluate(
+    () => window.__ARENA_DEBUG__?.getSnapshot().encounterRelief,
+  );
+  expect(partialRelief).toMatchObject({
+    state: "available",
+    summary: { completeWindowCount: 0, partialWindowCount: 1 },
+    episodes: [{ windowState: "partial" }],
+  });
+
+  await page.evaluate((targetEndsAt) => {
+    const debug = window.__ARENA_DEBUG__;
+    debug?.setElapsed(targetEndsAt);
+    debug?.step({}, 1 / 60);
+  }, partialRelief!.state === "available" ? partialRelief!.episodes[0]!.targetEndsAt : 0);
+  const completedRelief = await page.evaluate(
+    () => window.__ARENA_DEBUG__?.getRunExport().encounterRelief,
+  );
+  expect(completedRelief).toMatchObject({
+    state: "available",
+    summary: { completeWindowCount: 1, partialWindowCount: 0 },
+    episodes: [{ windowState: "complete", encounterId: expect.any(String) }],
+  });
+
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
     debug?.setElapsed(240);
     debug?.step({}, 1 / 60);
-  }, scheduledAt!);
+  });
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "contractSelect",
   );

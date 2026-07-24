@@ -168,6 +168,9 @@ describe("createArenaScreenViewModel", () => {
     expect(viewModel.statusText).toContain("3/4");
     expect(viewModel.statusText).toContain("パルス別 / 固定シード 77");
     expect(viewModel.statusText).toContain("ルール: rules-rc6");
+    expect(viewModel.statusText).toContain(
+      "順位: 作戦完遂後、総クリア時間が短い順（同タイムは撃破点）",
+    );
   });
 
   it("derives settings labels and confirmation labels from UI state", () => {
@@ -245,6 +248,7 @@ describe("createArenaScreenViewModel", () => {
 
     expect(viewModel.statusText?.split("\n")).toEqual(
       expect.arrayContaining([
+        "00:00.00 / 撃破 18,300点",
         "時間メダル 金 / 完遂 +15,000",
         "指揮艦撃破 00:00",
       ]),
@@ -341,6 +345,9 @@ describe("createArenaScreenViewModel", () => {
     ).detailText;
     expect(details).toContain("遠征未完遂");
     expect(details).toContain(`ルール: ${record.rulesetVersion}`);
+    expect(details).toContain(
+      "順位: 作戦完遂後、総クリア時間が短い順（同タイムは撃破点）",
+    );
 
     world.stats.lastDamageSource = {
       kind: "contact",
@@ -352,6 +359,20 @@ describe("createArenaScreenViewModel", () => {
     expect(
       createArenaScreenViewModel(world, SIMULATION_CONFIG, createUiState()).statusText,
     ).toContain("指揮艦 挟撃護衛");
+  });
+
+  it("states the Endless ranking contract without changing its comparator", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.state.status = "gameOver";
+    const record = createRecord(world);
+
+    const details = createArenaScreenViewModel(
+      world,
+      SIMULATION_CONFIG,
+      createUiState({ latestRunRecord: record }),
+    ).detailText;
+
+    expect(details).toContain("順位: 撃破点が高い順（同点は生存時間）");
   });
 });
 

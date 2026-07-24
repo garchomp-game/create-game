@@ -311,6 +311,29 @@ describe("run records", () => {
     );
   });
 
+  it("defaults the Charger pre-telegraph kill count on earlier records", () => {
+    const record = makeRecord();
+    record.encounterMetrics.charger = {
+      spawned: 1,
+      telegraphs: 1,
+      charges: 1,
+      killedBeforeTelegraph: 0,
+      playerHits: 0,
+      avoided: 1,
+      obstacleInterruptions: 0,
+      boundaryInterruptions: 0,
+      recoveries: 1,
+      killed: 1,
+      killsByWeapon: { pulse: 1, spread: 0, pierce: 0 },
+    };
+    const charger = record.encounterMetrics.charger!;
+    delete (charger as Partial<typeof charger>).killedBeforeTelegraph;
+
+    expect(
+      runRecordSchema.parse(record).encounterMetrics.charger?.killedBeforeTelegraph,
+    ).toBe(0);
+  });
+
   it("migrates v1 records without discarding existing rank data", () => {
     const current = makeRecord();
     const { pulseRicochet: _pulseRicochet, ...legacyRanks } = current.upgradeRanks;
