@@ -10,6 +10,7 @@ const chromiumExecutablePath =
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  workers: 4,
   timeout: 30_000,
   expect: {
     timeout: 5_000,
