@@ -5,6 +5,14 @@ description: 総経過時間ではなく課題ごとのmeaningful progressで発
 
 最終整理日: 2026-07-24
 
+:::note[比較baseline]
+この資料は、H0では短いinstructionと対象ringだけを表示し、H1で初めて
+WASD / mouse記号を出す候補を記録している。ownerの追加観測を受け、
+開始前とactive直後から方向付きglyphを出す別候補を
+[Training H0 即時操作ガイド候補](../v08-training-immediate-guidance-candidate/)
+として分離した。本資料を黙って書き換えず、比較baselineとして残す。
+:::
+
 ## 仮説
 
 T1.2-Cの短い説明だけでは操作を始めない初心者に対し、最初から文章を

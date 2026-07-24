@@ -76,12 +76,14 @@ export const uiText: UiText = {
   trainingSteps: {
     move: {
       title: "移動",
-      instruction: "WASD / 矢印キーで移動",
-      briefing: "キーを押して自機を動かします。\nEscでいつでも中断できます。",
+      instruction: "Dで右の光へ、次にAで左の光へ",
+      briefing: "Dで右へ、次にAで左へ動きます。\n矢印と光だけ見ても進められます。",
       actionLabel: "移動を始める",
-      hint1: "押している方向へ自機が移動します",
-      hint2: "同じ場所に留まらず、64px以上移動してください",
-      success: "✓ 移動できました",
+      hint1: "黄色いキーと矢印の方向へ進みます",
+      hint2: "光の輪へ入ると、次の移動方向へ切り替わります",
+      success: "✓ 左右へ移動できました",
+      cueLabel: "Dで右へ",
+      targetLabel: "",
     },
     navigate: {
       title: "進路変更",
@@ -91,6 +93,8 @@ export const uiText: UiText = {
       hint1: "壁には通り抜けられません",
       hint2: "折れ線を目安に、壁の外側へ回り込んでください",
       success: "✓ 壁を迂回できました",
+      cueLabel: "光へ回り込む",
+      targetLabel: "移動先",
     },
     contactDamage: {
       title: "敵との接触",
@@ -100,15 +104,19 @@ export const uiText: UiText = {
       hint1: "この課題では移動と射撃を停止しています",
       hint2: "敵本体と自機の距離に注目してください",
       success: "注意：敵本体への接触でもHPが減ります",
+      cueLabel: "この課題は見るだけ",
+      targetLabel: "接触でダメージ",
     },
     aimAndKill: {
-      title: "照準と射撃",
-      instruction: "マウスで狙って撃破",
-      briefing: "HPを回復します。\nマウスで敵を狙って撃破します。",
+      title: "射撃練習",
+      instruction: "静止標的を倒し、次に動く敵を追って撃つ",
+      briefing: "最初は止まった敵です。\n倒したら、次は動く敵を狙います。",
       actionLabel: "射撃を始める",
       hint1: "マウスを動かすと照準方向が変わります",
       hint2: "自動射撃がオフなら左クリックかSpaceで射撃します",
-      success: "✓ 敵を撃破しました",
+      success: "✓ 静止・移動標的を撃破しました",
+      cueLabel: "止まった敵を狙う",
+      targetLabel: "静止標的",
     },
     collectXp: {
       title: "XP回収",
@@ -118,6 +126,8 @@ export const uiText: UiText = {
       hint1: "近づくとXPが自機へ吸引されます",
       hint2: "リングで示した取得物へ移動してください",
       success: "✓ XPを回収しました",
+      cueLabel: "近づいて取る",
+      targetLabel: "XP",
     },
     dodgeProjectile: {
       title: "敵弾回避",
@@ -127,6 +137,8 @@ export const uiText: UiText = {
       hint1: "敵弾の進行線から上下へ外れてください",
       hint2: "射撃では消えません。移動だけで安全位置へ抜けます",
       success: "✓ 敵弾を回避できました",
+      cueLabel: "上下へ避ける",
+      targetLabel: "",
     },
     collectRepair: {
       title: "修復",
@@ -136,6 +148,8 @@ export const uiText: UiText = {
       hint1: "REPAIRも近づくと自機へ吸引されます",
       hint2: "リングで示したREPAIRへ移動してください",
       success: "✓ HPを修復しました",
+      cueLabel: "近づいて取る",
+      targetLabel: "REPAIR",
     },
     chooseUpgrade: {
       title: "強化選択",
@@ -145,6 +159,8 @@ export const uiText: UiText = {
       hint1: "1 / 2 / 3キー、またはクリックで選べます",
       hint2: "選んだ効果は、この後の回避と総合演習へ反映されます",
       success: "✓ 強化を取得しました",
+      cueLabel: "1 / 2 / 3で選ぶ",
+      targetLabel: "",
     },
     transferDrill: {
       title: "総合演習",
@@ -154,6 +170,8 @@ export const uiText: UiText = {
       hint1: "",
       hint2: "",
       success: "✓ 総合演習を完了しました",
+      cueLabel: "",
+      targetLabel: "",
     },
   },
   damageSource: {

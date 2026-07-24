@@ -24,7 +24,17 @@ import { spawnEnemyAtPosition } from "./systems/spawnSystem";
 
 export const BASIC_TUTORIAL_SEED = 20260720;
 export const BASIC_TUTORIAL_NO_PROGRESS_HINT_SECONDS = [5, 10] as const;
-export const BASIC_TUTORIAL_MOVE_DISTANCE = 64;
+export const BASIC_TUTORIAL_MOVE_LEGS = 2;
+export const BASIC_TUTORIAL_MOVE_RIGHT_ZONE = {
+  x: 600,
+  y: 270,
+  radius: 28,
+} as const;
+export const BASIC_TUTORIAL_MOVE_LEFT_ZONE = {
+  x: 360,
+  y: 270,
+  radius: 28,
+} as const;
 export const BASIC_TUTORIAL_NAVIGATION_START = {
   x: 160,
   y: 166,
@@ -60,11 +70,27 @@ export const BASIC_TUTORIAL_COMBAT_PLAYER_POSITION = {
   x: 200,
   y: 270,
 } as const;
+export const BASIC_TUTORIAL_CONTACT_ENEMY_POSITION = {
+  x: 300,
+  y: 270,
+} as const;
 export const BASIC_TUTORIAL_COMBAT_ENEMY_POSITION = {
   x: 760,
   y: 270,
 } as const;
+export const BASIC_TUTORIAL_MOVING_ENEMY_POSITION = {
+  x: 760,
+  y: 370,
+} as const;
 const TRAINING_XP_POSITION = { x: 480, y: 100 } as const;
+export const BASIC_TUTORIAL_REPAIR_PLAYER_POSITION = {
+  x: 320,
+  y: 270,
+} as const;
+export const BASIC_TUTORIAL_REPAIR_POSITION = {
+  x: 640,
+  y: 270,
+} as const;
 const TRANSFER_REQUIRED_KILLS = 3;
 const DODGE_READY_SECONDS = 1;
 const RETRY_NOTICE_SECONDS = 1.8;
@@ -77,7 +103,8 @@ type ControllerCheckpoint = {
   // Checkpoints intentionally own World state only. Training steps must not
   // consume RandomStreams because retries do not rewind their generators.
   world: WorldState;
-  movementDistance: number;
+  movementLegsCompleted: number;
+  aimTargetsDefeated: number;
   dodgePasses: number;
   trackedProjectileId: string | null;
   targetEnemyId: string | null;
@@ -98,7 +125,8 @@ export class TutorialController {
   private stepActiveSeconds = 0;
   private totalActiveSeconds = 0;
   private noProgressSeconds = 0;
-  private movementDistance = 0;
+  private movementLegsCompleted = 0;
+  private aimTargetsDefeated = 0;
   private dodgePasses = 0;
   private trackedProjectileId: string | null = null;
   private targetEnemyId: string | null = null;
@@ -224,11 +252,17 @@ export class TutorialController {
 
     switch (this.stepId) {
       case "move":
-        this.movementDistance += Math.hypot(
-          world.player.position.x - frameBefore.playerPosition.x,
-          world.player.position.y - frameBefore.playerPosition.y,
-        );
-        if (this.movementDistance >= BASIC_TUTORIAL_MOVE_DISTANCE) {
+        if (
+          this.movementLegsCompleted === 0 &&
+          isInsideZone(world.player.position, BASIC_TUTORIAL_MOVE_RIGHT_ZONE)
+        ) {
+          this.movementLegsCompleted = 1;
+          this.target = createZoneTarget(BASIC_TUTORIAL_MOVE_LEFT_ZONE);
+        } else if (
+          this.movementLegsCompleted === 1 &&
+          isInsideZone(world.player.position, BASIC_TUTORIAL_MOVE_LEFT_ZONE)
+        ) {
+          this.movementLegsCompleted = BASIC_TUTORIAL_MOVE_LEGS;
           this.advanceTo("navigate", world, config, added);
         }
         break;
@@ -258,6 +292,26 @@ export class TutorialController {
               event.type === "enemy.killed" && event.enemyId === this.targetEnemyId,
           )
         ) {
+          if (this.aimTargetsDefeated === 0) {
+            this.aimTargetsDefeated = 1;
+            world.bullets = [];
+            const enemy = spawnTutorialEnemy(
+              world,
+              config,
+              BASIC_TUTORIAL_MOVING_ENEMY_POSITION,
+              false,
+            );
+            this.targetEnemyId = enemy.id;
+            this.target = createEnemyTarget(enemy);
+            added.push({
+              type: "enemy.spawned",
+              enemyId: enemy.id,
+              enemyType: enemy.typeId,
+              position: { ...enemy.position },
+            });
+            break;
+          }
+          this.aimTargetsDefeated = 2;
           const spawnedXp = events.find(
             (event) =>
               event.type === "pickup.spawned" && event.pickupKind === "xp",
@@ -480,7 +534,10 @@ export class TutorialController {
     world.state.status = "playing";
 
     if (this.stepId === "move") {
-      this.movementDistance = 0;
+      clearTransientWorld(world);
+      world.player.position = { ...TRAINING_PLAYER_START };
+      this.movementLegsCompleted = 0;
+      this.target = createZoneTarget(BASIC_TUTORIAL_MOVE_RIGHT_ZONE);
     } else if (this.stepId === "navigate") {
       world.player.position = { ...BASIC_TUTORIAL_NAVIGATION_START };
       this.target = {
@@ -495,30 +552,38 @@ export class TutorialController {
           ...point,
         })),
       };
-    } else if (
-      this.stepId === "contactDamage" ||
-      this.stepId === "aimAndKill"
-    ) {
+    } else if (this.stepId === "contactDamage") {
       clearTransientWorld(world);
       world.player.position = { ...BASIC_TUTORIAL_COMBAT_PLAYER_POSITION };
       world.state.damageCooldown = 0;
-      if (this.stepId === "aimAndKill") {
-        world.state.hp = getPlayerMaxHp(world, config);
-      }
-      const enemy = spawnEnemyAtPosition(
+      const enemy = spawnTutorialEnemy(
         world,
-        "chaser",
-        { spawnInterval: 60, speedMultiplier: 1, maxEnemies: 1 },
-        BASIC_TUTORIAL_COMBAT_ENEMY_POSITION,
         config,
+        BASIC_TUTORIAL_CONTACT_ENEMY_POSITION,
+        false,
       );
       this.targetEnemyId = enemy.id;
-      this.target = {
-        kind: "enemy",
-        id: enemy.id,
+      this.target = createEnemyTarget(enemy);
+      events.push({
+        type: "enemy.spawned",
+        enemyId: enemy.id,
+        enemyType: enemy.typeId,
         position: { ...enemy.position },
-        radius: enemy.radius + 12,
-      };
+      });
+    } else if (this.stepId === "aimAndKill") {
+      clearTransientWorld(world);
+      world.player.position = { ...BASIC_TUTORIAL_COMBAT_PLAYER_POSITION };
+      world.state.damageCooldown = 0;
+      world.state.hp = getPlayerMaxHp(world, config);
+      this.aimTargetsDefeated = 0;
+      const enemy = spawnTutorialEnemy(
+        world,
+        config,
+        BASIC_TUTORIAL_COMBAT_ENEMY_POSITION,
+        true,
+      );
+      this.targetEnemyId = enemy.id;
+      this.target = createEnemyTarget(enemy);
       events.push({
         type: "enemy.spawned",
         enemyId: enemy.id,
@@ -560,6 +625,7 @@ export class TutorialController {
       this.trackedProjectileId = null;
     } else if (this.stepId === "collectRepair") {
       clearTransientWorld(world);
+      world.player.position = { ...BASIC_TUTORIAL_REPAIR_PLAYER_POSITION };
       world.state.hp = Math.max(
         1,
         Math.floor(getPlayerMaxHp(world, config) * 0.6),
@@ -667,6 +733,7 @@ export class TutorialController {
       world.state.damageCooldown = 0;
     }
     if (stepId === "collectRepair") {
+      world.player.position = { ...BASIC_TUTORIAL_REPAIR_PLAYER_POSITION };
       world.state.hp = Math.max(
         1,
         Math.floor(getPlayerMaxHp(world, config) * 0.6),
@@ -682,7 +749,11 @@ export class TutorialController {
     config: SimulationConfig,
     events: GameEvent[],
   ): void {
-    const pickup = spawnTrainingHeal(world, config, TRAINING_PLAYER_START);
+    const pickup = spawnTrainingHeal(
+      world,
+      config,
+      BASIC_TUTORIAL_REPAIR_POSITION,
+    );
     this.targetPickupId = pickup.id;
     this.target = {
       kind: "pickup",
@@ -813,7 +884,8 @@ export class TutorialController {
     sourceEvents.splice(0, sourceEvents.length);
     if (damageEvent) sourceEvents.push(damageEvent);
     Object.assign(world, structuredClone(this.checkpoint.world));
-    this.movementDistance = this.checkpoint.movementDistance;
+    this.movementLegsCompleted = this.checkpoint.movementLegsCompleted;
+    this.aimTargetsDefeated = this.checkpoint.aimTargetsDefeated;
     this.dodgePasses = this.checkpoint.dodgePasses;
     this.trackedProjectileId = this.checkpoint.trackedProjectileId;
     this.targetEnemyId = this.checkpoint.targetEnemyId;
@@ -843,7 +915,8 @@ export class TutorialController {
   private captureCheckpoint(world: WorldState): void {
     this.checkpoint = {
       world: structuredClone(world),
-      movementDistance: this.movementDistance,
+      movementLegsCompleted: this.movementLegsCompleted,
+      aimTargetsDefeated: this.aimTargetsDefeated,
       dodgePasses: this.dodgePasses,
       trackedProjectileId: this.trackedProjectileId,
       targetEnemyId: this.targetEnemyId,
@@ -868,8 +941,14 @@ export class TutorialController {
   private getProgress(): { current: number; required: number } {
     if (this.stepId === "move") {
       return {
-        current: Math.min(this.movementDistance, BASIC_TUTORIAL_MOVE_DISTANCE),
-        required: BASIC_TUTORIAL_MOVE_DISTANCE,
+        current: this.movementLegsCompleted,
+        required: BASIC_TUTORIAL_MOVE_LEGS,
+      };
+    }
+    if (this.stepId === "aimAndKill") {
+      return {
+        current: this.aimTargetsDefeated,
+        required: 2,
       };
     }
     if (this.stepId === "dodgeProjectile") {
@@ -915,6 +994,49 @@ function clearTransientWorld(world: WorldState): void {
   world.enemyProjectiles = [];
   world.pickups = [];
   world.progression.pendingUpgradeChoices = [];
+}
+
+function createZoneTarget(
+  zone: { x: number; y: number; radius: number },
+): TutorialTarget {
+  return {
+    kind: "zone",
+    id: null,
+    position: { x: zone.x, y: zone.y },
+    radius: zone.radius,
+  };
+}
+
+function createEnemyTarget(
+  enemy: ReturnType<typeof spawnEnemyAtPosition>,
+): TutorialTarget {
+  return {
+    kind: "enemy",
+    id: enemy.id,
+    position: { ...enemy.position },
+    radius: enemy.radius + 12,
+  };
+}
+
+function spawnTutorialEnemy(
+  world: WorldState,
+  config: SimulationConfig,
+  position: Vec2,
+  stationary: boolean,
+) {
+  const enemy = spawnEnemyAtPosition(
+    world,
+    "chaser",
+    { spawnInterval: 60, speedMultiplier: 1, maxEnemies: 1 },
+    position,
+    config,
+  );
+  enemy.enteredArena = true;
+  if (stationary) {
+    enemy.speed = 0;
+    enemy.xpValue = 0;
+  }
+  return enemy;
 }
 
 function isInsideZone(

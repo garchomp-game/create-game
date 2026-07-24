@@ -69,6 +69,8 @@ export class ArenaTutorialDialog {
       view.briefing,
       view.actionLabel,
       view.success,
+      view.cueKind,
+      view.cueLabel,
     ]);
     if (signature === this.signature) return;
     this.signature = signature;
@@ -80,7 +82,13 @@ export class ArenaTutorialDialog {
     panel.setAttribute("aria-labelledby", "arena-tutorial-dialog-title");
     panel.setAttribute(
       "aria-describedby",
-      "arena-tutorial-dialog-objective arena-tutorial-dialog-body",
+      [
+        "arena-tutorial-dialog-objective",
+        "arena-tutorial-dialog-body",
+        view.cueKind ? "arena-tutorial-dialog-cue" : "",
+      ]
+        .filter(Boolean)
+        .join(" "),
     );
     if (view.success) {
       panel.append(
@@ -99,6 +107,8 @@ export class ArenaTutorialDialog {
         id: "arena-tutorial-dialog-body",
       }),
     );
+    const controlGuide = createControlGuide(view);
+    if (controlGuide) panel.append(controlGuide);
 
     const button = element(
       "button",
@@ -209,6 +219,87 @@ function element<K extends keyof HTMLElementTagNameMap>(
   node.textContent = text;
   for (const [name, value] of Object.entries(attributes)) {
     node.setAttribute(name, value);
+  }
+  return node;
+}
+
+function createControlGuide(
+  view: ArenaTutorialViewModel,
+): HTMLDivElement | null {
+  if (!view.cueKind || !view.cueLabel) return null;
+
+  const guide = element("div", "arena-tutorial-dialog__control-guide", "", {
+    id: "arena-tutorial-dialog-cue",
+    role: "img",
+    "aria-label": view.cueLabel,
+    "data-tutorial-cue": view.cueKind,
+  });
+  const visual = element(
+    "div",
+    `arena-tutorial-dialog__control-visual arena-tutorial-dialog__control-visual--${view.cueKind}`,
+  );
+  visual.setAttribute("aria-hidden", "true");
+
+  if (view.cueKind === "move" || view.cueKind === "route") {
+    visual.append(
+      controlKey("W", "↑", "up"),
+      controlKey("A", "←", "left"),
+      controlKey("S", "↓", "down"),
+      controlKey("D", "→", "right"),
+    );
+  } else if (view.cueKind === "dodge") {
+    visual.append(
+      controlKey("W", "↑", "up"),
+      controlKey("S", "↓", "down"),
+    );
+  } else if (view.cueKind === "aim") {
+    visual.append(
+      element("span", "arena-tutorial-dialog__mouse"),
+      element("span", "arena-tutorial-dialog__crosshair"),
+    );
+  } else if (view.cueKind === "upgrade") {
+    visual.append(
+      controlKey("1", "", "choice"),
+      controlKey("2", "", "choice"),
+      controlKey("3", "", "choice"),
+    );
+  } else {
+    visual.append(
+      element(
+        "span",
+        "arena-tutorial-dialog__observe-badge",
+        "操作停止",
+      ),
+    );
+  }
+
+  guide.append(
+    visual,
+    element(
+      "strong",
+      "arena-tutorial-dialog__control-label",
+      view.cueLabel,
+    ),
+  );
+  return guide;
+}
+
+function controlKey(
+  key: string,
+  arrow: string,
+  position: string,
+): HTMLElement {
+  const node = element(
+    "kbd",
+    `arena-tutorial-dialog__control-key arena-tutorial-dialog__control-key--${position}`,
+  );
+  node.append(
+    element("span", "arena-tutorial-dialog__control-key-name", key),
+  );
+  if (arrow) {
+    node.append(
+      element("span", "arena-tutorial-dialog__control-key-arrow", arrow),
+    );
   }
   return node;
 }

@@ -7,6 +7,7 @@ import {
   TUTORIAL_OVERLAY_GRAPHICS_DEPTH,
   TUTORIAL_OVERLAY_TEXT_DEPTH,
 } from "./PhaserArenaDepths";
+import { PhaserTutorialCueRenderer } from "./PhaserTutorialCueRenderer";
 
 export const TUTORIAL_PANEL_BOUNDS = {
   x: 130,
@@ -34,7 +35,7 @@ export class PhaserTutorialLayer {
   private readonly checklistEyebrowText: Phaser.GameObjects.Text;
   private readonly checklistInstructionText: Phaser.GameObjects.Text;
   private readonly checklistHintText: Phaser.GameObjects.Text;
-  private readonly inputCueText: Phaser.GameObjects.Text;
+  private readonly cueRenderer: PhaserTutorialCueRenderer;
 
   constructor(
     scene: Phaser.Scene,
@@ -102,15 +103,7 @@ export class PhaserTutorialLayer {
       "#facc15",
       TUTORIAL_CHECKLIST_TEXT_DEPTH,
     );
-    this.inputCueText = createText(
-      scene,
-      12,
-      "#f8fafc",
-      TUTORIAL_OVERLAY_TEXT_DEPTH,
-    )
-      .setOrigin(0.5, 0.5)
-      .setAlign("center")
-      .setLineSpacing(6);
+    this.cueRenderer = new PhaserTutorialCueRenderer(scene, simulationConfig);
   }
 
   render(
@@ -119,11 +112,11 @@ export class PhaserTutorialLayer {
   ): void {
     this.graphics.clear();
     this.checklistGraphics.clear();
-    this.inputCueText.setVisible(false);
     const visible = Boolean(view?.visible && view.presentation === "hud");
     const checklistVisible = Boolean(visible && view?.panelKind === "checklist");
     this.setOverlayTextVisible(visible && !checklistVisible);
     this.setChecklistTextVisible(checklistVisible);
+    this.cueRenderer.render(world, visible ? view : null);
     if (!view || !visible) return;
 
     if (view.panelKind === "checklist") {
@@ -133,39 +126,6 @@ export class PhaserTutorialLayer {
     }
 
     if (view.notice) this.renderNotice(view.notice);
-
-    if (view.target) {
-      const pulse =
-        view.cueLevel > 0
-          ? (Math.sin(world.state.elapsed * 7) + 1) * 3
-          : 0;
-      const radius = view.target.radius + pulse;
-      if (view.showGuideLine) {
-        this.graphics.lineStyle(2, 0xfacc15, 0.72);
-        this.graphics.beginPath();
-        this.graphics.moveTo(world.player.position.x, world.player.position.y);
-        for (const point of view.target.guidePath ?? []) {
-          this.graphics.lineTo(point.x, point.y);
-        }
-        this.graphics.lineTo(view.target.position.x, view.target.position.y);
-        this.graphics.strokePath();
-      }
-      this.graphics.fillStyle(0xfacc15, view.target.kind === "zone" ? 0.12 : 0.05);
-      this.graphics.fillCircle(
-        view.target.position.x,
-        view.target.position.y,
-        radius,
-      );
-      this.graphics.lineStyle(view.cueLevel > 0 ? 4 : 3, 0xfacc15, 0.96);
-      this.graphics.strokeCircle(
-        view.target.position.x,
-        view.target.position.y,
-        radius,
-      );
-    }
-    if (view.cueLevel > 0 && view.cueKind) {
-      this.renderInputCue(world, view.cueKind);
-    }
   }
 
   private renderStandardPanel(view: ArenaTutorialViewModel): void {
@@ -252,75 +212,6 @@ export class PhaserTutorialLayer {
       .setVisible(true);
   }
 
-  private renderInputCue(
-    world: WorldState,
-    cueKind: NonNullable<ArenaTutorialViewModel["cueKind"]>,
-  ): void {
-    const pulse = 0.72 + (Math.sin(world.state.elapsed * 8) + 1) * 0.1;
-    const centerX = clamp(
-      world.player.position.x,
-      72,
-      this.simulationConfig.arena.width - 72,
-    );
-    const centerY = clamp(
-      world.player.position.y - 68,
-      70,
-      this.simulationConfig.arena.height - 120,
-    );
-
-    this.graphics.fillStyle(0x020617, 0.9);
-    this.graphics.lineStyle(2, 0x67e8f9, pulse);
-
-    if (cueKind === "aim") {
-      this.graphics.fillRoundedRect(centerX - 14, centerY - 20, 28, 40, 12);
-      this.graphics.strokeRoundedRect(centerX - 14, centerY - 20, 28, 40, 12);
-      this.graphics.lineBetween(centerX, centerY - 19, centerX, centerY - 7);
-      this.graphics.strokeCircle(centerX + 24, centerY - 20, 7);
-      this.graphics.lineBetween(
-        centerX + 24,
-        centerY - 31,
-        centerX + 24,
-        centerY - 25,
-      );
-      this.graphics.lineBetween(
-        centerX + 24,
-        centerY - 15,
-        centerX + 24,
-        centerY - 9,
-      );
-      this.graphics.lineBetween(
-        centerX + 13,
-        centerY - 20,
-        centerX + 19,
-        centerY - 20,
-      );
-      this.graphics.lineBetween(
-        centerX + 29,
-        centerY - 20,
-        centerX + 35,
-        centerY - 20,
-      );
-      return;
-    }
-
-    const keySize = 22;
-    const gap = 3;
-    const keys = [
-      { x: centerX - keySize / 2, y: centerY - keySize - gap },
-      { x: centerX - keySize - gap, y: centerY },
-      { x: centerX - keySize / 2, y: centerY },
-      { x: centerX + gap, y: centerY },
-    ];
-    for (const key of keys) {
-      this.graphics.fillRoundedRect(key.x, key.y, keySize, keySize, 3);
-      this.graphics.strokeRoundedRect(key.x, key.y, keySize, keySize, 3);
-    }
-    this.inputCueText
-      .setPosition(centerX, centerY + 6)
-      .setText("W\nA  S  D")
-      .setVisible(true);
-  }
-
   private setOverlayTextVisible(visible: boolean): void {
     this.eyebrowText.setVisible(visible);
     this.titleText.setVisible(visible);
@@ -352,8 +243,4 @@ function createText(
     })
     .setDepth(depth)
     .setVisible(false);
-}
-
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(maximum, Math.max(minimum, value));
 }

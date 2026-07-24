@@ -5,10 +5,16 @@ import { createWorld } from "./createWorld";
 import {
   BASIC_TUTORIAL_COMBAT_ENEMY_POSITION,
   BASIC_TUTORIAL_COMBAT_PLAYER_POSITION,
-  BASIC_TUTORIAL_MOVE_DISTANCE,
+  BASIC_TUTORIAL_CONTACT_ENEMY_POSITION,
+  BASIC_TUTORIAL_MOVE_LEFT_ZONE,
+  BASIC_TUTORIAL_MOVE_LEGS,
+  BASIC_TUTORIAL_MOVE_RIGHT_ZONE,
+  BASIC_TUTORIAL_MOVING_ENEMY_POSITION,
   BASIC_TUTORIAL_NAVIGATION_START,
   BASIC_TUTORIAL_NAVIGATION_WAYPOINTS,
   BASIC_TUTORIAL_NAVIGATION_ZONE,
+  BASIC_TUTORIAL_REPAIR_PLAYER_POSITION,
+  BASIC_TUTORIAL_REPAIR_POSITION,
   BASIC_TUTORIAL_UPGRADE_CHOICES,
   TutorialController,
 } from "./TutorialController";
@@ -22,13 +28,38 @@ describe("TutorialController", () => {
     expect(controller.getSnapshot()).toMatchObject({
       stepId: "move",
       phase: "briefing",
-      progress: { current: 0, required: BASIC_TUTORIAL_MOVE_DISTANCE },
+      progress: { current: 0, required: BASIC_TUTORIAL_MOVE_LEGS },
     });
     expect(world.state.status).toBe("trainingBriefing");
     activateCurrentStep(controller, world);
+    expect(controller.getSnapshot().target?.position).toEqual({
+      x: BASIC_TUTORIAL_MOVE_RIGHT_ZONE.x,
+      y: BASIC_TUTORIAL_MOVE_RIGHT_ZONE.y,
+    });
 
     advanceFrame(controller, world, [], () => {
-      world.player.position.x += BASIC_TUTORIAL_MOVE_DISTANCE;
+      world.player.position = {
+        x: BASIC_TUTORIAL_MOVE_RIGHT_ZONE.x,
+        y: BASIC_TUTORIAL_MOVE_RIGHT_ZONE.y,
+      };
+      world.state.elapsed += 0.25;
+    });
+    expect(controller.getSnapshot()).toMatchObject({
+      stepId: "move",
+      phase: "active",
+      progress: { current: 1, required: BASIC_TUTORIAL_MOVE_LEGS },
+      target: {
+        position: {
+          x: BASIC_TUTORIAL_MOVE_LEFT_ZONE.x,
+          y: BASIC_TUTORIAL_MOVE_LEFT_ZONE.y,
+        },
+      },
+    });
+    advanceFrame(controller, world, [], () => {
+      world.player.position = {
+        x: BASIC_TUTORIAL_MOVE_LEFT_ZONE.x,
+        y: BASIC_TUTORIAL_MOVE_LEFT_ZONE.y,
+      };
       world.state.elapsed += 0.25;
     });
     expect(controller.getSnapshot()).toMatchObject({
@@ -59,7 +90,7 @@ describe("TutorialController", () => {
     expect(world.player.position).toEqual(BASIC_TUTORIAL_COMBAT_PLAYER_POSITION);
     expect(contact.target).toMatchObject({
       kind: "enemy",
-      position: BASIC_TUTORIAL_COMBAT_ENEMY_POSITION,
+      position: BASIC_TUTORIAL_CONTACT_ENEMY_POSITION,
     });
     expect(
       controller.prepareInput({
@@ -115,9 +146,30 @@ describe("TutorialController", () => {
       kind: "enemy",
       position: BASIC_TUTORIAL_COMBAT_ENEMY_POSITION,
     });
+    expect(world.enemies[0]).toMatchObject({
+      speed: 0,
+      xpValue: 0,
+    });
 
-    const targetEnemyId = aim.target!.id!;
-    const targetPosition = { ...aim.target!.position };
+    const stationaryEnemyId = aim.target!.id!;
+    const stationaryPosition = { ...aim.target!.position };
+    world.enemies = [];
+    advanceFrame(controller, world, [
+      enemyKilled(stationaryEnemyId, stationaryPosition, 0),
+    ]);
+    expect(controller.getSnapshot()).toMatchObject({
+      stepId: "aimAndKill",
+      phase: "active",
+      progress: { current: 1, required: 2 },
+      target: {
+        kind: "enemy",
+        position: BASIC_TUTORIAL_MOVING_ENEMY_POSITION,
+      },
+    });
+    expect(world.enemies[0]!.speed).toBeGreaterThan(0);
+
+    const targetEnemyId = controller.getSnapshot().target!.id!;
+    const targetPosition = { ...controller.getSnapshot().target!.position };
     const xpId = `pickup-${world.nextPickupId++}`;
     world.enemies = [];
     world.pickups.push({
@@ -220,6 +272,22 @@ describe("TutorialController", () => {
       retryCount: 0,
     });
     activateCurrentStep(controller, world);
+
+    expect(world.player.position).toEqual(
+      BASIC_TUTORIAL_REPAIR_PLAYER_POSITION,
+    );
+    expect(controller.getSnapshot().target?.position).toEqual(
+      BASIC_TUTORIAL_REPAIR_POSITION,
+    );
+    expect(
+      Math.hypot(
+        BASIC_TUTORIAL_REPAIR_POSITION.x -
+          BASIC_TUTORIAL_REPAIR_PLAYER_POSITION.x,
+        BASIC_TUTORIAL_REPAIR_POSITION.y -
+          BASIC_TUTORIAL_REPAIR_PLAYER_POSITION.y,
+      ),
+    ).toBeGreaterThan(SIMULATION_CONFIG.pickup.magnetRadius);
+    expect(world.pickups).toHaveLength(1);
 
     const healId = controller.getSnapshot().target!.id!;
     world.pickups = [];
@@ -545,31 +613,42 @@ describe("TutorialController", () => {
     ]);
     expect(controller.getSnapshot().stepId).toBe("aimAndKill");
 
+    world.enemies = [];
+    const events: GameEvent[] = [
+      enemyKilled(target.id!, target.position, 0),
+      enemyKilled(target.id!, target.position, 0),
+    ];
+    advanceFrame(controller, world, events);
+    expect(controller.getSnapshot()).toMatchObject({
+      stepId: "aimAndKill",
+      progress: { current: 1, required: 2 },
+    });
+
+    const movingTarget = controller.getSnapshot().target!;
     const pickupId = `pickup-${world.nextPickupId++}`;
     world.enemies = [];
     world.pickups.push({
       id: pickupId,
       kind: "xp",
-      position: { ...target.position },
+      position: { ...movingTarget.position },
       radius: SIMULATION_CONFIG.pickup.xpRadius,
       xpValue: 1,
       healValue: 0,
       lifetime: null,
     });
-    const events: GameEvent[] = [
-      enemyKilled(target.id!, target.position),
-      enemyKilled(target.id!, target.position),
+    const completionEvents: GameEvent[] = [
+      enemyKilled(movingTarget.id!, movingTarget.position),
       {
         type: "pickup.spawned",
         pickupId,
         pickupKind: "xp",
-        position: { ...target.position },
+        position: { ...movingTarget.position },
         xpValue: 1,
         healValue: 0,
         lifetime: null,
       },
     ];
-    const added = advanceFrame(controller, world, events);
+    const added = advanceFrame(controller, world, completionEvents);
 
     expect(controller.getSnapshot().stepId).toBe("collectXp");
     expect(
@@ -676,7 +755,17 @@ function reachAimStep(
 ): void {
   activateCurrentStep(controller, world);
   advanceFrame(controller, world, [], () => {
-    world.player.position.x += BASIC_TUTORIAL_MOVE_DISTANCE;
+    world.player.position = {
+      x: BASIC_TUTORIAL_MOVE_RIGHT_ZONE.x,
+      y: BASIC_TUTORIAL_MOVE_RIGHT_ZONE.y,
+    };
+    world.state.elapsed += 0.1;
+  });
+  advanceFrame(controller, world, [], () => {
+    world.player.position = {
+      x: BASIC_TUTORIAL_MOVE_LEFT_ZONE.x,
+      y: BASIC_TUTORIAL_MOVE_LEFT_ZONE.y,
+    };
     world.state.elapsed += 0.1;
   });
   activateCurrentStep(controller, world);
@@ -731,6 +820,12 @@ function reachUpgradeStep(
   world: WorldState,
 ): void {
   reachAimStep(controller, world);
+  const stationaryEnemyId = controller.getSnapshot().target!.id!;
+  const stationaryPosition = { ...controller.getSnapshot().target!.position };
+  world.enemies = [];
+  advanceFrame(controller, world, [
+    enemyKilled(stationaryEnemyId, stationaryPosition, 0),
+  ]);
   const enemyId = controller.getSnapshot().target!.id!;
   const position = { ...controller.getSnapshot().target!.position };
   const pickupId = `pickup-${world.nextPickupId++}`;
@@ -874,6 +969,7 @@ function activateCurrentStep(
 function enemyKilled(
   enemyId: string,
   position: { x: number; y: number },
+  xpAwarded = 1,
 ): Extract<GameEvent, { type: "enemy.killed" }> {
   return {
     type: "enemy.killed",
@@ -883,7 +979,7 @@ function enemyKilled(
     enemyType: "chaser",
     weaponType: "pulse",
     scoreAwarded: 10,
-    xpAwarded: 1,
+    xpAwarded,
     position,
   };
 }

@@ -11,10 +11,13 @@ describe("ArenaTutorialPresenter", () => {
       presentation: "hud",
       eyebrow: "BASIC TRAINING  1/9",
       title: "移動",
-      instruction: "WASD / 矢印キーで移動",
+      instruction: "Dで右の光へ、次にAで左の光へ",
       hint: null,
-      progress: "24 / 64px",
+      progress: "右 …   左 …",
       target: null,
+      cueKind: "move",
+      cueLabel: "Dで右へ",
+      cueLevel: 0,
     });
   });
 
@@ -28,16 +31,19 @@ describe("ArenaTutorialPresenter", () => {
       visible: true,
       presentation: "briefing",
       title: "移動",
-      instruction: "WASD / 矢印キーで移動",
+      instruction: "Dで右の光へ、次にAで左の光へ",
       actionLabel: "移動を始める",
       success: null,
       target: null,
       progress: null,
+      cueKind: "move",
+      cueLabel: "Dで右へ",
+      cueLevel: 0,
     });
-    expect(view?.briefing).toContain("キーを押して自機を動かします");
+    expect(view?.briefing).toContain("Dで右へ");
   });
 
-  it("uses an input cue for H1 without adding copy", () => {
+  it("emphasizes the immediate input cue at H1 without adding copy", () => {
     const view = createArenaTutorialViewModel(
       makeSnapshot({
         hintLevel: 1,
@@ -49,6 +55,7 @@ describe("ArenaTutorialPresenter", () => {
     expect(view).toMatchObject({
       hint: null,
       cueKind: "move",
+      cueLabel: "Dで右へ",
       cueLevel: 1,
       showGuideLine: false,
     });
@@ -76,9 +83,11 @@ describe("ArenaTutorialPresenter", () => {
       visible: true,
       title: "進路変更",
       hint: "折れ線を目安に、壁の外側へ回り込んでください",
-      cueKind: "move",
+      cueKind: "route",
+      cueLabel: "光へ回り込む",
       cueLevel: 2,
       showGuideLine: true,
+      targetLabel: "移動先",
       target: {
         kind: "zone",
         position: { x: 400, y: 166 },
@@ -88,6 +97,30 @@ describe("ArenaTutorialPresenter", () => {
         ],
       },
     });
+  });
+
+  it("assigns a visual action cue to every guided task", () => {
+    const expectations = [
+      ["move", "move", "Dで右へ"],
+      ["navigate", "route", "光へ回り込む"],
+      ["contactDamage", "observe", "この課題は見るだけ"],
+      ["aimAndKill", "aim", "止まった敵を狙う"],
+      ["collectXp", "route", "近づいて取る"],
+      ["chooseUpgrade", "upgrade", "1 / 2 / 3で選ぶ"],
+      ["dodgeProjectile", "dodge", "上下へ避ける"],
+      ["collectRepair", "route", "近づいて取る"],
+      ["transferDrill", null, null],
+    ] as const;
+
+    for (const [stepId, cueKind, cueLabel] of expectations) {
+      const stepNumber = expectations.findIndex(([id]) => id === stepId) + 1;
+      expect(
+        createArenaTutorialViewModel(
+          makeSnapshot({ stepId, stepNumber }),
+          "playing",
+        ),
+      ).toMatchObject({ cueKind, cueLabel });
+    }
   });
 
   it("keeps transfer objectives visible but removes prompts from menus", () => {
@@ -115,6 +148,8 @@ describe("ArenaTutorialPresenter", () => {
       title: "総合演習",
       progress: "敵 残り2体   取得物 残り2個",
       target: null,
+      cueKind: null,
+      cueLabel: null,
       showGuideLine: false,
       panelKind: "checklist",
     });
@@ -178,7 +213,7 @@ function makeSnapshot(
     totalActiveSeconds: 0,
     noProgressSeconds: 0,
     hintLevel: 0,
-    progress: { current: 24, required: 64 },
+    progress: { current: 0, required: 2 },
     target: null,
     lastCompletedStepId: null,
     selectedUpgradeId: null,

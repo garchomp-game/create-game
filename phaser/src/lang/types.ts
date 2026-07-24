@@ -96,6 +96,8 @@ export type UiText = {
       hint1: string;
       hint2: string;
       success: string;
+      cueLabel: string;
+      targetLabel: string;
     }
   >;
   damageSource: {

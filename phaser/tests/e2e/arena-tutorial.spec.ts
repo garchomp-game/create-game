@@ -16,8 +16,23 @@ test.describe("basic Training", () => {
     await clickCanvasLogical(page, 480, 393);
     await expectTrainingStep(page, "move");
     await expect(page.locator(".arena-tutorial-dialog--visible")).toContainText(
-      "キーを押して自機を動かします",
+      "Dで右へ",
     );
+    const initialMovementCue = page.locator(
+      "[data-tutorial-cue='move']",
+    );
+    await expect(initialMovementCue).toHaveAttribute(
+      "aria-label",
+      "Dで右へ",
+    );
+    await expect(initialMovementCue).toContainText("W");
+    await expect(initialMovementCue).toContainText("↑");
+    await expect(initialMovementCue).toContainText("A");
+    await expect(initialMovementCue).toContainText("←");
+    await expect(initialMovementCue).toContainText("S");
+    await expect(initialMovementCue).toContainText("↓");
+    await expect(initialMovementCue).toContainText("D");
+    await expect(initialMovementCue).toContainText("→");
     await expect
       .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().runContext))
       .toBeNull();
@@ -104,6 +119,31 @@ test.describe("basic Training", () => {
     await holdKey(page, "KeyW", 700);
     await expectTrainingStep(page, "collectRepair", 20_000);
     await continueTutorial(page, "collectRepair");
+    const repairStart = await page.evaluate(() => {
+      const snapshot = window.__ARENA_DEBUG__?.getSnapshot();
+      const target = snapshot?.tutorial?.target;
+      return target
+        ? {
+            distance: Math.hypot(
+              target.position.x - snapshot.player.x,
+              target.position.y - snapshot.player.y,
+            ),
+          }
+        : null;
+    });
+    expect(repairStart).not.toBeNull();
+    expect(repairStart!.distance).toBeGreaterThan(
+      SIMULATION_CONFIG.pickup.magnetRadius,
+    );
+    await page.waitForTimeout(500);
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const tutorial = window.__ARENA_DEBUG__?.getSnapshot().tutorial;
+          return tutorial?.stepId === "collectRepair" && tutorial.target !== null;
+        }),
+      )
+      .toBe(true);
     await moveToCurrentTutorialTarget(page);
     await expectTrainingStep(page, "transferDrill");
     await expect(page.locator(".arena-tutorial-dialog--visible")).toContainText(
@@ -343,7 +383,7 @@ async function continueTutorial(
   const panel = dialog.getByRole("dialog");
   await expect(panel).toHaveAttribute(
     "aria-describedby",
-    "arena-tutorial-dialog-objective arena-tutorial-dialog-body",
+    /arena-tutorial-dialog-objective arena-tutorial-dialog-body(?: arena-tutorial-dialog-cue)?/,
   );
   const continueButton = dialog.locator("[data-tutorial-action='continue']");
   await expect(continueButton).toBeFocused();
@@ -368,9 +408,9 @@ async function completeMoveStep(page: Page): Promise<void> {
       () => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.stepId,
     );
     if (stepId !== "move") return;
-    await holdKey(page, "KeyD", 250);
+    await moveToCurrentTutorialTarget(page);
   }
-  throw new Error("Movement task did not reach its distance guard.");
+  throw new Error("Movement task did not complete both directional targets.");
 }
 
 async function movePlayerAxisTo(
