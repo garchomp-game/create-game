@@ -247,14 +247,14 @@ RC5は基準証跡として保持し、productionへ直接昇格しません。U
 
 短い自動ゲートでは全unit、決定論、24 route、migration、probe、soak、Final Expedition露出、通常 / 候補build、EX browser 13件、共通選択UI、9課題Training、3ブラウザrelease smokeを通過しています。通常buildはEX OFF、候補buildだけ`0.8.0-candidate.2`とC2 rulesetを使います。production trafficは変更していません。
 
-残るのは、exact SHAのVersion Preview、GitHub Actions、Pulse / Spread各3体系の人間操作、Aegis / Tidalの実GPU高密度確認です。詳細は[EX Protocol C2 最新main統合レポート](../../playtest/v08-ex-c2-main-integration-report/)を参照してください。
+commit `dca3cec1127b`は[Draft PR #127](https://github.com/garchomp-game/create-game/pull/127)と[固定Version Preview](https://v08-ex-c2-integration-dca3cec-arena-core.garchomp-game.workers.dev/)へ出し、実URLsmokeを完了しました。残るのはGitHub Actions、Pulse / Spread各3体系の人間操作、Aegis / Tidalの実GPU高密度確認です。詳細は[EX Protocol C2 最新main統合レポート](../../playtest/v08-ex-c2-main-integration-report/)を参照してください。
 
 ## 次の優先順
 
 公開ベータ基準、RC6、control観測、採用済み選択UI、9課題Training、desktop gate、WebGL fallback、Phase A fixture、StudyLog契約はmainへ統合済みです。
 
-1. #126のEX C2統合候補をDraft PRと固定Version Previewへ出し、productionを変更せず自動証拠をSHAへ結び付ける。
-2. Pulse / Spread各3 Protocolの人間操作と、Aegis / Tidalの実GPU高密度確認を行う。
+1. PR #127のGitHub Actionsを完了し、#126の自動証拠を`dca3cec1127b`へ固定する。
+2. 固定PreviewでPulse / Spread各3 Protocolの人間操作と、Aegis / Tidalの実GPU高密度確認を行う。
 3. #81でT1.1 control、T1.2短文候補、H1/H2無操作ヒント候補を別cellとして比較する。
 4. 採用したTraining文言とヒントだけをmainへ統合し、O1共通導線を1候補で確認する。
 5. EX C2、Training、O1の採否後にv0.8統合buildを固定し、Endless / Final Expedition / Trainingの最終回帰を行う。

@@ -16,7 +16,9 @@ desktop gate、WebGL fallback、StudyLog契約とC2を結合しました。
 短いprobe / soak、Final Expedition露出smoke、EX browser 13件、
 Training完走、通常release smokeまで通しています。競合解決と残るゲートは
 [EX Protocol C2 最新main統合レポート](../v08-ex-c2-main-integration-report/)を
-正本とします。
+正本とします。commit `dca3cec1127b`は
+[固定Preview](https://v08-ex-c2-integration-dca3cec-arena-core.garchomp-game.workers.dev/)
+へuploadし、production trafficを変更せず実URLsmokeを完了しました。
 
 ## 対象
 
