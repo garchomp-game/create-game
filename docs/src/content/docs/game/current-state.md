@@ -247,7 +247,7 @@ RC5は基準証跡として保持し、productionへ直接昇格しません。U
 
 短い自動ゲートでは全unit、決定論、24 route、migration、probe、soak、Final Expedition露出、通常 / 候補build、EX browser 13件、共通選択UI、9課題Training、3ブラウザrelease smokeを通過しています。通常buildはEX OFF、候補buildだけ`0.8.0-candidate.2`とC2 rulesetを使います。production trafficは変更していません。
 
-runtime commit `dca3cec1127b`は[Draft PR #127](https://github.com/garchomp-game/create-game/pull/127)と[固定Version Preview](https://v08-ex-c2-integration-dca3cec-arena-core.garchomp-game.workers.dev/)へ出し、実URLsmokeを完了しました。PR HEAD `163670b5bd11`では4件のGitHub Actionsもすべてgreenです。残るのはPulse / Spread各3体系の人間操作、Aegis / Tidalの実GPU高密度確認です。詳細は[EX Protocol C2 最新main統合レポート](../../playtest/v08-ex-c2-main-integration-report/)を参照してください。
+runtime commit `dca3cec1127b`は[Draft PR #127](https://github.com/garchomp-game/create-game/pull/127)と[固定Version Preview](https://v08-ex-c2-integration-dca3cec-arena-core.garchomp-game.workers.dev/)へ出し、実URLsmokeを完了しました。PRのPhaser、Starlight、browser smoke、EX candidateもすべてgreenです。残るのはPulse / Spread各3体系の人間操作、Aegis / Tidalの実GPU高密度確認です。詳細は[EX Protocol C2 最新main統合レポート](../../playtest/v08-ex-c2-main-integration-report/)を参照してください。
 
 ## 次の優先順
 

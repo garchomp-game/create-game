@@ -25,11 +25,10 @@ EX Protocol C2を、`origin/main`の`60ae8889390c`を基点として再統合し
 | 項目 | 値 |
 | --- | --- |
 | branch / runtime commit | `agent/v08-ex-c2-integration` / `dca3cec1127b` |
-| PR HEAD | `163670b5bd11` |
 | Draft PR | [#127](https://github.com/garchomp-game/create-game/pull/127) |
 | Cloudflare Version | `b6f88819-46c5-4820-8923-a2ff0c55e92c` |
 | 固定Preview | [v08-ex-c2-integration-dca3cec](https://v08-ex-c2-integration-dca3cec-arena-core.garchomp-game.workers.dev/) |
-| GitHub Actions | run `30082168996`、4 job green |
+| GitHub Actions | PR #127の最新statusで4 job green |
 | production traffic | 変更なし |
 
 C2からは6 Protocol、各2 x 2の進化経路、Mastery、EX Lv3以降の
@@ -51,6 +50,11 @@ Limit Break、右クリック / `E`入力、RunRecord v3非破壊移行、専用
 `LIMIT BREAK CYCLE`表示へ修正しました。Training完走E2Eでは、
 固定180ms入力が目標座標を往復するテスト側の量子化問題を検出し、
 距離に応じて押下時間を短くする方式へ変更しました。ゲーム数値は変更していません。
+
+EX画像fixtureはPlaywright固定ChromiumとNoto CJKへ実行環境を揃え、
+代表戦闘を可変フレームのまま撮らず、固定step後にdebug pauseして取得します。
+`createDebugInput()`が落としていた`specialPressed`も単体fixtureで保証し、
+6体系の画像を2連続、計26件で安定確認しました。
 
 ## 自動証拠
 

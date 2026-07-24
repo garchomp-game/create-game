@@ -420,12 +420,20 @@ for (const fixture of PROTOCOL_COMBAT_CASES) {
       )
       .click();
     await expectStatus(page, "playing");
-    await page.evaluate(() => {
-      window.__ARENA_DEBUG__?.setEnemyVisualFixture("wave3");
-    });
-    if (fixture.runtimeKind === "rebound-overdrive") {
-      await page.keyboard.press("e");
-    }
+    await page.evaluate((runtimeKind) => {
+      const debug = window.__ARENA_DEBUG__;
+      debug?.setEnemyVisualFixture("wave3");
+      debug?.setPaused(true);
+      if (runtimeKind === "rebound-overdrive") {
+        debug?.step({ specialPressed: true }, 1 / 60);
+      }
+    }, fixture.runtimeKind);
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        }),
+    );
 
     await expect
       .poll(() =>
@@ -436,6 +444,19 @@ for (const fixture of PROTOCOL_COMBAT_CASES) {
         ),
       )
       .toBe(fixture.runtimeKind);
+    if (fixture.runtimeKind === "rebound-overdrive") {
+      await expect
+        .poll(() =>
+          page.evaluate(() => {
+            const runtime =
+              window.__ARENA_DEBUG__?.getSnapshot().exProtocol?.runtime;
+            return runtime?.kind === "rebound-overdrive"
+              ? (runtime.armedUntil ?? 0)
+              : 0;
+          }),
+        )
+        .toBeGreaterThan(0);
+    }
     await expect
       .poll(() =>
         page.evaluate(

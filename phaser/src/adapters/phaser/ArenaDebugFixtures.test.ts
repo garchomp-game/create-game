@@ -22,7 +22,9 @@ describe("ArenaDebugFixtures", () => {
       upgradeChoicePressed: null,
       contractChoicePressed: null,
       tutorialContinuePressed: false,
+      specialPressed: false,
     });
+    expect(createDebugInput({ specialPressed: true }).specialPressed).toBe(true);
   });
 
   it("creates deterministic enemy visual fixtures", () => {
