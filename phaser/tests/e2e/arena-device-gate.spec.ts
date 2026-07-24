@@ -38,3 +38,27 @@ test("does not mistake a narrow desktop window for a smartphone", async ({ page 
   await expect(page.locator("[data-device-gate='unsupported']")).toHaveCount(0);
   await expect(page.locator("canvas")).toBeVisible();
 });
+
+test("explains unavailable WebGL before Phaser starts", async ({ page }) => {
+  await page.addInitScript(() => {
+    const getContext = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (
+      contextId: string,
+      ...options: unknown[]
+    ) {
+      if (contextId === "webgl" || contextId === "webgl2") return null;
+      return getContext.call(this, contextId, ...options);
+    } as typeof HTMLCanvasElement.prototype.getContext;
+  });
+
+  await page.goto("/");
+
+  const gate = page.locator("[data-startup-gate='webgl-unavailable']");
+  await expect(gate).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "WebGLを利用できません" }),
+  ).toBeVisible();
+  await expect(page.getByText(/ハードウェア アクセラレーション/)).toBeVisible();
+  await expect(page.locator("canvas")).toHaveCount(0);
+  expect(await page.evaluate(() => window.__ARENA_DEBUG__)).toBeUndefined();
+});

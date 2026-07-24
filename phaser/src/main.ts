@@ -3,6 +3,10 @@ import {
   shouldBlockGameDevice,
   showDesktopOnlyGate,
 } from "./adapters/dom/DesktopOnlyGate";
+import {
+  canStartWebgl,
+  showWebglStartupGate,
+} from "./adapters/dom/WebglStartupGate";
 import { applyArenaDomTheme } from "./adapters/dom/applyArenaDomTheme";
 import "./arena.css";
 
@@ -14,9 +18,16 @@ if (!gameRoot) {
 
 if (shouldBlockGameDevice(readDesktopDeviceSignals())) {
   showDesktopOnlyGate(gameRoot);
+} else if (!canStartWebgl()) {
+  showWebglStartupGate(gameRoot, "webgl-unavailable");
 } else {
   applyArenaDomTheme();
-  void import("./adapters/phaser/createPhaserGame").then(({ createPhaserGame }) => {
-    createPhaserGame(gameRoot.id);
-  });
+  void import("./adapters/phaser/createPhaserGame")
+    .then(({ createPhaserGame }) => {
+      createPhaserGame(gameRoot.id);
+    })
+    .catch((error: unknown) => {
+      console.error("Arena Core failed to initialize.", error);
+      showWebglStartupGate(gameRoot, "initialization-failed");
+    });
 }
