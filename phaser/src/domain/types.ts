@@ -983,6 +983,12 @@ export type GameEvent =
       retryCount: number;
       reason: "enemyProjectile" | "damage";
     }
+  | {
+      type: "tutorial.hint.shown";
+      stepId: TutorialStepId;
+      hintLevel: 1 | 2;
+      noProgressSeconds: number;
+    }
   | { type: "tutorial.completed"; elapsed: number }
   | { type: "game.paused"; elapsed: number }
   | { type: "game.resumed"; elapsed: number }

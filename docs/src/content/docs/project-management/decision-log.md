@@ -1132,3 +1132,20 @@ T1.2-Cと、meaningful progressに応じて発火するH1 / H2を分離する。
   後続の具体案内だけを変更する。
 - 戦闘object visual、O1入口、課題座標、simulation、記録を混ぜない。
 - 長い説明を4章へ統合する案は、短文化だけで摩擦が残る場合の別candidateとする。
+
+## 2026-07-24: Training H1 / H2を無進展時計で比較する
+
+決定: T1.2-Cのcopyを固定し、段階hintだけを変えるstacked candidateを作る。
+H1は5秒、H2は合計10秒の連続したno-progressで発火する。総経過時間や
+無関係な入力ではなく、実移動、照準更新、対象hit、Pickup距離短縮、
+敵弾の非衝突通過をmeaningful progressとして時計をresetする。
+
+- H1はWASD / mouse記号と対象pulseだけを追加し、文章を増やさない。
+- H2だけ既存の短い具体文とguideを表示する。
+- Pause、briefing、upgrade選択、観察課題、総合演習では時計を進めない。
+- 自動成功、timeout進行、skip、simulation、記録契約を変更しない。
+- `TutorialSnapshot.noProgressSeconds`と`tutorial.hint.shown`をローカル観測へ追加するが、
+  RunRecord、Profile、ランキングには保存しない。
+
+採否はT1.2-Cとの人間比較で行う。自動greenは候補完成であり、
+H1 / H2到達率と停止解除のraw countを得る前にmainへ採用しない。

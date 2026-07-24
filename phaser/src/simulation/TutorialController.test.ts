@@ -365,13 +365,13 @@ describe("TutorialController", () => {
     });
   });
 
-  it("keeps hint time within a retried task and clears retry state on advance", () => {
+  it("keeps no-progress hint time within a retried task and clears retry state on advance", () => {
     const world = createWorld(SIMULATION_CONFIG);
     const controller = new TutorialController();
     controller.initialize(world, SIMULATION_CONFIG);
     reachDodgeStep(controller, world);
     advanceFrame(controller, world, [], () => {
-      world.state.elapsed += 8.1;
+      world.state.elapsed += 5.1;
     });
     const projectileId = world.enemyProjectiles[0]!.id;
     const events: GameEvent[] = [
@@ -389,7 +389,8 @@ describe("TutorialController", () => {
       retryCount: 1,
       retryReason: "enemyProjectile",
       hintLevel: 1,
-      stepActiveSeconds: 8.1,
+      stepActiveSeconds: 5.1,
+      noProgressSeconds: 5.1,
     });
 
     advanceFrame(controller, world, [], () => {
@@ -435,22 +436,101 @@ describe("TutorialController", () => {
     ).toBe(false);
   });
 
-  it("does not advance hint time when simulation elapsed is frozen", () => {
+  it("reveals hints only after consecutive no-progress windows", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    const controller = new TutorialController();
+    controller.initialize(world, SIMULATION_CONFIG);
+    activateCurrentStep(controller, world);
+
+    advanceFrame(controller, world, [], () => {
+      world.state.elapsed += 4.9;
+    });
+    expect(controller.getSnapshot()).toMatchObject({
+      hintLevel: 0,
+      noProgressSeconds: 4.9,
+    });
+
+    const h1Events = advanceFrame(controller, world, [], () => {
+      world.state.elapsed += 0.1;
+    });
+    expect(controller.getSnapshot().hintLevel).toBe(1);
+    expect(h1Events).toContainEqual(
+      expect.objectContaining({
+        type: "tutorial.hint.shown",
+        stepId: "move",
+        hintLevel: 1,
+      }),
+    );
+
+    const h2Events = advanceFrame(controller, world, [], () => {
+      world.state.elapsed += 5;
+    });
+    expect(controller.getSnapshot()).toMatchObject({
+      hintLevel: 2,
+      noProgressSeconds: 10,
+    });
+    expect(h2Events).toContainEqual(
+      expect.objectContaining({
+        type: "tutorial.hint.shown",
+        stepId: "move",
+        hintLevel: 2,
+      }),
+    );
+  });
+
+  it("resets no-progress hints only for meaningful task progress", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    const controller = new TutorialController();
+    controller.initialize(world, SIMULATION_CONFIG);
+    activateCurrentStep(controller, world);
+
+    advanceFrameWithInput(
+      controller,
+      world,
+      { shootHeld: true },
+      4.9,
+    );
+    expect(controller.getSnapshot()).toMatchObject({
+      hintLevel: 0,
+      noProgressSeconds: 4.9,
+    });
+
+    advanceFrameWithInput(
+      controller,
+      world,
+      { shootHeld: true },
+      0.2,
+    );
+    expect(controller.getSnapshot().hintLevel).toBe(1);
+    expect(controller.getSnapshot().noProgressSeconds).toBeCloseTo(5.1);
+
+    advanceFrameWithInput(
+      controller,
+      world,
+      { move: { x: 1, y: 0 } },
+      0.1,
+      () => {
+        world.player.position.x += 1;
+      },
+    );
+    expect(controller.getSnapshot()).toMatchObject({
+      hintLevel: 0,
+      noProgressSeconds: 0,
+    });
+  });
+
+  it("does not advance no-progress time when simulation elapsed is frozen", () => {
     const world = createWorld(SIMULATION_CONFIG);
     const controller = new TutorialController();
     controller.initialize(world, SIMULATION_CONFIG);
     activateCurrentStep(controller, world);
 
     advanceFrame(controller, world);
-    expect(controller.getSnapshot().hintLevel).toBe(0);
-
-    advanceFrame(controller, world, [], () => {
-      world.state.elapsed = 8.1;
+    expect(controller.getSnapshot()).toMatchObject({
+      stepActiveSeconds: 0,
+      noProgressSeconds: 0,
+      hintLevel: 0,
     });
-    expect(controller.getSnapshot().hintLevel).toBe(1);
-
-    advanceFrame(controller, world);
-    expect(controller.getSnapshot().stepActiveSeconds).toBeCloseTo(8.1);
   });
 
   it("ignores unrelated and duplicate success events", () => {
@@ -755,6 +835,26 @@ function advanceFrame(
   return controller.update(world, SIMULATION_CONFIG, events, frameBefore, {
     tutorialContinuePressed,
   });
+}
+
+function advanceFrameWithInput(
+  controller: TutorialController,
+  world: WorldState,
+  input: {
+    move?: { x: number; y: number };
+    aimWorld?: { x: number; y: number } | null;
+    shootHeld?: boolean;
+  },
+  elapsed: number,
+  mutate: () => void = () => undefined,
+): GameEvent[] {
+  const frameBefore = {
+    elapsed: world.state.elapsed,
+    playerPosition: { ...world.player.position },
+  };
+  mutate();
+  world.state.elapsed += elapsed;
+  return controller.update(world, SIMULATION_CONFIG, [], frameBefore, input);
 }
 
 function activateCurrentStep(
