@@ -10,6 +10,10 @@ import type {
 import { circleCircle, circleRect } from "../../math/geometry";
 import { getThreatMultipliers } from "../threatDirector";
 import { getDifficultyElapsed } from "../difficultyClock";
+import {
+  getPlayerEffectiveMaxHp,
+  healPlayer,
+} from "./playerHealthSystem";
 
 export function updatePickups(
   world: WorldState,
@@ -57,7 +61,7 @@ export function rollHealDrop(
 }
 
 export function getCurrentMaxHp(world: WorldState, config: SimulationConfig): number {
-  return config.player.maxHp + world.runtime.maxHpBonus;
+  return getPlayerEffectiveMaxHp(world, config);
 }
 
 function spawnPickupsFromKills(
@@ -65,7 +69,16 @@ function spawnPickupsFromKills(
   config: SimulationConfig,
   events: GameEvent[],
 ): void {
-  const killEvents = events.filter((event) => event.type === "enemy.killed");
+  const killEvents = events.filter(
+    (
+      event,
+    ): event is Extract<
+      GameEvent,
+      { type: "enemy.killed" | "enemy.protocol.killed" }
+    > =>
+      event.type === "enemy.killed" ||
+      event.type === "enemy.protocol.killed",
+  );
   const boss = world.expedition?.boss?.status === "active"
     ? world.expedition.boss
     : null;
@@ -255,15 +268,14 @@ function collectPickups(
       continue;
     }
 
-    const hpBefore = world.state.hp;
-    world.state.hp = Math.min(getCurrentMaxHp(world, config), hpBefore + pickup.healValue);
+    const hpRecovered = healPlayer(world, config, pickup.healValue);
     events.push({
       type: "pickup.collected",
       pickupId: pickup.id,
       pickupKind: "heal",
       xpValue: 0,
       healValue: pickup.healValue,
-      hpRecovered: world.state.hp - hpBefore,
+      hpRecovered,
     });
   }
   world.pickups = remaining;

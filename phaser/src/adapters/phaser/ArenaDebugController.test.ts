@@ -192,6 +192,7 @@ function createFixture(run: { modeId?: string; stageId?: string } = {}) {
     getFeedbackSnapshot: () => ({
       impactCount: 0,
       particleCount: 0,
+      protocolEffectCount: 0,
       screenFlashAlpha: 0,
     }),
     getAudioCues: () => [],
@@ -250,6 +251,10 @@ function makeContext(): RunContext {
     stageId: "arena-default",
     difficultyId: "standard",
     rulesetVersion: "test-rules",
+    rulesetProfileId: "legacy-endless-v068",
+    rngVersion: "arena-rng-v1",
+    runRecordSchemaVersion: 2,
+    exProtocolsEnabled: false,
     seedCategory: "fixed",
     weaponId: "pulse",
     modifierIds: [],

@@ -5,6 +5,13 @@ import type {
 } from "./encounterDirector";
 import type { SpawnGeometryId } from "./structuredSpawning";
 import type { TutorialStepId } from "./tutorial";
+import type {
+  ExProtocolEvolutionId,
+  ExProtocolId,
+  ExProtocolProgressionState,
+  ExProtocolProjectileState,
+} from "./exProtocols";
+import type { ExProtocolRunStats } from "./exProtocolTelemetry";
 
 export type Vec2 = {
   x: number;
@@ -20,6 +27,8 @@ export type GameStatus =
   | "playing"
   | "paused"
   | "upgradeSelect"
+  | "protocolSelect"
+  | "evolutionSelect"
   | "contractSelect"
   | "trainingComplete"
   | "gameOver";
@@ -63,6 +72,21 @@ export const EXTRA_UPGRADE_IDS = [
 export type ExtraUpgradeId = (typeof EXTRA_UPGRADE_IDS)[number];
 export type ProgressionChoiceId = UpgradeId | ExtraUpgradeId;
 
+export type ProgressionPendingChoice =
+  | { kind: "upgrade"; choices: UpgradeId[] }
+  | { kind: "protocol"; choices: ExProtocolId[] }
+  | {
+      kind: "evolution-one";
+      protocolId: ExProtocolId;
+      choices: ExProtocolEvolutionId[];
+    }
+  | {
+      kind: "evolution-two";
+      protocolId: ExProtocolId;
+      choices: ExProtocolEvolutionId[];
+    }
+  | { kind: "limit-break"; choices: ExtraUpgradeId[] };
+
 export const UPGRADE_CATEGORIES = [
   "weapon",
   "mobility",
@@ -73,6 +97,7 @@ export const UPGRADE_CATEGORIES = [
 export type UpgradeCategory = (typeof UPGRADE_CATEGORIES)[number];
 
 export type SimulationFeatures = {
+  exProtocols: boolean;
   pulseRicochet: boolean;
   pulseBoundaryRicochet: boolean;
   pulseFocus: boolean;
@@ -319,6 +344,7 @@ export type Obstacle = {
 export type SimulationConfig = {
   seed: number;
   features: SimulationFeatures;
+  exProtocolOfferPolicy?: "fixed-compatible" | "disabled";
   arena: ArenaSimulationConfig;
   player: PlayerSimulationConfig;
   defaultWeapon: WeaponTypeId;
@@ -391,6 +417,22 @@ export type Player = CircleBody & {
   id: "player";
 };
 
+export type VolleyKind = "normal" | "ex.tidal";
+
+export type ProjectileRole = "center" | "inner" | "edge" | "protocol";
+
+export type CandidateBulletMetadata = {
+  creationOrdinal: number;
+  hitCapacityAtFire: number;
+  volleyKind: VolleyKind;
+  projectileIndex: number;
+  projectileCount: number;
+  projectileRole: ProjectileRole;
+  activationId: number | null;
+  consumedCoreSpreadSweep: boolean;
+  protocolState: ExProtocolProjectileState | null;
+};
+
 export type Bullet = CircleBody & {
   id: string;
   volleyId: number;
@@ -404,6 +446,7 @@ export type Bullet = CircleBody & {
   ricochetSurfaceKind: RicochetSurfaceKind | null;
   ricochetBoundarySide: ArenaBoundarySide | null;
   hitEnemyIds: string[];
+  candidate?: CandidateBulletMetadata;
 };
 
 export type Enemy = CircleBody & {
@@ -424,6 +467,9 @@ export type Enemy = CircleBody & {
   action?: ChargerActionState;
   pulseFocusStacks?: number;
   pulseFocusExpiresAt?: number;
+  candidate?: {
+    creationOrdinal: number;
+  };
 };
 
 export type CommanderEliteState = {
@@ -456,12 +502,28 @@ export type ChargerActionState = {
   hitPlayerDuringCharge: boolean;
 };
 
+export type EnemyProjectileCategory = "standard" | "boss" | "beam" | "hazard";
+
 export type EnemyProjectile = CircleBody & {
   id: string;
   velocity: Vec2;
   lifetime: number;
   damage: number;
   source?: { bossId: string; bossAttackId: BossAttackId };
+  candidate?: {
+    creationOrdinal: number;
+    category: EnemyProjectileCategory;
+    interceptible: boolean;
+  };
+};
+
+export type ExProtocolDamageEffect = "relay" | "tidal" | "breakwater";
+
+export type ExProtocolEnemyDamageSource = {
+  kind: "ex-protocol";
+  protocolId: ExProtocolId;
+  activationId: number;
+  effect: ExProtocolDamageEffect;
 };
 
 export type Pickup = CircleBody & {
@@ -495,6 +557,8 @@ export type ProgressionState = {
   upgradeRanks: Record<UpgradeId, number>;
   extraUpgradeRanks: Record<ExtraUpgradeId, number>;
   extraCycleRemaining: ExtraUpgradeId[];
+  pendingChoice?: ProgressionPendingChoice;
+  exProtocol?: ExProtocolProgressionState;
 };
 
 export type EncounterPhase = "pending" | "warning" | "active" | "recovery";
@@ -527,6 +591,7 @@ export type EncounterState = {
     selectedAt: number | null;
     enemySpeedMultiplier: number;
     scoreMultiplier: number;
+    notBefore?: number;
   };
   collapse: {
     stage: number;
@@ -869,6 +934,7 @@ export type RunStats = {
   encounterMetrics: EncounterRunStats;
   weaponMetrics: Record<WeaponTypeId, WeaponRunStats>;
   weaponComparisonMetrics: Record<WeaponTypeId, WeaponComparisonRunStats>;
+  exProtocolMetrics: ExProtocolRunStats;
 };
 
 export type EnemyNavigationRunStats = {
@@ -884,6 +950,16 @@ export type ActiveVolleyAnalytics = {
   postRicochetEnemyIds: string[];
   spreadSweepEnemyIds: string[];
   spreadSweepTriggered: boolean;
+  reboundPostRicochetEnemyIds?: string[];
+  reboundMasteryRefunded?: boolean;
+  tidalEnemyIds?: string[];
+  tidalLeftEdgeEnemyIds?: string[];
+  tidalRightEdgeEnemyIds?: string[];
+  tidalChargeGranted?: boolean;
+  breakwaterCloseEnemyIds?: string[];
+  breakwaterChargeGranted?: boolean;
+  aegisInterceptedSides?: Array<"left" | "right">;
+  aegisPerfectGuardGranted?: boolean;
 };
 
 export type RunAnalyticsState = {
@@ -903,6 +979,7 @@ export type RunResultSummary = Omit<
   | "progressionMetrics"
   | "encounterMetrics"
   | "weaponComparisonMetrics"
+  | "exProtocolMetrics"
 > & {
   elapsed: number;
   score: number;
@@ -956,6 +1033,7 @@ export type InputSnapshot = {
   upgradeChoicePressed: number | null;
   contractChoicePressed?: number | null;
   tutorialContinuePressed?: boolean;
+  specialPressed?: boolean;
 };
 
 export type GameEvent =
@@ -1005,6 +1083,15 @@ export type GameEvent =
       ricochetsUsed: number;
       ricochetSurfaceKind: RicochetSurfaceKind | null;
       ricochetBoundarySide: ArenaBoundarySide | null;
+      damage: number;
+      hpAfter: number;
+    }
+  | {
+      type: "enemy.protocol.hit";
+      source: ExProtocolEnemyDamageSource;
+      enemyId: string;
+      enemyType: EnemyTypeId;
+      weaponType: WeaponTypeId;
       damage: number;
       hpAfter: number;
     }
@@ -1149,6 +1236,16 @@ export type GameEvent =
       position: Vec2;
     }
   | {
+      type: "enemy.protocol.killed";
+      source: ExProtocolEnemyDamageSource;
+      enemyId: string;
+      enemyType: EnemyTypeId;
+      weaponType: WeaponTypeId;
+      scoreAwarded: number;
+      xpAwarded: number;
+      position: Vec2;
+    }
+  | {
       type: "pickup.spawned";
       pickupId: string;
       pickupKind: "xp";
@@ -1194,6 +1291,199 @@ export type GameEvent =
     }
   | { type: "upgrade.selected"; upgradeId: UpgradeId; rank: number; level: number; effect: UpgradeEffect }
   | { type: "build.completed"; level: number; elapsed: number }
+  | {
+      type: "ex.protocol.offered";
+      weaponId: WeaponTypeId;
+      exLevel: 0;
+      choices: ExProtocolId[];
+      elapsed: number;
+    }
+  | {
+      type: "ex.protocol.selected";
+      weaponId: WeaponTypeId;
+      protocolId: ExProtocolId;
+      interaction: "passive" | "active";
+      exLevel: 0;
+      elapsed: number;
+    }
+  | {
+      type: "ex.protocol.skipped";
+      weaponId: WeaponTypeId;
+      reason: "unsupported-weapon";
+      elapsed: number;
+    }
+  | {
+      type: "ex.evolution.offered";
+      protocolId: ExProtocolId;
+      tier: 1 | 2;
+      exLevel: number;
+      choices: ExProtocolEvolutionId[];
+      elapsed: number;
+    }
+  | {
+      type: "ex.level_up";
+      level: number;
+      exLevel: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.evolution.selected";
+      protocolId: ExProtocolId;
+      tier: 1 | 2;
+      evolutionId: ExProtocolEvolutionId;
+      exLevel: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.mastery.unlocked";
+      protocolId: ExProtocolId;
+      masteryId: string;
+      exLevel: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.limit_break.connected";
+      protocolId: ExProtocolId | null;
+      exLevel: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.redline.hit";
+      projectileId: string;
+      totalDamage: number;
+      bonusDamageAttributed: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.special.rejected";
+      protocolId: ExProtocolId;
+      reason:
+        | "already-armed"
+        | "cooldown"
+        | "not-charged"
+        | "insufficient-hp";
+      elapsed: number;
+    }
+  | {
+      type: "ex.special.armed";
+      protocolId: ExProtocolId;
+      elapsed: number;
+    }
+  | {
+      type: "ex.special.expired";
+      protocolId: ExProtocolId;
+      reason: "no-volley";
+      elapsed: number;
+    }
+  | {
+      type: "ex.rebound.restored";
+      volleyId: number;
+      restoredCapacity: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.rebound.cooldown.refunded";
+      volleyId: number;
+      remainingBefore: number;
+      remainingAfter: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.relay.anchor.created";
+      enemyId: string;
+      volleyId: number;
+      refreshed: boolean;
+      expiresAt: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.relay.resolved";
+      activationId: number;
+      targetCount: number;
+      damage: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.relay.blocked";
+      anchorEnemyId: string;
+      endpointEnemyId: string;
+      elapsed: number;
+    }
+  | {
+      type: "ex.tidal.charged";
+      charge: number;
+      maxCharge: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.special.activated";
+      protocolId: ExProtocolId;
+      activationId: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.protocol.volley.fired";
+      protocolId: ExProtocolId;
+      activationId: number;
+      volleyId: number;
+      projectileIds: string[];
+      projectileCount: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.tidal.backwash.triggered";
+      activationId: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.tidal.second-crest.triggered";
+      activationId: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.breakwater.charged";
+      charge: number;
+      elapsed: number;
+    }
+  | {
+      type: "player.integrity.spent";
+      protocolId: ExProtocolId;
+      amount: number;
+      hpAfter: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.breakwater.resolved";
+      activationId: number;
+      targetCount: number;
+      pushedTargets: number;
+      damage: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.breakwater.escape-current.triggered";
+      activationId: number;
+      expiresAt: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.aegis.intercepted";
+      volleyId: number;
+      side: "left" | "right";
+      enemyProjectileCategory: EnemyProjectileCategory;
+      plannedPlayerEndpointContact: boolean;
+      elapsed: number;
+    }
+  | {
+      type: "ex.aegis.perfect-guard.charged";
+      charge: number;
+      elapsed: number;
+    }
+  | {
+      type: "ex.aegis.empowered.volley";
+      volleyId: number;
+      elapsed: number;
+    }
   | {
       type: "extra.level_up";
       level: number;
@@ -1424,7 +1714,11 @@ export type GameMetric =
         | "wave.spawn_budget"
         | "wave.max_enemies"
         | "endless.threat_tier"
-        | "endless.collapse_stage";
+        | "endless.collapse_stage"
+        | "ex.protocol.activation_trackers"
+        | "ex.aegis.collision_candidates"
+        | "ex.aegis.interception_candidates"
+        | "ex.aegis.collision_resolved";
       value: number;
     }
   | { type: "timing"; name: "frame.dt_ms" | "frame.raw_dt_ms"; valueMs: number };

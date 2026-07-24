@@ -12,6 +12,7 @@ import type {
   Vec2,
   WorldState,
 } from "../../domain/types";
+import { applyPlayerDamage } from "./playerHealthSystem";
 import type { RandomStreams } from "../../math/random";
 import { normalize } from "../../math/vector";
 import {
@@ -35,8 +36,9 @@ export function spawnFinalExpeditionBoss(
   world.enemies.length = 0;
   world.enemyProjectiles.length = 0;
 
+  const creationOrdinal = world.nextEnemyId++;
   const enemy: Enemy = {
-    id: `enemy-${world.nextEnemyId++}`,
+    id: `enemy-${creationOrdinal}`,
     typeId: definition.baseEnemyTypeId,
     position: { ...definition.spawnPosition },
     radius: definition.radius,
@@ -49,6 +51,9 @@ export function spawnFinalExpeditionBoss(
     attackTimer: Number.POSITIVE_INFINITY,
     enteredArena: true,
     boss: { bossId: definition.id },
+    ...(world.progression.exProtocol
+      ? { candidate: { creationOrdinal } }
+      : {}),
   };
   world.enemies.push(enemy);
 
@@ -98,8 +103,15 @@ export function updateFinalExpeditionBoss(
   if (!boss || boss.status !== "active") return [];
 
   const killed = baseEvents.find(
-    (event): event is Extract<GameEvent, { type: "enemy.killed" }> =>
-      event.type === "enemy.killed" && event.enemyId === boss.enemyId,
+    (
+      event,
+    ): event is Extract<
+      GameEvent,
+      { type: "enemy.killed" | "enemy.protocol.killed" }
+    > =>
+      (event.type === "enemy.killed" ||
+        event.type === "enemy.protocol.killed") &&
+      event.enemyId === boss.enemyId,
   );
   if (killed) {
     boss.status = "defeated";
@@ -325,12 +337,10 @@ function executeCommandPulse(
     } else if (world.state.damageCooldown > 0 || world.state.hp <= 0) {
       result = "invulnerable";
     } else {
-      const hpBefore = world.state.hp;
-      world.state.hp = Math.max(
-        0,
-        hpBefore - phaseValue(definition.commandPulse.damage, phase),
+      damage = applyPlayerDamage(
+        world,
+        phaseValue(definition.commandPulse.damage, phase),
       );
-      damage = hpBefore - world.state.hp;
       result = damage > 0 ? "hit" : "invulnerable";
       if (damage > 0) {
         world.state.damageCooldown = config.player.damageCooldown;
@@ -471,8 +481,9 @@ function spawnBossSalvo(
     const offsetRatio = available <= 1 ? 0 : index / (available - 1) - 0.5;
     const direction = rotate(aim, spread * offsetRatio);
     const spawnOffset = enemy.radius + radius + 4;
+    const creationOrdinal = world.nextEnemyProjectileId++;
     const projectile: EnemyProjectile = {
-      id: `enemy-projectile-${world.nextEnemyProjectileId++}`,
+      id: `enemy-projectile-${creationOrdinal}`,
       position: {
         x: enemy.position.x + direction.x * spawnOffset,
         y: enemy.position.y + direction.y * spawnOffset,
@@ -485,6 +496,15 @@ function spawnBossSalvo(
         bossId: world.expedition!.boss!.bossId,
         bossAttackId: attackId,
       },
+      ...(config.features.exProtocols
+        ? {
+            candidate: {
+              creationOrdinal,
+              category: "boss" as const,
+              interceptible: false,
+            },
+          }
+        : {}),
     };
     world.enemyProjectiles.push(projectile);
     projectileIds.push(projectile.id);

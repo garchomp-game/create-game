@@ -65,12 +65,21 @@ export class ArenaChoiceOverlay {
       model.title,
       model.subtitle,
     );
+    if (model.kind === "protocol" || model.kind === "evolution") {
+      shell.classList.add(
+        "arena-choice-shell--ex",
+        `arena-choice-shell--${model.kind}`,
+      );
+    }
     const grid = element(
       "div",
       `arena-choice-grid arena-choice-grid--${model.cards.length === 2 ? "two" : "three"}`,
     );
     model.cards.forEach((card) => grid.append(this.createChoiceButton(card)));
     shell.append(grid);
+    if (model.footer) {
+      shell.append(element("p", "arena-choice-footer", model.footer));
+    }
 
     const backAction = model.backAction;
     if (backAction) {
@@ -131,12 +140,23 @@ export class ArenaChoiceOverlay {
   }
 
   private createChoiceButton(card: ArenaChoiceCardViewModel): HTMLButtonElement {
-    const button = element("button", `arena-choice-card arena-choice-card--${card.tone}`);
+    const isExChoice = card.kind === "protocol" || card.kind === "evolution";
+    const button = element(
+      "button",
+      [
+        "arena-choice-card",
+        isExChoice ? "arena-choice-card--ex" : "",
+        `arena-choice-card--${card.tone}`,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    );
     button.type = "button";
     button.dataset.choiceKind = card.kind;
     button.dataset.choiceIndex = String(card.index);
     button.dataset.choiceId = card.id;
     button.setAttribute("aria-keyshortcuts", String(card.index + 1));
+    if (card.ariaLabel) button.setAttribute("aria-label", card.ariaLabel);
     if (card.selection.kind === "menu") {
       button.dataset.choiceAction = card.selection.action;
     }
@@ -150,11 +170,6 @@ export class ArenaChoiceOverlay {
     );
     if (card.rank) cardHeader.append(element("span", "arena-choice-rank", card.rank));
 
-    const metric = element("span", "arena-choice-card-metric");
-    metric.append(
-      element("span", "arena-choice-card-metric-label", card.metricLabel),
-      element("strong", "arena-choice-card-metric-value", card.metric),
-    );
     const action = element("span", "arena-choice-card-action", card.actionLabel);
     const actionMarker = element("span", "arena-choice-action-marker");
     actionMarker.setAttribute("aria-hidden", "true");
@@ -164,9 +179,30 @@ export class ArenaChoiceOverlay {
       cardHeader,
       element("strong", "arena-choice-card-title", card.title),
       element("span", "arena-choice-card-description", card.description),
-      metric,
-      action,
     );
+    if (card.facts && card.facts.length > 0) {
+      card.facts.forEach((fact) => {
+        const row = element("span", "arena-choice-fact");
+        row.append(
+          element("span", "arena-choice-fact-label", fact.label),
+          element("span", "arena-choice-fact-text", fact.text),
+        );
+        button.append(row);
+      });
+      if (card.inputHint) {
+        button.append(
+          element("span", "arena-choice-input-hint", card.inputHint),
+        );
+      }
+    } else {
+      const metric = element("span", "arena-choice-card-metric");
+      metric.append(
+        element("span", "arena-choice-card-metric-label", card.metricLabel),
+        element("strong", "arena-choice-card-metric-value", card.metric),
+      );
+      button.append(metric);
+    }
+    button.append(action);
     button.addEventListener("click", (event) => {
       this.applySelection(card.selection);
       this.pendingInput.inputMethod = getChoiceInputMethod(event);

@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import { SIMULATION_CONFIG } from "../../config/gameConfig";
 import type { WorldState } from "../../domain/types";
 import { createWorld } from "../../simulation/createWorld";
-import { createRandomStreams } from "../../math/random";
+import {
+  createRandomStreams,
+  RANDOM_STREAM_VERSION_V2,
+} from "../../math/random";
 import { getWaveBand } from "../../simulation/waveDirector";
 import { createArenaRunExport } from "./ArenaRunExport";
 import { createEmptyChoiceInteractionReport } from "../../application/ChoiceInteractionMonitor";
@@ -82,6 +85,61 @@ describe("createArenaRunExport", () => {
       wave: getWaveBand(SIMULATION_CONFIG, 394),
     });
     expect(runExport.wave).not.toEqual(getWaveBand(SIMULATION_CONFIG, 540));
+  });
+
+  it("exports candidate provenance, flags, catalog, and aggregate telemetry", () => {
+    const runConfig = {
+      ...SIMULATION_CONFIG,
+      features: {
+        ...SIMULATION_CONFIG.features,
+        exProtocols: true,
+      },
+    };
+    const world = createWorld(runConfig);
+    world.stats.exProtocolMetrics.protocolSourceDamage = 12;
+    const base = createTestInput(world);
+    const runExport = createArenaRunExport({
+      ...base,
+      context: {
+        id: "candidate-run",
+        profileId: "profile-test",
+        startedAt: "2026-07-23T00:00:00.000Z",
+        modeId: "endless",
+        stageId: "arena-default",
+        difficultyId: "standard",
+        rulesetVersion: "phaser-v0.8-ex-protocols-c1",
+        seedCategory: "fixed",
+        weaponId: "pulse",
+        modifierIds: [],
+        appVersion: "0.8.0-candidate.1",
+        buildCommit: "abc123",
+        seed: 42,
+        runOrigin: "test",
+        rankEligibility: {
+          eligible: false,
+          reasons: ["automatedTest", "nonStandardRuleset"],
+        },
+        rulesetProfileId: "candidate-ex-endless-c1",
+        rngVersion: RANDOM_STREAM_VERSION_V2,
+        runRecordSchemaVersion: 3,
+        exProtocolsEnabled: true,
+      },
+      randomStreams: createRandomStreams(
+        42,
+        RANDOM_STREAM_VERSION_V2,
+      ),
+      runConfig,
+    });
+
+    expect(runExport).toMatchObject({
+      exportSchemaVersion: 2,
+      rulesetProfileId: "candidate-ex-endless-c1",
+      rngVersion: "arena-rng-v2",
+      runRecordSchemaVersion: 3,
+      featureFlags: { exProtocols: true },
+      exProtocolCatalogVersion: "ex-protocols-v1",
+      exProtocol: { protocolSourceDamage: 12 },
+    });
   });
 });
 

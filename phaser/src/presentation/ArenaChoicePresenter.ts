@@ -12,8 +12,17 @@ import { TEXT } from "../lang";
 import { getUpgradeRequirementProgress } from "../simulation/buildComposer";
 import { isExtraUpgradeId } from "../simulation/extraProgression";
 import { createUpgradePreview, formatUpgradePreview } from "../simulation/upgradePreview";
+import {
+  createExProtocolChoiceViewModel,
+  formatSelectedExProtocolRoute,
+} from "./ExProtocolPresenter";
 
-export type ArenaChoiceKind = "weapon" | "upgrade" | "contract";
+export type ArenaChoiceKind =
+  | "weapon"
+  | "upgrade"
+  | "protocol"
+  | "evolution"
+  | "contract";
 export type ArenaChoicePhase = ArenaChoiceKind | "extra";
 export type ArenaChoiceTone =
   | "pulse"
@@ -45,6 +54,9 @@ export type ArenaChoiceCardViewModel = {
   metricLabel: string;
   metric: string;
   actionLabel: string;
+  facts?: Array<{ label: string; text: string }>;
+  inputHint?: string | null;
+  ariaLabel?: string;
   selection: ArenaChoiceSelection;
 };
 
@@ -58,6 +70,7 @@ export type ArenaChoiceViewModel = {
   subtitle: string;
   cards: ArenaChoiceCardViewModel[];
   backAction: MenuAction | null;
+  footer: string | null;
   signature: string;
 };
 
@@ -78,6 +91,7 @@ export function createArenaChoiceViewModel(
       subtitle: "",
       cards: [],
       backAction: null,
+      footer: null,
       signature: "hidden",
     };
   }
@@ -87,6 +101,12 @@ export function createArenaChoiceViewModel(
   }
   if (world.state.status === "upgradeSelect") {
     return createUpgradeChoices(world, config);
+  }
+  if (
+    world.state.status === "protocolSelect" ||
+    world.state.status === "evolutionSelect"
+  ) {
+    return createExProtocolChoices(world);
   }
   return createContractChoices(world);
 }
@@ -122,6 +142,7 @@ function createWeaponChoices(world: WorldState): ArenaChoiceViewModel {
       ),
     ],
     backAction: "back",
+    footer: null,
     signature: createSignature(world),
   };
 }
@@ -157,18 +178,76 @@ function createUpgradeChoices(
 ): ArenaChoiceViewModel {
   const choices = world.progression.pendingUpgradeChoices;
   const extra = world.progression.buildCompletedAt !== null;
+  const limitBreak = world.progression.pendingChoice?.kind === "limit-break";
   return {
     visible: true,
     kind: "upgrade",
     phase: extra ? "extra" : "upgrade",
-    eyebrow: extra ? "EXTRA CYCLE / BUILD" : "LEVEL UP / BUILD",
-    statusLabel: extra ? `EX強化 C${world.progression.extraCycle}` : "通常強化",
-    title: extra
-      ? `EXTRA LEVEL ${world.progression.extraLevel}`
-      : `レベル ${world.progression.level} 強化選択`,
-    subtitle: createProgressText(world, config),
+    eyebrow: limitBreak
+      ? "LIMIT BREAK / BUILD"
+      : extra
+        ? "EXTRA CYCLE / BUILD"
+        : "LEVEL UP / BUILD",
+    statusLabel: limitBreak
+      ? `EX Lv ${world.progression.extraLevel}`
+      : extra
+        ? `EX強化 C${world.progression.extraCycle}`
+        : "通常強化",
+    title: limitBreak
+      ? `EX Lv ${world.progression.extraLevel} / LIMIT BREAK CYCLE ${world.progression.extraCycle}`
+      : extra
+        ? `EXTRA LEVEL ${world.progression.extraLevel}`
+        : `レベル ${world.progression.level} 強化選択`,
+    subtitle: limitBreak
+      ? `${formatSelectedExProtocolRoute(world)} / 未取得 ${world.progression.extraCycleRemaining.length}`
+      : createProgressText(world, config),
     cards: choices.map((choiceId, index) => createUpgradeCard(world, config, choiceId, index)),
     backAction: null,
+    footer: null,
+    signature: createSignature(world),
+  };
+}
+
+function createExProtocolChoices(world: WorldState): ArenaChoiceViewModel {
+  const model = createExProtocolChoiceViewModel(world);
+  if (!model) {
+    throw new Error(
+      `Missing EX Protocol choice view model for "${world.state.status}".`,
+    );
+  }
+
+  return {
+    visible: true,
+    kind: model.kind,
+    phase: model.kind,
+    eyebrow:
+      model.kind === "protocol"
+        ? "EX PROTOCOL / SIGNATURE"
+        : "EX PROTOCOL / EVOLUTION",
+    statusLabel: model.kind === "protocol" ? "固有能力" : "進化選択",
+    title: model.title,
+    subtitle: model.subtitle,
+    cards: model.cards.map((card, index) => ({
+      kind: model.kind,
+      index,
+      indexLabel: formatChoiceIndex(index),
+      id: card.id,
+      tone: world.state.weaponType === "spread" ? "spread" : "pulse",
+      role: card.role,
+      title: card.title,
+      rank: null,
+      description: card.summary,
+      metricLabel: card.facts[0]?.label ?? "効果",
+      metric: card.facts[0]?.text ?? card.summary,
+      actionLabel:
+        model.kind === "protocol" ? "この固有能力を選択" : "この進化を選択",
+      facts: card.facts,
+      inputHint: card.inputHint,
+      ariaLabel: card.ariaLabel,
+      selection: { kind: "upgrade", index },
+    })),
+    backAction: null,
+    footer: model.footer,
     signature: createSignature(world),
   };
 }
@@ -269,6 +348,7 @@ function createContractChoices(world: WorldState): ArenaChoiceViewModel {
       },
     ],
     backAction: null,
+    footer: null,
     signature: createSignature(world),
   };
 }
@@ -309,6 +389,7 @@ function formatChoiceIndex(index: number): string {
 }
 
 function createSignature(world: WorldState): string {
+  const pendingChoice = world.progression.pendingChoice;
   return [
     world.state.status,
     world.state.weaponType,
@@ -318,6 +399,24 @@ function createSignature(world: WorldState): string {
     world.progression.extraCycle,
     world.progression.buildCompletedAt,
     world.progression.pendingUpgradeChoices.join(","),
+    pendingChoice?.kind ?? "",
+    pendingChoice && "choices" in pendingChoice
+      ? pendingChoice.choices.join(",")
+      : "",
+    pendingChoice &&
+    (pendingChoice.kind === "evolution-one" ||
+      pendingChoice.kind === "evolution-two")
+      ? pendingChoice.protocolId
+      : "",
+    world.progression.exProtocol?.status ?? "",
+    world.progression.exProtocol?.status === "selected"
+      ? [
+          world.progression.exProtocol.route.protocolId,
+          world.progression.exProtocol.route.evolutionOneId,
+          world.progression.exProtocol.route.evolutionTwoId,
+          world.progression.exProtocol.route.masteryUnlocked,
+        ].join(",")
+      : "",
     Object.values(world.progression.upgradeRanks).join(","),
     Object.values(world.progression.extraUpgradeRanks).join(","),
   ].join(":");
@@ -341,6 +440,17 @@ function formatExtraPreview(effect: ExtraUpgradeEffect, currentRank: number): st
 
 function isChoiceStatus(
   status: WorldState["state"]["status"],
-): status is "weaponSelect" | "upgradeSelect" | "contractSelect" {
-  return status === "weaponSelect" || status === "upgradeSelect" || status === "contractSelect";
+): status is
+  | "weaponSelect"
+  | "upgradeSelect"
+  | "protocolSelect"
+  | "evolutionSelect"
+  | "contractSelect" {
+  return (
+    status === "weaponSelect" ||
+    status === "upgradeSelect" ||
+    status === "protocolSelect" ||
+    status === "evolutionSelect" ||
+    status === "contractSelect"
+  );
 }

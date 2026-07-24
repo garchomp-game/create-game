@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { HUD_LEFT_PANEL_BOUNDS } from "../../src/adapters/phaser/PhaserHud";
+import { HUD_LEFT_PANEL_BOUNDS } from "../../src/adapters/phaser/PhaserHudLayout";
 import { TUTORIAL_TRANSFER_CHECKLIST_BOUNDS } from "../../src/adapters/phaser/PhaserTutorialLayer";
 import { SIMULATION_CONFIG } from "../../src/config/gameConfig";
 import type { TutorialStepId } from "../../src/domain/tutorial";
@@ -406,7 +406,11 @@ async function movePlayerAxisTo(
         : difference > 0
           ? "KeyS"
           : "KeyW";
-    await holdKey(page, key, 180);
+    const durationMs = Math.min(
+      180,
+      Math.max(32, Math.abs(difference) * 2.5),
+    );
+    await holdKey(page, key, durationMs);
   }
   throw new Error(`Player did not reach ${axis}=${destination}.`);
 }
@@ -522,7 +526,7 @@ async function finishTransferDrill(page: Page): Promise<void> {
       if (status === "trainingComplete") return;
       const point = patrolPoints[index % patrolPoints.length]!;
       await moveMouseLogical(page, 480, 270);
-      await movePlayerAxisTo(page, "y", point.y, 10, "transferDrill");
+      await movePlayerAxisTo(page, "y", point.y, 24, "transferDrill");
       await movePlayerAxisTo(page, "x", point.x, 28, "transferDrill");
     }
   } finally {

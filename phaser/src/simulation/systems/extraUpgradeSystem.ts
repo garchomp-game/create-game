@@ -6,6 +6,15 @@ import type {
 } from "../../domain/types";
 import { composeBuild } from "../buildComposer";
 import { canIncreaseExtraUpgrade } from "../extraProgression";
+import { delayPendingContract } from "../exProtocolProgression";
+import {
+  clearProgressionChoice,
+  getPendingLimitBreakChoices,
+} from "../progressionChoices";
+import {
+  applyCapacityIncrease,
+  getPlayerEffectiveMaxHp,
+} from "./playerHealthSystem";
 
 export function applyExtraUpgrade(
   world: WorldState,
@@ -15,7 +24,7 @@ export function applyExtraUpgrade(
   automatic = false,
 ): boolean {
   if (world.progression.buildCompletedAt === null) return false;
-  if (!world.progression.pendingUpgradeChoices.includes(extraUpgradeId)) return false;
+  if (!getPendingLimitBreakChoices(world).includes(extraUpgradeId)) return false;
   if (
     !canIncreaseExtraUpgrade(
       config,
@@ -32,7 +41,7 @@ export function applyExtraUpgrade(
     (id) => id !== extraUpgradeId,
   );
 
-  const maxHpBonusBefore = world.runtime.maxHpBonus;
+  const effectiveMaxHpBefore = getPlayerEffectiveMaxHp(world, config);
   const composition = composeBuild(
     config,
     world.state.weaponType,
@@ -41,10 +50,10 @@ export function applyExtraUpgrade(
     world.progression.extraUpgradeRanks,
   );
   Object.assign(world.runtime, composition.modifiers);
-  world.state.hp += Math.max(0, world.runtime.maxHpBonus - maxHpBonusBefore);
-  world.state.hp = Math.min(world.state.hp, config.player.maxHp + world.runtime.maxHpBonus);
-  world.progression.pendingUpgradeChoices = [];
+  applyCapacityIncrease(world, config, effectiveMaxHpBefore, true);
+  clearProgressionChoice(world, config);
   world.state.status = "playing";
+  if (config.features.exProtocols) delayPendingContract(world);
   events.push({
     type: "extra.upgrade.selected",
     extraUpgradeId,

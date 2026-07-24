@@ -6,6 +6,7 @@ import { FINAL_EXPEDITION_ENCOUNTER_DECK_ID } from "./expeditionEncounterCards";
 export const ARENA_DEFAULT_STAGE_DEFINITION = {
   id: "arena-default",
   titleKey: "stage.arena-default.title",
+  exProtocolOfferPolicy: "fixed-compatible",
   arena: {
     width: 960,
     height: 540,
@@ -25,6 +26,7 @@ export const ARENA_DEFAULT_STAGE_DEFINITION = {
 export const FINAL_EXPEDITION_STAGE_DEFINITION = {
   id: "final-expedition",
   titleKey: "stage.final-expedition.title",
+  exProtocolOfferPolicy: "fixed-compatible",
   campaign: { order: 10, role: "final" },
   arena: { ...ARENA_DEFAULT_STAGE_DEFINITION.arena },
   obstacles: ARENA_DEFAULT_STAGE_DEFINITION.obstacles.map((obstacle) => ({
@@ -118,6 +120,7 @@ export const FINAL_EXPEDITION_STAGE_DEFINITION = {
 export const BASIC_TRAINING_STAGE_DEFINITION = {
   id: "basic-training",
   titleKey: "stage.basic-training.title",
+  exProtocolOfferPolicy: "disabled",
   arena: { ...ARENA_DEFAULT_STAGE_DEFINITION.arena },
   obstacles: ARENA_DEFAULT_STAGE_DEFINITION.obstacles.map((obstacle) => ({
     ...obstacle,

@@ -3,6 +3,15 @@ import { composeBuild } from "../buildComposer";
 import { isExtraUpgradeId } from "../extraProgression";
 import { applyExtraUpgrade } from "./extraUpgradeSystem";
 import { completeBuild, getAvailableUpgradeIds, getRemainingUpgradeIds } from "./levelSystem";
+import {
+  clearProgressionChoice,
+  getPendingLimitBreakChoices,
+  getPendingUpgradeChoices,
+} from "../progressionChoices";
+import {
+  applyCapacityIncrease,
+  getPlayerEffectiveMaxHp,
+} from "./playerHealthSystem";
 
 export function chooseUpgrade(
   world: WorldState,
@@ -10,14 +19,14 @@ export function chooseUpgrade(
   config: SimulationConfig,
   events: GameEvent[],
 ): void {
-  const choiceId = world.progression.pendingUpgradeChoices[choiceIndex];
-  if (!choiceId) return;
-  if (isExtraUpgradeId(choiceId)) {
-    applyExtraUpgrade(world, choiceId, config, events);
+  const limitBreakId = getPendingLimitBreakChoices(world)[choiceIndex];
+  if (limitBreakId) {
+    applyExtraUpgrade(world, limitBreakId, config, events);
     return;
   }
 
-  const upgradeId = choiceId;
+  const upgradeId = getPendingUpgradeChoices(world)[choiceIndex];
+  if (!upgradeId || isExtraUpgradeId(upgradeId)) return;
 
   const upgrade = config.upgrades[upgradeId];
   if (
@@ -33,7 +42,7 @@ export function chooseUpgrade(
   if (nextRank > upgrade.maxRank) return;
 
   world.progression.upgradeRanks[upgradeId] = nextRank;
-  const maxHpBonusBefore = world.runtime.maxHpBonus;
+  const effectiveMaxHpBefore = getPlayerEffectiveMaxHp(world, config);
   const composition = composeBuild(
     config,
     world.state.weaponType,
@@ -42,9 +51,8 @@ export function chooseUpgrade(
     world.progression.extraUpgradeRanks,
   );
   Object.assign(world.runtime, composition.modifiers);
-  world.state.hp += Math.max(0, world.runtime.maxHpBonus - maxHpBonusBefore);
-  world.state.hp = Math.min(world.state.hp, config.player.maxHp + world.runtime.maxHpBonus);
-  world.progression.pendingUpgradeChoices = [];
+  applyCapacityIncrease(world, config, effectiveMaxHpBefore, true);
+  clearProgressionChoice(world, config);
   world.state.status = "playing";
   events.push({
     type: "upgrade.selected",

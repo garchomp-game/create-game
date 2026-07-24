@@ -17,6 +17,14 @@ import {
   selectExtraUpgradeChoices,
 } from "../extraProgression";
 import { applyExtraUpgrade } from "./extraUpgradeSystem";
+import {
+  offerExProtocolEvolution,
+  offerExProtocolSelection,
+} from "../exProtocolProgression";
+import {
+  setLimitBreakChoices,
+  setUpgradeChoices,
+} from "../progressionChoices";
 
 export function updateLevelProgression(
   world: WorldState,
@@ -49,18 +57,19 @@ export function updateLevelProgression(
     world.progression.upgradeRanks,
     world.state.weaponType,
   );
-  world.progression.pendingUpgradeChoices = selectUpgradeChoices(
+  const choices = selectUpgradeChoices(
     config,
     random,
     world.progression.upgradeRanks,
     world.state.weaponType,
   );
+  setUpgradeChoices(world, choices, config);
   events.push({
     type: "player.level_up",
     level: world.progression.level,
-    choices: [...world.progression.pendingUpgradeChoices] as UpgradeId[],
+    choices: [...choices],
   });
-  if (world.progression.pendingUpgradeChoices.length === 0) {
+  if (choices.length === 0) {
     completeBuild(world, config, events);
     return;
   }
@@ -69,7 +78,7 @@ export function updateLevelProgression(
   events.push({
     type: "upgrade.offered",
     level: world.progression.level,
-    choices: [...world.progression.pendingUpgradeChoices] as UpgradeId[],
+    choices: [...choices],
     availableUpgradeIds,
     lockedUpgradeIds: getLockedUpgradeIds(
       config,
@@ -189,6 +198,9 @@ export function completeBuild(
     level: world.progression.level,
     elapsed: world.state.elapsed,
   });
+  if (config.features.exProtocols) {
+    offerExProtocolSelection(world, config, events);
+  }
 }
 
 function updateExtraLevelProgression(
@@ -203,6 +215,39 @@ function updateExtraLevelProgression(
   world.progression.level += 1;
   world.progression.extraLevel += 1;
   world.progression.xpToNext = getExtraXpToNextLevel(world.progression.extraLevel, config);
+  if (config.features.exProtocols) {
+    events.push({
+      type: "ex.level_up",
+      level: world.progression.level,
+      exLevel: world.progression.extraLevel,
+      elapsed: world.state.elapsed,
+    });
+    if (
+      world.progression.exProtocol?.status === "selected" &&
+      world.progression.extraLevel === 1
+    ) {
+      offerExProtocolEvolution(world, 1, events);
+      return;
+    }
+    if (
+      world.progression.exProtocol?.status === "selected" &&
+      world.progression.extraLevel === 2
+    ) {
+      offerExProtocolEvolution(world, 2, events);
+      return;
+    }
+    if (world.progression.extraLevel === 3) {
+      events.push({
+        type: "ex.limit_break.connected",
+        protocolId:
+          world.progression.exProtocol?.status === "selected"
+            ? world.progression.exProtocol.route.protocolId
+            : null,
+        exLevel: world.progression.extraLevel,
+        elapsed: world.state.elapsed,
+      });
+    }
+  }
   world.progression.extraCycleRemaining = world.progression.extraCycleRemaining.filter((id) =>
     canIncreaseExtraUpgrade(config, id, world.progression.extraUpgradeRanks[id]),
   );
@@ -219,7 +264,7 @@ function updateExtraLevelProgression(
     world.progression.extraUpgradeRanks,
     world.progression.extraCycleRemaining,
   );
-  world.progression.pendingUpgradeChoices = choices;
+  setLimitBreakChoices(world, choices, config);
   events.push({
     type: "extra.level_up",
     level: world.progression.level,

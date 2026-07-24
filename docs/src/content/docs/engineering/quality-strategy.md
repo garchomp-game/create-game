@@ -15,17 +15,31 @@ npm run build
 
 ## GitHub Actions
 
-`.github/workflows/quality.yml`はpull requestとmain pushへ、次の3 statusをcommit SHA単位で付けます。
+`.github/workflows/quality.yml`はpull requestとmain pushへ、次の4 statusをcommit SHA単位で付けます。
 
 | Job | 自動実行する契約 |
 | --- | --- |
 | `Phaser quality` | `npm ci`、型検査、unit / simulation、production build、配布artifact検査 |
 | `Starlight build` | `npm ci`、telemetry無効の静的build |
 | `Browser release smoke` | Playwright同梱ChromiumとFirefoxによる公開経路、desktop / portrait、WebGL、版情報、ローカルデータ削除 |
+| `EX Protocol candidate` | 型付きreplay、保存migration、短いbalance probe、Chromiumの候補critical E2E |
 
 CIはNode 24を使い、repository内容の読取権限だけを持ちます。Cloudflare secret、deploy、production trafficは扱いません。同じbranchで新しいcommitがpushされた場合は古いrunをcancelします。ブラウザ失敗時だけtraceとscreenshotを7日間artifactへ残します。
 
 CIではPlaywright同梱Chromium、ローカルでは既定で`/usr/bin/google-chrome`を使います。`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`を指定した場合は両環境でその値を優先します。GitHub-hosted Ubuntuのheadless FirefoxでWebGL context生成に失敗したため、CIのFirefoxだけを`ARENA_FIREFOX_HEADED=1`でheadedにし、`xvfb-run`とMesa software renderingの下で同じWebGL smokeを実行します。Firefoxの検査やWebGL要件はskipしません。
+
+## 開発速度とQA強度
+
+通常運用では作業時間そのものへ厳しい上限を置かず、Ultraを含む長時間の自律実装も許容します。短縮対象は必要な実装や検証ではなく、同じ証拠の重複取得と、変更範囲に対して過剰な横断QAです。
+
+- 実装中は型検査、変更箇所のunit、短いCPU fixtureを中心にし、触れた画面やフローだけをE2Eで確認する。
+- 関心事単位のsliceが成立した時点で、全unitまたは関連E2Eを一度実行する。
+- seed matrix、長時間probe、全ブラウザ、実GPU耐久、人間採否はcandidate SHAを固定してからまとめて実行する。
+- 同じSHA、設定、コマンドのgreen証拠は再実行せず、docs-only commit後にruntime QAを繰り返さない。
+- 保存migration、RNG、共通simulation、feature ON / OFF境界、配布identityは影響が広いため、該当する統合確認を最後まで延期しない。
+- 失敗、予想外の差分、共有責務への変更が見つかった場合だけ、一段広いgateへ拡張する。
+
+この段階分けは品質基準を下げるものではありません。実装サイクル中の待ち時間を抑え、最終candidateには従来どおり再現可能な全体証拠を残すための運用です。
 
 全E2E画像、v0.7 probe、15分GPU耐久、通常UI採否は毎PRへ含めません。描画、ゲームルール、長時間性能、人間の所感に応じて、以下の手動ゲートを追加します。
 
@@ -198,3 +212,42 @@ npm run probe:v07
 このprobeはPulse / Spreadへ同じ3 seedを与え、15分以内の終了、5 Act、Commander出現と撃破、ボス第2段階、3攻撃、最長展開空白、敵・弾・Pickup上限を検査します。両武器の全勝は要求せず、各武器に少なくとも1勝と1本以上の自然phase 2到達があることを確認します。同一seedを再実行し、入力、イベント列、終了worldのhashも比較します。通常の`npm test`へ含めず、統合QAとルール変更時に明示実行します。
 
 RC5は大型黄HP 8、Commander HP 500、追跡ボス、通常ウェーブ継続による技術基準です。Commander、Chargerの予告、構造化侵入、ボス3攻撃を専用ブラウザfixtureで固定します。RC6では通常probeとrepair比較probeを別コマンドとして扱い、未実行側は明示的にskipします。自動入力は人間採否を代替しないため、production昇格にはPulse / Spread各1本以上の通常UI欠陥特化ランを必要とします。RC5基準は[v0.7 RC5統合QAレポート](../../playtest/v07-qa-report/)、現行RC6は[RC6統合QAレポート](../../playtest/v07-rc6-integration-report/)を参照してください。
+
+## v0.8 EX Protocol candidate
+
+候補OFF parityと、候補ONの機構・分岐・保存・長時間負荷を別gateにします。
+
+```bash
+cd phaser
+npm run test:ex-protocols:paths
+npm run test:ex-protocols:determinism
+npm run test:ex-protocols:record-migration
+npm run test:ex-protocols:probe
+npm run test:ex-protocols:soak
+npm run test:ex-protocols:final-exposure
+npm run test:e2e:ex-protocols
+```
+
+| Gate | 保証するもの |
+| --- | --- |
+| paths | 6 Protocol x E1 2択 x E2 2択の24 route、Mastery、最初のLimit Break、record / export |
+| determinism | 型付きreplay tape、古いchoiceのfail-fast、同一seedのevent / world一致 |
+| record migration | v3 codec、v1 / v2非破壊reconcile、削除journal、ランキング分離 |
+| probe | baselineと3 Protocolの同一seed比較、効果機会、damage帰属、判断p95 |
+| soak | 高圧状態のentity上限、Tidal tracker解放、Aegis候補数、step p95 |
+| final exposure | Final ExpeditionでE1、E2、Mastery、Limit Break、boss phase 2へ到達できるか |
+| E2E | 3択 / 2択、Active入力、HUD、6体系の代表戦闘、結果route、画像 |
+
+通常PR向けの短いgateと、明示実行のrelease規模を分けます。
+
+```bash
+npm run test:ex-protocols:probe:release
+npm run test:ex-protocols:soak:release
+npm run test:ex-protocols:final-exposure:release
+```
+
+release balanceは20 seed、baseline + 武器互換3 Protocol、4 branch pathのLatin-squareを使います。結果はreview triggerであり、自動調整や自動採用を行いません。Protocolの自然な発動機会がないrunを効果0の失敗と混同しません。
+
+`.github/workflows/ex-protocol-release.yml`は`workflow_dispatch`専用です。20 seed balance、full headless soak、24 route、全unit、配布buildを通常PRから分離し、必要な場合だけ両武器20 seedのFinal Expedition露出も追加実行します。deployとproduction traffic変更は行いません。
+
+headless soakは機構と相対性能を検査します。production採用には、SwiftShaderではない実GPUの15分耐久と、人間による6体系の操作・可読性確認を別途必要とします。詳細は[EX Protocol候補](../../design/ex-protocols/)を参照してください。

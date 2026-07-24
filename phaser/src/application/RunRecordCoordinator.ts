@@ -6,6 +6,7 @@ import type {
   UpgradeSelectionRunStat,
   EncounterRunStats,
 } from "../domain/types";
+import type { ExProtocolRunStats } from "../domain/exProtocolTelemetry";
 import type { RunContext, RunOrigin, RunRecord } from "../domain/runRecords";
 import type { RunRecordStorePort, RunRecordWriteResult } from "../ports/RunRecordStorePort";
 import { createRankEligibility, createRunRecord } from "./runRecords";
@@ -19,6 +20,7 @@ export type FinalizeRunInput = {
   extraUpgradeSelections?: ExtraUpgradeSelectionRunStat[];
   buildCompletedAt: number | null;
   encounterMetrics?: EncounterRunStats;
+  exProtocolMetrics?: ExProtocolRunStats;
 };
 
 export type FinalizeRunResult =
@@ -98,6 +100,7 @@ export class RunRecordCoordinator {
       extraUpgradeSelections: input.extraUpgradeSelections,
       buildCompletedAt: input.buildCompletedAt,
       encounterMetrics: input.encounterMetrics,
+      exProtocolMetrics: input.exProtocolMetrics,
     });
     this.finalizedRecord ??= cloneRecord(record);
     const write = this.store.save(record);
@@ -123,20 +126,5 @@ function cloneContext(context: RunContext): RunContext {
 }
 
 function cloneRecord(record: RunRecord): RunRecord {
-  return {
-    ...record,
-    modifierIds: [...record.modifierIds],
-    rankEligibility: {
-      eligible: record.rankEligibility.eligible,
-      reasons: [...record.rankEligibility.reasons],
-    },
-    lastDamageSource: record.lastDamageSource ? { ...record.lastDamageSource } : null,
-    upgradeRanks: { ...record.upgradeRanks },
-    upgradeSelections: record.upgradeSelections.map((selection) => ({ ...selection })),
-    extraUpgradeRanks: { ...record.extraUpgradeRanks },
-    extraUpgradeSelections: record.extraUpgradeSelections.map((selection) => ({ ...selection })),
-    capstoneMetrics: { ...record.capstoneMetrics },
-    weaponIdentityMetrics: structuredClone(record.weaponIdentityMetrics),
-    encounterMetrics: structuredClone(record.encounterMetrics),
-  };
+  return structuredClone(record);
 }

@@ -1,4 +1,15 @@
-import type { Bullet, GameEvent, SimulationConfig, Vec2, WorldState } from "../../domain/types";
+import type {
+  Bullet,
+  GameEvent,
+  ProjectileRole,
+  SimulationConfig,
+  Vec2,
+  WorldState,
+} from "../../domain/types";
+import { createRedlineProjectileState } from "../protocols/redlineCore";
+import { prepareReboundVolley } from "../protocols/reboundOverdrive";
+import { createResonanceRelayProjectileState } from "../protocols/resonanceRelay";
+import { prepareAegisVolley } from "../protocols/aegisFan";
 
 export function updateShooting(
   world: WorldState,
@@ -14,6 +25,17 @@ export function updateShooting(
   const hitCapacity = weapon.hitCapacity + world.runtime.hitCapacityBonus;
   const directions = getProjectileDirections(aim, projectileCount, weapon.spreadAngle);
   const volleyId = world.nextVolleyId++;
+  const reboundPlan = config.features.exProtocols
+    ? prepareReboundVolley(world, volleyId)
+    : null;
+  const aegisPlan = config.features.exProtocols
+    ? prepareAegisVolley(
+        world,
+        volleyId,
+        directions.length,
+        events,
+      )
+    : null;
   const consumesSpreadSweep =
     world.state.weaponType === "spread" &&
     world.runtime.spreadSweepDistinctTargets > 0 &&
@@ -27,10 +49,11 @@ export function updateShooting(
     spreadSweepTriggered: false,
   };
   const bulletIds: string[] = [];
-  for (const direction of directions) {
+  for (const [projectileIndex, direction] of directions.entries()) {
     const offset = config.player.radius + weapon.radius + 2;
+    const creationOrdinal = world.nextBulletId++;
     const bullet: Bullet = {
-      id: `bullet-${world.nextBulletId++}`,
+      id: `bullet-${creationOrdinal}`,
       volleyId,
       weaponType: world.state.weaponType,
       position: {
@@ -43,13 +66,46 @@ export function updateShooting(
       },
       radius: weapon.radius,
       lifetime: weapon.lifetime,
-      damage: weapon.damage * world.runtime.projectileDamageMultiplier,
+      damage:
+        weapon.damage *
+        world.runtime.projectileDamageMultiplier *
+        (aegisPlan?.getDamageMultiplier(projectileIndex) ?? 1),
       hitsRemaining: hitCapacity,
-      ricochetRemaining: weapon.ricochetCount + world.runtime.ricochetBonus,
+      ricochetRemaining:
+        weapon.ricochetCount +
+        world.runtime.ricochetBonus +
+        (reboundPlan?.ricochetCapacityBonus ?? 0),
       ricochetsUsed: 0,
       ricochetSurfaceKind: null,
       ricochetBoundarySide: null,
       hitEnemyIds: [],
+      ...(config.features.exProtocols
+        ? {
+            candidate: {
+              creationOrdinal,
+              hitCapacityAtFire: hitCapacity,
+              volleyKind: "normal" as const,
+              projectileIndex,
+              projectileCount: directions.length,
+              projectileRole: getProjectileRole(
+                projectileIndex,
+                directions.length,
+              ),
+              activationId: null,
+              consumedCoreSpreadSweep: consumesSpreadSweep,
+              protocolState:
+                reboundPlan?.createProjectileState() ??
+                createRedlineProjectileState(world) ??
+                createResonanceRelayProjectileState(world) ??
+                aegisPlan?.createProjectileState(
+                  projectileIndex,
+                  weapon.damage *
+                    world.runtime.projectileDamageMultiplier,
+                ) ??
+                null,
+            },
+          }
+        : {}),
     };
     world.bullets.push(bullet);
     bulletIds.push(bullet.id);
@@ -70,6 +126,23 @@ export function updateShooting(
   if (consumesSpreadSweep) {
     events.push({ type: "spread.sweep.consumed", volleyId });
   }
+}
+
+export function getProjectileRole(
+  projectileIndex: number,
+  projectileCount: number,
+): ProjectileRole {
+  if (projectileCount <= 1) return "center";
+  if (projectileIndex === 0 || projectileIndex === projectileCount - 1) {
+    return "edge";
+  }
+  if (
+    projectileCount % 2 === 1 &&
+    projectileIndex === Math.floor(projectileCount / 2)
+  ) {
+    return "center";
+  }
+  return "inner";
 }
 
 export function getProjectileDirections(

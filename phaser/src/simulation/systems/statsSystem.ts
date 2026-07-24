@@ -4,9 +4,14 @@ import {
   type GameEvent,
   type WorldState,
 } from "../../domain/types";
+import {
+  recordExProtocolEvent,
+  refreshExProtocolExposureStats,
+} from "./exProtocolStatsSystem";
 
 export function updateRunStats(world: WorldState, events: GameEvent[]): void {
   for (const event of events) {
+    recordExProtocolEvent(world, event);
     if (event.type === "shot.fired") {
       world.stats.shotsFired += 1;
       world.stats.weaponMetrics[event.weaponType].shotsFired += 1;
@@ -90,7 +95,10 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
     } else if (event.type === "spread.sweep.consumed") {
       world.stats.capstoneMetrics.spreadSweepConsumes += 1;
       world.stats.weaponIdentityMetrics.spreadSweep.consumes += 1;
-    } else if (event.type === "enemy.killed") {
+    } else if (
+      event.type === "enemy.killed" ||
+      event.type === "enemy.protocol.killed"
+    ) {
       world.stats.enemiesKilled += 1;
       const weaponStats = world.stats.weaponMetrics[event.weaponType];
       weaponStats.kills += 1;
@@ -364,6 +372,7 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
     progression.longestMeaningfulChoiceGap,
     currentChoiceGap,
   );
+  refreshExProtocolExposureStats(world);
 
   const activeVolleyIds = new Set(world.bullets.map((bullet) => String(bullet.volleyId)));
   for (const volleyId of Object.keys(world.analytics.activeVolleys)) {

@@ -21,6 +21,10 @@
 | `pickup*.ogg` | ピックアップ、2バリエーション | 各0.27秒 |
 | `level-up.ogg` | レベル上昇の4音上昇フレーズ | 0.78秒 |
 | `upgrade.ogg` | 強化選択の上昇音と和音 | 0.72秒 |
+| `protocol-ready.ogg` | EX Protocolの選択、進化、CHARGE完了 | 0.34秒 |
+| `protocol-activate.ogg` | EX Protocolの能動発動、導線・反射成立 | 0.42秒 |
+| `protocol-guard.ogg` | 護壁扇による敵弾迎撃 | 0.25秒 |
+| `protocol-reject.ogg` | 発動条件不足、時間切れ、導線遮断 | 0.22秒 |
 | `damage*.ogg` | 被弾、2バリエーション | 各0.31秒 |
 | `game-over.ogg` | ラン終了の下降フレーズ | 1.42秒 |
 

@@ -176,6 +176,7 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-V08-026` | [#98](https://github.com/garchomp-game/create-game/issues/98) | 撃つ・避ける・取るの戦闘オブジェクト視覚言語 | P1 | Phase A fixtureは先行可。runtime T2は#97のT1結果で誤認が残る場合だけ |
 | `PH-V08-027` | [#110](https://github.com/garchomp-game/create-game/issues/110) | 危険イベント終了後5秒の立て直しshadow計測 | P1 | ゲーム数値を変えず、5秒窓と次警告時盤面をdev exportへ出す |
 | `PH-V08-028` | [#112](https://github.com/garchomp-game/create-game/issues/112) | 批判レビューcontrol観測の結合build | P1 | gameplay candidateを含めず、独立shadowを1回の手動runで取得可能にする |
+| `PH-V08-033` | [#126](https://github.com/garchomp-game/create-game/issues/126) | EX Protocol C2を最新mainへ統合 | P0 | 自動統合ゲート実行中。人間6体系・実GPU・production採否は未完了 |
 
 ## 横断QA
 

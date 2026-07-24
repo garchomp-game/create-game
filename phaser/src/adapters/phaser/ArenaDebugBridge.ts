@@ -24,6 +24,7 @@ import type {
 } from "../../domain/runRecords";
 import type { RunRecordWriteResult } from "../../ports/RunRecordStorePort";
 import type {
+  LegacyRandomStreamId,
   RandomStreamId,
   RandomStreams,
 } from "../../math/random";
@@ -36,6 +37,7 @@ import type {
   GameEvent,
   GameStatus,
   InputSnapshot,
+  ProgressionPendingChoice,
   RunResultSummary,
   RunStats,
   RuntimeModifiers,
@@ -45,6 +47,8 @@ import type {
   WaveBand,
   WeaponTypeId,
 } from "../../domain/types";
+import type { ExProtocolProgressionState } from "../../domain/exProtocols";
+import type { ExProtocolRunStats } from "../../domain/exProtocolTelemetry";
 import type { TutorialSnapshot } from "../../domain/tutorial";
 import type {
   AutoPilotMode,
@@ -68,7 +72,8 @@ export type ArenaObstacleContactCounts = {
 };
 
 export type ArenaRandomStreamSnapshot = Pick<RandomStreams, "version" | "rootSeed"> & {
-  seeds: Record<RandomStreamId, number>;
+  seeds: Record<LegacyRandomStreamId, number> &
+    Partial<Record<RandomStreamId, number>>;
 };
 
 export type ArenaDebugSnapshot = {
@@ -109,6 +114,8 @@ export type ArenaDebugSnapshot = {
   upgradeRanks: Record<UpgradeId, number>;
   extraUpgradeRanks: Record<ExtraUpgradeId, number>;
   extraCycleRemaining: ExtraUpgradeId[];
+  pendingProgressionChoice: ProgressionPendingChoice | null;
+  exProtocol: ExProtocolProgressionState | null;
   runtime: RuntimeModifiers;
   buildComposition: BuildComposition;
   encounter: EncounterState;
@@ -138,10 +145,19 @@ export type ArenaDebugSnapshot = {
 };
 
 export type ArenaRunExport = {
+  exportSchemaVersion: 2;
   capturedAt: string;
   game: "arena-core-phaser";
   appVersion: string;
   rulesetVersion: string;
+  rulesetProfileId: string;
+  rngVersion: string;
+  runRecordSchemaVersion: 2 | 3 | null;
+  featureFlags: {
+    exProtocols: boolean;
+  };
+  exProtocolCatalogVersion: string | null;
+  exProtocol: ExProtocolRunStats | null;
   configVersion: string;
   buildCommit: string;
   runId: string;
@@ -214,6 +230,8 @@ export type ArenaDebugApi = {
   grantXp(amount: number): void;
   forceUpgradeSelect(preserveInput?: boolean): void;
   forceExtraUpgradeSelect(): void;
+  forceExProtocolSelect(): void;
+  forceExEvolutionSelect(tier?: 1 | 2): void;
   restart(): void;
   startAutoPilot(weaponType?: WeaponTypeId): void;
   setAutoPilotEnabled(enabled: boolean): void;

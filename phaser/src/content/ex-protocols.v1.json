@@ -1,0 +1,413 @@
+{
+  "$schema": "./ex-protocols.v1.schema.json",
+  "catalogVersion": "ex-protocols-v1",
+  "offerPolicy": {
+    "initial": "fixed-all-compatible",
+    "consumeRng": false,
+    "training": "disabled",
+    "unsupportedWeapon": "skip-to-limit-break"
+  },
+  "progression": {
+    "normalCoreRanks": 25,
+    "signatureExLevel": 0,
+    "evolutionOneExLevel": 1,
+    "evolutionTwoExLevel": 2,
+    "masteryUnlock": "with-evolution-two",
+    "limitBreakStartsAtExLevel": 3
+  },
+  "input": {
+    "semanticAction": "specialPressed",
+    "bindings": ["MouseRight", "KeyE"],
+    "bufferWhileBlocked": false,
+    "specialBeforeNormalShooting": true
+  },
+  "protocols": [
+    {
+      "id": "pulse.resonance-relay",
+      "weaponId": "pulse",
+      "displayNameJa": "交差導線",
+      "displayNameEn": "Resonance Relay",
+      "interaction": "passive",
+      "identity": ["focus", "line"],
+      "signature": {
+        "anchorLifetimeSeconds": 1.5,
+        "relayHalfWidthPx": 6,
+        "maxIntermediateTargets": 3,
+        "damageMultiplier": 0.55,
+        "bossEligibleAsIntermediate": false,
+        "blockedByObstacles": true,
+        "consumeOnUnblockedAttempt": true,
+        "resetAnchorFocusStacks": 0,
+        "anchorPositionMode": "live-center-at-endpoint-collision",
+        "endpointRequiresLaterNormalVolley": true,
+        "endpointRequiresFirstEnemyHit": true,
+        "refreshAnchorOnSurvivingMaxFocusDirectHit": true,
+        "resolveRelayFromLethalEndpointSnapshot": true,
+        "createAnchorFromLethalHit": true
+      },
+      "evolutionOne": [
+        {
+          "id": "extended-coupling",
+          "displayNameJa": "延長結合",
+          "displayNameEn": "Extended Coupling",
+          "anchorLifetimeSeconds": 2.25
+        },
+        {
+          "id": "dense-conduit",
+          "displayNameJa": "高密度導線",
+          "displayNameEn": "Dense Conduit",
+          "maxIntermediateTargets": 5
+        }
+      ],
+      "evolutionTwo": [
+        {
+          "id": "residual-anchor",
+          "displayNameJa": "残留端点",
+          "displayNameEn": "Residual Anchor",
+          "remainingAnchorFocusStacks": 2
+        },
+        {
+          "id": "endpoint-priming",
+          "displayNameJa": "終点予充電",
+          "displayNameEn": "Endpoint Priming",
+          "endpointBonusFocusStacks": 2,
+          "activateOnBlockedRelay": false
+        }
+      ],
+      "mastery": {
+        "id": "crosslink",
+        "displayNameJa": "交差結合",
+        "displayNameEn": "Crosslink",
+        "minimumEligibleIntermediateTargets": 2,
+        "damageMultiplier": 0.75
+      }
+    },
+    {
+      "id": "pulse.rebound-overdrive",
+      "weaponId": "pulse",
+      "displayNameJa": "反跳過給",
+      "displayNameEn": "Rebound Overdrive",
+      "interaction": "active",
+      "identity": ["ricochet", "line"],
+      "signature": {
+        "armDurationSeconds": 2,
+        "cooldownSeconds": 6,
+        "capacityRestoreMode": "at-least-capacity-at-fire",
+        "capacityBonus": 0,
+        "restoreOnRicochetOrdinal": 1,
+        "clearHitEnemyIds": false,
+        "refundOnMiss": false
+      },
+      "evolutionOne": [
+        {
+          "id": "rapid-chamber",
+          "displayNameJa": "速装炉",
+          "displayNameEn": "Rapid Chamber",
+          "cooldownSeconds": 4.5
+        },
+        {
+          "id": "deep-return",
+          "displayNameJa": "深層帰還",
+          "displayNameEn": "Deep Return",
+          "capacityBonus": 2
+        }
+      ],
+      "evolutionTwo": [
+        {
+          "id": "double-reflection",
+          "displayNameJa": "二重反射",
+          "displayNameEn": "Double Reflection",
+          "armedVolleyRicochetCapacityBonus": 1
+        },
+        {
+          "id": "return-surge",
+          "displayNameJa": "帰還増幅",
+          "displayNameEn": "Return Surge",
+          "postRicochetDamageMultiplier": 1.3
+        }
+      ],
+      "mastery": {
+        "id": "perfect-return",
+        "displayNameJa": "完全帰還",
+        "displayNameEn": "Perfect Return",
+        "uniquePostRicochetHits": 3,
+        "remainingCooldownMultiplier": 0.5,
+        "maxRefundsPerVolley": 1
+      }
+    },
+    {
+      "id": "pulse.redline-core",
+      "weaponId": "pulse",
+      "displayNameJa": "赤熱炉心",
+      "displayNameEn": "Redline Core",
+      "interaction": "passive",
+      "identity": ["focus", "hp-reserve"],
+      "signature": {
+        "effectiveMaxHpMultiplier": 0.7,
+        "redlineDamageMultiplier": 1.4,
+        "capacityRestore": 1,
+        "requiresStackBeforeAtMaximum": false,
+        "directPreRicochetHitOnly": true
+      },
+      "evolutionOne": [
+        {
+          "id": "stabilized-core",
+          "displayNameJa": "安定炉心",
+          "displayNameEn": "Stabilized Core",
+          "effectiveMaxHpMultiplier": 0.75,
+          "healOnCapacityIncrease": false
+        },
+        {
+          "id": "overpressure",
+          "displayNameJa": "過圧",
+          "displayNameEn": "Overpressure",
+          "redlineDamageMultiplier": 1.6
+        }
+      ],
+      "evolutionTwo": [
+        {
+          "id": "long-burn",
+          "displayNameJa": "長時間燃焼",
+          "displayNameEn": "Long Burn",
+          "focusDurationBonusSeconds": 0.3
+        },
+        {
+          "id": "deep-bore",
+          "displayNameJa": "深孔",
+          "displayNameEn": "Deep Bore",
+          "capacityRestore": 2
+        }
+      ],
+      "mastery": {
+        "id": "core-penetration",
+        "displayNameJa": "炉心貫徹",
+        "displayNameEn": "Core Penetration",
+        "damageBase": "captured-trigger-redline-resolved-damage",
+        "extraCapacityHitDamageMultiplier": 1.5,
+        "maxEmpoweredExtraHitsPerProjectile": 1,
+        "bossEligible": false,
+        "consumeOnIneligibleBoss": false
+      }
+    },
+    {
+      "id": "spread.full-span-tidal-sweep",
+      "weaponId": "spread",
+      "displayNameJa": "全幅潮汐掃討",
+      "displayNameEn": "Full-span Tidal Sweep",
+      "interaction": "active",
+      "identity": ["sweep", "multi-target"],
+      "signature": {
+        "chargeDistinctTargets": 3,
+        "initialCharges": 0,
+        "requireBothOuterProjectiles": false,
+        "requireDistinctOuterTargets": false,
+        "maxCharges": 1,
+        "projectileCount": 9,
+        "arcRadians": 1.05,
+        "damageMultiplier": 0.65,
+        "hitCapacity": 2,
+        "speedMultiplier": 1,
+        "lifetimeMultiplier": 0.8,
+        "maxHitsPerEnemyPerActivation": 1,
+        "duplicateSharedHitCollision": "transparent-no-capacity-cost"
+      },
+      "evolutionOne": [
+        {
+          "id": "wide-wake",
+          "displayNameJa": "広域航跡",
+          "displayNameEn": "Wide Wake",
+          "arcRadians": 1.35
+        },
+        {
+          "id": "deep-wake",
+          "displayNameJa": "深層航跡",
+          "displayNameEn": "Deep Wake",
+          "hitCapacity": 3
+        }
+      ],
+      "evolutionTwo": [
+        {
+          "id": "double-reservoir",
+          "displayNameJa": "二重蓄潮",
+          "displayNameEn": "Double Reservoir",
+          "maxCharges": 2,
+          "grantChargeOnSelection": false
+        },
+        {
+          "id": "backwash-cycle",
+          "displayNameJa": "返し潮循環",
+          "displayNameEn": "Backwash Cycle",
+          "minimumDistinctActivationHits": 5,
+          "currentNormalShotTimerMultiplier": 0.5,
+          "maxTriggersPerActivation": 1
+        }
+      ],
+      "mastery": {
+        "id": "second-crest",
+        "displayNameJa": "第二波頭",
+        "displayNameEn": "Second Crest",
+        "minimumDistinctActivationHits": 5,
+        "grantCoreSpreadSweepCharge": 1,
+        "maxTriggersPerActivation": 1
+      }
+    },
+    {
+      "id": "spread.breakwater-fan",
+      "weaponId": "spread",
+      "displayNameJa": "防波扇",
+      "displayNameEn": "Breakwater Fan",
+      "interaction": "active",
+      "identity": ["front-control", "hp-cost"],
+      "signature": {
+        "chargeDistinctTargets": 2,
+        "initialCharges": 0,
+        "chargeRangePx": 190,
+        "maxCharges": 1,
+        "cooldownSeconds": 6,
+        "costGrossHpSnapshotRatio": 0.1,
+        "minimumHpAfterCost": 1,
+        "coneAngleDegrees": 120,
+        "rangePx": 190,
+        "maxTargets": 10,
+        "requiresLineOfSight": true,
+        "targetOrder": ["distance", "creation-ordinal"],
+        "classPriority": ["boss", "charger", "commander", "base-type"],
+        "resolveImmediatelyInSpecialPhase": true,
+        "consumeOnZeroTargets": true,
+        "damageMultipliers": {
+          "chaser": 2,
+          "fast": 2,
+          "brute": 1,
+          "ranged": 1,
+          "commander": 0.5,
+          "charger": 0.5,
+          "boss": 0.25
+        },
+        "pushDistancePx": {
+          "chaser": 80,
+          "fast": 80,
+          "brute": 40,
+          "ranged": 80,
+          "commander": 0,
+          "charger": 0,
+          "boss": 0
+        }
+      },
+      "evolutionOne": [
+        {
+          "id": "efficient-venting",
+          "displayNameJa": "省力排圧",
+          "displayNameEn": "Efficient Venting",
+          "costGrossHpSnapshotRatio": 0.07
+        },
+        {
+          "id": "hard-break",
+          "displayNameJa": "強圧決壊",
+          "displayNameEn": "Hard Break",
+          "activationDamageMultiplier": 1.35
+        }
+      ],
+      "evolutionTwo": [
+        {
+          "id": "long-break",
+          "displayNameJa": "長射程防波",
+          "displayNameEn": "Long Break",
+          "rangePx": 240,
+          "coneAngleDegrees": 120
+        },
+        {
+          "id": "wide-break",
+          "displayNameJa": "広角防波",
+          "displayNameEn": "Wide Break",
+          "rangePx": 190,
+          "coneAngleDegrees": 150
+        }
+      ],
+      "mastery": {
+        "id": "escape-current",
+        "displayNameJa": "離脱流",
+        "displayNameEn": "Escape Current",
+        "minimumAffectedNonBossTargets": 5,
+        "moveSpeedMultiplier": 1.2,
+        "durationSeconds": 1.25,
+        "stackMode": "refresh"
+      }
+    },
+    {
+      "id": "spread.aegis-fan",
+      "weaponId": "spread",
+      "displayNameJa": "護壁扇",
+      "displayNameEn": "Aegis Fan",
+      "interaction": "passive",
+      "identity": ["defense", "edge-projectiles"],
+      "signature": {
+        "edgeProjectileIndices": "first-and-last",
+        "edgeEnemyDamageMultiplier": 0.6,
+        "interceptsPerEdgeProjectile": 1,
+        "consumeEdgeProjectileOnIntercept": true,
+        "interceptibleProjectileCategory": "standard",
+        "bossProjectilesInterceptible": false,
+        "collisionMode": "relative-swept",
+        "interceptionRequiresPreRicochet": true,
+        "eventPriority": [
+          "enemy-projectile-termination",
+          "enemy-projectile-interception",
+          "legacy-player-endpoint-hit",
+          "player-bullet-enemy-hit",
+          "player-bullet-motion-boundary"
+        ],
+        "tieBreaker": [
+          "player-bullet-creation-ordinal",
+          "enemy-projectile-creation-ordinal",
+          "enemy-creation-ordinal",
+          "local-event-ordinal"
+        ],
+        "collisionTimeEpsilon": 1e-7,
+        "minimumFrameTimeAdvance": 0.000001,
+        "maxCollisionEventsPerFrame": 2048
+      },
+      "evolutionOne": [
+        {
+          "id": "restored-edge",
+          "displayNameJa": "外縁復元",
+          "displayNameEn": "Restored Edge",
+          "edgeEnemyDamageMultiplier": 0.75
+        },
+        {
+          "id": "broad-intercept",
+          "displayNameJa": "広域迎撃",
+          "displayNameEn": "Broad Intercept",
+          "interceptionRadiusBonusPx": 6
+        }
+      ],
+      "evolutionTwo": [
+        {
+          "id": "carry-through",
+          "displayNameJa": "貫通護衛",
+          "displayNameEn": "Carry Through",
+          "consumeEdgeProjectileOnIntercept": false,
+          "remainingInterceptsAfterIntercept": 0,
+          "preserveEnemyHitCapacity": true
+        },
+        {
+          "id": "guard-momentum",
+          "displayNameJa": "防護機動",
+          "displayNameEn": "Guard Momentum",
+          "moveSpeedMultiplier": 1.15,
+          "durationSeconds": 0.6,
+          "stackMode": "refresh"
+        }
+      ],
+      "mastery": {
+        "id": "perfect-guard",
+        "displayNameJa": "完全防護",
+        "displayNameEn": "Perfect Guard",
+        "requiresBothEdgesOfSameVolley": true,
+        "initialCharges": 0,
+        "maxCharges": 1,
+        "nextVolleyEdgeEnemyDamageMultiplier": 1,
+        "consumeOnNextNormalVolley": true
+      }
+    }
+  ]
+}

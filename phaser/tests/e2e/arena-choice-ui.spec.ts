@@ -283,3 +283,18 @@ test("records pointer and keyboard choices with a one-second resume window", asy
   });
   expect(finalReport?.summary.inputMethodCounts).toEqual({ keyboard: 1, pointer: 1 });
 });
+
+test("does not install candidate-only context menu handling", async ({ page }) => {
+  await page.goto("/");
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+
+  expect(
+    await page.locator("canvas").evaluate((node) => {
+      const event = new MouseEvent("contextmenu", {
+        bubbles: true,
+        cancelable: true,
+      });
+      return node.dispatchEvent(event);
+    }),
+  ).toBe(true);
+});

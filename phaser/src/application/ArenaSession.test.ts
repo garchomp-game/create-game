@@ -7,6 +7,7 @@ import {
   type RandomStreamId,
 } from "../math/random";
 import { createWorld } from "../simulation/createWorld";
+import { projectLegacyWorldForDigest } from "../simulation/legacyWorldProjection";
 import { stepWorld } from "../simulation/stepWorld";
 import { ArenaSession } from "./ArenaSession";
 
@@ -46,7 +47,11 @@ describe("ArenaSession", () => {
     expect(session.modeId).toBe("endless");
     expect(session.stageId).toBe("arena-default");
     expect(stableHash(JSON.stringify(eventDigest))).toBe("0e5c664a");
-    expect(stableHash(JSON.stringify(session.world))).toBe("9e021e02");
+    expect(
+      stableHash(
+        JSON.stringify(projectLegacyWorldForDigest(session.world)),
+      ),
+    ).toBe("9e021e02");
   });
 
   it("owns the active seed, config, weapon, and status without mirror state", () => {
@@ -65,6 +70,23 @@ describe("ArenaSession", () => {
       baseXp: 180,
       growth: 1.04,
       maxXp: 360,
+    });
+  });
+
+  it("retires the Endless contract only in the EX candidate profile", () => {
+    const legacy = new ArenaSession(SIMULATION_CONFIG);
+    legacy.start({ seed: 1, weaponType: "pulse" });
+    expect(legacy.config.features.endlessContract).toBe(true);
+
+    const candidate = new ArenaSession(SIMULATION_CONFIG);
+    candidate.start({
+      seed: 1,
+      weaponType: "pulse",
+      rulesetProfileId: "candidate-ex-endless-c2",
+    });
+    expect(candidate.config.features).toMatchObject({
+      exProtocols: true,
+      endlessContract: false,
     });
   });
 

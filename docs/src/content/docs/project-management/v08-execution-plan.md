@@ -3,7 +3,14 @@ title: v0.8 実行計画
 description: RC6を固定したまま、設計契約、単独candidate、統合採否を依存順に進める作業計画。
 ---
 
-最終整理日: 2026-07-22
+最終整理日: 2026-07-24
+
+:::note[現在の統合レーン]
+main `60ae8889390c`までに観測、選択UI、9課題Training、desktop gate、
+WebGL fallback、Phase A fixture、StudyLog契約を統合しました。
+現在は[#126](https://github.com/garchomp-game/create-game/issues/126)で
+EX Protocol C2をこの基盤へ再統合しています。通常buildとproductionはEX OFFです。
+:::
 
 ## 目的
 
@@ -30,8 +37,10 @@ v0.8では機能量を増やす前に、Arena Coreの面白さの核を小さい
 | 3 | PR #90 | UI比較手順をmain `df61f14`へ統合し、PR / main CIがgreen | 完了 |
 | 4 | PR #91 / #101 | 圧力カーブ、計装、保守性、#83の設計判断、#97 / #98レーンをmainへ統合済み | 完了。後続判断は新しいPRへ分離 |
 | 5 | PR #102 / #103 / #104 / #99 | Run Fact Kernel、最大密度fixture骨格、9課題Trainingをmain `565d401a92f6`まで統合済み | 完了。各consumerは独立Issueで不足を追加 |
-| 6 | Draft PR #113 | control観測を旧main上で結合済み | 最新mainへ修復統合し、exact HEADで再QAする |
-| 別経路 | Draft PR #84 | RC6 UI candidateとPreviewを公開済み | #78の停止時間計測と人間比較を揃えて採用、再調整、棄却を決める |
+| 6 | PR #113 / #115 | control観測とTraining T1.1をmainへ統合済み | 完了 |
+| 7 | PR #84 / #114 / #118 / #123 / #125 | 選択UI、desktop gate、WebGL fallback、Phase A fixture、StudyLogをmainへ統合済み | 完了 |
+| 8 | Issue #126 | EX Protocol C2を最新mainへ再統合中 | Draft PR、固定Preview、人間6体系、実GPU確認 |
+| 比較候補 | PR #120 / #122 | T1.2短文とH1/H2無操作ヒント。CI green | #81の人間cellまでDraft維持 |
 
 2026-07-20のGitHub Actions障害は同日04:44 UTCに解消しました。障害中の`startup_failure`はコード失敗にもgreen証跡にも含めません。復旧後のPR #91でheadless FirefoxのWebGL context生成失敗を検出し、PR #96でFirefoxだけをheaded + Xvfb + software GLへ切り替えました。検査をskipせず、PR #96のrun `29731009204`とmain `8635ca0`のrun `29731165320`はいずれも3 jobがgreenです。
 
@@ -44,6 +53,7 @@ v0.8では機能量を増やす前に、Arena Coreの面白さの核を小さい
 | UI | [#68](https://github.com/garchomp-game/create-game/issues/68) / [#67](https://github.com/garchomp-game/create-game/issues/67) / [#70](https://github.com/garchomp-game/create-game/issues/70) | 選択画面の可読性と再開操作 | PR #84と比較手順 | candidateを採用、再調整、棄却のいずれかに固定 |
 | T1 | [#97](https://github.com/garchomp-game/create-game/issues/97) | 現行visualのTrainingで説明不足を切り分ける | 9課題runtime、owner gate、CI、Previewを固定しmain採用済み | #81でT0 / T1を分け、事前教材なしのEndlessを死亡または90秒まで観測 |
 | T2 | [#98](https://github.com/garchomp-game/create-game/issues/98) | 撃つ・避ける・取るの視覚意味を変える必要があるか | Phase A fixtureは先行可。runtimeはT1で誤認が残る場合だけ | 変更不要、採用、再設計、延期、棄却を固定 |
+| EX | [#126](https://github.com/garchomp-game/create-game/issues/126) | Core完成後の武器固有判断を最新mainへ統合 | C2数値を固定し、通常build OFFを維持 | 自動gate、固定Preview、人間6体系、実GPU後に採用・再調整・棄却 |
 | 0C | [#77](https://github.com/garchomp-game/create-game/issues/77) | candidate非依存のfact、episode、純粋ledger | PR #102をmain `10198a9e810b`へ統合済み | Phase 0完了。Presenterと容量上限付きsummaryは後続consumerの不足確認後 |
 | 0D | [#93](https://github.com/garchomp-game/create-game/issues/93) | Boss Attack Cardと回復・反撃窓の観測 | RC6 control。runtime候補は入れない | 3攻撃の文法、chain、shadow指標を定義 |
 | 0E | [#94](https://github.com/garchomp-game/create-game/issues/94) | 主敗因、factual near-miss、同条件再挑戦 | #77の共通fact境界 | 純粋集約fixtureとViewModelを固定 |

@@ -1,10 +1,11 @@
 import "./beta-info.css";
-import { APP_VERSION, RULESET_VERSION } from "./config/version";
 
+const appVersion = import.meta.env.VITE_APP_VERSION;
+const rulesetVersion = import.meta.env.VITE_RULESET_VERSION;
 const buildCommit = import.meta.env.VITE_GIT_COMMIT || "unknown";
 
-setText("app-version", APP_VERSION);
-setText("ruleset-version", RULESET_VERSION);
+setText("app-version", appVersion);
+setText("ruleset-version", rulesetVersion);
 setText("build-commit", buildCommit);
 configureFeedbackLink();
 configureLocalDataDeletion();
@@ -19,8 +20,8 @@ function configureFeedbackLink(): void {
   if (!(link instanceof HTMLAnchorElement)) return;
 
   const body = [
-    `- appVersion: ${APP_VERSION}`,
-    `- rulesetVersion: ${RULESET_VERSION}`,
+    `- appVersion: ${appVersion}`,
+    `- rulesetVersion: ${rulesetVersion}`,
     `- buildCommit: ${buildCommit}`,
     "- seed:",
     "- ブラウザ / OS:",

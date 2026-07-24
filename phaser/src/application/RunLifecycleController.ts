@@ -110,6 +110,7 @@ export class RunLifecycleController {
       extraUpgradeSelections: world.stats.progressionMetrics.extraSelections,
       buildCompletedAt: world.progression.buildCompletedAt,
       encounterMetrics: world.stats.encounterMetrics,
+      exProtocolMetrics: world.stats.exProtocolMetrics,
     });
     if (result.status === "notStarted" || result.status === "alreadyFinalized") {
       return {

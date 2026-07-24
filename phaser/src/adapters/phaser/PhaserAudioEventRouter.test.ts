@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type * as Phaser from "phaser";
+import { toExProtocolId } from "../../content/exProtocolCatalog";
 import { PhaserAudioEventRouter } from "./PhaserAudioEventRouter";
 
 describe("PhaserAudioEventRouter", () => {
@@ -200,6 +201,61 @@ describe("PhaserAudioEventRouter", () => {
         },
       ],
     });
+  });
+
+  it("routes distinct EX Protocol readiness, activation, guard, and rejection cues", () => {
+    const played: string[] = [];
+    const scene = {
+      time: { now: 100 },
+      cache: { audio: { exists: () => true } },
+      sound: { play: (key: string) => played.push(key) },
+    } as unknown as Phaser.Scene;
+    const router = new PhaserAudioEventRouter(scene, true);
+    const rebound = toExProtocolId("pulse.rebound-overdrive");
+
+    router.handleEvents([
+      {
+        type: "ex.protocol.selected",
+        weaponId: "pulse",
+        protocolId: rebound,
+        interaction: "active",
+        exLevel: 0,
+        elapsed: 1,
+      },
+      {
+        type: "ex.special.activated",
+        protocolId: rebound,
+        activationId: 1,
+        elapsed: 2,
+      },
+      {
+        type: "ex.aegis.intercepted",
+        volleyId: 2,
+        side: "left",
+        enemyProjectileCategory: "standard",
+        plannedPlayerEndpointContact: true,
+        elapsed: 3,
+      },
+      {
+        type: "ex.special.rejected",
+        protocolId: rebound,
+        reason: "cooldown",
+        elapsed: 4,
+      },
+    ]);
+
+    expect(played).toEqual([
+      "protocolReady",
+      "protocolActivate",
+      "protocolGuard",
+      "protocolReject",
+    ]);
+    expect(router.getLastCues()).toEqual([
+      "protocolReady",
+      "protocolActivate",
+      "protocolGuard",
+      "protocolReject",
+    ]);
   });
 
   it.each([

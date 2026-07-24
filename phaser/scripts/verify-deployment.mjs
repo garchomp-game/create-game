@@ -91,7 +91,7 @@ if (relativeFiles.includes("index.html") && relativeFiles.includes("beta-info.ht
     if (!/^[0-9a-f]{7,40}$/.test(indexIdentity.buildCommit)) {
       errors.push(`public buildCommit is invalid: ${indexIdentity.buildCommit}`);
     }
-    if (!/^\d+\.\d+\.\d+$/.test(indexIdentity.appVersion)) {
+    if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(indexIdentity.appVersion)) {
       errors.push(`public appVersion is invalid: ${indexIdentity.appVersion}`);
     }
     if (!indexIdentity.rulesetVersion.startsWith("phaser-v")) {

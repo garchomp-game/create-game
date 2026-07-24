@@ -62,6 +62,7 @@ export type StageCompletionScoringDefinition = {
 export type StageDefinition = {
   id: string;
   titleKey: string;
+  exProtocolOfferPolicy: "fixed-compatible" | "disabled";
   campaign?: StageCampaignDefinition;
   arena: ArenaDefinition;
   obstacles: ObstacleDefinition[];

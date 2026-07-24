@@ -176,8 +176,9 @@ function updateRangedAttack(
   enemy.attackTimer += ranged.attackInterval / threat.attackSpeed;
   if (world.enemyProjectiles.length >= config.threat.maximumEnemyProjectiles) return;
   const offset = enemy.radius + ranged.projectileRadius + 2;
+  const creationOrdinal = world.nextEnemyProjectileId++;
   const projectile: EnemyProjectile = {
-    id: `enemy-projectile-${world.nextEnemyProjectileId++}`,
+    id: `enemy-projectile-${creationOrdinal}`,
     position: {
       x: enemy.position.x + directionToPlayer.x * offset,
       y: enemy.position.y + directionToPlayer.y * offset,
@@ -189,6 +190,15 @@ function updateRangedAttack(
     radius: ranged.projectileRadius,
     lifetime: ranged.projectileLifetime,
     damage: Math.ceil(ranged.projectileDamage * threat.damage),
+    ...(config.features.exProtocols
+      ? {
+          candidate: {
+            creationOrdinal,
+            category: "standard" as const,
+            interceptible: true,
+          },
+        }
+      : {}),
   };
   world.enemyProjectiles.push(projectile);
   events.push({

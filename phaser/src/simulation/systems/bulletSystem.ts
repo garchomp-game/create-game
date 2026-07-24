@@ -27,10 +27,13 @@ export type BulletRicochetMotion = {
 export type BulletMotionSegment = {
   start: Vec2;
   end: Vec2;
+  frameT0: number;
+  frameT1: number;
   ricochetsUsed: number;
   ricochetSurfaceKind: Bullet["ricochetSurfaceKind"];
   ricochetBoundarySide: Bullet["ricochetBoundarySide"];
   ricochetAfter: BulletRicochetMotion | null;
+  terminalAfter: boolean;
 };
 
 export type BulletFrameMotion = {
@@ -40,7 +43,12 @@ export type BulletFrameMotion = {
 
 export type BulletFrameMotions = ReadonlyMap<string, BulletFrameMotion>;
 
-type SurfaceCollision = {
+export type PlannedBulletFrame = {
+  bullet: Bullet;
+  motion: BulletFrameMotion;
+};
+
+export type SurfaceCollision = {
   t: number;
   position: Vec2;
   normal: Vec2;
@@ -59,6 +67,19 @@ export function updateBullets(
   return motions;
 }
 
+export function planBulletFrame(
+  bullet: Bullet,
+  dt: number,
+  obstacles: readonly Obstacle[],
+  config: SimulationConfig,
+): PlannedBulletFrame {
+  const plannedBullet = cloneBullet(bullet);
+  return {
+    bullet: plannedBullet,
+    motion: advanceBullet(plannedBullet, dt, obstacles, config),
+  };
+}
+
 function advanceBullet(
   bullet: Bullet,
   dt: number,
@@ -66,7 +87,8 @@ function advanceBullet(
   config: SimulationConfig,
 ): BulletFrameMotion {
   const segments: BulletMotionSegment[] = [];
-  let frameTimeRemaining = Math.max(0, dt);
+  const frameDuration = Math.max(0, dt);
+  let frameTimeRemaining = frameDuration;
   let survives = bullet.lifetime > MOTION_EPSILON;
   let surfaceCollisions = 0;
 
@@ -95,13 +117,26 @@ function advanceBullet(
     );
 
     if (!collision) {
+      const frameT0 = toFrameT(
+        frameDuration - frameTimeRemaining,
+        frameDuration,
+      );
+      const frameT1 = toFrameT(
+        frameDuration - frameTimeRemaining + travelTime,
+        frameDuration,
+      );
+      const terminalAfter =
+        bullet.lifetime - travelTime <= MOTION_EPSILON;
       segments.push({
         start,
         end: projectedEnd,
+        frameT0,
+        frameT1,
         ricochetsUsed: bullet.ricochetsUsed,
         ricochetSurfaceKind: bullet.ricochetSurfaceKind,
         ricochetBoundarySide: bullet.ricochetBoundarySide,
         ricochetAfter: null,
+        terminalAfter,
       });
       bullet.position = projectedEnd;
       bullet.lifetime = Math.max(0, bullet.lifetime - travelTime);
@@ -119,13 +154,23 @@ function advanceBullet(
     const segment: BulletMotionSegment = {
       start,
       end: { ...collision.position },
+      frameT0: toFrameT(
+        frameDuration - frameTimeRemaining - timeToCollision,
+        frameDuration,
+      ),
+      frameT1: toFrameT(
+        frameDuration - frameTimeRemaining,
+        frameDuration,
+      ),
       ricochetsUsed: bullet.ricochetsUsed,
       ricochetSurfaceKind: bullet.ricochetSurfaceKind,
       ricochetBoundarySide: bullet.ricochetBoundarySide,
       ricochetAfter: null,
+      terminalAfter: false,
     };
 
     if (!canRicochet || bullet.lifetime <= MOTION_EPSILON) {
+      segment.terminalAfter = true;
       segments.push(segment);
       survives = false;
       break;
@@ -155,9 +200,35 @@ function advanceBullet(
 
   if (surfaceCollisions >= MAX_SURFACE_COLLISIONS_PER_FRAME && frameTimeRemaining > 0) {
     survives = false;
+    const finalSegment = segments[segments.length - 1];
+    if (finalSegment) finalSegment.terminalAfter = true;
   }
 
   return { segments, survives };
+}
+
+function cloneBullet(bullet: Bullet): Bullet {
+  return {
+    ...bullet,
+    position: { ...bullet.position },
+    velocity: { ...bullet.velocity },
+    hitEnemyIds: [...bullet.hitEnemyIds],
+    ...(bullet.candidate
+      ? {
+          candidate: {
+            ...bullet.candidate,
+            protocolState: bullet.candidate.protocolState
+              ? { ...bullet.candidate.protocolState }
+              : null,
+          },
+        }
+      : {}),
+  };
+}
+
+function toFrameT(elapsed: number, frameDuration: number): number {
+  if (frameDuration <= MOTION_EPSILON) return 0;
+  return clamp(elapsed / frameDuration, 0, 1);
 }
 
 function canRicochetFrom(
@@ -170,7 +241,7 @@ function canRicochetFrom(
   return config.features.pulseBoundaryRicochet && bullet.weaponType === "pulse";
 }
 
-function findFirstSurfaceCollision(
+export function findFirstSurfaceCollision(
   start: Vec2,
   end: Vec2,
   radius: number,

@@ -11,6 +11,23 @@ import { createArenaScreenViewModel } from "./ArenaScreenPresenter";
 import type { ArenaUiState } from "./ArenaUiState";
 
 describe("createArenaScreenViewModel", () => {
+  it.each([
+    ["protocolSelect", "protocolSelect"],
+    ["evolutionSelect", "evolutionSelect"],
+  ] as const)("presents %s as an EX choice screen", (status, kind) => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.state.status = status;
+
+    expect(
+      createArenaScreenViewModel(world, SIMULATION_CONFIG),
+    ).toMatchObject({
+      kind,
+      status,
+      statusText: null,
+      detailText: null,
+    });
+  });
+
   it("presents the title screen without Phaser objects", () => {
     const world = createWorld(SIMULATION_CONFIG);
     world.state.status = "title";
@@ -213,10 +230,71 @@ describe("createArenaScreenViewModel", () => {
     expect(viewModel.detailText).toBe("記録を保存できませんでした");
   });
 
+  it("shows the saved EX Protocol route in candidate results", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.state.status = "gameOver";
+    const uiState = createUiState();
+    const record = createRecord(world);
+    uiState.latestRunRecord = {
+      ...record,
+      schemaVersion: 3,
+      rulesetProfileId: "candidate-ex-endless-c2",
+      rngVersion: "arena-rng-v2",
+      exProtocol: {
+        offeredIds: [
+          "pulse.resonance-relay",
+          "pulse.rebound-overdrive",
+          "pulse.redline-core",
+        ],
+        selectedId: "pulse.resonance-relay",
+        selectedAtElapsed: 120,
+        evolutionOneId: "extended-coupling",
+        evolutionOneAtElapsed: 140,
+        evolutionTwoId: "endpoint-priming",
+        evolutionTwoAtElapsed: 160,
+        masteryId: "crosslink",
+        masteryAtElapsed: 160,
+        firstLimitBreakAtElapsed: 180,
+        exposureSeconds: 60,
+        protocolSourceDamage: 10,
+        protocolBonusDamageAttributed: 2,
+        protocolSourceKills: 1,
+        protocolBonusFinisherKills: 0,
+        specialPresses: 0,
+        specialAccepted: 0,
+        specialRejectedByReason: {},
+        activeUseIntervalCount: 0,
+        activeUseIntervalSumSeconds: 0,
+        activeUseIntervalMaxSeconds: 0,
+        counters: {},
+      },
+    } as typeof uiState.latestRunRecord;
+
+    const viewModel = createArenaScreenViewModel(
+      world,
+      SIMULATION_CONFIG,
+      uiState,
+    );
+
+    expect(viewModel.detailText).toContain(
+      "PROTOCOL: 交差導線 / Resonance Relay",
+    );
+    expect(viewModel.detailText).toContain(
+      "E1 延長結合 / E2 終点予充電 / MASTERY 交差結合",
+    );
+  });
+
   it("keeps Expedition completion bonuses on separate readable lines", () => {
     const world = createWorld(SIMULATION_CONFIG);
     world.state.status = "gameOver";
+    world.state.hp = 37;
     world.state.score = 141_292;
+    world.stats.lastDamageSource = {
+      kind: "projectile",
+      projectileId: "boss-projectile-before-victory",
+      bossId: "first-command-ship",
+      bossAttackId: "targeted-salvo",
+    };
     world.stats.encounterMetrics.expedition = {
       outcome: "victory",
       reachedActId: "command-ship",
@@ -253,6 +331,7 @@ describe("createArenaScreenViewModel", () => {
         "指揮艦撃破 00:00",
       ]),
     );
+    expect(viewModel.statusText).not.toContain("撃墜原因");
   });
 
   it("formats Expedition PB deltas from integer centiseconds", () => {
@@ -295,6 +374,48 @@ describe("createArenaScreenViewModel", () => {
     expect(tied.statusText).toContain("総合PBと同記録");
   });
 
+  it("explains the fatal source that ended an Endless run", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.state.status = "gameOver";
+    world.state.hp = 0;
+    world.stats.lastDamageSource = {
+      kind: "contact",
+      enemyId: "enemy-fast-1",
+      enemyType: "fast",
+    };
+
+    expect(
+      createArenaScreenViewModel(
+        world,
+        SIMULATION_CONFIG,
+        createUiState(),
+      ).statusText,
+    ).toContain("撃墜原因: 高速体に接触し、HPが0になりました");
+
+    world.stats.lastDamageSource = {
+      kind: "projectile",
+      projectileId: "enemy-projectile-1",
+    };
+    expect(
+      createArenaScreenViewModel(
+        world,
+        SIMULATION_CONFIG,
+        createUiState(),
+      ).statusText,
+    ).toContain("撃墜原因: 射撃体の敵弾を受け、HPが0になりました");
+
+    world.stats.lastDamageSource = { kind: "collapse", stage: 2 };
+    expect(
+      createArenaScreenViewModel(
+        world,
+        SIMULATION_CONFIG,
+        createUiState(),
+      ).statusText,
+    ).toContain(
+      "撃墜原因: 安全領域外で崩壊ダメージを受け、HPが0になりました（第2段階）",
+    );
+  });
+
   it("names the boss attack that ended an Expedition", () => {
     const world = createWorld(SIMULATION_CONFIG);
     world.state.status = "gameOver";
@@ -335,7 +456,9 @@ describe("createArenaScreenViewModel", () => {
     );
 
     expect(viewModel.statusText).toContain("遠征失敗");
-    expect(viewModel.statusText).toContain("指揮艦 照準斉射");
+    expect(viewModel.statusText).toContain(
+      "撃墜原因: 指揮艦の「照準斉射」を受け、HPが0になりました",
+    );
 
     const record = createRecord(world, "expedition", "final-expedition");
     const details = createArenaScreenViewModel(
@@ -357,8 +480,14 @@ describe("createArenaScreenViewModel", () => {
       bossAttackId: "escort-pincer",
     };
     expect(
-      createArenaScreenViewModel(world, SIMULATION_CONFIG, createUiState()).statusText,
-    ).toContain("指揮艦 挟撃護衛");
+      createArenaScreenViewModel(
+        world,
+        SIMULATION_CONFIG,
+        createUiState(),
+      ).statusText,
+    ).toContain(
+      "撃墜原因: 指揮艦の「挟撃護衛」に接触し、HPが0になりました",
+    );
   });
 
   it("states the Endless ranking contract without changing its comparator", () => {
@@ -390,6 +519,13 @@ function createRecord(
       stageId,
       difficultyId: "standard",
       rulesetVersion: "rules-rc6",
+      rulesetProfileId:
+        modeId === "expedition"
+          ? "legacy-final-expedition-rc6"
+          : "legacy-endless-v068",
+      rngVersion: "arena-rng-v1",
+      runRecordSchemaVersion: 2,
+      exProtocolsEnabled: false,
       seedCategory: "random",
       weaponId: world.state.weaponType,
       modifierIds: [],

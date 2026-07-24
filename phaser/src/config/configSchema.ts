@@ -323,8 +323,12 @@ const obstacleSchema = z
 export const simulationConfigSchema: z.ZodType<SimulationConfig> = z
   .object({
     seed: z.number().int(),
+    exProtocolOfferPolicy: z
+      .enum(["fixed-compatible", "disabled"])
+      .optional(),
     features: z
       .object({
+        exProtocols: z.boolean(),
         pulseRicochet: z.boolean(),
         pulseBoundaryRicochet: z.boolean(),
         pulseFocus: z.boolean(),

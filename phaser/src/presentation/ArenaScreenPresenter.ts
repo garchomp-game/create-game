@@ -4,7 +4,7 @@ import {
   getExpeditionTacticalScore,
   isRankableRun,
 } from "../application/runRecords";
-import { APP_VERSION, RELEASE_CHANNEL_LABEL } from "../config/version";
+import { RELEASE_CHANNEL_LABEL } from "../config/version";
 import { toRunCentiseconds } from "../domain/runRecords";
 import type { RankIneligibilityReason, RunRecord } from "../domain/runRecords";
 import type {
@@ -23,6 +23,7 @@ import { TEXT } from "../lang";
 import { getUpgradeRequirementProgress } from "../simulation/buildComposer";
 import { createRunResultSummary } from "../simulation/resultSummary";
 import type { ArenaUiState } from "./ArenaUiState";
+import { formatExProtocolRecordRoute } from "./ExProtocolPresenter";
 
 export type ArenaScreenKind =
   | "none"
@@ -31,6 +32,8 @@ export type ArenaScreenKind =
   | "settings"
   | "gameOver"
   | "upgradeSelect"
+  | "protocolSelect"
+  | "evolutionSelect"
   | "contractSelect"
   | "trainingComplete"
   | "paused"
@@ -96,6 +99,10 @@ export function createArenaScreenViewModel(
       };
     case "upgradeSelect":
       return { ...base, kind: "upgradeSelect", statusText: null, detailText: null };
+    case "protocolSelect":
+      return { ...base, kind: "protocolSelect", statusText: null, detailText: null };
+    case "evolutionSelect":
+      return { ...base, kind: "evolutionSelect", statusText: null, detailText: null };
     case "contractSelect":
       return { ...base, kind: "contractSelect", statusText: null, detailText: null };
     case "trainingComplete":
@@ -138,7 +145,7 @@ export function createArenaScreenViewModel(
       return {
         ...base,
         kind: "title",
-        statusText: `${TEXT.ui.titleScreen}\nENDLESS / EXPEDITION / TRAINING\n生存限界か、最終決戦か\n${RELEASE_CHANNEL_LABEL} v${uiState?.releaseIdentity.appVersion ?? APP_VERSION}`,
+        statusText: `${TEXT.ui.titleScreen}\nENDLESS / EXPEDITION / TRAINING\n生存限界か、最終決戦か\n${RELEASE_CHANNEL_LABEL} v${uiState?.releaseIdentity.appVersion ?? import.meta.env.VITE_APP_VERSION}`,
         detailText: null,
       };
     default:
@@ -181,8 +188,14 @@ function formatGameOverText(world: WorldState, uiState?: ArenaUiState): string {
     );
   }
 
-  if (summary.lastDamageSource) {
-    lines.push(TEXT.ui.result.cause(formatDamageSource(summary.lastDamageSource)));
+  const isFatalDefeat =
+    summary.hp <= 0 && expeditionOutcome !== "victory";
+  if (isFatalDefeat && summary.lastDamageSource) {
+    lines.push(
+      TEXT.ui.result.defeatCause(
+        formatFatalDamageSource(summary.lastDamageSource),
+      ),
+    );
   }
 
   return lines.filter(Boolean).join("\n");
@@ -198,6 +211,9 @@ function formatGameOverDetails(uiState?: ArenaUiState): string {
     `モード: ${formatModeName(record.modeId)} / ステージ: ${formatStageName(record.stageId)}`,
     formatRankingContract(record.modeId),
     `開始武器: ${TEXT.hud.weaponNames[record.weaponId]}`,
+    record.schemaVersion === 3
+      ? formatExProtocolRecordRoute(record.exProtocol)
+      : "",
     formatRecordCapstone(record),
     formatRecordEncounter(record),
     formatBuildLine(record),
@@ -506,12 +522,15 @@ function createMenuLabels(
   };
 }
 
-function formatDamageSource(source: PlayerDamageSource): string {
+function formatFatalDamageSource(source: PlayerDamageSource): string {
   if (source.kind !== "collapse" && source.bossAttackId) {
-    return `指揮艦 ${formatBossAttack(source.bossAttackId)}`;
+    const attackName = formatBossAttack(source.bossAttackId);
+    return source.kind === "contact"
+      ? `指揮艦の「${attackName}」に接触し、HPが0になりました`
+      : `指揮艦の「${attackName}」を受け、HPが0になりました`;
   }
   if (source.kind === "contact") {
-    if (source.bossId) return "指揮艦 接触";
+    if (source.bossId) return "指揮艦に接触し、HPが0になりました";
     return TEXT.ui.damageSource.enemyContact(TEXT.ui.enemyNames[source.enemyType]);
   }
   if (source.kind === "projectile") return TEXT.ui.damageSource.enemyProjectile;

@@ -14,14 +14,20 @@ import type {
 } from "../domain/gameContent";
 import type { TutorialSnapshot } from "../domain/tutorial";
 import { createRandomStreams, type RandomStreams } from "../math/random";
+import type {
+  RulesetProfile,
+  RulesetProfileId,
+} from "../domain/ruleset";
 import { createWorld } from "../simulation/createWorld";
 import { stepWorld } from "../simulation/stepWorld";
 import { ExpeditionController } from "../simulation/ExpeditionController";
 import { TutorialController } from "../simulation/TutorialController";
 import { updateRunStats } from "../simulation/systems/statsSystem";
+import { initializeExProtocolProgression } from "../simulation/exProtocolProgression";
 import { DEFAULT_MODE_ID, DEFAULT_STAGE_ID } from "../config/version";
 import type { GameContentRegistry } from "./GameContentRegistry";
 import { DEFAULT_GAME_CONTENT_REGISTRY } from "./defaultGameContentRegistry";
+import { resolveRulesetProfile } from "./RulesetProfileRegistry";
 
 export type ArenaSessionStartInput = {
   seed: number;
@@ -29,6 +35,7 @@ export type ArenaSessionStartInput = {
   status?: WorldState["state"]["status"];
   modeId?: string;
   stageId?: string;
+  rulesetProfileId?: RulesetProfileId;
 };
 
 export type ArenaSessionOptions = {
@@ -42,6 +49,7 @@ type ActiveArenaSession = {
   world: WorldState;
   mode: ModeDefinition;
   stage: StageDefinition;
+  rulesetProfile: RulesetProfile;
   expeditionController: ExpeditionController | null;
   tutorialController: TutorialController | null;
 };
@@ -62,10 +70,30 @@ export class ArenaSession {
       input.modeId ?? DEFAULT_MODE_ID,
       input.stageId ?? DEFAULT_STAGE_ID,
     );
-    const config = applyStageToConfig(this.baseConfig, mode, stage, seed);
+    const rulesetProfile = resolveRulesetProfile(
+      mode.id,
+      stage.id,
+      input.rulesetProfileId,
+    );
+    if (
+      rulesetProfile.features.exProtocols &&
+      stage.exProtocolOfferPolicy !== "fixed-compatible"
+    ) {
+      throw new Error(
+        `Stage "${stage.id}" does not allow EX Protocol offers.`,
+      );
+    }
+    const config = applyStageToConfig(
+      this.baseConfig,
+      mode,
+      stage,
+      seed,
+      rulesetProfile,
+    );
     const world = createWorld(config);
     world.state.weaponType = input.weaponType;
     world.state.status = input.status ?? "playing";
+    initializeExProtocolProgression(world, config, input.weaponType);
     const expeditionController =
       mode.runtimeKind === "expedition"
         ? new ExpeditionController(
@@ -75,7 +103,10 @@ export class ArenaSession {
         : null;
     const tutorialController =
       mode.runtimeKind === "training" ? new TutorialController() : null;
-    const randomStreams = createRandomStreams(seed);
+    const randomStreams = createRandomStreams(
+      seed,
+      rulesetProfile.randomStreamVersion,
+    );
     expeditionController?.initialize(world, randomStreams);
     tutorialController?.initialize(world, config);
     this.active = {
@@ -85,6 +116,7 @@ export class ArenaSession {
       world,
       mode,
       stage,
+      rulesetProfile,
       expeditionController,
       tutorialController,
     };
@@ -177,6 +209,10 @@ export class ArenaSession {
     return structuredClone(this.requireActive().stage);
   }
 
+  get rulesetProfile(): RulesetProfile {
+    return this.requireActive().rulesetProfile;
+  }
+
   get recordPolicy(): ModeDefinition["recordPolicy"] {
     return this.requireActive().mode.recordPolicy;
   }
@@ -221,20 +257,29 @@ function applyStageToConfig(
   mode: ModeDefinition,
   stage: StageDefinition,
   seed: number,
+  rulesetProfile: RulesetProfile,
 ): SimulationConfig {
   const difficulty = stage.difficulty;
   return {
     ...baseConfig,
     seed,
+    ...(rulesetProfile.features.exProtocols
+      ? { exProtocolOfferPolicy: stage.exProtocolOfferPolicy }
+      : {}),
     features:
       mode.runtimeKind === "expedition" || mode.runtimeKind === "training"
         ? {
             ...baseConfig.features,
+            exProtocols: rulesetProfile.features.exProtocols,
             encounterDeck: false,
-            endlessContract: false,
+            endlessContract: rulesetProfile.features.endlessContract,
             arenaCollapse: false,
           }
-        : { ...baseConfig.features },
+        : {
+            ...baseConfig.features,
+            exProtocols: rulesetProfile.features.exProtocols,
+            endlessContract: rulesetProfile.features.endlessContract,
+          },
     arena: {
       width: stage.arena.width,
       height: stage.arena.height,

@@ -375,3 +375,16 @@ description: 訪問履歴ベースの安全巡回を検証するPH-AUTO系列の
 - 可視情報と100msから180msの反応遅延だけを使う`human-reference`プロファイル。
 
 これらを巡回実装へ先回りして混ぜません。
+
+## EX Protocol candidateのprobe policy
+
+`PH-V08-027`のbalance / exposure probeは、製品AutoPilotを変更せず、probe専用policyで次だけを固定します。
+
+- weaponとseedに対するProtocol、E1、E2 route。
+- Reboundの次volley武装。
+- Tidal / Breakwaterのchargeがあり、前方clusterへ意味がある場合のspecial。
+- 全Protocol共通の既存fair移動、回避、回収、照準。
+
+RelayとRedlineはfair AutoPilotの自然照準で成立機会が不足する場合があります。0回を即座に弱いProtocolと判定せず、`opportunity=0`と`opportunity>0 / effect=0`を分けます。probe policyを強くするために製品AIの生存方針、武器別安全係数、ランキング適格性を変更しません。
+
+このprobeは20 seedのreview triggerです。人間のspecial timing、代償理解、武器弱点維持を合格判定しません。結果を見てcandidate値を自動調整せず、変更案は別比較として事前登録します。

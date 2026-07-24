@@ -526,6 +526,10 @@ function makeContext(): RunContext {
     appVersion: "0.5",
     buildCommit: "abc123",
     seed: 42,
+    rulesetProfileId: "legacy-endless-v068",
+    rngVersion: "arena-rng-v1",
+    runRecordSchemaVersion: 2,
+    exProtocolsEnabled: false,
     runOrigin: "manual",
     rankEligibility: createRankEligibility("manual"),
   };

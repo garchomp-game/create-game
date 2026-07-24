@@ -235,22 +235,29 @@ RC5は基準証跡として保持し、productionへ直接昇格しません。U
 
 ## v0.8 control観測build
 
-2026-07-22の批判的レビューを受け、危険反転やBoss調整を先に実装せず、RC6 controlの事実を集める6件の独立PRをDraft PR [#113](https://github.com/garchomp-game/create-game/pull/113)へ結合しました。2026-07-24に最新main `565d401a92f6`へ再統合し、9課題Trainingを保持した修復候補をローカルbranch `agent/v08-observation-control-repair`で作成しています。アプリ版`0.7.0`、Endlessルール`phaser-v0.6.8-pulse-boundary-ricochet`、最終遠征ルール`phaser-v0.7.0-final-expedition-rc6`は維持しています。
+2026-07-22の批判的レビューを受け、危険反転やBoss調整を先に実装せず、RC6 controlの事実を集める6件の独立PRをPR [#113](https://github.com/garchomp-game/create-game/pull/113)へ結合しました。9課題Trainingを保持した修復と再QAを終え、merge commit `669a635`としてmainへ統合済みです。アプリ版`0.7.0`、Endlessルール`phaser-v0.6.8-pulse-boundary-ricochet`、最終遠征ルール`phaser-v0.7.0-final-expedition-rc6`は維持しています。
 
 同じrun exportから、現行Chargerの成立性、強化選択のwall-clockと復帰1秒、危険イベント終了後5秒、Boss攻撃別の被弾・回復・反撃窓を取得できます。修復候補では連続choiceの復帰episodeをqueueで保持し、敗因、進捗、比較差分の純粋ViewModelを`runOutcomeInsight`としてdebug exportへ接続しました。Workers観測PreviewからはブラウザdownloadでJSONを取得できます。ゲーム数値、RNG、`RunRecord`、ランキング契約、production trafficは変更していません。
 
-旧結合commit `4bd771e`の477 unit、77 E2E、production buildは履歴証拠として保持しますが、修復候補の合格証拠へ流用しません。runtime merge `b35e42e4388a`、tested HEAD `f35cb1227d3b`で、74 files / 506 unit / 2 skipped、TypeScript、production buildと配布検査、観測用build、Playwright 90 passed / 1 skipped、Starlight 111ページがgreenです。ローカル観測artifactでもmarker一致、game over JSON、`runOutcomeInsight: available`、console error 0件を確認しました。Cloudflare Version Preview、GitHub Actions、人間control観測は残っています。詳細は[v0.8 control観測build サマリ](../v08-observation-control-summary/)と[実施手順](../../playtest/v08-observation-control-runbook/)を参照してください。
+旧結合commit `4bd771e`の477 unit、77 E2E、production buildは履歴証拠として保持しますが、修復候補の合格証拠へ流用しません。修復後の自動証拠、Cloudflare Version Preview、GitHub Actionsは完了し、その後に採用済み選択UI、desktop gate、WebGL fallback、戦闘オブジェクトPhase A fixture、StudyLog契約をmain `60ae8889390c`まで積み上げました。詳細は[v0.8 control観測build サマリ](../v08-observation-control-summary/)と[実施手順](../../playtest/v08-observation-control-runbook/)を参照してください。
+
+## v0.8 EX Protocol C2統合候補
+
+[#126](https://github.com/garchomp-game/create-game/issues/126)では、C2の6 Protocol、24 route、Mastery、EX Lv3以降のLimit Break、RunRecord v3非破壊移行を最新mainへ再統合しています。旧C2専用DOMは戻さず、採用済み`ArenaChoicePresenter`へProtocol / Evolution / Limit Breakを接続しました。Training中はEXを無効化し、過負荷契約はC2で廃止したままです。
+
+短い自動ゲートでは全unit、決定論、24 route、migration、probe、soak、Final Expedition露出、通常 / 候補build、EX browser 13件、共通選択UI、9課題Training、3ブラウザrelease smokeを通過しています。通常buildはEX OFF、候補buildだけ`0.8.0-candidate.2`とC2 rulesetを使います。production trafficは変更していません。
+
+残るのは、exact SHAのVersion Preview、GitHub Actions、Pulse / Spread各3体系の人間操作、Aegis / Tidalの実GPU高密度確認です。詳細は[EX Protocol C2 最新main統合レポート](../../playtest/v08-ex-c2-main-integration-report/)を参照してください。
 
 ## 次の優先順
 
-公開ベータ基準、RC6の自動証跡、通常UIの欠陥特化採否、main統合は固定済みです。GitHub Actions、Encounter境界追補、9課題Training、Run Fact Kernel、最大密度fixture骨格までmain `565d401a92f6`へ統合しました。2026-07-22の批判的レビューを受け、未検証の危険反転よりcontrol観測を先行します。
+公開ベータ基準、RC6、control観測、採用済み選択UI、9課題Training、desktop gate、WebGL fallback、Phase A fixture、StudyLog契約はmainへ統合済みです。
 
-1. #113を最新mainへ再統合し、複数選択の復帰窓、敗因ViewModelのdebug export、Workers PreviewのJSON取得を修復する。
-2. 修復buildでEndlessのPulse / Spreadを各1本、最初の危険イベントのrecovery完了まで観察する。
-3. 最終遠征のPulse / Spreadを各1本、Boss第2段階またはラン終了まで観察する。
-4. 必須run後に5分の自由選択を置き、EndlessとExpeditionが別の再挑戦理由を作れているか観察する。
-5. #97のTraining T1は事前教材なしで行い、Training後のEndlessを死亡または90秒まで観察する。誤認が残る場合だけ#98の視覚T2へ進む。
-6. Charger、選択UI、Boss、イベント緩和は、control結果を受けて変更値と合格条件を事前登録し、1 build 1 candidateで比較する。
-7. 採用するv0.7配布SHAを固定し、production build、実URLsmoke、rollback確認後にtrafficを昇格する。
+1. #126のEX C2統合候補をDraft PRと固定Version Previewへ出し、productionを変更せず自動証拠をSHAへ結び付ける。
+2. Pulse / Spread各3 Protocolの人間操作と、Aegis / Tidalの実GPU高密度確認を行う。
+3. #81でT1.1 control、T1.2短文候補、H1/H2無操作ヒント候補を別cellとして比較する。
+4. 採用したTraining文言とヒントだけをmainへ統合し、O1共通導線を1候補で確認する。
+5. EX C2、Training、O1の採否後にv0.8統合buildを固定し、Endless / Final Expedition / Trainingの最終回帰を行う。
+6. #98 Phase B、Charger、Boss、イベント緩和は、観測事実と事前登録した合格条件がある場合だけ別candidateで進める。
 
 採否の理由は[v0.8 批判的レビューの採用判断](../../design/v08-critical-review-adoption/)、直近の詳細は[直近フェーズ](../../project-management/next-phase-plan/)と[v0.8 実行計画](../../project-management/v08-execution-plan/)、技術契約は[RC6の時計と記録規則](../../engineering/expedition-rc6-clock-and-ranking-adr/)、3作戦系列は[エクスペディション3作戦検証](../../design/expedition-campaign/)、表示改善は[UI・グラフィック再設計計画](../../project-management/ui-visual-redesign-plan/)を参照してください。

@@ -8,11 +8,26 @@ import type {
 } from "../../domain/types";
 import { circleCircle, segmentCircleFirstIntersection } from "../../math/geometry";
 import type { BulletFrameMotions, BulletMotionSegment } from "./bulletSystem";
-import { releaseCommanderPressure } from "./commanderEliteSystem";
+import { recordChargerPlayerHit } from "./chargerEnemySystem";
+import { resolveEnemyDamage } from "./enemyDamageSystem";
+import { applyPlayerDamage } from "./playerHealthSystem";
 import {
-  recordChargerKilled,
-  recordChargerPlayerHit,
-} from "./chargerEnemySystem";
+  getRedlineFocusDurationBonus,
+  resolveRedlineDamage,
+} from "../protocols/redlineCore";
+import {
+  recordReboundPostRicochetHit,
+  resolveReboundDamage,
+  restoreReboundCapacityAfterRicochet,
+} from "../protocols/reboundOverdrive";
+import { resolveResonanceAfterNormalHit } from "../protocols/resonanceRelay";
+import {
+  isTransparentTidalDuplicate,
+  recordTidalActivationHit,
+  recordTidalNormalHit,
+} from "../protocols/tidalSweep";
+import { recordBreakwaterNormalHit } from "../protocols/breakwaterFan";
+import { resolveAegisDamage } from "../protocols/aegisFan";
 
 export function resolveCombat(
   world: WorldState,
@@ -45,6 +60,7 @@ export function resolveCombat(
 
       for (const { enemy } of intersections) {
         if (deadEnemies.has(enemy) || bullet.hitEnemyIds.includes(enemy.id)) continue;
+        if (isTransparentTidalDuplicate(world, bullet, enemy)) continue;
         resolveBulletEnemyHit(world, bullet, enemy, segment, deadEnemies, events);
         if (bullet.hitsRemaining <= 0) {
           stoppedByHitCapacity = true;
@@ -69,6 +85,7 @@ export function resolveCombat(
           ricochetsUsed: ricochet.ricochetsUsed,
           ricochetsRemaining: ricochet.ricochetsRemaining,
         });
+        restoreReboundCapacityAfterRicochet(world, bullet, events);
       }
     }
 
@@ -80,31 +97,7 @@ export function resolveCombat(
   world.bullets = remainingBullets;
   world.enemies = world.enemies.filter((enemy) => !deadEnemies.has(enemy));
   resolveEnemyProjectileHits(world, config, events);
-
-  if (world.state.damageCooldown <= 0) {
-    const touchingEnemy = world.enemies.find((enemy) => circleCircle(enemy, world.player));
-    if (touchingEnemy) {
-      const hpBefore = world.state.hp;
-      world.state.hp = Math.max(0, hpBefore - touchingEnemy.damage);
-      const damage = hpBefore - world.state.hp;
-      if (damage > 0) {
-        world.state.damageCooldown = config.player.damageCooldown;
-        recordChargerPlayerHit(touchingEnemy, damage, events);
-        events.push({
-          type: "player.damaged",
-          damage,
-          hpAfter: world.state.hp,
-          source: {
-            kind: "contact",
-            enemyId: touchingEnemy.id,
-            enemyType: touchingEnemy.typeId,
-            ...(touchingEnemy.boss ? { bossId: touchingEnemy.boss.bossId } : {}),
-            ...(touchingEnemy.bossAttackSource ?? {}),
-          },
-        });
-      }
-    }
-  }
+  resolveEnemyContactDamage(world, config, events);
 }
 
 function createStationaryMotion(bullet: Bullet): { segments: BulletMotionSegment[]; survives: true } {
@@ -113,17 +106,20 @@ function createStationaryMotion(bullet: Bullet): { segments: BulletMotionSegment
       {
         start: { ...bullet.position },
         end: { ...bullet.position },
+        frameT0: 0,
+        frameT1: 0,
         ricochetsUsed: bullet.ricochetsUsed,
         ricochetSurfaceKind: bullet.ricochetSurfaceKind,
         ricochetBoundarySide: bullet.ricochetBoundarySide,
         ricochetAfter: null,
+        terminalAfter: false,
       },
     ],
     survives: true,
   };
 }
 
-function resolveBulletEnemyHit(
+export function resolveBulletEnemyHit(
   world: WorldState,
   bullet: Bullet,
   enemy: Enemy,
@@ -138,57 +134,192 @@ function resolveBulletEnemyHit(
     segment.ricochetsUsed,
     bullet.hitEnemyIds.length,
   );
-  const damage = bullet.damage + focusHit.bonusDamage;
-  enemy.hp -= damage;
+  const endpointPositionBeforeHit = { ...enemy.position };
+  const normalResolvedDamage = bullet.damage + focusHit.bonusDamage;
+  const redline = resolveRedlineDamage(
+    world,
+    bullet,
+    enemy,
+    segment.ricochetsUsed,
+    focusHit.stackBefore,
+    focusHit.stackAfter,
+    normalResolvedDamage,
+  );
+  const rebound = resolveReboundDamage(
+    world,
+    bullet,
+    normalResolvedDamage,
+  );
+  const protocolDamage = redline ?? rebound;
+  const aegis = resolveAegisDamage(
+    world,
+    bullet,
+    normalResolvedDamage,
+  );
+  const resolvedProtocolDamage = protocolDamage ?? aegis;
+  const damage =
+    resolvedProtocolDamage?.damage ?? normalResolvedDamage;
+  const tidalState =
+    bullet.candidate?.protocolState?.kind ===
+    "full-span-tidal-sweep"
+      ? bullet.candidate.protocolState
+      : null;
   bullet.hitEnemyIds.push(enemy.id);
   bullet.hitsRemaining -= 1;
   registerSpreadSweepHit(world, bullet, enemy, events);
+  resolveEnemyDamage(
+    world,
+    enemy,
+    {
+      amount: damage,
+      baselineWithoutAnyProtocol:
+        tidalState
+          ? 0
+          : resolvedProtocolDamage?.baselineWithoutAnyProtocol ??
+            damage,
+      baselineForEffectAttribution:
+        tidalState
+          ? 0
+          : resolvedProtocolDamage
+              ?.baselineForEffectAttribution ?? damage,
+      source: {
+        kind: "player-projectile",
+        bulletId: bullet.id,
+        volleyId: bullet.volleyId,
+        weaponType: bullet.weaponType,
+        ricochetsUsed: segment.ricochetsUsed,
+        ricochetSurfaceKind: segment.ricochetSurfaceKind,
+        ricochetBoundarySide: segment.ricochetBoundarySide,
+        ...(tidalState
+          ? {
+              protocolId:
+                world.progression.exProtocol?.status === "selected"
+                  ? world.progression.exProtocol.route.protocolId
+                  : undefined,
+              activationId: tidalState.activationId,
+            }
+          : resolvedProtocolDamage
+            ? { protocolId: resolvedProtocolDamage.protocolId }
+            : {}),
+        ...(resolvedProtocolDamage?.effectDetail
+          ? {
+              protocolEffectDetail:
+                resolvedProtocolDamage.effectDetail,
+            }
+          : {}),
+        attribution: tidalState
+          ? "protocol-volley"
+          : resolvedProtocolDamage?.attribution ?? "normal",
+      },
+    },
+    deadEnemies,
+    events,
+    {
+      afterHit: (outcome) => {
+        if (focusHit.applied) {
+          events.push({
+            type: "pulse.focus.hit",
+            enemyId: enemy.id,
+            enemyType: enemy.typeId,
+            stackBefore: focusHit.stackBefore,
+            stackAfter: focusHit.stackAfter,
+            lineStacks: focusHit.lineStacks,
+            targetBonusDamage: focusHit.targetBonusDamage,
+            lineBonusDamage: focusHit.lineBonusDamage,
+            bonusDamage: focusHit.bonusDamage,
+            killed: outcome.killed,
+          });
+        }
+        if (redline?.redlineEvent) {
+          events.push({
+            type: "ex.redline.hit",
+            projectileId: bullet.id,
+            totalDamage: redline.redlineEvent.totalDamage,
+            bonusDamageAttributed:
+              redline.redlineEvent.bonusDamageAttributed,
+            elapsed: world.state.elapsed,
+          });
+        }
+        recordReboundPostRicochetHit(
+          world,
+          bullet,
+          enemy,
+          events,
+        );
+        resolveResonanceAfterNormalHit(
+          world,
+          bullet,
+          enemy,
+          {
+            priorDirectHits: bullet.hitEnemyIds.length - 1,
+            ricochetsUsed: segment.ricochetsUsed,
+            stackAfter: focusHit.stackAfter,
+            maximumStacks: world.runtime.pulseFocusMaxStacks,
+            endpointSurvived: !outcome.killed,
+            endpointPositionBeforeHit,
+          },
+          deadEnemies,
+          events,
+        );
+        recordTidalNormalHit(world, bullet, enemy, events);
+        recordTidalActivationHit(world, bullet, enemy, events);
+        recordBreakwaterNormalHit(world, bullet, enemy, events);
+      },
+    },
+  );
+}
+
+export function resolveEnemyProjectilePlayerHit(
+  world: WorldState,
+  projectile: EnemyProjectile,
+  config: SimulationConfig,
+  events: GameEvent[],
+): void {
+  if (world.state.damageCooldown > 0) return;
+
+  const damage = applyPlayerDamage(world, projectile.damage);
+  if (damage <= 0) return;
+  world.state.damageCooldown = config.player.damageCooldown;
   events.push({
-    type: "enemy.hit",
-    bulletId: bullet.id,
-    volleyId: bullet.volleyId,
-    enemyId: enemy.id,
-    enemyType: enemy.typeId,
-    weaponType: bullet.weaponType,
-    ricochetsUsed: segment.ricochetsUsed,
-    ricochetSurfaceKind: segment.ricochetSurfaceKind,
-    ricochetBoundarySide: segment.ricochetBoundarySide,
+    type: "player.damaged",
     damage,
-    hpAfter: Math.max(0, enemy.hp),
+    hpAfter: world.state.hp,
+    source: {
+      kind: "projectile",
+      projectileId: projectile.id,
+      ...(projectile.source ?? {}),
+    },
   });
+}
 
-  if (focusHit.applied) {
-    events.push({
-      type: "pulse.focus.hit",
-      enemyId: enemy.id,
-      enemyType: enemy.typeId,
-      stackBefore: focusHit.stackBefore,
-      stackAfter: focusHit.stackAfter,
-      lineStacks: focusHit.lineStacks,
-      targetBonusDamage: focusHit.targetBonusDamage,
-      lineBonusDamage: focusHit.lineBonusDamage,
-      bonusDamage: focusHit.bonusDamage,
-      killed: enemy.hp <= 0,
-    });
-  }
+export function resolveEnemyContactDamage(
+  world: WorldState,
+  config: SimulationConfig,
+  events: GameEvent[],
+): void {
+  if (world.state.damageCooldown > 0) return;
+  const touchingEnemy = world.enemies.find((enemy) =>
+    circleCircle(enemy, world.player),
+  );
+  if (!touchingEnemy) return;
 
-  if (enemy.hp > 0) return;
-
-  deadEnemies.add(enemy);
-  releaseCommanderPressure(world, enemy, bullet.weaponType, events);
-  recordChargerKilled(world, enemy, bullet.weaponType, events);
-  const scoreAwarded = Math.round(enemy.score * world.encounter.contract.scoreMultiplier);
-  world.state.score += scoreAwarded;
+  const damage = applyPlayerDamage(world, touchingEnemy.damage);
+  if (damage <= 0) return;
+  world.state.damageCooldown = config.player.damageCooldown;
+  recordChargerPlayerHit(touchingEnemy, damage, events);
   events.push({
-    type: "enemy.killed",
-    bulletId: bullet.id,
-    volleyId: bullet.volleyId,
-    enemyId: enemy.id,
-    enemyType: enemy.typeId,
-    weaponType: bullet.weaponType,
-    scoreAwarded,
-    xpAwarded: enemy.xpValue,
-    position: { ...enemy.position },
+    type: "player.damaged",
+    damage,
+    hpAfter: world.state.hp,
+    source: {
+      kind: "contact",
+      enemyId: touchingEnemy.id,
+      enemyType: touchingEnemy.typeId,
+      ...(touchingEnemy.boss
+        ? { bossId: touchingEnemy.boss.bossId }
+        : {}),
+      ...(touchingEnemy.bossAttackSource ?? {}),
+    },
   });
 }
 
@@ -236,6 +367,7 @@ function applyPulseFocus(
   const bonusDamage = targetBonusDamage + lineBonusDamage;
   enemy.pulseFocusStacks = stackAfter;
   enemy.pulseFocusExpiresAt = world.state.elapsed + world.runtime.pulseFocusDuration;
+  enemy.pulseFocusExpiresAt += getRedlineFocusDurationBonus(world);
   return {
     applied: true,
     stackBefore,
@@ -255,6 +387,8 @@ function registerSpreadSweepHit(
 ): void {
   if (
     bullet.weaponType !== "spread" ||
+    (bullet.candidate &&
+      bullet.candidate.volleyKind !== "normal") ||
     world.runtime.spreadSweepDistinctTargets <= 0
   ) return;
 
@@ -303,22 +437,7 @@ function resolveEnemyProjectileHits(
 
     if (world.state.damageCooldown > 0) continue;
 
-    const hpBefore = world.state.hp;
-    world.state.hp = Math.max(0, hpBefore - projectile.damage);
-    const damage = hpBefore - world.state.hp;
-    if (damage > 0) {
-      world.state.damageCooldown = config.player.damageCooldown;
-      events.push({
-        type: "player.damaged",
-        damage,
-        hpAfter: world.state.hp,
-        source: {
-          kind: "projectile",
-          projectileId: projectile.id,
-          ...(projectile.source ?? {}),
-        },
-      });
-    }
+    resolveEnemyProjectilePlayerHit(world, projectile, config, events);
   }
 
   world.enemyProjectiles = remainingProjectiles;

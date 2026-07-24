@@ -10,6 +10,10 @@ export type AudioCueId =
   | "levelUp"
   | "upgrade"
   | "sweep"
+  | "protocolReady"
+  | "protocolActivate"
+  | "protocolGuard"
+  | "protocolReject"
   | "damage"
   | "gameOver";
 
@@ -50,7 +54,9 @@ type AudioCueRoutingDecision =
 const EVENT_CUES: Partial<Record<GameEvent["type"], AudioCueId>> = {
   "shot.fired": "shot",
   "enemy.hit": "hit",
+  "enemy.protocol.hit": "hit",
   "enemy.killed": "kill",
+  "enemy.protocol.killed": "kill",
   "pickup.collected": "pickup",
   "player.level_up": "levelUp",
   "extra.level_up": "levelUp",
@@ -77,6 +83,21 @@ const EVENT_CUES: Partial<Record<GameEvent["type"], AudioCueId>> = {
   "upgrade.selected": "upgrade",
   "extra.upgrade.selected": "upgrade",
   "spread.sweep.triggered": "sweep",
+  "ex.protocol.selected": "protocolReady",
+  "ex.evolution.selected": "protocolReady",
+  "ex.mastery.unlocked": "protocolReady",
+  "ex.limit_break.connected": "protocolReady",
+  "ex.special.armed": "protocolReady",
+  "ex.tidal.charged": "protocolReady",
+  "ex.breakwater.charged": "protocolReady",
+  "ex.aegis.perfect-guard.charged": "protocolReady",
+  "ex.special.activated": "protocolActivate",
+  "ex.relay.resolved": "protocolActivate",
+  "ex.rebound.restored": "protocolActivate",
+  "ex.aegis.intercepted": "protocolGuard",
+  "ex.special.rejected": "protocolReject",
+  "ex.special.expired": "protocolReject",
+  "ex.relay.blocked": "protocolReject",
   "player.damaged": "damage",
   "game.over": "gameOver",
 };
@@ -89,6 +110,10 @@ const CUE_VOLUMES: Record<AudioCueId, number> = {
   levelUp: 0.38,
   upgrade: 0.34,
   sweep: 0.26,
+  protocolReady: 0.28,
+  protocolActivate: 0.34,
+  protocolGuard: 0.3,
+  protocolReject: 0.24,
   damage: 0.38,
   gameOver: 0.44,
 };
@@ -101,6 +126,10 @@ const CUE_ASSETS: Record<AudioCueId, readonly string[]> = {
   levelUp: ["levelUp"],
   upgrade: ["upgrade"],
   sweep: ["upgrade"],
+  protocolReady: ["protocolReady"],
+  protocolActivate: ["protocolActivate"],
+  protocolGuard: ["protocolGuard"],
+  protocolReject: ["protocolReject"],
   damage: ["damage", "damageAlt1"],
   gameOver: ["gameOver"],
 };
@@ -113,6 +142,10 @@ const CUE_DETUNE: Record<AudioCueId, readonly number[]> = {
   levelUp: [0],
   upgrade: [0],
   sweep: [120],
+  protocolReady: [0],
+  protocolActivate: [0],
+  protocolGuard: [0],
+  protocolReject: [0],
   damage: [0, -14],
   gameOver: [0],
 };
@@ -125,6 +158,10 @@ const CUE_COOLDOWNS: Record<AudioCueId, number> = {
   levelUp: 150,
   upgrade: 150,
   sweep: 120,
+  protocolReady: 120,
+  protocolActivate: 90,
+  protocolGuard: 45,
+  protocolReject: 120,
   damage: 100,
   gameOver: 300,
 };

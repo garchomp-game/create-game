@@ -1,4 +1,5 @@
 import { UPGRADE_IDS } from "../domain/types";
+import { createEmptyExProtocolRunStats } from "../domain/exProtocolTelemetry";
 import type {
   SimulationConfig,
   WeaponComparisonRunStats,
@@ -180,6 +181,7 @@ export function createWorld(config: SimulationConfig): WorldState {
         spread: createWeaponComparisonRunStats(),
         pierce: createWeaponComparisonRunStats(),
       },
+      exProtocolMetrics: createEmptyExProtocolRunStats(),
     },
     analytics: {
       activeVolleys: {},

@@ -8,6 +8,7 @@
     "build": "tsc --noEmit && vite build",
     "build:deploy": "npm run build && npm run verify:deploy",
     "build:observation": "tsc --noEmit && VITE_ARENA_ENABLE_TEST_HOOKS=1 vite build",
+    "build:deploy:ex-protocols": "VITE_ARENA_EX_PROTOCOL_CANDIDATE=1 npm run build:deploy",
     "build:e2e": "tsc --noEmit && VITE_ARENA_FIXED_SEED=1 VITE_ARENA_RUN_ORIGIN=test VITE_ARENA_ENABLE_TEST_HOOKS=1 VITE_PHASER_PRESERVE_DRAWING_BUFFER=1 vite build",
     "audio:generate": "node scripts/generate-audio.mjs",
     "deploy:cloudflare": "npm run build:deploy && wrangler deploy",
@@ -27,7 +28,17 @@
     "prepreview:e2e": "npm run build:e2e",
     "preview:e2e": "vite preview --host 0.0.0.0",
     "probe:v07": "vitest run scripts/v07-expedition-probe.test.ts --reporter=verbose",
-    "probe:v07:repair": "ARENA_PROBE_KIND=repair-budget vitest run scripts/v07-expedition-probe.test.ts --reporter=verbose"
+    "probe:v07:repair": "ARENA_PROBE_KIND=repair-budget vitest run scripts/v07-expedition-probe.test.ts --reporter=verbose",
+    "test:ex-protocols:paths": "vitest run scripts/ex-protocol-paths.test.ts --maxWorkers=1 --reporter=verbose",
+    "test:ex-protocols:determinism": "vitest run scripts/ex-protocol-replay-tape.test.ts scripts/ex-protocol-determinism.test.ts --maxWorkers=1 --reporter=verbose",
+    "test:ex-protocols:record-migration": "vitest run src/adapters/storage/legacyRunRecordDecoder.test.ts src/adapters/storage/runRecordV3Codec.test.ts src/adapters/storage/LocalRunRecordStoreV3.test.ts --maxWorkers=1 --reporter=verbose",
+    "test:ex-protocols:probe": "vitest run scripts/ex-protocol-probe-policy.test.ts scripts/ex-protocol-balance-probe.test.ts --maxWorkers=1 --reporter=verbose",
+    "test:ex-protocols:probe:release": "ARENA_EX_PROTOCOL_FULL_PROBE=1 vitest run scripts/ex-protocol-balance-probe.test.ts --maxWorkers=1 --reporter=verbose",
+    "test:ex-protocols:soak": "vitest run scripts/ex-protocol-soak.test.ts --maxWorkers=1 --reporter=verbose",
+    "test:ex-protocols:soak:release": "ARENA_EX_PROTOCOL_FULL_SOAK=1 vitest run scripts/ex-protocol-soak.test.ts --maxWorkers=1 --reporter=verbose",
+    "test:ex-protocols:final-exposure": "vitest run scripts/ex-protocol-final-exposure.test.ts --maxWorkers=1 --reporter=verbose",
+    "test:ex-protocols:final-exposure:release": "ARENA_EX_PROTOCOL_FINAL_EXPOSURE_FULL=1 vitest run scripts/ex-protocol-final-exposure.test.ts --maxWorkers=1 --reporter=verbose",
+    "test:e2e:ex-protocols": "VITE_ARENA_EX_PROTOCOL_CANDIDATE=1 playwright test tests/e2e/arena-ex-protocol-ui.spec.ts --project=chrome --workers=1"
   },
   "dependencies": {
     "@vitejs/plugin-basic-ssl": "^2.1.0",

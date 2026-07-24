@@ -29,6 +29,14 @@ import {
 import { getWaveBand } from "./waveDirector";
 import { getThreatTier } from "./threatDirector";
 import { getDifficultyElapsed } from "./difficultyClock";
+import {
+  chooseExProtocol,
+  chooseExProtocolEvolution,
+} from "./exProtocolProgression";
+import { updateExProtocolSpecialPhase } from "./systems/exProtocolSystem";
+import { isAegisFanSelected } from "./protocols/aegisFan";
+import { resolveAegisCollisionFrame } from "./systems/aegisCollisionSystem";
+import type { AegisCollisionFrameStats } from "./systems/aegisCollisionSystem";
 
 export function stepWorld(
   world: WorldState,
@@ -89,6 +97,32 @@ export function stepWorld(
     return collectResult(world, dt, rawDt, config, events);
   }
 
+  if (world.state.status === "protocolSelect") {
+    if (input.upgradeChoicePressed !== null) {
+      chooseExProtocol(
+        world,
+        input.upgradeChoicePressed,
+        config,
+        events,
+      );
+      updateRunStats(world, events);
+    }
+    return collectResult(world, 0, rawDt, config, events);
+  }
+
+  if (world.state.status === "evolutionSelect") {
+    if (input.upgradeChoicePressed !== null) {
+      chooseExProtocolEvolution(
+        world,
+        input.upgradeChoicePressed,
+        config,
+        events,
+      );
+      updateRunStats(world, events);
+    }
+    return collectResult(world, 0, rawDt, config, events);
+  }
+
   if (world.state.status === "upgradeSelect") {
     if (input.upgradeChoicePressed !== null) {
       chooseUpgrade(world, input.upgradeChoicePressed, config, events);
@@ -142,21 +176,48 @@ export function stepWorld(
     config,
   );
   updateArenaCollapse(world, dt, config, events);
+  updateExProtocolSpecialPhase(
+    world,
+    input.specialPressed === true,
+    config,
+    events,
+  );
   updateShooting(world, input.shootHeld, config, events);
-  const bulletMotions = updateBullets(world, dt, config);
+  const useAegisCollisionArbitration =
+    config.features.exProtocols && isAegisFanSelected(world);
+  const bulletMotions = useAegisCollisionArbitration
+    ? undefined
+    : updateBullets(world, dt, config);
   updateSpawner(world, dt, random.spawn, config, events);
   if ((world.eliteState?.commanderIds.length ?? 0) > 0) {
     updateCommanderElites(world, random.spawn, config, events);
   }
   updateEnemies(world, dt, config, events);
-  updateEnemyProjectiles(world, dt, config);
-  resolveCombat(world, config, events, bulletMotions);
+  let aegisCollisionStats: AegisCollisionFrameStats | null = null;
+  if (useAegisCollisionArbitration) {
+    aegisCollisionStats = resolveAegisCollisionFrame(
+      world,
+      dt,
+      config,
+      events,
+    );
+  } else {
+    updateEnemyProjectiles(world, dt, config);
+    resolveCombat(world, config, events, bulletMotions);
+  }
   updatePickups(world, config, events, dt);
   updateLevelProgression(world, random.upgrade, config, events);
   updateGameOver(world, events);
   updateRunStats(world, events);
 
-  return collectResult(world, dt, rawDt, config, events);
+  return collectResult(
+    world,
+    dt,
+    rawDt,
+    config,
+    events,
+    aegisCollisionStats,
+  );
 }
 
 function collectResult(
@@ -165,6 +226,7 @@ function collectResult(
   rawDt: number,
   config: SimulationConfig,
   events: GameEvent[],
+  aegisCollisionStats: AegisCollisionFrameStats | null = null,
 ): StepWorldResult {
   const difficultyElapsed = getDifficultyElapsed(world);
   const wave = getWaveBand(config, difficultyElapsed);
@@ -195,6 +257,38 @@ function collectResult(
         name: "endless.collapse_stage",
         value: world.encounter.collapse.stage,
       },
+      {
+        type: "gauge",
+        name: "ex.protocol.activation_trackers",
+        value: countExProtocolActivationTrackers(world),
+      },
+      {
+        type: "gauge",
+        name: "ex.aegis.collision_candidates",
+        value: aegisCollisionStats?.candidateCount ?? 0,
+      },
+      {
+        type: "gauge",
+        name: "ex.aegis.interception_candidates",
+        value:
+          aegisCollisionStats?.interceptionCandidateCount ?? 0,
+      },
+      {
+        type: "gauge",
+        name: "ex.aegis.collision_resolved",
+        value: aegisCollisionStats?.resolvedEventCount ?? 0,
+      },
     ],
   };
+}
+
+function countExProtocolActivationTrackers(world: WorldState): number {
+  const progression = world.progression.exProtocol;
+  if (
+    progression?.status !== "selected" ||
+    progression.runtime.kind !== "full-span-tidal-sweep"
+  ) {
+    return 0;
+  }
+  return Object.keys(progression.runtime.activations).length;
 }
