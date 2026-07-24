@@ -1118,3 +1118,19 @@ PR #115をmain `59cffbf7cddf`へ統合し、Cloudflare Version
 `https://191dd49a-arena-core.garchomp-game.workers.dev`で通常配布smokeを
 完了し、版情報、通常run、保存、再挑戦、Pause、公開情報とerror 0件を確認した。
 production trafficは変更していない。
+
+## 2026-07-24: 戦闘オブジェクトPhase Aを現行visualのfixtureへ限定する
+
+決定: #98はT1人間結果を待つPhase Bと、先行可能なPhase Aを分離する。
+Phase Aではdebug/test専用`object-semantics-control`を追加し、敵本体、敵弾、
+自機弾、XP、REPAIRの単体、敵弾と取得物の重なり、5種重なり、
+magnet距離110 / 92 / 52 / 22pxを現行visualのまま固定する。
+
+- desktop、portrait、landscape-wideでcolor / grayscaleを保存する。
+- grayscaleはtest後処理であり、製品runtimeへfilterを追加しない。
+- `PhaserArenaWorldView`、asset、audio、simulation、magnet、hitbox、記録を変更しない。
+- Phase Aの自動greenは現状比較の準備であり、runtime visual採用の根拠にしない。
+- T1で逆方向誤認が残った対象だけをPhase Bへ進め、複数visual規則を一度に変えない。
+
+5秒clipと人間分類票は凍結SHAのPhase A画像に続く手動証拠とし、
+未取得のまま#98を完了扱いにしない。
