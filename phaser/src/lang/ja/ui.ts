@@ -77,7 +77,7 @@ export const uiText: UiText = {
     move: {
       title: "移動",
       instruction: "WASD / 矢印キーで移動",
-      briefing: "光の円まで移動します。\nEscでいつでも中断できます。",
+      briefing: "キーを押して自機を動かします。\nEscでいつでも中断できます。",
       actionLabel: "移動を始める",
       hint1: "押している方向へ自機が移動します",
       hint2: "同じ場所に留まらず、64px以上移動してください",

@@ -34,7 +34,7 @@ describe("ArenaTutorialPresenter", () => {
       target: null,
       progress: null,
     });
-    expect(view?.briefing).toContain("光の円まで移動します");
+    expect(view?.briefing).toContain("キーを押して自機を動かします");
   });
 
   it("reveals staged hints and a guide only after their thresholds", () => {

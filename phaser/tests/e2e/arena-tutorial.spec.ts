@@ -16,7 +16,7 @@ test.describe("basic Training", () => {
     await clickCanvasLogical(page, 480, 393);
     await expectTrainingStep(page, "move");
     await expect(page.locator(".arena-tutorial-dialog--visible")).toContainText(
-      "光の円まで移動します",
+      "キーを押して自機を動かします",
     );
     await expect
       .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().runContext))
