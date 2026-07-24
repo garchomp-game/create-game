@@ -107,6 +107,26 @@ runtime候補は`dc174ec`。
 製品不具合として再現していないが、T1.1の人間結果へ混ぜず、
 E2E安定性の残存riskとして記録する。
 
+## main統合と固定Preview
+
+PR #115をmainへ統合し、merge commit
+`59cffbf7cddf115c893566c2b288295c13bfc75d`から通常配布buildを作成した。
+production trafficへ配分せず、次のCloudflare Version Previewを
+T1.1の人間gateに使う。
+
+| 項目 | 値 |
+| --- | --- |
+| Preview URL | `https://191dd49a-arena-core.garchomp-game.workers.dev` |
+| Cloudflare Version ID | `191dd49a-5b08-4edc-bfa1-0b7cc0cf0260` |
+| app / ruleset | `0.7.0` / `phaser-v0.7.0-final-expedition-rc6` |
+| build commit | `59cffbf7cddf` |
+| Endless run ruleset | `phaser-v0.6.8-pulse-boundary-ricochet` |
+| 実URL確認日 | 2026-07-24 |
+
+通常配布smokeで版情報、タイトル、設定、ランキング、履歴、武器選択、
+自然終了、RunRecord、再挑戦、Pause、beta情報を確認し、
+console、page、request、HTTP errorは0件だった。
+
 ## 人間gate
 
 [#81](https://github.com/garchomp-game/create-game/issues/81)は
@@ -114,7 +134,7 @@ E2E安定性の残存riskとして記録する。
 旧Preview `v08-training-t1-contact-2247bd9`は9課題実装の履歴証拠だが、
 固定`8/8`とchecklist遮蔽を含むため、新しい初心者T1の母数へ使わない。
 
-次はT1.1のexact HEADからimmutable Previewを作り、事前教材なしで
+新しい初心者T1は上記固定Previewだけを使い、事前教材なしで
 介助なし完了、敵本体・敵弾・XP・REPAIR分類、強化説明、
 Endlessへの転移を観測する。参加者結果が出るまで次を開始しない。
 

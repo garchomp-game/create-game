@@ -1112,3 +1112,9 @@ runtime候補は`dc174ec`。全unit 520件、production build、transferの
 landscape / portrait visual、9課題公開入力E2Eを確認した。
 次の採否ownerは#81の人間raw countであり、それまでは#98 runtime visualと
 O1入口の製品defaultを確定しない。
+
+PR #115をmain `59cffbf7cddf`へ統合し、Cloudflare Version
+`191dd49a-5b08-4edc-bfa1-0b7cc0cf0260`としてuploadした。固定Preview
+`https://191dd49a-arena-core.garchomp-game.workers.dev`で通常配布smokeを
+完了し、版情報、通常run、保存、再挑戦、Pause、公開情報とerror 0件を確認した。
+production trafficは変更していない。
