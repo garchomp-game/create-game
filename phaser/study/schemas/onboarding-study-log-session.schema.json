@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arena-core.local/schemas/onboarding-study-log-session.v1.json",
+  "title": "Arena Core Onboarding Study Log Session v1",
+  "type": "array",
+  "minItems": 1,
+  "maxItems": 256,
+  "items": {
+    "$ref": "https://arena-core.local/schemas/onboarding-study-log.v1.json"
+  }
+}

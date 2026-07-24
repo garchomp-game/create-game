@@ -1,0 +1,294 @@
+{
+  "schemaVersion": "study-definition.v1",
+  "definitionVersion": 1,
+  "sessionKind": "full-training",
+  "expectedStepIds": [
+    "move",
+    "navigate",
+    "contactDamage",
+    "aimAndKill",
+    "collectXp",
+    "chooseUpgrade",
+    "dodgeProjectile",
+    "collectRepair",
+    "transferDrill"
+  ],
+  "scenes": [
+    {
+      "sceneId": "move",
+      "purpose": "move"
+    },
+    {
+      "sceneId": "navigate",
+      "purpose": "navigate"
+    },
+    {
+      "sceneId": "contactDamage",
+      "purpose": "contact-damage"
+    },
+    {
+      "sceneId": "aimAndKill",
+      "purpose": "aim-and-kill"
+    },
+    {
+      "sceneId": "collectXp",
+      "purpose": "xp"
+    },
+    {
+      "sceneId": "chooseUpgrade",
+      "purpose": "upgrade"
+    },
+    {
+      "sceneId": "dodgeProjectile",
+      "purpose": "dodge"
+    },
+    {
+      "sceneId": "collectRepair",
+      "purpose": "repair"
+    },
+    {
+      "sceneId": "transferDrill",
+      "purpose": "transfer"
+    }
+  ],
+  "steps": [
+    {
+      "stepId": "move",
+      "sceneId": "move",
+      "fixtureId": "tutorial-player",
+      "relevantActionIds": [
+        "move"
+      ],
+      "meaningfulProgressCriteria": [
+        "movement-distance-increased"
+      ],
+      "wrongActionReasons": [
+        "no-input",
+        "wrong-binding"
+      ],
+      "successEvidenceTypes": [
+        "movement-distance-met"
+      ],
+      "guardParameters": [
+        {
+          "key": "required-distance-px",
+          "value": 64
+        }
+      ]
+    },
+    {
+      "stepId": "navigate",
+      "sceneId": "navigate",
+      "fixtureId": "tutorial-navigation-zone",
+      "relevantActionIds": [
+        "move"
+      ],
+      "meaningfulProgressCriteria": [
+        "distance-to-zone-reduced"
+      ],
+      "wrongActionReasons": [
+        "wrong-direction"
+      ],
+      "successEvidenceTypes": [
+        "destination-entered"
+      ],
+      "guardParameters": [
+        {
+          "key": "zone-radius-px",
+          "value": 32
+        }
+      ]
+    },
+    {
+      "stepId": "contactDamage",
+      "sceneId": "contactDamage",
+      "fixtureId": "tutorial-contact-enemy",
+      "relevantActionIds": [
+        "observe-contact"
+      ],
+      "meaningfulProgressCriteria": [
+        "enemy-contact-progressed"
+      ],
+      "wrongActionReasons": [],
+      "successEvidenceTypes": [
+        "contact-damage-taken"
+      ],
+      "guardParameters": [
+        {
+          "key": "damage-source",
+          "value": "contact"
+        }
+      ]
+    },
+    {
+      "stepId": "aimAndKill",
+      "sceneId": "aimAndKill",
+      "fixtureId": "tutorial-combat-enemy",
+      "relevantActionIds": [
+        "aim",
+        "shoot"
+      ],
+      "meaningfulProgressCriteria": [
+        "target-damaged"
+      ],
+      "wrongActionReasons": [
+        "wrong-target",
+        "wrong-direction"
+      ],
+      "successEvidenceTypes": [
+        "target-defeated"
+      ],
+      "guardParameters": []
+    },
+    {
+      "stepId": "collectXp",
+      "sceneId": "collectXp",
+      "fixtureId": "tutorial-xp-pickup",
+      "relevantActionIds": [
+        "move"
+      ],
+      "meaningfulProgressCriteria": [
+        "pickup-distance-reduced"
+      ],
+      "wrongActionReasons": [
+        "wrong-target",
+        "wrong-direction"
+      ],
+      "successEvidenceTypes": [
+        "xp-collected"
+      ],
+      "guardParameters": []
+    },
+    {
+      "stepId": "chooseUpgrade",
+      "sceneId": "chooseUpgrade",
+      "fixtureId": "tutorial-upgrade-choice",
+      "relevantActionIds": [
+        "choose-upgrade"
+      ],
+      "meaningfulProgressCriteria": [
+        "choice-focused"
+      ],
+      "wrongActionReasons": [
+        "wrong-binding",
+        "wrong-target"
+      ],
+      "successEvidenceTypes": [
+        "upgrade-chosen"
+      ],
+      "guardParameters": []
+    },
+    {
+      "stepId": "dodgeProjectile",
+      "sceneId": "dodgeProjectile",
+      "fixtureId": "tutorial-enemy-projectile",
+      "relevantActionIds": [
+        "move"
+      ],
+      "meaningfulProgressCriteria": [
+        "danger-distance-increased"
+      ],
+      "wrongActionReasons": [
+        "wrong-direction",
+        "unsafe-action"
+      ],
+      "successEvidenceTypes": [
+        "projectile-avoided"
+      ],
+      "guardParameters": [
+        {
+          "key": "required-passes",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "stepId": "collectRepair",
+      "sceneId": "collectRepair",
+      "fixtureId": "tutorial-repair-pickup",
+      "relevantActionIds": [
+        "move"
+      ],
+      "meaningfulProgressCriteria": [
+        "pickup-distance-reduced"
+      ],
+      "wrongActionReasons": [
+        "wrong-target",
+        "wrong-direction"
+      ],
+      "successEvidenceTypes": [
+        "repair-collected"
+      ],
+      "guardParameters": []
+    },
+    {
+      "stepId": "transferDrill",
+      "sceneId": "transferDrill",
+      "fixtureId": "tutorial-transfer-drill",
+      "relevantActionIds": [
+        "move",
+        "aim",
+        "shoot"
+      ],
+      "meaningfulProgressCriteria": [
+        "enemies-remaining-reduced",
+        "pickups-remaining-reduced"
+      ],
+      "wrongActionReasons": [
+        "wrong-target",
+        "unsafe-action",
+        "repeated-ineffective-action"
+      ],
+      "successEvidenceTypes": [
+        "transfer-drill-cleared"
+      ],
+      "guardParameters": [
+        {
+          "key": "required-kills",
+          "value": 3
+        },
+        {
+          "key": "remaining-pickups",
+          "value": 0
+        }
+      ]
+    }
+  ],
+  "o1ScopePolicy": {
+    "conditionalRepairFifthEnabled": false,
+    "approvalDecisionId": null,
+    "maximumStepsPerScene": 2
+  },
+  "hintPolicy": {
+    "maximumLevel": 2,
+    "h1ActiveNoProgressMs": 5000,
+    "h2ActiveNoProgressMs": 5000,
+    "repeatedWrongActionThreshold": 2,
+    "excludedContexts": [
+      "pause",
+      "blur",
+      "loading",
+      "choice"
+    ]
+  },
+  "inputPolicy": {
+    "bindingSource": "runtime-binding-snapshot",
+    "allowedInputPresets": [
+      "keyboard-mouse"
+    ],
+    "autoFirePolicy": "supported"
+  },
+  "entryPolicy": {
+    "enabled": false
+  },
+  "contextPromptPolicy": {
+    "enabled": false,
+    "prompts": []
+  },
+  "retentionPolicy": {
+    "enabled": false,
+    "modeSource": "selected-mode",
+    "requiredCheckpointSeconds": [],
+    "requiredBehaviors": []
+  }
+}

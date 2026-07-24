@@ -1,0 +1,304 @@
+[
+  {
+    "schemaVersion": "onboarding-study-log.v1",
+    "eventId": "00000001-0000-4000-8000-000000000001",
+    "sequence": 0,
+    "sessionId": "11111111-1111-4111-8111-111111111111",
+    "assignmentId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "occurredAt": "2026-07-24T00:00:00.000Z",
+    "activeElapsedMs": 0,
+    "eventName": "onboarding_variant_assigned",
+    "study": {
+      "studyId": "o1-entry-comparison-v1",
+      "protocolVersion": 1,
+      "hypothesisId": "O1-ENTRY-001",
+      "cellId": "O1-A",
+      "arm": "A",
+      "sessionKind": "o1",
+      "definitionDigest": "sha256:77731c5ec1c4abcb37bf5ec97722c2426b39c08665555609f6267f11db79b452"
+    },
+    "build": {
+      "headSha": "2222222222222222222222222222222222222222",
+      "buildMarker": "example-candidate-2222222",
+      "artifactDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "appVersion": "example-candidate",
+      "rulesetVersion": "example-ruleset"
+    },
+    "context": {
+      "onboardingVersion": 1,
+      "stepId": null,
+      "attempt": 0,
+      "hintLevel": 0,
+      "selectedMode": "endless",
+      "autoFire": true,
+      "inputPreset": "keyboard-mouse",
+      "fullscreen": false,
+      "viewport": "1920x1080",
+      "uiScale": 100,
+      "highContrast": false
+    },
+    "payload": {
+      "allocationMethod": "manual-randomization",
+      "eligibility": "eligible",
+      "arm": "A"
+    }
+  },
+  {
+    "schemaVersion": "onboarding-study-log.v1",
+    "eventId": "00000002-0000-4000-8000-000000000002",
+    "sequence": 1,
+    "sessionId": "11111111-1111-4111-8111-111111111111",
+    "assignmentId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "occurredAt": "2026-07-24T00:00:01.000Z",
+    "activeElapsedMs": 0,
+    "eventName": "onboarding_offer_shown",
+    "study": {
+      "studyId": "o1-entry-comparison-v1",
+      "protocolVersion": 1,
+      "hypothesisId": "O1-ENTRY-001",
+      "cellId": "O1-A",
+      "arm": "A",
+      "sessionKind": "o1",
+      "definitionDigest": "sha256:77731c5ec1c4abcb37bf5ec97722c2426b39c08665555609f6267f11db79b452"
+    },
+    "build": {
+      "headSha": "2222222222222222222222222222222222222222",
+      "buildMarker": "example-candidate-2222222",
+      "artifactDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "appVersion": "example-candidate",
+      "rulesetVersion": "example-ruleset"
+    },
+    "context": {
+      "onboardingVersion": 1,
+      "stepId": null,
+      "attempt": 0,
+      "hintLevel": 0,
+      "selectedMode": "endless",
+      "autoFire": true,
+      "inputPreset": "keyboard-mouse",
+      "fullscreen": false,
+      "viewport": "1920x1080",
+      "uiScale": 100,
+      "highContrast": false
+    },
+    "payload": {
+      "primaryCtaId": "start-basic-check",
+      "skipVisible": true,
+      "selectedMode": "endless"
+    }
+  },
+  {
+    "schemaVersion": "onboarding-study-log.v1",
+    "eventId": "00000003-0000-4000-8000-000000000003",
+    "sequence": 2,
+    "sessionId": "11111111-1111-4111-8111-111111111111",
+    "assignmentId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "occurredAt": "2026-07-24T00:00:02.000Z",
+    "activeElapsedMs": 0,
+    "eventName": "onboarding_started",
+    "study": {
+      "studyId": "o1-entry-comparison-v1",
+      "protocolVersion": 1,
+      "hypothesisId": "O1-ENTRY-001",
+      "cellId": "O1-A",
+      "arm": "A",
+      "sessionKind": "o1",
+      "definitionDigest": "sha256:77731c5ec1c4abcb37bf5ec97722c2426b39c08665555609f6267f11db79b452"
+    },
+    "build": {
+      "headSha": "2222222222222222222222222222222222222222",
+      "buildMarker": "example-candidate-2222222",
+      "artifactDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "appVersion": "example-candidate",
+      "rulesetVersion": "example-ruleset"
+    },
+    "context": {
+      "onboardingVersion": 1,
+      "stepId": null,
+      "attempt": 0,
+      "hintLevel": 0,
+      "selectedMode": "endless",
+      "autoFire": true,
+      "inputPreset": "keyboard-mouse",
+      "fullscreen": false,
+      "viewport": "1920x1080",
+      "uiScale": 100,
+      "highContrast": false
+    },
+    "payload": {
+      "startSource": "primary-cta"
+    }
+  },
+  {
+    "schemaVersion": "onboarding-study-log.v1",
+    "eventId": "00000004-0000-4000-8000-000000000004",
+    "sequence": 3,
+    "sessionId": "11111111-1111-4111-8111-111111111111",
+    "assignmentId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "occurredAt": "2026-07-24T00:00:03.000Z",
+    "activeElapsedMs": 1000,
+    "eventName": "onboarding_step_started",
+    "study": {
+      "studyId": "o1-entry-comparison-v1",
+      "protocolVersion": 1,
+      "hypothesisId": "O1-ENTRY-001",
+      "cellId": "O1-A",
+      "arm": "A",
+      "sessionKind": "o1",
+      "definitionDigest": "sha256:77731c5ec1c4abcb37bf5ec97722c2426b39c08665555609f6267f11db79b452"
+    },
+    "build": {
+      "headSha": "2222222222222222222222222222222222222222",
+      "buildMarker": "example-candidate-2222222",
+      "artifactDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "appVersion": "example-candidate",
+      "rulesetVersion": "example-ruleset"
+    },
+    "context": {
+      "onboardingVersion": 1,
+      "stepId": "move-to-beacon",
+      "attempt": 1,
+      "hintLevel": 0,
+      "selectedMode": "endless",
+      "autoFire": true,
+      "inputPreset": "keyboard-mouse",
+      "fullscreen": false,
+      "viewport": "1920x1080",
+      "uiScale": 100,
+      "highContrast": false
+    },
+    "payload": {
+      "stepId": "move-to-beacon",
+      "attempt": 1
+    }
+  },
+  {
+    "schemaVersion": "onboarding-study-log.v1",
+    "eventId": "00000005-0000-4000-8000-000000000005",
+    "sequence": 4,
+    "sessionId": "11111111-1111-4111-8111-111111111111",
+    "assignmentId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "occurredAt": "2026-07-24T00:00:05.000Z",
+    "activeElapsedMs": 3000,
+    "eventName": "onboarding_step_succeeded",
+    "study": {
+      "studyId": "o1-entry-comparison-v1",
+      "protocolVersion": 1,
+      "hypothesisId": "O1-ENTRY-001",
+      "cellId": "O1-A",
+      "arm": "A",
+      "sessionKind": "o1",
+      "definitionDigest": "sha256:77731c5ec1c4abcb37bf5ec97722c2426b39c08665555609f6267f11db79b452"
+    },
+    "build": {
+      "headSha": "2222222222222222222222222222222222222222",
+      "buildMarker": "example-candidate-2222222",
+      "artifactDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "appVersion": "example-candidate",
+      "rulesetVersion": "example-ruleset"
+    },
+    "context": {
+      "onboardingVersion": 1,
+      "stepId": "move-to-beacon",
+      "attempt": 1,
+      "hintLevel": 0,
+      "selectedMode": "endless",
+      "autoFire": true,
+      "inputPreset": "keyboard-mouse",
+      "fullscreen": false,
+      "viewport": "1920x1080",
+      "uiScale": 100,
+      "highContrast": false
+    },
+    "payload": {
+      "evidenceType": "destination-entered",
+      "sourceEventId": "domain-event-0001",
+      "fixtureEntityId": "o1-beacon-1"
+    }
+  },
+  {
+    "schemaVersion": "onboarding-study-log.v1",
+    "eventId": "00000006-0000-4000-8000-000000000006",
+    "sequence": 5,
+    "sessionId": "11111111-1111-4111-8111-111111111111",
+    "assignmentId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "occurredAt": "2026-07-24T00:00:06.000Z",
+    "activeElapsedMs": 4000,
+    "eventName": "onboarding_completed",
+    "study": {
+      "studyId": "o1-entry-comparison-v1",
+      "protocolVersion": 1,
+      "hypothesisId": "O1-ENTRY-001",
+      "cellId": "O1-A",
+      "arm": "A",
+      "sessionKind": "o1",
+      "definitionDigest": "sha256:77731c5ec1c4abcb37bf5ec97722c2426b39c08665555609f6267f11db79b452"
+    },
+    "build": {
+      "headSha": "2222222222222222222222222222222222222222",
+      "buildMarker": "example-candidate-2222222",
+      "artifactDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "appVersion": "example-candidate",
+      "rulesetVersion": "example-ruleset"
+    },
+    "context": {
+      "onboardingVersion": 1,
+      "stepId": null,
+      "attempt": 0,
+      "hintLevel": 0,
+      "selectedMode": "endless",
+      "autoFire": true,
+      "inputPreset": "keyboard-mouse",
+      "fullscreen": false,
+      "viewport": "1920x1080",
+      "uiScale": 100,
+      "highContrast": false
+    },
+    "payload": {
+      "totalActiveElapsedMs": 4000,
+      "maxHint": 0
+    }
+  },
+  {
+    "schemaVersion": "onboarding-study-log.v1",
+    "eventId": "00000007-0000-4000-8000-000000000007",
+    "sequence": 6,
+    "sessionId": "11111111-1111-4111-8111-111111111111",
+    "assignmentId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "occurredAt": "2026-07-24T00:00:07.000Z",
+    "activeElapsedMs": 4000,
+    "eventName": "study_session_ended",
+    "study": {
+      "studyId": "o1-entry-comparison-v1",
+      "protocolVersion": 1,
+      "hypothesisId": "O1-ENTRY-001",
+      "cellId": "O1-A",
+      "arm": "A",
+      "sessionKind": "o1",
+      "definitionDigest": "sha256:77731c5ec1c4abcb37bf5ec97722c2426b39c08665555609f6267f11db79b452"
+    },
+    "build": {
+      "headSha": "2222222222222222222222222222222222222222",
+      "buildMarker": "example-candidate-2222222",
+      "artifactDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "appVersion": "example-candidate",
+      "rulesetVersion": "example-ruleset"
+    },
+    "context": {
+      "onboardingVersion": 1,
+      "stepId": null,
+      "attempt": 0,
+      "hintLevel": 0,
+      "selectedMode": "endless",
+      "autoFire": true,
+      "inputPreset": "keyboard-mouse",
+      "fullscreen": false,
+      "viewport": "1920x1080",
+      "uiScale": 100,
+      "highContrast": false
+    },
+    "payload": {
+      "terminalStatus": "completed"
+    }
+  }
+]

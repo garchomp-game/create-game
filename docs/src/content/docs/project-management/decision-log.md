@@ -1134,3 +1134,17 @@ magnet距離110 / 92 / 52 / 22pxを現行visualのまま固定する。
 
 5秒clipと人間分類票は凍結SHAのPhase A画像に続く手動証拠とし、
 未取得のまま#98を完了扱いにしない。
+
+## 2026-07-24: StudyLogを製品記録から分離した開発契約として導入する
+
+決定: Onboarding候補の観測契約は`phaser/study/`へ隔離し、schema、
+session invariant validator、definition digest、fixtureだけを先行導入する。
+
+- 製品runtimeからimportしない。
+- RunRecord、Profile、ranking、simulation、外部telemetryを変更しない。
+- 現行full Trainingの9課題IDと順序だけをVitestで製品sourceへ結び付ける。
+- 4 session kind、O1両arm、negative mutationの自己テストをCIへ追加する。
+- runtime instrumentationは凍結candidateとhuman protocolが決まった後の別PRとする。
+
+受領済み`Arena-Core-Onboarding-UX-Flow-Readiness-Pack-20260724`は同梱validatorで
+pack validationとcontract self-testがgreenであることを確認してから取り込んだ。

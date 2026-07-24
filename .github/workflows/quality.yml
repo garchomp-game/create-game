@@ -35,6 +35,7 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      - run: npm run study:contract
       - run: npm run build:deploy
 
   docs-build:

@@ -1,0 +1,88 @@
+{
+  "schemaVersion": "candidate-build-manifest.v1",
+  "studyId": "o1-entry-comparison-v1",
+  "studyLogProtocolVersion": 1,
+  "humanProtocolVersion": 1,
+  "hypothesisId": "O1-ENTRY-001",
+  "cellId": "O1-A",
+  "arm": "A",
+  "sessionKind": "o1",
+  "studyDefinitionPath": "STUDY_DEFINITION.example.json",
+  "studyDefinitionDigest": "sha256:77731c5ec1c4abcb37bf5ec97722c2426b39c08665555609f6267f11db79b452",
+  "expectedStepIds": [
+    "move-to-beacon"
+  ],
+  "assignmentRule": {
+    "method": "manual-randomization",
+    "occursBeforeOffer": true,
+    "stickyWithinAssignment": true,
+    "eligibilityRule": "Fresh Profile; no prior T1.1 or O1 exposure"
+  },
+  "eligibility": [
+    "Fresh Profile",
+    "No prior T1.1 exposure",
+    "No prior O1 exposure"
+  ],
+  "independentVariable": "Entry CTA only",
+  "diffAllowlist": [
+    "entryVariant"
+  ],
+  "fixedVariables": [
+    "O1 content",
+    "visual tokens",
+    "success guards",
+    "hint timing",
+    "selected mode"
+  ],
+  "primaryMetric": "Unaided Standard transfer per all assigned",
+  "guardMetrics": [
+    "abandon",
+    "skip findability",
+    "experienced-player friction"
+  ],
+  "denominator": "All assigned participants",
+  "minimumFormativeReach": "At least five classification-reached participants in this arm",
+  "immediateStop": [
+    "Any entry-external difference between O1-A and O1-B",
+    "Any Standard simulation digest difference",
+    "Any movement-unknown progression block"
+  ],
+  "adoptCriteria": [
+    "All formative quality gates pass",
+    "Preregistered practical transfer difference is met",
+    "No guard metric is materially worse"
+  ],
+  "reviseCriteria": [
+    "Quality gates pass but practical difference is inconclusive",
+    "p90 exceeds the preregistered design target"
+  ],
+  "rejectCriteria": [
+    "Any inverse enemy-projectile and pickup classification",
+    "Any reproducible Profile or RunRecord corruption"
+  ],
+  "baseline": {
+    "headSha": "1111111111111111111111111111111111111111",
+    "buildMarker": "example-baseline-1111111",
+    "artifactDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "appVersion": "example-baseline",
+    "rulesetVersion": "example-ruleset"
+  },
+  "candidate": {
+    "headSha": "2222222222222222222222222222222222222222",
+    "buildMarker": "example-candidate-2222222",
+    "artifactDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "appVersion": "example-candidate",
+    "rulesetVersion": "example-ruleset"
+  },
+  "mergeBaseSha": "3333333333333333333333333333333333333333",
+  "lockfileDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+  "configDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+  "requiredT3Lanes": [
+    "e2e",
+    "webgl",
+    "visual",
+    "accessibility",
+    "human"
+  ],
+  "knownBlockedLanes": []
+}

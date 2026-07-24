@@ -1,0 +1,1125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arena-core.local/schemas/onboarding-study-log.v1.json",
+  "title": "Arena Core Onboarding Study Log Event v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "eventId",
+    "sequence",
+    "sessionId",
+    "assignmentId",
+    "occurredAt",
+    "activeElapsedMs",
+    "eventName",
+    "study",
+    "build",
+    "context",
+    "payload"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "onboarding-study-log.v1"
+    },
+    "eventId": {
+      "$ref": "#/$defs/uuidV4"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "sessionId": {
+      "$ref": "#/$defs/uuidV4"
+    },
+    "assignmentId": {
+      "$ref": "#/$defs/uuidV4"
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "activeElapsedMs": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "eventName": {
+      "enum": [
+        "onboarding_variant_assigned",
+        "onboarding_offer_shown",
+        "onboarding_started",
+        "onboarding_skipped",
+        "onboarding_step_started",
+        "first_relevant_input",
+        "first_meaningful_progress",
+        "meaningful_progress",
+        "wrong_action",
+        "onboarding_hint_escalated",
+        "onboarding_step_succeeded",
+        "onboarding_abandoned",
+        "onboarding_completed",
+        "context_prompt_shown",
+        "context_prompt_succeeded",
+        "full_training_started",
+        "full_training_completed",
+        "retention_probe_started",
+        "retention_probe_checkpoint",
+        "retention_probe_succeeded",
+        "study_session_ended"
+      ]
+    },
+    "study": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "studyId",
+        "protocolVersion",
+        "hypothesisId",
+        "cellId",
+        "arm",
+        "sessionKind",
+        "definitionDigest"
+      ],
+      "properties": {
+        "studyId": {
+          "$ref": "#/$defs/shortString"
+        },
+        "protocolVersion": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "hypothesisId": {
+          "$ref": "#/$defs/shortString"
+        },
+        "cellId": {
+          "$ref": "#/$defs/shortString"
+        },
+        "arm": {
+          "$ref": "#/$defs/shortString"
+        },
+        "sessionKind": {
+          "enum": [
+            "o1",
+            "full-training",
+            "context-prompt",
+            "retention"
+          ]
+        },
+        "definitionDigest": {
+          "$ref": "#/$defs/nonZeroDigest"
+        }
+      }
+    },
+    "build": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "headSha",
+        "buildMarker",
+        "artifactDigest",
+        "appVersion",
+        "rulesetVersion"
+      ],
+      "properties": {
+        "headSha": {
+          "$ref": "#/$defs/nonZeroSha"
+        },
+        "buildMarker": {
+          "type": "string",
+          "minLength": 7,
+          "maxLength": 128,
+          "pattern": "^(?!replace-me$).*\\S.*$"
+        },
+        "artifactDigest": {
+          "$ref": "#/$defs/nonZeroDigest"
+        },
+        "appVersion": {
+          "$ref": "#/$defs/shortString"
+        },
+        "rulesetVersion": {
+          "$ref": "#/$defs/shortString"
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "onboardingVersion",
+        "stepId",
+        "attempt",
+        "hintLevel",
+        "selectedMode",
+        "autoFire",
+        "inputPreset",
+        "fullscreen",
+        "viewport",
+        "uiScale",
+        "highContrast"
+      ],
+      "properties": {
+        "onboardingVersion": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "stepId": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/shortString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "attempt": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "hintLevel": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "selectedMode": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/shortString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "autoFire": {
+          "type": "boolean"
+        },
+        "inputPreset": {
+          "$ref": "#/$defs/shortString"
+        },
+        "fullscreen": {
+          "type": "boolean"
+        },
+        "viewport": {
+          "type": "string",
+          "pattern": "^[0-9]{2,5}x[0-9]{2,5}$"
+        },
+        "uiScale": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 200
+        },
+        "highContrast": {
+          "type": "boolean"
+        }
+      }
+    },
+    "payload": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "$ref": "#/$defs/variantAssigned"
+    },
+    {
+      "$ref": "#/$defs/offerShown"
+    },
+    {
+      "$ref": "#/$defs/onboardingStarted"
+    },
+    {
+      "$ref": "#/$defs/onboardingSkipped"
+    },
+    {
+      "$ref": "#/$defs/stepStarted"
+    },
+    {
+      "$ref": "#/$defs/relevantInput"
+    },
+    {
+      "$ref": "#/$defs/meaningfulProgress"
+    },
+    {
+      "$ref": "#/$defs/wrongAction"
+    },
+    {
+      "$ref": "#/$defs/hintEscalated"
+    },
+    {
+      "$ref": "#/$defs/stepSucceeded"
+    },
+    {
+      "$ref": "#/$defs/onboardingAbandoned"
+    },
+    {
+      "$ref": "#/$defs/onboardingCompleted"
+    },
+    {
+      "$ref": "#/$defs/contextPromptShown"
+    },
+    {
+      "$ref": "#/$defs/contextPromptSucceeded"
+    },
+    {
+      "$ref": "#/$defs/fullTrainingStarted"
+    },
+    {
+      "$ref": "#/$defs/fullTrainingCompleted"
+    },
+    {
+      "$ref": "#/$defs/retentionProbeStarted"
+    },
+    {
+      "$ref": "#/$defs/retentionCheckpoint"
+    },
+    {
+      "$ref": "#/$defs/retentionSucceeded"
+    },
+    {
+      "$ref": "#/$defs/sessionEnded"
+    }
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:-]+$"
+    },
+    "uuidV4": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "shortString": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:-]+$"
+    },
+    "nonZeroSha": {
+      "type": "string",
+      "pattern": "^(?!0{40}$)[0-9a-f]{40}$"
+    },
+    "nonZeroDigest": {
+      "type": "string",
+      "pattern": "^sha256:(?!0{64}$)[0-9a-f]{64}$"
+    },
+    "eventPayload": {
+      "type": "object",
+      "additionalProperties": false
+    },
+    "whenEvent": {
+      "type": "object",
+      "required": [
+        "eventName"
+      ]
+    },
+    "variantAssigned": {
+      "if": {
+        "type": "object",
+        "properties": {
+          "eventName": {
+            "const": "onboarding_variant_assigned"
+          }
+        },
+        "required": [
+          "eventName"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "allocationMethod",
+              "eligibility",
+              "arm"
+            ],
+            "properties": {
+              "allocationMethod": {
+                "enum": [
+                  "manual-randomization",
+                  "deterministic-hash",
+                  "external-assignment"
+                ]
+              },
+              "eligibility": {
+                "enum": [
+                  "eligible",
+                  "ineligible",
+                  "technical-invalid"
+                ]
+              },
+              "arm": {
+                "$ref": "#/$defs/shortString"
+              }
+            }
+          }
+        }
+      }
+    },
+    "offerShown": {
+      "if": {
+        "type": "object",
+        "properties": {
+          "eventName": {
+            "const": "onboarding_offer_shown"
+          }
+        },
+        "required": [
+          "eventName"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "primaryCtaId",
+              "skipVisible",
+              "selectedMode"
+            ],
+            "properties": {
+              "primaryCtaId": {
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/shortString"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "skipVisible": {
+                "type": "boolean"
+              },
+              "selectedMode": {
+                "$ref": "#/$defs/shortString"
+              }
+            }
+          }
+        }
+      }
+    },
+    "onboardingStarted": {
+      "if": {
+        "type": "object",
+        "properties": {
+          "eventName": {
+            "const": "onboarding_started"
+          }
+        },
+        "required": [
+          "eventName"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "startSource"
+            ],
+            "properties": {
+              "startSource": {
+                "enum": [
+                  "primary-cta",
+                  "default-start",
+                  "training-menu",
+                  "retry"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "onboardingSkipped": {
+      "if": {
+        "type": "object",
+        "properties": {
+          "eventName": {
+            "const": "onboarding_skipped"
+          }
+        },
+        "required": [
+          "eventName"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "phase",
+              "destination"
+            ],
+            "properties": {
+              "phase": {
+                "enum": [
+                  "offer",
+                  "in-progress"
+                ]
+              },
+              "destination": {
+                "enum": [
+                  "standard-run",
+                  "mode-select",
+                  "title"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "stepStarted": {
+      "if": {
+        "type": "object",
+        "properties": {
+          "eventName": {
+            "const": "onboarding_step_started"
+          }
+        },
+        "required": [
+          "eventName"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "stepId",
+              "attempt"
+            ],
+            "properties": {
+              "stepId": {
+                "$ref": "#/$defs/shortString"
+              },
+              "attempt": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              }
+            }
+          }
+        }
+      }
+    },
+    "relevantInput": {
+      "if": {
+        "type": "object",
+        "properties": {
+          "eventName": {
+            "const": "first_relevant_input"
+          }
+        },
+        "required": [
+          "eventName"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "actionId",
+              "accepted",
+              "elapsedMs"
+            ],
+            "properties": {
+              "actionId": {
+                "$ref": "#/$defs/shortString"
+              },
+              "accepted": {
+                "type": "boolean"
+              },
+              "elapsedMs": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 3600000
+              }
+            }
+          }
+        }
+      }
+    },
+    "meaningfulProgress": {
+      "if": {
+        "type": "object",
+        "properties": {
+          "eventName": {
+            "enum": [
+              "first_meaningful_progress",
+              "meaningful_progress"
+            ]
+          }
+        },
+        "required": [
+          "eventName"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "criterion",
+              "value"
+            ],
+            "properties": {
+              "criterion": {
+                "$ref": "#/$defs/shortString"
+              },
+              "value": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1000000
+              }
+            }
+          }
+        }
+      }
+    },
+    "wrongAction": {
+      "if": {
+        "type": "object",
+        "properties": {
+          "eventName": {
+            "const": "wrong_action"
+          }
+        },
+        "required": [
+          "eventName"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "reason",
+              "count"
+            ],
+            "properties": {
+              "reason": {
+                "enum": [
+                  "no-input",
+                  "wrong-binding",
+                  "wrong-target",
+                  "wrong-direction",
+                  "unsafe-action",
+                  "repeated-ineffective-action",
+                  "other-bounded"
+                ]
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              }
+            }
+          }
+        }
+      }
+    },
+    "hintEscalated": {
+      "if": {
+        "type": "object",
+        "properties": {
+          "eventName": {
+            "const": "onboarding_hint_escalated"
+          }
+        },
+        "required": [
+          "eventName"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "fromHint",
+              "toHint",
+              "reason",
+              "wrongActionCountAtTransition"
+            ],
+            "properties": {
+              "fromHint": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "toHint": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 2
+              },
+              "reason": {
+                "enum": [
+                  "active-time-stall",
+                  "repeated-wrong-action",
+                  "explicit-help"
+                ]
+              },
+              "wrongActionCountAtTransition": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 700
+              }
+            }
+          }
+        }
+      }
+    },
+    "stepSucceeded": {
+      "if": {
+        "type": "object",
+        "properties": {
+          "eventName": {
+            "const": "onboarding_step_succeeded"
+          }
+        },
+        "required": [
+          "eventName"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "evidenceType",
+              "sourceEventId",
+              "fixtureEntityId"
+            ],
+            "properties": {
+              "evidenceType": {
+                "$ref": "#/$defs/shortString"
+              },
+              "sourceEventId": {
+                "$ref": "#/$defs/id"
+              },
+              "fixtureEntityId": {
+                "$ref": "#/$defs/shortString"
+              }
+            }
+          }
+        }
+      }
+    },
+    "onboardingAbandoned": {
+      "if": {
+        "type": "object",
+        "properties": {
+          "eventName": {
+            "const": "onboarding_abandoned"
+          }
+        },
+        "required": [
+          "eventName"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "reason"
+            ],
+            "properties": {
+              "reason": {
+                "enum": [
+                  "title-exit",
+                  "reload",
+                  "window-close",
+                  "technical-error",
+                  "facilitator-stop"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "onboardingCompleted": {
+      "if": {
+        "type": "object",
+        "properties": {
+          "eventName": {
+            "const": "onboarding_completed"
+          }
+        },
+        "required": [
+          "eventName"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "totalActiveElapsedMs",
+              "maxHint"
+            ],
+            "properties": {
+              "totalActiveElapsedMs": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 3600000
+              },
+              "maxHint": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2
+              }
+            }
+          }
+        }
+      }
+    },
+    "contextPromptShown": {
+      "if": {
+        "type": "object",
+        "properties": {
+          "eventName": {
+            "const": "context_prompt_shown"
+          }
+        },
+        "required": [
+          "eventName"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "promptId",
+              "triggerId"
+            ],
+            "properties": {
+              "promptId": {
+                "$ref": "#/$defs/shortString"
+              },
+              "triggerId": {
+                "$ref": "#/$defs/shortString"
+              }
+            }
+          }
+        }
+      }
+    },
+    "contextPromptSucceeded": {
+      "if": {
+        "type": "object",
+        "properties": {
+          "eventName": {
+            "const": "context_prompt_succeeded"
+          }
+        },
+        "required": [
+          "eventName"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "promptId",
+              "evidenceType",
+              "sourceEventId"
+            ],
+            "properties": {
+              "promptId": {
+                "$ref": "#/$defs/shortString"
+              },
+              "evidenceType": {
+                "$ref": "#/$defs/shortString"
+              },
+              "sourceEventId": {
+                "$ref": "#/$defs/id"
+              }
+            }
+          }
+        }
+      }
+    },
+    "fullTrainingStarted": {
+      "if": {
+        "type": "object",
+        "properties": {
+          "eventName": {
+            "const": "full_training_started"
+          }
+        },
+        "required": [
+          "eventName"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "trainingVersion",
+              "taskCount"
+            ],
+            "properties": {
+              "trainingVersion": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "taskCount": {
+                "const": 9
+              }
+            }
+          }
+        }
+      }
+    },
+    "fullTrainingCompleted": {
+      "if": {
+        "type": "object",
+        "properties": {
+          "eventName": {
+            "const": "full_training_completed"
+          }
+        },
+        "required": [
+          "eventName"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "trainingVersion",
+              "taskCount",
+              "maxHint"
+            ],
+            "properties": {
+              "trainingVersion": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "taskCount": {
+                "const": 9
+              },
+              "maxHint": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2
+              }
+            }
+          }
+        }
+      }
+    },
+    "retentionProbeStarted": {
+      "if": {
+        "type": "object",
+        "properties": {
+          "eventName": {
+            "const": "retention_probe_started"
+          }
+        },
+        "required": [
+          "eventName"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "mode",
+              "seedId"
+            ],
+            "properties": {
+              "mode": {
+                "$ref": "#/$defs/shortString"
+              },
+              "seedId": {
+                "$ref": "#/$defs/shortString"
+              }
+            }
+          }
+        }
+      }
+    },
+    "retentionCheckpoint": {
+      "if": {
+        "type": "object",
+        "properties": {
+          "eventName": {
+            "const": "retention_probe_checkpoint"
+          }
+        },
+        "required": [
+          "eventName"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "checkpointSeconds",
+              "survived",
+              "damageTaken",
+              "stalled"
+            ],
+            "properties": {
+              "checkpointSeconds": {
+                "enum": [
+                  30,
+                  60,
+                  90
+                ]
+              },
+              "survived": {
+                "type": "boolean"
+              },
+              "damageTaken": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              "stalled": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      }
+    },
+    "retentionSucceeded": {
+      "if": {
+        "type": "object",
+        "properties": {
+          "eventName": {
+            "const": "retention_probe_succeeded"
+          }
+        },
+        "required": [
+          "eventName"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "behaviors"
+            ],
+            "properties": {
+              "behaviors": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 8,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "move",
+                    "aim",
+                    "shoot",
+                    "avoid-enemy-projectile",
+                    "collect-xp",
+                    "collect-repair",
+                    "choose-upgrade",
+                    "use-active-protocol"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "sessionEnded": {
+      "if": {
+        "type": "object",
+        "properties": {
+          "eventName": {
+            "const": "study_session_ended"
+          }
+        },
+        "required": [
+          "eventName"
+        ]
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "terminalStatus"
+            ],
+            "properties": {
+              "terminalStatus": {
+                "enum": [
+                  "completed",
+                  "skipped",
+                  "abandoned",
+                  "technical-invalid",
+                  "retention-complete",
+                  "retention-not-met",
+                  "full-training-complete",
+                  "context-complete",
+                  "context-not-met"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
