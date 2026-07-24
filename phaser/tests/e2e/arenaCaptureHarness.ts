@@ -25,7 +25,11 @@ export async function openArenaCaptureScenario(
     .poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__)))
     .toBe(true);
 
-  await moveMouseToCanvasLogical(page, 480, 339);
+  await moveMouseToCanvasLogical(
+    page,
+    480,
+    ARENA_CAPTURE_SCENARIOS[scenarioId].expectedBoss ? 339 : 297,
+  );
   await page.mouse.down();
   await page.mouse.up();
   await page
@@ -64,16 +68,21 @@ export async function assertArenaCaptureStructure(
   );
   if (!snapshot) throw new Error("Debug snapshot is not available.");
   const expected = ARENA_CAPTURE_SCENARIOS[scenarioId].expectedLayers;
+  const definition = ARENA_CAPTURE_SCENARIOS[scenarioId];
 
   expect(snapshot.captureScenario).toEqual({
     id: scenarioId,
     layers: expected,
   });
-  expect(snapshot.expedition?.boss).toMatchObject({
-    bossId: "final-command-ship",
-    phase: 2,
-    action: { attackId: "targeted-salvo", phase: "telegraph" },
-  });
+  if (definition.expectedBoss) {
+    expect(snapshot.expedition?.boss).toMatchObject({
+      bossId: "final-command-ship",
+      phase: 2,
+      action: { attackId: "targeted-salvo", phase: "telegraph" },
+    });
+  } else {
+    expect(snapshot.expedition?.boss ?? null).toBeNull();
+  }
   expect(snapshot.performance.frameSamples).toBeGreaterThan(0);
   expect(Number.isFinite(snapshot.performance.p95RawDtMs)).toBe(true);
   expect(snapshot.renderPerformance.staticBackground.drawCount).toBe(1);
@@ -83,16 +92,18 @@ export async function assertArenaCaptureStructure(
   );
   expect(Number.isFinite(snapshot.renderPerformance.screenHud.maxMs)).toBe(true);
   const audioRouting = snapshot.audioRouting;
-  expect(audioRouting.requested.length).toBeGreaterThan(0);
   expect(
     audioRouting.played.length + audioRouting.suppressed.length,
   ).toBe(audioRouting.requested.length);
-  expect(audioRouting.requested).toContainEqual(
-    expect.objectContaining({
-      eventType: "expedition.act.changed",
-      cue: "upgrade",
-    }),
-  );
+  if (definition.expectsExpeditionAudioCue) {
+    expect(audioRouting.requested.length).toBeGreaterThan(0);
+    expect(audioRouting.requested).toContainEqual(
+      expect.objectContaining({
+        eventType: "expedition.act.changed",
+        cue: "upgrade",
+      }),
+    );
+  }
   const resolvedSequences = [
     ...audioRouting.played,
     ...audioRouting.suppressed,
@@ -116,6 +127,16 @@ export async function assertArenaCaptureStructure(
     audioRouting: snapshot.audioRouting,
     webgl: rendererProbe,
   };
+}
+
+export async function setArenaCaptureGrayscale(
+  page: Page,
+  enabled: boolean,
+): Promise<void> {
+  await page.locator("#game").evaluate((node, grayscale) => {
+    (node as HTMLElement).style.filter = grayscale ? "grayscale(1)" : "";
+  }, enabled);
+  await page.waitForTimeout(50);
 }
 
 async function moveMouseToCanvasLogical(
