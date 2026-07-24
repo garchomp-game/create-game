@@ -179,18 +179,19 @@ test("coalesces right click into special input without normal shooting", async (
   ).toBe(beforeKeyboard);
 });
 
-test("removes candidate-only input hooks when Training starts", async ({
+test("removes candidate-only input hooks when Story onboarding starts", async ({
   page,
 }) => {
   await gotoCandidate(page);
   const canvas = page.locator("canvas");
   expect(await dispatchContextMenu(canvas)).toBe(false);
-  const box = await canvas.boundingBox();
-  if (!box) throw new Error("Canvas is not visible.");
-  await page.mouse.click(
-    box.x + box.width * 0.5,
-    box.y + box.height * (393 / 540),
-  );
+  await clickCanvasLogical(canvas, 480, 189);
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
+    )
+    .toBe("story");
+  await clickCanvasLogical(canvas, 480, 217);
   await expect
     .poll(() =>
       page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.stepId),
@@ -499,4 +500,23 @@ async function dispatchContextMenu(
     });
     return node.dispatchEvent(event);
   });
+}
+
+async function clickCanvasLogical(
+  canvas: Locator,
+  x: number,
+  y: number,
+): Promise<void> {
+  const point = await canvas.evaluate(
+    (node, logicalPoint) => {
+      const element = node as HTMLCanvasElement;
+      const bounds = element.getBoundingClientRect();
+      return {
+        x: bounds.left + (logicalPoint.x / element.width) * bounds.width,
+        y: bounds.top + (logicalPoint.y / element.height) * bounds.height,
+      };
+    },
+    { x, y },
+  );
+  await canvas.page().mouse.click(point.x, point.y);
 }
