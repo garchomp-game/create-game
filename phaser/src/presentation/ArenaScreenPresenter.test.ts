@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createRankEligibility, createRunRecord } from "../application/runRecords";
 import { SIMULATION_CONFIG } from "../config/gameConfig";
+import { createDefaultPracticeRunOptions } from "../domain/practice";
 import { createDefaultProfileSettings } from "../domain/profile";
 import type { RunRecord } from "../domain/runRecords";
 import type { WorldState } from "../domain/types";
@@ -38,11 +39,10 @@ describe("createArenaScreenViewModel", () => {
       kind: "title",
       status: "title",
       secondaryMenu: null,
-      detailText: null,
+      statusText: TEXT.ui.titleScreen,
+      detailText:
+        "照準と回避で、生存限界を更新せよ\n技術プレビュー v0.7.0",
     });
-    expect(viewModel.statusText).toBe(
-      `${TEXT.ui.titleScreen}\nENDLESS / EXPEDITION / TRAINING\n生存限界か、最終決戦か\n技術プレビュー v0.7.0`,
-    );
   });
 
   it("presents Training completion without a RunRecord result", () => {
@@ -61,6 +61,133 @@ describe("createArenaScreenViewModel", () => {
     expect(viewModel.menuLabels.title).toBe("タイトルへ戻る");
   });
 
+  it("presents Story completion with operation-specific copy", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.state.status = "trainingComplete";
+
+    const viewModel = createArenaScreenViewModel(
+      world,
+      SIMULATION_CONFIG,
+      undefined,
+      {
+        flowKind: "story",
+        missionNumber: 3,
+        missionCount: 3,
+        missionTitle: "実戦投入",
+        stepId: "complete",
+        phase: "complete",
+        stepNumber: 10,
+        stepCount: 10,
+        stepActiveSeconds: 0,
+        totalActiveSeconds: 30,
+        noProgressSeconds: 0,
+        hintLevel: 0,
+        progress: { current: 1, required: 1 },
+        target: null,
+        lastCompletedStepId: "deploymentDrill",
+        selectedUpgradeId: "rapidFire",
+        retryCount: 0,
+        retryReason: null,
+        retryNoticeSecondsRemaining: 0,
+        readySecondsRemaining: 0,
+        transfer: {
+          survivalSeconds: 0,
+          kills: 4,
+          pickups: 4,
+          spawnedPickups: 4,
+          requiredKills: 3,
+          enemiesRemaining: 0,
+          pickupsRemaining: 0,
+          repairPosition: { x: 480, y: 420 },
+        },
+      },
+    );
+
+    expect(viewModel.statusText).toBe(
+      `${TEXT.ui.storyCompleteTitle}\n${TEXT.ui.storyCompleteDescription}`,
+    );
+  });
+
+  it("presents the shared help overlay with a close action", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.state.status = "playing";
+    const uiState = createUiState({ secondaryMenu: "help" });
+
+    expect(
+      createArenaScreenViewModel(world, SIMULATION_CONFIG, uiState),
+    ).toMatchObject({
+      kind: "help",
+      status: "playing",
+      secondaryMenu: "help",
+      helpPage: "controls",
+      statusText: null,
+      detailText: null,
+      menuLabels: { back: "閉じる" },
+    });
+  });
+
+  it("separates Practice settings from its weapon selection screen", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.state.status = "title";
+
+    const weaponScreen = createArenaScreenViewModel(
+      world,
+      SIMULATION_CONFIG,
+      createUiState({ secondaryMenu: "practice" }),
+    );
+    expect(weaponScreen).toMatchObject({
+      kind: "practice",
+      secondaryMenu: "practice",
+    });
+    expect(weaponScreen.statusText).toContain("開始武器を選択");
+
+    const settingsScreen = createArenaScreenViewModel(
+      world,
+      SIMULATION_CONFIG,
+      createUiState({ secondaryMenu: "practiceSettings" }),
+    );
+    expect(settingsScreen).toMatchObject({
+      kind: "practice",
+      secondaryMenu: "practiceSettings",
+      statusText: null,
+      menuLabels: { back: "練習へ戻る" },
+      practiceSettings: {
+        heading: "練習条件",
+        invincibleLabel: "HP無敵",
+        invincibleValue: "オン",
+        intensityLabel: "敵の出現量",
+        intensityValue: "少なめ",
+        enemiesHeading: "出現する敵",
+        enemies: [
+          {
+            typeId: "chaser",
+            action: "practiceEnemyChaser",
+            label: "追跡体",
+            enabled: true,
+          },
+          {
+            typeId: "brute",
+            action: "practiceEnemyBrute",
+            label: "重装体",
+            enabled: true,
+          },
+          {
+            typeId: "fast",
+            action: "practiceEnemyFast",
+            label: "高速体",
+            enabled: false,
+          },
+          {
+            typeId: "ranged",
+            action: "practiceEnemyRanged",
+            label: "射撃体",
+            enabled: false,
+          },
+        ],
+      },
+    });
+  });
+
   it("labels pause actions as Training controls when a tutorial is active", () => {
     const world = createWorld(SIMULATION_CONFIG);
     world.state.status = "paused";
@@ -70,6 +197,10 @@ describe("createArenaScreenViewModel", () => {
       SIMULATION_CONFIG,
       undefined,
       {
+        flowKind: "basic-training",
+        missionNumber: 1,
+        missionCount: 1,
+        missionTitle: "基本訓練",
         stepId: "chooseUpgrade",
         phase: "active",
         stepNumber: 5,
@@ -229,6 +360,31 @@ describe("createArenaScreenViewModel", () => {
     expect(viewModel.kind).toBe("gameOver");
     expect(viewModel.statusText).toContain("1234");
     expect(viewModel.detailText).toBe("記録を保存できませんでした");
+  });
+
+  it("presents Practice completion as intentionally unrecorded", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.state.status = "gameOver";
+    world.state.score = 4321;
+    world.practice = {
+      options: {
+        invincible: false,
+        intensity: "standard",
+        enemyTypeIds: ["brute", "fast"],
+      },
+    };
+
+    const viewModel = createArenaScreenViewModel(
+      world,
+      SIMULATION_CONFIG,
+      createUiState(),
+    );
+
+    expect(viewModel.statusText).toContain("PRACTICE 終了");
+    expect(viewModel.statusText).toContain("記録・ランキング対象外");
+    expect(viewModel.detailText).toContain("無敵 オフ");
+    expect(viewModel.detailText).toContain("重装体 / 高速体");
+    expect(viewModel.detailText).not.toContain("保存できません");
   });
 
   it("shows the saved EX Protocol route in candidate results", () => {
@@ -608,5 +764,8 @@ function createUiState(
       buildCommit: "123456789abc",
     },
     ...overrides,
+    helpPage: overrides.helpPage ?? "controls",
+    practiceOptions:
+      overrides.practiceOptions ?? createDefaultPracticeRunOptions(),
   };
 }

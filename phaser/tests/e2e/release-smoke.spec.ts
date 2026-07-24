@@ -29,7 +29,7 @@ test("exposes the release identity and completes the primary input path", async 
   expect(await probeVisibleCanvasSamples(page, canvas)).toBeGreaterThan(0);
   expect(await hasHorizontalViewportOverflow(page)).toBe(false);
 
-  await clickCanvasLogical(page, 480, 307);
+  await clickCanvasLogical(page, 276, 283);
   const pulseChoice = page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']");
   await expect(pulseChoice).toBeVisible();
   await pulseChoice.click();
@@ -54,7 +54,7 @@ test("publishes privacy, feedback, licenses, and complete local-data deletion", 
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
     .toBe("title");
-  await clickCanvasLogical(page, 620, 495);
+  await clickCanvasLogical(page, 808, 390);
   await expect(page).toHaveURL(/\/beta-info\.html$/);
   await expect(page.getByRole("heading", { name: "ARENA CORE" })).toBeVisible();
   await expect(page.locator("#app-version")).toHaveText(APP_VERSION);
@@ -92,7 +92,8 @@ test("starts, advances, and exits Training without creating a run record", async
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
     .toBe("title");
 
-  await clickCanvasLogical(page, 480, 393);
+  await clickCanvasLogical(page, 480, 189);
+  await clickCanvasLogical(page, 480, 217);
   await expect
     .poll(() =>
       page.evaluate(
@@ -108,7 +109,7 @@ test("starts, advances, and exits Training without creating a run record", async
     )
     .toBe("active");
 
-  await page.keyboard.down("KeyD");
+  await completeMoveTrainingStep(page);
   await expect
     .poll(() =>
       page.evaluate(
@@ -116,7 +117,6 @@ test("starts, advances, and exits Training without creating a run record", async
       ),
     )
     .toBe("navigate");
-  await page.keyboard.up("KeyD");
 
   await page.waitForTimeout(100);
   await page.keyboard.down("Escape");
@@ -155,6 +155,29 @@ async function clickCanvasLogical(page: Page, x: number, y: number): Promise<voi
     box.left + (x / box.canvasWidth) * box.width,
     box.top + (y / box.canvasHeight) * box.height,
   );
+}
+
+async function completeMoveTrainingStep(page: Page): Promise<void> {
+  const deadline = Date.now() + 15_000;
+  while (Date.now() < deadline) {
+    const snapshot = await page.evaluate(() => {
+      const current = window.__ARENA_DEBUG__?.getSnapshot();
+      return {
+        stepId: current?.tutorial?.stepId ?? null,
+        playerX: current?.player.x ?? null,
+        targetX: current?.tutorial?.target?.position.x ?? null,
+      };
+    });
+    if (snapshot.stepId !== "move") return;
+    if (snapshot.playerX === null || snapshot.targetX === null) {
+      throw new Error("Training movement target is unavailable.");
+    }
+    const key = snapshot.targetX > snapshot.playerX ? "KeyD" : "KeyA";
+    await page.keyboard.down(key);
+    await page.waitForTimeout(160);
+    await page.keyboard.up(key);
+  }
+  throw new Error("Training movement step did not complete.");
 }
 
 async function hasHorizontalViewportOverflow(page: Page): Promise<boolean> {

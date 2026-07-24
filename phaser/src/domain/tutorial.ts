@@ -11,13 +11,30 @@ export const TUTORIAL_STEP_IDS = [
   "complete",
 ] as const;
 
-export type TutorialStepId = (typeof TUTORIAL_STEP_IDS)[number];
+export const STORY_TUTORIAL_STEP_IDS = [
+  "move",
+  "navigate",
+  "contactDamage",
+  "aimAndKill",
+  "dodgeProjectile",
+  "collectRepair",
+  "transferDrill",
+  "collectXp",
+  "chooseUpgrade",
+  "deploymentDrill",
+  "complete",
+] as const;
+
+export type TutorialStepId =
+  | (typeof TUTORIAL_STEP_IDS)[number]
+  | (typeof STORY_TUTORIAL_STEP_IDS)[number];
 
 export type TutorialPhase = "briefing" | "active" | "complete";
 
 export type TutorialRetryReason = "enemyProjectile" | "damage";
 
 export type TutorialUpgradeId = "rapidFire" | "swiftStep" | "vitalCore";
+export type TutorialFlowKind = "basic-training" | "story";
 
 export type TutorialTarget = {
   kind: "zone" | "enemy" | "pickup";
@@ -33,6 +50,10 @@ export type TutorialProgress = {
 };
 
 export type TutorialSnapshot = {
+  flowKind: TutorialFlowKind;
+  missionNumber: number;
+  missionCount: number;
+  missionTitle: string;
   stepId: TutorialStepId;
   phase: TutorialPhase;
   stepNumber: number;

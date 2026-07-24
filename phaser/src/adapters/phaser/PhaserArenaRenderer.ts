@@ -17,6 +17,7 @@ import type { TutorialSnapshot } from "../../domain/tutorial";
 import { createArenaTutorialViewModel } from "../../presentation/ArenaTutorialPresenter";
 import { ARENA_DYNAMIC_WORLD_DEPTH } from "./PhaserArenaDepths";
 import { PhaserTutorialLayer } from "./PhaserTutorialLayer";
+import { PhaserPracticeGuideLayer } from "./PhaserPracticeGuideLayer";
 
 export class PhaserArenaRenderer {
   private readonly graphics: Phaser.GameObjects.Graphics;
@@ -25,6 +26,7 @@ export class PhaserArenaRenderer {
   private readonly screenView: PhaserArenaScreenView;
   private readonly hud: PhaserHud;
   private readonly tutorialLayer: PhaserTutorialLayer;
+  private readonly practiceGuideLayer: PhaserPracticeGuideLayer;
   private renderedFrames = 0;
   private worldRenderTotalMs = 0;
   private worldRenderMaxMs = 0;
@@ -49,7 +51,15 @@ export class PhaserArenaRenderer {
     this.worldView = new PhaserArenaWorldView(simulationConfig, viewConfig);
     this.hud = new PhaserHud(scene, simulationConfig);
     this.tutorialLayer = new PhaserTutorialLayer(scene, simulationConfig);
-    this.screenView = new PhaserArenaScreenView(scene, simulationConfig);
+    this.practiceGuideLayer = new PhaserPracticeGuideLayer(
+      scene,
+      simulationConfig,
+    );
+    this.screenView = new PhaserArenaScreenView(
+      scene,
+      simulationConfig,
+      viewConfig,
+    );
   }
 
   configureForRun(config: SimulationConfig): void {
@@ -78,6 +88,7 @@ export class PhaserArenaRenderer {
 
     const worldStartedAt = now();
     this.worldView.render(this.graphics, world, pointerWorld);
+    this.practiceGuideLayer.render(world);
     const worldDuration = now() - worldStartedAt;
     const screenStartedAt = now();
     this.screenView.render(this.graphics, world, screen);

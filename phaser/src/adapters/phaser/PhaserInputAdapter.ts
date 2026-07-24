@@ -7,6 +7,14 @@ import {
   findUpgradeChoiceAt,
   getMenuButtons,
 } from "./PhaserMenuLayout";
+import {
+  getHelpHudButtonBounds,
+  isPointInHelpBounds,
+} from "./PhaserHelpLayout";
+import {
+  getPracticeSettingsButtonBounds,
+  isPointInPracticeControl,
+} from "./PhaserPracticeLayout";
 import type { MenuAction, SecondaryMenu } from "./PhaserMenuLayout";
 
 type ArenaKeys = {
@@ -29,6 +37,7 @@ type ArenaKeys = {
   upgrade3: Phaser.Input.Keyboard.Key;
   autoPilot: Phaser.Input.Keyboard.Key;
   debug: Phaser.Input.Keyboard.Key;
+  help: Phaser.Input.Keyboard.Key;
   special?: Phaser.Input.Keyboard.Key;
 };
 
@@ -105,6 +114,7 @@ export class PhaserInputAdapter {
       upgrade3: "THREE",
       autoPilot: "O",
       debug: "F3",
+      help: "H",
     }) as ArenaKeys;
 
     keyboard.addCapture([
@@ -115,6 +125,7 @@ export class PhaserInputAdapter {
       Phaser.Input.Keyboard.KeyCodes.LEFT,
       Phaser.Input.Keyboard.KeyCodes.RIGHT,
       Phaser.Input.Keyboard.KeyCodes.ESC,
+      Phaser.Input.Keyboard.KeyCodes.H,
     ]);
 
     scene.input.on(
@@ -180,6 +191,7 @@ export class PhaserInputAdapter {
     upgradeChoiceCount: number,
     autoFireEnabled = true,
     secondaryMenu: SecondaryMenu | null = null,
+    practiceActive = false,
   ): InputSnapshot {
     this.pendingChoiceInputMethod = null;
     const pointer = this.scene.input.activePointer;
@@ -187,9 +199,36 @@ export class PhaserInputAdapter {
     const specialPointerPressed = this.specialPointerPressed;
     const startJustDown = Phaser.Input.Keyboard.JustDown(this.keys.start);
     const shootJustDown = Phaser.Input.Keyboard.JustDown(this.keys.shoot);
+    const helpJustDown = Phaser.Input.Keyboard.JustDown(this.keys.help);
+    const arenaWidth = this.scene.scale.gameSize.width;
+    const arenaHeight = this.scene.scale.gameSize.height;
+    const helpButtonPressed =
+      pointerPressed &&
+      status === "playing" &&
+      secondaryMenu === null &&
+      isPointInHelpBounds(
+        getHelpHudButtonBounds(arenaWidth, arenaHeight),
+        pointer.x,
+        pointer.y,
+      );
+    const practiceSettingsButtonPressed =
+      pointerPressed &&
+      practiceActive &&
+      status === "playing" &&
+      secondaryMenu === null &&
+      isPointInPracticeControl(
+        getPracticeSettingsButtonBounds(arenaWidth),
+        pointer.x,
+        pointer.y,
+      );
     this.pointerPressed = false;
     this.specialPointerPressed = false;
-    this.syncCursor(status, upgradeChoiceCount, secondaryMenu);
+    this.syncCursor(
+      status,
+      upgradeChoiceCount,
+      secondaryMenu,
+      practiceActive,
+    );
     if (
       status !== "playing" &&
       status !== "upgradeSelect" &&
@@ -198,12 +237,14 @@ export class PhaserInputAdapter {
       this.hasPointerAim = false;
     }
     const pointerAimsThisFrame =
-      this.hasPointerAim ||
-      (status === "playing" && (pointer.leftButtonDown() || pointerPressed));
+      !helpButtonPressed &&
+      !practiceSettingsButtonPressed &&
+      (this.hasPointerAim ||
+        (status === "playing" && (pointer.leftButtonDown() || pointerPressed)));
     const menuButtons = getMenuButtons(
       status,
-      this.scene.scale.gameSize.width,
-      this.scene.scale.gameSize.height,
+      arenaWidth,
+      arenaHeight,
       undefined,
       secondaryMenu,
     );
@@ -244,13 +285,27 @@ export class PhaserInputAdapter {
         status === "weaponSelect" ||
         status === "trainingComplete") &&
       Phaser.Input.Keyboard.JustDown(this.keys.escape);
-    const menuAction = backActivated
-      ? "back"
-      : pointerPressed
-        ? hoveredAction
-        : keyboardActivated
-          ? menuButtons[this.focusedMenuIndex]?.action ?? null
-          : null;
+    const helpAvailable =
+      secondaryMenu === "settings" ||
+      secondaryMenu === "help" ||
+      status === "playing" ||
+      status === "paused";
+    const helpAction =
+      helpButtonPressed || (helpAvailable && helpJustDown)
+        ? secondaryMenu === "help"
+          ? "back"
+          : "help"
+        : null;
+    const menuAction =
+      (practiceSettingsButtonPressed ? "practiceSettings" : null) ??
+      helpAction ??
+      (backActivated
+        ? "back"
+        : pointerPressed
+          ? hoveredAction
+          : keyboardActivated
+            ? menuButtons[this.focusedMenuIndex]?.action ?? null
+            : null);
     this.pendingMenuAction = menuAction;
     const clickedUpgradeChoice =
       pointerPressed && status === "upgradeSelect"
@@ -294,6 +349,8 @@ export class PhaserInputAdapter {
       startPressed,
       shootHeld:
         status === "playing" &&
+        !helpButtonPressed &&
+        !practiceSettingsButtonPressed &&
         (this.keys.shoot.isDown ||
           pointer.leftButtonDown() ||
           pointerPressed ||
@@ -359,6 +416,7 @@ export class PhaserInputAdapter {
     this.pointerPressed = false;
     this.specialPointerPressed = false;
     this.keys.special?.reset();
+    this.keys.help.reset();
     this.hasPointerAim = false;
     this.pendingMenuAction = null;
     this.pendingChoiceInputMethod = null;
@@ -381,9 +439,17 @@ export class PhaserInputAdapter {
     status: GameStatus,
     upgradeChoiceCount: number,
     secondaryMenu: SecondaryMenu | null = null,
+    practiceActive = false,
   ): void {
     const pointer = this.scene.input.activePointer;
-    this.updateCursor(status, upgradeChoiceCount, pointer.x, pointer.y, secondaryMenu);
+    this.updateCursor(
+      status,
+      upgradeChoiceCount,
+      pointer.x,
+      pointer.y,
+      secondaryMenu,
+      practiceActive,
+    );
   }
 
   private updateCursor(
@@ -392,9 +458,29 @@ export class PhaserInputAdapter {
     pointerX: number,
     pointerY: number,
     secondaryMenu: SecondaryMenu | null,
+    practiceActive: boolean,
   ): void {
     if (status === "playing" && secondaryMenu === null) {
-      this.setCursor("none");
+      const overHelpButton = isPointInHelpBounds(
+        getHelpHudButtonBounds(
+          this.scene.scale.gameSize.width,
+          this.scene.scale.gameSize.height,
+        ),
+        pointerX,
+        pointerY,
+      );
+      const overPracticeSettings =
+        practiceActive &&
+        isPointInPracticeControl(
+          getPracticeSettingsButtonBounds(
+            this.scene.scale.gameSize.width,
+          ),
+          pointerX,
+          pointerY,
+        );
+      this.setCursor(
+        overHelpButton || overPracticeSettings ? "pointer" : "none",
+      );
       return;
     }
 

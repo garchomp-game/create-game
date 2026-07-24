@@ -8,6 +8,7 @@ import type {
   WorldState,
 } from "../domain/types";
 import type {
+  TutorialFlowKind,
   TutorialSnapshot,
   TutorialPhase,
   TutorialRetryReason,
@@ -15,6 +16,7 @@ import type {
   TutorialTarget,
   TutorialUpgradeId,
 } from "../domain/tutorial";
+import { composeBuild } from "./buildComposer";
 import {
   getAvailableUpgradeIds,
   getLockedUpgradeIds,
@@ -54,7 +56,7 @@ export const BASIC_TUTORIAL_UPGRADE_CHOICES = [
   "vitalCore",
 ] as const;
 
-const TASK_STEPS: TutorialStepId[] = [
+const BASIC_TRAINING_TASK_STEPS: TutorialStepId[] = [
   "move",
   "navigate",
   "contactDamage",
@@ -64,6 +66,18 @@ const TASK_STEPS: TutorialStepId[] = [
   "dodgeProjectile",
   "collectRepair",
   "transferDrill",
+];
+const STORY_TASK_STEPS: TutorialStepId[] = [
+  "move",
+  "navigate",
+  "contactDamage",
+  "aimAndKill",
+  "dodgeProjectile",
+  "collectRepair",
+  "transferDrill",
+  "collectXp",
+  "chooseUpgrade",
+  "deploymentDrill",
 ];
 const TRAINING_PLAYER_START = { x: 480, y: 270 } as const;
 export const BASIC_TUTORIAL_COMBAT_PLAYER_POSITION = {
@@ -92,6 +106,7 @@ export const BASIC_TUTORIAL_REPAIR_POSITION = {
   y: 270,
 } as const;
 const TRANSFER_REQUIRED_KILLS = 3;
+const TUTORIAL_LOCKED_XP_TO_NEXT = 100;
 const DODGE_READY_SECONDS = 1;
 const RETRY_NOTICE_SECONDS = 1.8;
 export const BASIC_TUTORIAL_TRANSFER_REPAIR_POSITION = {
@@ -119,7 +134,13 @@ type ControllerCheckpoint = {
   target: TutorialTarget | null;
 };
 
+export type TutorialControllerOptions = {
+  flowKind?: TutorialFlowKind;
+};
+
 export class TutorialController {
+  private readonly flowKind: TutorialFlowKind;
+  private readonly taskSteps: TutorialStepId[];
   private stepId: TutorialStepId = "move";
   private phase: TutorialPhase = "briefing";
   private stepActiveSeconds = 0;
@@ -147,6 +168,14 @@ export class TutorialController {
   private transferPickupsRemaining = 0;
   private checkpoint: ControllerCheckpoint | null = null;
   private pendingEvents: GameEvent[] = [];
+
+  constructor(options: TutorialControllerOptions = {}) {
+    this.flowKind = options.flowKind ?? "basic-training";
+    this.taskSteps =
+      this.flowKind === "story"
+        ? STORY_TASK_STEPS
+        : BASIC_TRAINING_TASK_STEPS;
+  }
 
   initialize(world: WorldState, config: SimulationConfig): void {
     world.state.hp = getPlayerMaxHp(world, config);
@@ -301,6 +330,7 @@ export class TutorialController {
               BASIC_TUTORIAL_MOVING_ENEMY_POSITION,
               false,
             );
+            if (this.flowKind === "story") enemy.xpValue = 0;
             this.targetEnemyId = enemy.id;
             this.target = createEnemyTarget(enemy);
             added.push({
@@ -318,7 +348,12 @@ export class TutorialController {
           );
           this.targetPickupId =
             spawnedXp?.type === "pickup.spawned" ? spawnedXp.pickupId : null;
-          this.advanceTo("collectXp", world, config, added);
+          this.advanceTo(
+            this.flowKind === "story" ? "dodgeProjectile" : "collectXp",
+            world,
+            config,
+            added,
+          );
         }
         break;
       case "collectXp":
@@ -342,7 +377,12 @@ export class TutorialController {
           this.selectedUpgradeId = isTutorialUpgradeId(selected.upgradeId)
             ? selected.upgradeId
             : null;
-          this.advanceTo("dodgeProjectile", world, config, added);
+          this.advanceTo(
+            this.flowKind === "story" ? "deploymentDrill" : "dodgeProjectile",
+            world,
+            config,
+            added,
+          );
         }
         break;
       }
@@ -401,6 +441,7 @@ export class TutorialController {
         }
         break;
       case "transferDrill":
+      case "deploymentDrill":
         this.transferSurvivalSeconds += activeDelta;
         this.transferKills += events.filter(
           (event) => event.type === "enemy.killed",
@@ -424,7 +465,14 @@ export class TutorialController {
           this.transferEnemiesRemaining === 0 &&
           this.transferPickupsRemaining === 0
         ) {
-          this.advanceTo("complete", world, config, added);
+          this.advanceTo(
+            this.flowKind === "story" && this.stepId === "transferDrill"
+              ? "collectXp"
+              : "complete",
+            world,
+            config,
+            added,
+          );
         }
         break;
       case "complete":
@@ -435,12 +483,18 @@ export class TutorialController {
   }
 
   getSnapshot(): TutorialSnapshot {
-    const index = TASK_STEPS.indexOf(this.stepId);
+    const index = this.taskSteps.indexOf(this.stepId);
+    const mission = getTutorialMission(this.flowKind, this.stepId);
     return {
+      flowKind: this.flowKind,
+      missionNumber: mission.number,
+      missionCount: mission.count,
+      missionTitle: mission.title,
       stepId: this.stepId,
       phase: this.phase,
-      stepNumber: this.stepId === "complete" ? TASK_STEPS.length : index + 1,
-      stepCount: TASK_STEPS.length,
+      stepNumber:
+        this.stepId === "complete" ? this.taskSteps.length : index + 1,
+      stepCount: this.taskSteps.length,
       stepActiveSeconds: this.stepActiveSeconds,
       totalActiveSeconds: this.totalActiveSeconds,
       noProgressSeconds: this.noProgressSeconds,
@@ -519,7 +573,9 @@ export class TutorialController {
       type: "tutorial.step.started",
       stepId,
       stepNumber:
-        stepId === "complete" ? TASK_STEPS.length : TASK_STEPS.indexOf(stepId) + 1,
+        stepId === "complete"
+          ? this.taskSteps.length
+          : this.taskSteps.indexOf(stepId) + 1,
     });
   }
 
@@ -582,6 +638,7 @@ export class TutorialController {
         BASIC_TUTORIAL_COMBAT_ENEMY_POSITION,
         true,
       );
+      if (this.flowKind === "story") enemy.xpValue = 0;
       this.targetEnemyId = enemy.id;
       this.target = createEnemyTarget(enemy);
       events.push({
@@ -666,11 +723,14 @@ export class TutorialController {
           ),
         },
       );
-    } else if (this.stepId === "transferDrill") {
+    } else if (
+      this.stepId === "transferDrill" ||
+      this.stepId === "deploymentDrill"
+    ) {
       clearTransientWorld(world);
       world.state.status = "playing";
       world.progression.xp = 0;
-      world.progression.xpToNext = Number.MAX_SAFE_INTEGER;
+      world.progression.xpToNext = TUTORIAL_LOCKED_XP_TO_NEXT;
       world.player.position = { ...TRAINING_PLAYER_START };
       this.transferSurvivalSeconds = 0;
       this.transferKills = 0;
@@ -678,9 +738,45 @@ export class TutorialController {
       this.transferSpawnedPickups = 0;
       this.transferEnemiesRemaining = 0;
       this.transferPickupsRemaining = 0;
-      spawnTransferEnemy(world, config, "chaser", { x: 100, y: 270 }, events);
-      spawnTransferEnemy(world, config, "brute", { x: 860, y: 270 }, events);
-      spawnTransferEnemy(world, config, "ranged", { x: 480, y: 70 }, events);
+      if (this.flowKind === "story" && this.stepId === "transferDrill") {
+        applyStoryFixedUpgrade(world, config);
+      }
+      const suppressXp =
+        this.flowKind === "story" && this.stepId === "transferDrill";
+      spawnTransferEnemy(
+        world,
+        config,
+        "chaser",
+        { x: 100, y: 270 },
+        events,
+        suppressXp,
+      );
+      spawnTransferEnemy(
+        world,
+        config,
+        "brute",
+        { x: 860, y: 270 },
+        events,
+        suppressXp,
+      );
+      spawnTransferEnemy(
+        world,
+        config,
+        "ranged",
+        { x: 480, y: 70 },
+        events,
+        suppressXp,
+      );
+      if (this.stepId === "deploymentDrill") {
+        spawnTransferEnemy(
+          world,
+          config,
+          "fast",
+          { x: 480, y: 470 },
+          events,
+          false,
+        );
+      }
       spawnTransferRepair(
         world,
         config,
@@ -695,7 +791,7 @@ export class TutorialController {
     events.push({
       type: "tutorial.step.activated",
       stepId: this.stepId,
-      stepNumber: TASK_STEPS.indexOf(this.stepId) + 1,
+      stepNumber: this.taskSteps.indexOf(this.stepId) + 1,
     });
     this.captureCheckpoint(world);
   }
@@ -711,7 +807,8 @@ export class TutorialController {
       stepId === "aimAndKill" ||
       stepId === "dodgeProjectile" ||
       stepId === "collectRepair" ||
-      stepId === "transferDrill"
+      stepId === "transferDrill" ||
+      stepId === "deploymentDrill"
     ) {
       clearTransientWorld(world);
     }
@@ -954,7 +1051,10 @@ export class TutorialController {
     if (this.stepId === "dodgeProjectile") {
       return { current: this.dodgePasses, required: 2 };
     }
-    if (this.stepId === "transferDrill") {
+    if (
+      this.stepId === "transferDrill" ||
+      this.stepId === "deploymentDrill"
+    ) {
       return {
         current:
           Number(
@@ -1111,9 +1211,10 @@ function spawnTrainingHeal(
 function spawnTransferEnemy(
   world: WorldState,
   config: SimulationConfig,
-  typeId: "chaser" | "brute" | "ranged",
+  typeId: "chaser" | "brute" | "fast" | "ranged",
   position: Vec2,
   events: GameEvent[],
+  suppressXp = false,
 ): void {
   const enemy = spawnEnemyAtPosition(
     world,
@@ -1122,12 +1223,54 @@ function spawnTransferEnemy(
     position,
     config,
   );
+  if (suppressXp) enemy.xpValue = 0;
   events.push({
     type: "enemy.spawned",
     enemyId: enemy.id,
     enemyType: enemy.typeId,
     position: { ...enemy.position },
   });
+}
+
+function applyStoryFixedUpgrade(
+  world: WorldState,
+  config: SimulationConfig,
+): void {
+  if (world.progression.upgradeRanks.rapidFire > 0) return;
+  world.progression.upgradeRanks.rapidFire = 1;
+  const composition = composeBuild(
+    config,
+    world.state.weaponType,
+    world.progression.upgradeRanks,
+    [],
+    world.progression.extraUpgradeRanks,
+  );
+  Object.assign(world.runtime, composition.modifiers);
+}
+
+function getTutorialMission(
+  flowKind: TutorialFlowKind,
+  stepId: TutorialStepId,
+): { number: number; count: number; title: string } {
+  if (flowKind !== "story") {
+    return { number: 1, count: 1, title: "基本訓練" };
+  }
+  if (
+    stepId === "move" ||
+    stepId === "navigate" ||
+    stepId === "contactDamage" ||
+    stepId === "aimAndKill"
+  ) {
+    return { number: 1, count: 3, title: "機体起動" };
+  }
+  if (
+    stepId === "dodgeProjectile" ||
+    stepId === "collectRepair" ||
+    stepId === "transferDrill"
+  ) {
+    return { number: 2, count: 3, title: "初回迎撃" };
+  }
+  return { number: 3, count: 3, title: "実戦投入" };
 }
 
 function spawnTransferRepair(

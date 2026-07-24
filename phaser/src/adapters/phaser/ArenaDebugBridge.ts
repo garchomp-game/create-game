@@ -50,6 +50,7 @@ import type {
 import type { ExProtocolProgressionState } from "../../domain/exProtocols";
 import type { ExProtocolRunStats } from "../../domain/exProtocolTelemetry";
 import type { TutorialSnapshot } from "../../domain/tutorial";
+import type { PracticeRuntimeState } from "../../domain/practice";
 import type {
   AutoPilotMode,
   AutoPilotOverrideReason,
@@ -89,6 +90,7 @@ export type ArenaDebugSnapshot = {
   randomStreams: ArenaRandomStreamSnapshot;
   status: GameStatus;
   tutorial: TutorialSnapshot | null;
+  practice: PracticeRuntimeState | null;
   autoPilotEnabled: boolean;
   autoPilotMode: AutoPilotMode | null;
   autoPilotIntentMode: AutoPilotMode | null;

@@ -25,6 +25,12 @@ describe("RulesetProfileRegistry", () => {
       rankPolicy: "none",
       features: { exProtocols: false, endlessContract: false },
     });
+    expect(resolveRulesetProfile("practice", "practice-arena")).toMatchObject({
+      id: "practice-sandbox-v08",
+      rulesetVersion: "phaser-v0.8-practice-sandbox-v1",
+      rankPolicy: "none",
+      features: { exProtocols: false, endlessContract: false },
+    });
   });
 
   it("resolves only closed candidate combinations", () => {
@@ -48,7 +54,7 @@ describe("RulesetProfileRegistry", () => {
         "candidate-ex-endless-c2",
       ),
     ).toThrow(/not valid/);
-    expect(getRulesetProfiles()).toHaveLength(7);
+    expect(getRulesetProfiles()).toHaveLength(9);
   });
 
   it("retains the candidate-one profile tuple for stored record decoding", () => {

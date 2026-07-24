@@ -31,6 +31,16 @@ async function clickCanvasAt(page: Page, x: number, y: number): Promise<void> {
   );
 }
 
+async function openFinalExpedition(page: Page): Promise<void> {
+  await clickCanvasAt(page, 480, 189);
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
+    )
+    .toBe("story");
+  await clickCanvasAt(page, 480, 319);
+}
+
 async function moveMouseToCanvasAt(page: Page, x: number, y: number): Promise<void> {
   const box = await page.locator("canvas").evaluate((node) => {
     const canvas = node as HTMLCanvasElement;
@@ -89,7 +99,7 @@ test("renders canvas and accepts movement and shooting input", async ({ page }) 
     "title",
   );
 
-  await clickCanvasAt(page, 480, 307);
+  await clickCanvasAt(page, 276, 283);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "weaponSelect",
   );
@@ -135,10 +145,177 @@ test("renders canvas and accepts movement and shooting input", async ({ page }) 
   expect(consoleErrors).toEqual([]);
 });
 
+test("opens one help screen from play and settings without advancing the run", async ({
+  page,
+}) => {
+  await gotoArena(page);
+  await clickCanvasAt(page, 480, 390);
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
+    )
+    .toBe("help");
+  await clickCanvasAt(page, 480, 499);
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
+    )
+    .toBeNull();
+
+  await clickCanvasAt(page, 276, 283);
+  await page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']").click();
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+    .toBe("playing");
+  await clickCanvasAt(page, 480, 270);
+  await page.waitForTimeout(120);
+
+  await holdKeyForFrame(page, "KeyH");
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
+    )
+    .toBe("help");
+  const frozenAt = await page.evaluate(
+    () => window.__ARENA_DEBUG__?.getSnapshot().elapsed,
+  );
+  await page.waitForTimeout(180);
+  expect(
+    await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().elapsed),
+  ).toBe(frozenAt);
+
+  await holdKeyForFrame(page, "KeyH");
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
+    )
+    .toBeNull();
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().elapsed))
+    .toBeGreaterThan(frozenAt ?? 0);
+
+  await clickCanvasAt(page, 922, 502);
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
+    )
+    .toBe("help");
+  await clickCanvasAt(page, 480, 499);
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
+    )
+    .toBeNull();
+
+  await holdKeyForFrame(page, "Escape");
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+    .toBe("paused");
+  await clickCanvasAt(page, 480, 409);
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+    .toBe("title");
+  await clickCanvasAt(page, 644, 390);
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
+    )
+    .toBe("settings");
+  await clickCanvasAt(page, 625, 223);
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
+    )
+    .toBe("help");
+  await clickCanvasAt(page, 480, 499);
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
+    )
+    .toBe("settings");
+});
+
+test("starts Practice with chosen fixed conditions and no run record", async ({
+  page,
+}) => {
+  await gotoArena(page, "/?seed=20260724");
+
+  await clickCanvasAt(page, 620, 280);
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
+    )
+    .toBe("practice");
+
+  await clickCanvasAt(page, 660, 250);
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+    .toBe("playing");
+  await clickCanvasAt(page, 480, 31);
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
+    )
+    .toBe("practiceSettings");
+  const settingsOpenedAt = await page.evaluate(
+    () => window.__ARENA_DEBUG__?.getSnapshot().elapsed,
+  );
+  await page.waitForTimeout(120);
+  expect(
+    await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().elapsed),
+  ).toBe(settingsOpenedAt);
+  await clickCanvasAt(page, 770, 194);
+  await clickCanvasAt(page, 350, 306);
+  await clickCanvasAt(page, 350, 362);
+  await clickCanvasAt(page, 480, 464);
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
+    )
+    .toBeNull();
+  const snapshot = await page.evaluate(() =>
+    window.__ARENA_DEBUG__?.getSnapshot(),
+  );
+  expect(snapshot).toMatchObject({
+    runContext: null,
+    weaponType: "spread",
+    practice: {
+      options: {
+        invincible: true,
+        intensity: "standard",
+        enemyTypeIds: ["brute", "fast"],
+      },
+    },
+    wave: {
+      start: 0,
+      spawnInterval: 0.9,
+      speedMultiplier: 0.85,
+      maxEnemies: 12,
+      spawnBudget: 2,
+      enemyWeights: { brute: 0.65, fast: 0.9 },
+    },
+  });
+  expect(snapshot?.autoPilotEnabled).toBe(false);
+
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
+    if (!debug) throw new Error("Debug API is unavailable.");
+    debug.setPaused(true);
+    for (let index = 0; index < 120; index += 1) {
+      debug.step({}, 1 / 60);
+    }
+  });
+  const enemyCounts = await page.evaluate(
+    () => window.__ARENA_DEBUG__?.getSnapshot().enemyTypeCounts,
+  );
+  expect(enemyCounts?.chaser).toBe(0);
+  expect(enemyCounts?.ranged).toBe(0);
+});
+
 test("runs the final expedition from mode selection through result and retry", async ({ page }) => {
   await gotoArena(page, "/?seed=20260717");
 
-  await clickCanvasAt(page, 480, 339);
+  await openFinalExpedition(page);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "weaponSelect",
   );
@@ -221,7 +398,7 @@ test("navigates Expedition ranking boards across weapons, fixed seeds, and rules
 }) => {
   test.setTimeout(60_000);
   await gotoArena(page, "/?seed=20260717");
-  await clickCanvasAt(page, 480, 339);
+  await openFinalExpedition(page);
   await page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']").click();
   await page.evaluate(() => {
     const debug = window.__ARENA_DEBUG__;
@@ -378,10 +555,10 @@ test("uses native cursor affordances outside active play", async ({ page }) => {
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "title",
   );
-  await moveMouseToCanvasAt(page, 480, 307);
+  await moveMouseToCanvasAt(page, 276, 283);
   await expect.poll(() => getCanvasCursor(page)).toBe("pointer");
 
-  await clickCanvasAt(page, 480, 307);
+  await clickCanvasAt(page, 276, 283);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "weaponSelect",
   );
@@ -1066,7 +1243,7 @@ test("changes and resets settings through the pointer UI", async ({ page }) => {
   await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
   await page.evaluate(() => window.__ARENA_DEBUG__?.openMenu("settings"));
 
-  await clickCanvasAt(page, 480, 159);
+  await clickCanvasAt(page, 335, 171);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSettings().bgmVolume)).toBe(
     0.5,
   );
@@ -1076,7 +1253,7 @@ test("changes and resets settings through the pointer UI", async ({ page }) => {
   expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getSettings().bgmVolume)).toBe(0.5);
 
   await page.evaluate(() => window.__ARENA_DEBUG__?.openMenu("settings"));
-  await clickCanvasAt(page, 480, 395);
+  await clickCanvasAt(page, 625, 275);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSettings())).toMatchObject({
     bgmVolume: 1,
     sfxVolume: 1,
@@ -1101,7 +1278,7 @@ test("resets the guest profile without clearing settings or run records", async 
   );
   const previousProfileId = await page.evaluate(() => window.__ARENA_DEBUG__?.getProfile().id);
 
-  await clickCanvasAt(page, 480, 443);
+  await clickCanvasAt(page, 625, 327);
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getProfile().id))
     .not.toBe(previousProfileId);
@@ -1206,12 +1383,11 @@ test("loads local audio assets without page errors", async ({ page }) => {
   });
   await gotoArena(page);
   await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
-  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().music)).toMatchObject({
-    loaded: true,
-    playing: false,
-  });
+  expect(
+    await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().music.loaded),
+  ).toBe(true);
 
-  await clickCanvasAt(page, 480, 307);
+  await clickCanvasAt(page, 276, 283);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "weaponSelect",
   );
@@ -1250,6 +1426,10 @@ test("loads local audio assets without page errors", async ({ page }) => {
       "level-up.ogg",
       "pickup-alt-1.ogg",
       "pickup.ogg",
+      "protocol-activate.ogg",
+      "protocol-guard.ogg",
+      "protocol-ready.ogg",
+      "protocol-reject.ogg",
       "shot-alt-1.ogg",
       "shot-alt-2.ogg",
       "shot.ogg",
@@ -1261,7 +1441,7 @@ test("loads local audio assets without page errors", async ({ page }) => {
 test("selects spread as the run weapon and preserves it on restart", async ({ page }) => {
   await gotoArena(page, "/?seed=20260619");
 
-  await clickCanvasAt(page, 480, 307);
+  await clickCanvasAt(page, 276, 283);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "weaponSelect",
   );

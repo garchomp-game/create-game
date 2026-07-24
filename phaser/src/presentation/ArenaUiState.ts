@@ -3,11 +3,17 @@ import {
   selectRanking,
 } from "../application/runRecords";
 import type {
+  HelpPage,
   HistoryWeaponFilter,
   MenuAction,
   SecondaryMenu,
 } from "../application/ArenaMenuTypes";
 import type { LocalProfile, ProfileSettings } from "../domain/profile";
+import {
+  clonePracticeRunOptions,
+  createDefaultPracticeRunOptions,
+  type PracticeRunOptions,
+} from "../domain/practice";
 import type {
   RunComparisonQuery,
   RunContext,
@@ -24,6 +30,7 @@ export type ReleaseIdentity = {
 
 export type ArenaUiState = {
   secondaryMenu: SecondaryMenu | null;
+  helpPage: HelpPage;
   records: RunRecord[];
   ranking: RunRecord[];
   rankingQuery: RunComparisonQuery | null;
@@ -31,6 +38,7 @@ export type ArenaUiState = {
   rankingBoardCount: number;
   profile: LocalProfile;
   settings: ProfileSettings;
+  practiceOptions: PracticeRunOptions;
   latestRunRecord: RunRecord | null;
   previousBest: RunRecord | null;
   previousWeaponBest: RunRecord | null;
@@ -46,11 +54,13 @@ export type ArenaUiState = {
 
 export type CreateArenaUiStateInput = {
   secondaryMenu: SecondaryMenu | null;
+  helpPage?: HelpPage;
   runHistory: readonly RunRecord[];
   runRankings: readonly RunRecord[];
   runContext: RunContext | null;
   profile: LocalProfile;
   settings: ProfileSettings;
+  practiceOptions?: PracticeRunOptions;
   latestRunRecord: RunRecord | null;
   previousBest: RunRecord | null;
   previousWeaponBest: RunRecord | null;
@@ -86,6 +96,7 @@ export function createArenaUiState(input: CreateArenaUiStateInput): ArenaUiState
 
   return {
     secondaryMenu: input.secondaryMenu,
+    helpPage: input.helpPage ?? "controls",
     records,
     ranking,
     rankingQuery: rankingQuery ? { ...rankingQuery } : null,
@@ -93,6 +104,9 @@ export function createArenaUiState(input: CreateArenaUiStateInput): ArenaUiState
     rankingBoardCount: rankingBoards.length,
     profile: { ...input.profile },
     settings: { ...input.settings },
+    practiceOptions: clonePracticeRunOptions(
+      input.practiceOptions ?? createDefaultPracticeRunOptions(),
+    ),
     latestRunRecord: input.latestRunRecord ? { ...input.latestRunRecord } : null,
     previousBest: input.previousBest ? { ...input.previousBest } : null,
     previousWeaponBest: input.previousWeaponBest

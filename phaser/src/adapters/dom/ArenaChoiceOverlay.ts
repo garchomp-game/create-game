@@ -180,6 +180,9 @@ export class ArenaChoiceOverlay {
       element("strong", "arena-choice-card-title", card.title),
       element("span", "arena-choice-card-description", card.description),
     );
+    if (card.kind === "weapon") {
+      button.append(this.createWeaponDemo(card.id));
+    }
     if (card.facts && card.facts.length > 0) {
       card.facts.forEach((fact) => {
         const row = element("span", "arena-choice-fact");
@@ -208,6 +211,41 @@ export class ArenaChoiceOverlay {
       this.pendingInput.inputMethod = getChoiceInputMethod(event);
     });
     return button;
+  }
+
+  private createWeaponDemo(weaponId: string): HTMLSpanElement {
+    const demo = element(
+      "span",
+      `arena-weapon-demo arena-weapon-demo--${weaponId}`,
+    );
+    demo.setAttribute("aria-hidden", "true");
+    demo.append(element("span", "arena-weapon-demo-player"));
+
+    const trajectories =
+      weaponId === "spread" ? [25, 50, 75, 25, 50, 75] : [50, 50, 50];
+    trajectories.forEach((endY, index) => {
+      const shot = element("span", "arena-weapon-demo-shot");
+      shot.style.setProperty("--shot-end-y", `${endY}%`);
+      shot.style.setProperty(
+        "--shot-delay",
+        `${
+          weaponId === "spread"
+            ? index >= 3
+              ? -0.8
+              : 0
+            : -index * 0.34
+        }s`,
+      );
+      demo.append(shot);
+    });
+
+    const targetYs = weaponId === "spread" ? [25, 50, 75] : [50];
+    for (const targetY of targetYs) {
+      const target = element("span", "arena-weapon-demo-target");
+      target.style.setProperty("--target-y", `${targetY}%`);
+      demo.append(target);
+    }
+    return demo;
   }
 
   private applySelection(selection: ArenaChoiceSelection): void {

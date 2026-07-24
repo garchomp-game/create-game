@@ -65,6 +65,7 @@ export function applyPlayerDamage(
   world: WorldState,
   amount: number,
 ): number {
+  if (world.practice?.options.invincible) return 0;
   const hpBefore = world.state.hp;
   world.state.hp = Math.max(0, hpBefore - Math.max(0, amount));
   return hpBefore - world.state.hp;

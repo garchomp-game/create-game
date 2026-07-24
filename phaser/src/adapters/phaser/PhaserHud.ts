@@ -17,6 +17,8 @@ import {
 } from "../../presentation/ExProtocolPresenter";
 import { getPlayerEffectiveMaxHp } from "../../simulation/systems/playerHealthSystem";
 import { HUD_LEFT_PANEL_BOUNDS } from "./PhaserHudLayout";
+import { getHelpHudButtonBounds } from "./PhaserHelpLayout";
+import { getPracticeSettingsButtonBounds } from "./PhaserPracticeLayout";
 
 export class PhaserHud {
   private readonly scene: Phaser.Scene;
@@ -30,6 +32,8 @@ export class PhaserHud {
   private readonly encounterText: Phaser.GameObjects.Text;
   private readonly bossText: Phaser.GameObjects.Text;
   private readonly autoPilotText: Phaser.GameObjects.Text;
+  private readonly helpText: Phaser.GameObjects.Text;
+  private readonly practiceSettingsText: Phaser.GameObjects.Text;
   private protocolText: Phaser.GameObjects.Text | null = null;
   private protocolNotice: { text: string; expiresAt: number } | null = null;
   private runConfig: SimulationConfig;
@@ -54,6 +58,31 @@ export class PhaserHud {
       .setOrigin(0.5)
       .setColor("#67e8f9")
       .setText("AI観戦");
+    const helpButton = getHelpHudButtonBounds(
+      simulationConfig.arena.width,
+      simulationConfig.arena.height,
+    );
+    this.helpText = this.createText(
+      scene,
+      helpButton.x + helpButton.width / 2,
+      helpButton.y + helpButton.height / 2,
+    )
+      .setOrigin(0.5)
+      .setFontSize(22)
+      .setColor("#67e8f9")
+      .setText("?");
+    const practiceSettingsButton = getPracticeSettingsButtonBounds(
+      simulationConfig.arena.width,
+    );
+    this.practiceSettingsText = this.createText(
+      scene,
+      practiceSettingsButton.x + practiceSettingsButton.width / 2,
+      practiceSettingsButton.y + practiceSettingsButton.height / 2,
+    )
+      .setOrigin(0.5)
+      .setFontSize(15)
+      .setColor("#f8fafc")
+      .setText("設定");
     this.configureForRun(simulationConfig);
   }
 
@@ -138,6 +167,61 @@ export class PhaserHud {
       rightPanel.height - 1,
       6,
     );
+    if (world.state.status === "playing") {
+      const helpButton = getHelpHudButtonBounds(
+        this.simulationConfig.arena.width,
+        this.simulationConfig.arena.height,
+      );
+      this.graphics.fillStyle(0x020617, 0.88);
+      this.graphics.fillRoundedRect(
+        helpButton.x,
+        helpButton.y,
+        helpButton.width,
+        helpButton.height,
+        6,
+      );
+      this.graphics.lineStyle(2, 0x22d3ee, 0.92);
+      this.graphics.strokeRoundedRect(
+        helpButton.x + 0.5,
+        helpButton.y + 0.5,
+        helpButton.width - 1,
+        helpButton.height - 1,
+        6,
+      );
+      this.helpText
+        .setPosition(
+          helpButton.x + helpButton.width / 2,
+          helpButton.y + helpButton.height / 2,
+        )
+        .setVisible(true);
+    }
+    if (world.practice && world.state.status === "playing") {
+      const settingsButton = getPracticeSettingsButtonBounds(
+        this.simulationConfig.arena.width,
+      );
+      this.graphics.fillStyle(0x164e63, 0.94);
+      this.graphics.fillRoundedRect(
+        settingsButton.x,
+        settingsButton.y,
+        settingsButton.width,
+        settingsButton.height,
+        6,
+      );
+      this.graphics.lineStyle(2, 0x22d3ee, 0.95);
+      this.graphics.strokeRoundedRect(
+        settingsButton.x + 0.5,
+        settingsButton.y + 0.5,
+        settingsButton.width - 1,
+        settingsButton.height - 1,
+        6,
+      );
+      this.practiceSettingsText
+        .setPosition(
+          settingsButton.x + settingsButton.width / 2,
+          settingsButton.y + settingsButton.height / 2,
+        )
+        .setVisible(true);
+    }
     if (autoPilotEnabled) {
       const badge = { x: this.simulationConfig.arena.width / 2 - 78, y: 14, width: 156, height: 30 };
       this.graphics.fillStyle(0x083344, 0.9);
@@ -327,6 +411,8 @@ export class PhaserHud {
     this.encounterText.setVisible(visible && Boolean(this.encounterText.text));
     this.bossText.setVisible(false);
     this.autoPilotText.setVisible(false);
+    this.helpText.setVisible(false);
+    this.practiceSettingsText.setVisible(false);
     this.protocolText?.setVisible(false);
   }
 

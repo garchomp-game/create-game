@@ -356,9 +356,9 @@ const rawViewConfig = {
   },
   pickup: {
     xpColor: 0x22c55e,
-    healFill: 0xf8fafc,
-    healStroke: 0x0f172a,
-    healCross: 0xef4444,
+    healFill: 0x164e63,
+    healStroke: 0x67e8f9,
+    healCross: 0xf8fafc,
   },
   obstacle: {
     fill: 0x475569,

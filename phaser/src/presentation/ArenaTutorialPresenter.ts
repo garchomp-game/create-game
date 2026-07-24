@@ -45,14 +45,14 @@ export function createArenaTutorialViewModel(
     return hiddenViewModel(snapshot);
   }
 
-  const text = TEXT.ui.trainingSteps[snapshot.stepId];
+  const text = getTutorialStepText(snapshot);
   if (snapshot.phase === "briefing") {
     if (status !== "trainingBriefing") return hiddenViewModel(snapshot);
     return {
       stepId: snapshot.stepId,
       visible: true,
       presentation: "briefing",
-      eyebrow: `BASIC TRAINING  ${snapshot.stepNumber}/${snapshot.stepCount}`,
+      eyebrow: formatEyebrow(snapshot),
       title: text.title,
       instruction: text.instruction,
       briefing: text.briefing,
@@ -80,7 +80,7 @@ export function createArenaTutorialViewModel(
     stepId: snapshot.stepId,
     visible: true,
     presentation: "hud",
-    eyebrow: `BASIC TRAINING  ${snapshot.stepNumber}/${snapshot.stepCount}`,
+    eyebrow: formatEyebrow(snapshot),
     title: text.title,
     instruction: text.instruction,
     briefing: null,
@@ -97,7 +97,11 @@ export function createArenaTutorialViewModel(
     cueLabel: formatCueLabel(snapshot, text.cueLabel),
     cueLevel: snapshot.hintLevel,
     showGuideLine: snapshot.hintLevel === 2 && snapshot.target !== null,
-    panelKind: snapshot.stepId === "transferDrill" ? "checklist" : "standard",
+    panelKind:
+      snapshot.stepId === "transferDrill" ||
+      snapshot.stepId === "deploymentDrill"
+        ? "checklist"
+        : "standard",
   };
 }
 
@@ -106,7 +110,7 @@ function hiddenViewModel(snapshot: TutorialSnapshot): ArenaTutorialViewModel {
     stepId: snapshot.stepId,
     visible: false,
     presentation: "hud",
-    eyebrow: `BASIC TRAINING  ${snapshot.stepNumber}/${snapshot.stepCount}`,
+    eyebrow: formatEyebrow(snapshot),
     title: "",
     instruction: "",
     briefing: null,
@@ -152,10 +156,20 @@ function formatProgress(snapshot: TutorialSnapshot): string | null {
     if (snapshot.readySecondsRemaining > 0) return "READY";
     return `${snapshot.progress.current} / ${snapshot.progress.required}`;
   }
-  if (snapshot.stepId === "transferDrill") {
+  if (
+    snapshot.stepId === "transferDrill" ||
+    snapshot.stepId === "deploymentDrill"
+  ) {
     return `敵 残り${snapshot.transfer.enemiesRemaining}体   取得物 残り${snapshot.transfer.pickupsRemaining}個`;
   }
   return null;
+}
+
+function formatEyebrow(snapshot: TutorialSnapshot): string {
+  if (snapshot.flowKind === "story") {
+    return `STORY MISSION ${snapshot.missionNumber}/${snapshot.missionCount}  ${snapshot.missionTitle}`;
+  }
+  return `BASIC TRAINING  ${snapshot.stepNumber}/${snapshot.stepCount}`;
 }
 
 function formatCueLabel(
@@ -189,10 +203,44 @@ function formatTargetLabel(
 function formatSuccess(snapshot: TutorialSnapshot): string | null {
   const completed = snapshot.lastCompletedStepId;
   if (!completed || completed === "complete") return null;
-  const base = TEXT.ui.trainingSteps[completed].success;
+  const base = getTutorialStepText({
+    ...snapshot,
+    stepId: completed,
+  }).success;
   if (completed !== "chooseUpgrade" || !snapshot.selectedUpgradeId) return base;
   const upgrade = TEXT.upgrades.definitions[snapshot.selectedUpgradeId];
   return `${base}：${upgrade.title}\n${upgrade.description}`;
+}
+
+function getTutorialStepText(snapshot: TutorialSnapshot) {
+  if (snapshot.stepId === "complete") {
+    throw new Error("Completed tutorial steps do not have presentation copy");
+  }
+  const base = TEXT.ui.trainingSteps[snapshot.stepId];
+  if (snapshot.flowKind !== "story") return base;
+
+  if (snapshot.stepId === "move") {
+    return {
+      ...base,
+      title: "機体起動",
+      instruction: "Dで右の光へ、次にAで左の光へ",
+      briefing:
+        "外周防衛網が停止しました。\n機体を起動し、左右の光を確認します。",
+      actionLabel: "機体を起動",
+    };
+  }
+  if (snapshot.stepId === "transferDrill") {
+    return {
+      ...base,
+      title: "初回迎撃",
+      instruction: "敵3体を倒し、戦場を確保",
+      briefing:
+        "連射強化Iを固定装備します。\nこの作戦中は他の強化は発生しません。",
+      actionLabel: "初回迎撃を開始",
+      success: "✓ 初回迎撃を完了しました",
+    };
+  }
+  return base;
 }
 
 function formatRetryNotice(snapshot: TutorialSnapshot): string | null {
@@ -203,5 +251,5 @@ function formatRetryNotice(snapshot: TutorialSnapshot): string | null {
   if (snapshot.stepId === "dodgeProjectile") {
     return `${reason}\n回避 ${snapshot.progress.current}/${snapshot.progress.required}から再開します`;
   }
-  return `${reason}\n総合演習を最初から再開します`;
+  return `${reason}\n${snapshot.missionTitle}を最初から再開します`;
 }

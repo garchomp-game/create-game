@@ -13,6 +13,11 @@ import type {
   StageDefinition,
 } from "../domain/gameContent";
 import type { TutorialSnapshot } from "../domain/tutorial";
+import {
+  clonePracticeRunOptions,
+  createDefaultPracticeRunOptions,
+  type PracticeRunOptions,
+} from "../domain/practice";
 import { createRandomStreams, type RandomStreams } from "../math/random";
 import type {
   RulesetProfile,
@@ -36,6 +41,7 @@ export type ArenaSessionStartInput = {
   modeId?: string;
   stageId?: string;
   rulesetProfileId?: RulesetProfileId;
+  practiceOptions?: PracticeRunOptions;
 };
 
 export type ArenaSessionOptions = {
@@ -75,6 +81,12 @@ export class ArenaSession {
       stage.id,
       input.rulesetProfileId,
     );
+    const practiceOptions =
+      mode.runtimeKind === "practice"
+        ? clonePracticeRunOptions(
+            input.practiceOptions ?? createDefaultPracticeRunOptions(),
+          )
+        : null;
     if (
       rulesetProfile.features.exProtocols &&
       stage.exProtocolOfferPolicy !== "fixed-compatible"
@@ -89,8 +101,12 @@ export class ArenaSession {
       stage,
       seed,
       rulesetProfile,
+      practiceOptions,
     );
     const world = createWorld(config);
+    if (practiceOptions) {
+      world.practice = { options: clonePracticeRunOptions(practiceOptions) };
+    }
     world.state.weaponType = input.weaponType;
     world.state.status = input.status ?? "playing";
     initializeExProtocolProgression(world, config, input.weaponType);
@@ -102,7 +118,12 @@ export class ArenaSession {
           )
         : null;
     const tutorialController =
-      mode.runtimeKind === "training" ? new TutorialController() : null;
+      mode.runtimeKind === "training" || mode.runtimeKind === "story"
+        ? new TutorialController({
+            flowKind:
+              mode.runtimeKind === "story" ? "story" : "basic-training",
+          })
+        : null;
     const randomStreams = createRandomStreams(
       seed,
       rulesetProfile.randomStreamVersion,
@@ -179,6 +200,20 @@ export class ArenaSession {
       }
     }
     return result;
+  }
+
+  updatePracticeOptions(options: PracticeRunOptions): void {
+    const active = this.requireActive();
+    if (active.mode.runtimeKind !== "practice" || !active.world.practice) {
+      throw new Error("Practice options require an active Practice session.");
+    }
+    const nextOptions = clonePracticeRunOptions(options);
+    active.world.practice.options = clonePracticeRunOptions(nextOptions);
+    active.config.waves.splice(
+      0,
+      active.config.waves.length,
+      createPracticeWave(nextOptions),
+    );
   }
 
   get seed(): number {
@@ -258,6 +293,7 @@ function applyStageToConfig(
   stage: StageDefinition,
   seed: number,
   rulesetProfile: RulesetProfile,
+  practiceOptions: PracticeRunOptions | null,
 ): SimulationConfig {
   const difficulty = stage.difficulty;
   return {
@@ -267,7 +303,10 @@ function applyStageToConfig(
       ? { exProtocolOfferPolicy: stage.exProtocolOfferPolicy }
       : {}),
     features:
-      mode.runtimeKind === "expedition" || mode.runtimeKind === "training"
+      mode.runtimeKind === "expedition" ||
+      mode.runtimeKind === "training" ||
+      mode.runtimeKind === "story" ||
+      mode.runtimeKind === "practice"
         ? {
             ...baseConfig.features,
             exProtocols: rulesetProfile.features.exProtocols,
@@ -295,6 +334,8 @@ function applyStageToConfig(
             typeId,
             {
               ...enemy,
+              spawnCost:
+                mode.runtimeKind === "practice" ? 1 : enemy.spawnCost,
               hp: Math.ceil(
                 enemy.hp *
                   (difficulty.enemyHpMultipliers?.[typeId as EnemyTypeId] ?? 1),
@@ -310,7 +351,7 @@ function applyStageToConfig(
         ) as SimulationConfig["enemies"]
       : baseConfig.enemies,
     pickup:
-      mode.runtimeKind === "training"
+      mode.runtimeKind === "training" || mode.runtimeKind === "story"
         ? {
             ...baseConfig.pickup,
             healDropChance: 0,
@@ -327,12 +368,15 @@ function applyStageToConfig(
               ),
             }
           : baseConfig.pickup,
-    waves: difficulty
-      ? difficulty.waves.map((wave) => ({
-          ...wave,
-          enemyWeights: { ...wave.enemyWeights },
-        }))
-      : baseConfig.waves,
+    waves:
+      mode.runtimeKind === "practice" && practiceOptions
+        ? [createPracticeWave(practiceOptions)]
+        : difficulty
+          ? difficulty.waves.map((wave) => ({
+              ...wave,
+              enemyWeights: { ...wave.enemyWeights },
+            }))
+          : baseConfig.waves,
     threat: difficulty
       ? {
           ...baseConfig.threat,
@@ -349,5 +393,44 @@ function applyStageToConfig(
         }
       : baseConfig.leveling,
     obstacles: stage.obstacles.map((obstacle) => ({ ...obstacle })),
+  };
+}
+
+function createPracticeWave(
+  options: PracticeRunOptions,
+): SimulationConfig["waves"][number] {
+  const intensity =
+    options.intensity === "busy"
+      ? {
+          spawnInterval: 0.6,
+          speedMultiplier: 0.95,
+          maxEnemies: 20,
+          spawnBudget: 3,
+        }
+      : options.intensity === "standard"
+        ? {
+            spawnInterval: 0.9,
+            speedMultiplier: 0.85,
+            maxEnemies: 12,
+            spawnBudget: 2,
+          }
+        : {
+            spawnInterval: 1.4,
+            speedMultiplier: 0.75,
+            maxEnemies: 6,
+            spawnBudget: 1,
+          };
+  const weights = {
+    chaser: 1,
+    brute: 0.65,
+    fast: 0.9,
+    ranged: 0.55,
+  } as const;
+  return {
+    start: 0,
+    ...intensity,
+    enemyWeights: Object.fromEntries(
+      options.enemyTypeIds.map((typeId) => [typeId, weights[typeId]]),
+    ),
   };
 }

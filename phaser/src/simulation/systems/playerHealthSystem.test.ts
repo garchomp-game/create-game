@@ -57,6 +57,24 @@ describe("playerHealthSystem", () => {
       reservedHp: 33,
     });
   });
+
+  it("ignores damage while Practice invincibility is enabled", () => {
+    const session = new ArenaSession(SIMULATION_CONFIG);
+    session.start({
+      seed: 20260724,
+      weaponType: "pulse",
+      modeId: "practice",
+      stageId: "practice-arena",
+      practiceOptions: {
+        invincible: true,
+        intensity: "relaxed",
+        enemyTypeIds: ["chaser"],
+      },
+    });
+
+    expect(applyPlayerDamage(session.world, 40)).toBe(0);
+    expect(session.world.state.hp).toBe(SIMULATION_CONFIG.player.maxHp);
+  });
 });
 
 function createRedlineSession(): ArenaSession {

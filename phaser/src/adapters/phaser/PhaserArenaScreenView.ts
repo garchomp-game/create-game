@@ -1,18 +1,47 @@
 import * as Phaser from "phaser";
-import type { SimulationConfig, WorldState } from "../../domain/types";
+import type { SimulationConfig, ViewConfig, WorldState } from "../../domain/types";
 import type { ArenaScreenViewModel } from "../../presentation/ArenaScreenPresenter";
 import { ARENA_PHASER_COLORS as COLOR, ARENA_THEME } from "../../presentation/ArenaTheme";
 import { getMenuButtons } from "./PhaserMenuLayout";
+import { PhaserHelpOverlay } from "./PhaserHelpOverlay";
+import { PhaserPracticeSettingsView } from "./PhaserPracticeSettingsView";
+import { PhaserPracticeWeaponPreview } from "./PhaserPracticeWeaponPreview";
+import { PhaserTitleScreenView } from "./PhaserTitleScreenView";
 
 export class PhaserArenaScreenView {
   private readonly statusText: Phaser.GameObjects.Text;
   private readonly detailText: Phaser.GameObjects.Text;
   private readonly menuButtonTexts: Phaser.GameObjects.Text[];
+  private readonly helpOverlay: PhaserHelpOverlay;
+  private readonly practiceSettingsView: PhaserPracticeSettingsView;
+  private readonly practiceWeaponPreview: PhaserPracticeWeaponPreview;
+  private readonly titleScreenView: PhaserTitleScreenView;
 
   constructor(
     scene: Phaser.Scene,
     private readonly simulationConfig: SimulationConfig,
+    viewConfig: ViewConfig,
   ) {
+    this.helpOverlay = new PhaserHelpOverlay(
+      scene,
+      simulationConfig,
+      viewConfig,
+    );
+    this.practiceSettingsView = new PhaserPracticeSettingsView(
+      scene,
+      simulationConfig.arena.width,
+      simulationConfig.arena.height,
+      viewConfig,
+    );
+    this.practiceWeaponPreview = new PhaserPracticeWeaponPreview(
+      scene,
+      viewConfig,
+    );
+    this.titleScreenView = new PhaserTitleScreenView(
+      scene,
+      simulationConfig.arena.width,
+      simulationConfig.arena.height,
+    );
     this.statusText = scene.add
       .text(simulationConfig.arena.width / 2, simulationConfig.arena.height / 2, "", {
         fontFamily: ARENA_THEME.typography.canvasFontFamily,
@@ -37,7 +66,7 @@ export class PhaserArenaScreenView {
       .setDepth(20)
       .setVisible(false);
 
-    this.menuButtonTexts = Array.from({ length: 8 }, () =>
+    this.menuButtonTexts = Array.from({ length: 12 }, () =>
       scene.add
         .text(0, 0, "", {
           fontFamily: ARENA_THEME.typography.canvasFontFamily,
@@ -60,11 +89,22 @@ export class PhaserArenaScreenView {
     this.hideButtonTexts();
     this.statusText.setVisible(false);
     this.detailText.setVisible(false);
+    this.helpOverlay.hide();
+    this.practiceSettingsView.hide();
+    this.practiceWeaponPreview.hide();
+    this.titleScreenView.hide();
+
+    if (screen.kind === "help") {
+      this.helpOverlay.render(screen.helpPage, screen.focusedMenuAction);
+      return;
+    }
 
     if (
       screen.kind === "history" ||
       screen.kind === "ranking" ||
-      screen.kind === "settings"
+      screen.kind === "settings" ||
+      screen.kind === "story" ||
+      screen.kind === "practice"
     ) {
       this.drawSecondaryMenu(graphics, world, screen);
       return;
@@ -154,18 +194,7 @@ export class PhaserArenaScreenView {
       return;
     }
     if (screen.kind === "title") {
-      graphics.fillStyle(COLOR.overlayStrong, 0.86);
-      graphics.fillRect(0, 0, width, height);
-      this.statusText
-        .setOrigin(0.5)
-        .setAlign("center")
-        .setFontSize(32)
-        .setLineSpacing(4)
-        .setWordWrapWidth(width - 160)
-        .setPosition(width / 2, 116)
-        .setText(screen.statusText ?? "")
-        .setVisible(true);
-      this.drawMenuButtons(graphics, world, screen);
+      this.titleScreenView.render(graphics, screen);
     }
   }
 
@@ -177,6 +206,11 @@ export class PhaserArenaScreenView {
     const { width, height } = this.simulationConfig.arena;
     graphics.fillStyle(COLOR.overlayStrong, 0.96);
     graphics.fillRect(0, 0, width, height);
+
+    if (screen.secondaryMenu === "practiceSettings") {
+      this.practiceSettingsView.render(graphics, screen);
+      return;
+    }
 
     if (screen.kind === "history") {
       this.statusText
@@ -210,6 +244,9 @@ export class PhaserArenaScreenView {
         .setVisible(true);
     }
 
+    if (screen.secondaryMenu === "practice") {
+      this.practiceWeaponPreview.render(graphics);
+    }
     this.drawMenuButtons(graphics, world, screen);
   }
 
@@ -236,7 +273,14 @@ export class PhaserArenaScreenView {
         button.action === screen.focusedMenuAction,
       );
       const text = this.menuButtonTexts[index]!;
+      const isPracticeWeapon =
+        screen.secondaryMenu === "practice" &&
+        (button.action === "practiceStartPulse" ||
+          button.action === "practiceStartSpread");
+      const isPracticeBack =
+        screen.secondaryMenu === "practice" && button.action === "back";
       text
+        .setFontSize(isPracticeWeapon ? 22 : isPracticeBack ? 15 : 18)
         .setText(button.label)
         .setPosition(button.x + button.width / 2, button.y + button.height / 2)
         .setVisible(true);

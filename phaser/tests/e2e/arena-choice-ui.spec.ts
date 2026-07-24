@@ -52,7 +52,7 @@ async function expectChoiceCardsFit(page: Page, expectedCount: number): Promise<
 test("uses aligned semantic DOM controls at high pixel density", async ({ page }) => {
   await page.goto("/");
   await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
-  await clickCanvasLogical(page, 480, 307);
+  await clickCanvasLogical(page, 276, 283);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "weaponSelect",
   );
@@ -69,6 +69,14 @@ test("uses aligned semantic DOM controls at high pixel density", async ({ page }
   await expect(weaponChoices.first().locator(".arena-choice-card-action")).toHaveText(
     "この武器で開始",
   );
+  await expect(weaponChoices.first().locator(".arena-weapon-demo--pulse")).toHaveCount(1);
+  await expect(weaponChoices.nth(1).locator(".arena-weapon-demo--spread")).toHaveCount(1);
+  await expect(
+    weaponChoices.first().locator(".arena-weapon-demo-shot"),
+  ).toHaveCount(3);
+  await expect(
+    weaponChoices.nth(1).locator(".arena-weapon-demo-shot"),
+  ).toHaveCount(6);
   expect(await page.evaluate(() => window.devicePixelRatio)).toBe(2);
 
   const [overlayBox, canvasBox] = await Promise.all([overlay.boundingBox(), canvas.boundingBox()]);
@@ -145,7 +153,7 @@ test("fits weapon, EX, and contract choices in portrait", async ({ page }) => {
   await page.goto("/");
   await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
 
-  await clickCanvasLogical(page, 480, 307);
+  await clickCanvasLogical(page, 276, 283);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "weaponSelect",
   );

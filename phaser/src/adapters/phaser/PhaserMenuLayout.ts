@@ -1,5 +1,9 @@
 import type { GameStatus } from "../../domain/types";
 import type { MenuAction, SecondaryMenu } from "../../application/ArenaMenuTypes";
+import {
+  getHelpCloseButtonBounds,
+  getHelpTabButtonBounds,
+} from "./PhaserHelpLayout";
 
 export type { MenuAction, SecondaryMenu } from "../../application/ArenaMenuTypes";
 
@@ -21,9 +25,24 @@ export type UpgradeChoiceButton = {
 };
 
 const DEFAULT_MENU_LABELS: Record<MenuAction, string> = {
-  start: "エンドレス開始",
+  story: "ストーリー",
+  start: "エンドレス",
   startExpedition: "最終遠征に挑む",
   startTraining: "基本訓練",
+  practice: "練習場",
+  practiceSettings: "設定",
+  practiceInvincible: "HP無敵",
+  practiceInvinciblePrevious: "◀",
+  practiceInvincibleNext: "▶",
+  practiceIntensity: "敵の出現量",
+  practiceIntensityPrevious: "◀",
+  practiceIntensityNext: "▶",
+  practiceEnemyChaser: "追跡体",
+  practiceEnemyBrute: "重装体",
+  practiceEnemyFast: "高速体",
+  practiceEnemyRanged: "射撃体",
+  practiceStartPulse: "パルスで開始",
+  practiceStartSpread: "拡散で開始",
   selectPulse: "パルスを選ぶ",
   selectSpread: "拡散を選ぶ",
   contractStandard: "標準を維持",
@@ -34,6 +53,10 @@ const DEFAULT_MENU_LABELS: Record<MenuAction, string> = {
   history: "ラン履歴",
   ranking: "ランキング",
   settings: "設定",
+  help: "操作ヘルプ",
+  helpControls: "操作",
+  helpEnemies: "敵",
+  helpField: "アイテム",
   betaInfo: "プレビュー情報",
   back: "戻る",
   historyPrevious: "前のページ",
@@ -117,24 +140,182 @@ export function getMenuButtons(
   }
 
   if (secondaryMenu === "settings") {
-    const actions: MenuAction[] = [
-      "settingsBgm",
-      "settingsSfx",
-      "settingsShake",
-      "settingsFlash",
-      "settingsAutoFire",
-      "resetSettings",
-      "resetProfile",
-      "back",
+    const halfWidth = 250;
+    const leftX = arenaWidth / 2 - 270;
+    const rightX = arenaWidth / 2 + 20;
+    const actions = [
+      ["settingsBgm", leftX, 150],
+      ["settingsSfx", leftX, 202],
+      ["settingsShake", leftX, 254],
+      ["settingsFlash", leftX, 306],
+      ["settingsAutoFire", rightX, 150],
+      ["help", rightX, 202],
+      ["resetSettings", rightX, 254],
+      ["resetProfile", rightX, 306],
+    ] as const;
+    return [
+      ...actions.map(([action, buttonX, buttonY]) => ({
+        action,
+        label: label(action),
+        x: buttonX,
+        y: buttonY,
+        width: halfWidth,
+        height: buttonHeight,
+      })),
+      {
+        action: "back" as const,
+        label: label("back"),
+        x,
+        y: 390,
+        width: buttonWidth,
+        height: buttonHeight,
+      },
     ];
-    return actions.map((action, index) => ({
-      action,
-      label: label(action),
-      x,
-      y: 134 + index * 48,
-      width: buttonWidth,
-      height: buttonHeight,
-    }));
+  }
+
+  if (secondaryMenu === "help") {
+    const close = getHelpCloseButtonBounds(arenaWidth, arenaHeight);
+    return [
+      ...getHelpTabButtonBounds(arenaWidth).map((tab) => ({
+        action: tab.action,
+        label: label(tab.action),
+        x: tab.x,
+        y: tab.y,
+        width: tab.width,
+        height: tab.height,
+      })),
+      {
+        action: "back",
+        label: label("back"),
+        ...close,
+      },
+    ];
+  }
+
+  if (secondaryMenu === "practice") {
+    const weaponWidth = 320;
+    const weaponHeight = 120;
+    const leftX = arenaWidth / 2 - 340;
+    const rightX = arenaWidth / 2 + 20;
+    return [
+      {
+        action: "practiceStartPulse",
+        label: label("practiceStartPulse"),
+        x: leftX,
+        y: 190,
+        width: weaponWidth,
+        height: weaponHeight,
+      },
+      {
+        action: "practiceStartSpread",
+        label: label("practiceStartSpread"),
+        x: rightX,
+        y: 190,
+        width: weaponWidth,
+        height: weaponHeight,
+      },
+      {
+        action: "back",
+        label: label("back"),
+        x: arenaWidth / 2 - 80,
+        y: 438,
+        width: 160,
+        height: 36,
+      },
+    ];
+  }
+
+  if (secondaryMenu === "story") {
+    return [
+      {
+        action: "startTraining",
+        label: "第1章　初期作戦",
+        x: arenaWidth / 2 - 280,
+        y: 176,
+        width: 560,
+        height: 82,
+      },
+      {
+        action: "startExpedition",
+        label: "最終章　最終遠征",
+        x: arenaWidth / 2 - 280,
+        y: 278,
+        width: 560,
+        height: 82,
+      },
+      {
+        action: "back",
+        label: label("back"),
+        x: arenaWidth / 2 - 80,
+        y: 420,
+        width: 160,
+        height: 36,
+      },
+    ];
+  }
+
+  if (secondaryMenu === "practiceSettings") {
+    const selectorLeftX = arenaWidth / 2 + 90;
+    const selectorRightX = arenaWidth / 2 + 270;
+    const enemyLeftX = arenaWidth / 2 - 230;
+    const enemyRightX = arenaWidth / 2 + 30;
+    return [
+      {
+        action: "practiceInvinciblePrevious",
+        label: label("practiceInvinciblePrevious"),
+        x: selectorLeftX,
+        y: 112,
+        width: 40,
+        height: 40,
+      },
+      {
+        action: "practiceInvincibleNext",
+        label: label("practiceInvincibleNext"),
+        x: selectorRightX,
+        y: 112,
+        width: 40,
+        height: 40,
+      },
+      {
+        action: "practiceIntensityPrevious",
+        label: label("practiceIntensityPrevious"),
+        x: selectorLeftX,
+        y: 174,
+        width: 40,
+        height: 40,
+      },
+      {
+        action: "practiceIntensityNext",
+        label: label("practiceIntensityNext"),
+        x: selectorRightX,
+        y: 174,
+        width: 40,
+        height: 40,
+      },
+      ...(
+        [
+          ["practiceEnemyChaser", enemyLeftX, 286],
+          ["practiceEnemyBrute", enemyRightX, 286],
+          ["practiceEnemyFast", enemyLeftX, 342],
+          ["practiceEnemyRanged", enemyRightX, 342],
+        ] as const
+      ).map(([action, buttonX, buttonY]) => ({
+        action,
+        label: label(action),
+        x: buttonX,
+        y: buttonY,
+        width: 200,
+        height: 40,
+      })),
+      {
+        action: "back",
+        label: label("back"),
+        x: arenaWidth / 2 - 80,
+        y: 446,
+        width: 160,
+        height: 36,
+      },
+    ];
   }
 
   if (secondaryMenu === "history") {
@@ -236,24 +417,39 @@ export function getMenuButtons(
   }
 
   if (status === "title") {
-    const primary: MenuAction[] = ["start", "startExpedition", "startTraining"];
-    const secondary: MenuAction[] = ["ranking", "history", "settings", "betaInfo"];
+    const primary: MenuAction[] = ["story"];
+    const support: MenuAction[] = ["start", "practice"];
+    const utility: MenuAction[] = [
+      "ranking",
+      "history",
+      "help",
+      "settings",
+      "betaInfo",
+    ];
     return [
       ...primary.map((action, index) => ({
         action,
         label: label(action),
-        x,
-        y: 276 + index * 48,
-        width: buttonWidth,
-        height: buttonHeight,
+        x: 88,
+        y: 146,
+        width: 784,
+        height: 86,
       })),
-      ...secondary.map((action, index) => ({
+      ...support.map((action, index) => ({
         action,
         label: label(action),
-        x: arenaWidth / 2 - 270 + (index % 2) * 280,
-        y: 426 + Math.floor(index / 2) * 48,
-        width: 260,
-        height: buttonHeight,
+        x: 88 + index * 392,
+        y: 250,
+        width: 376,
+        height: 66,
+      })),
+      ...utility.map((action, index) => ({
+        action,
+        label: label(action),
+        x: 76 + index * 164,
+        y: 368,
+        width: 152,
+        height: 44,
       })),
     ];
   }

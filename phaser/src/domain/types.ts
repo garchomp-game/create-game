@@ -1009,6 +1009,7 @@ export type WorldState = {
   };
   encounter: EncounterState;
   expedition?: ExpeditionState;
+  practice?: import("./practice").PracticeRuntimeState;
   player: Player;
   bullets: Bullet[];
   enemies: Enemy[];

@@ -3,7 +3,7 @@ import type { EnemyTypeId, Obstacle, Vec2, WaveBand } from "./types";
 export type ModeDefinition = {
   id: string;
   titleKey: string;
-  runtimeKind: "endless" | "expedition" | "training";
+  runtimeKind: "endless" | "expedition" | "training" | "story" | "practice";
   recordPolicy: "standard" | "none";
   stageIds: string[];
   defaultStageId: string;

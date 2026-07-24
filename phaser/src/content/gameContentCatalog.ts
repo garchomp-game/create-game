@@ -151,6 +151,53 @@ export const BASIC_TRAINING_STAGE_DEFINITION = {
   clearCondition: { type: "training" },
 } satisfies GameContentDefinitions["stages"][number];
 
+export const STORY_INTRO_STAGE_DEFINITION = {
+  ...BASIC_TRAINING_STAGE_DEFINITION,
+  id: "story-intro",
+  titleKey: "stage.story-intro.title",
+  campaign: { order: 1, role: "standard" },
+} satisfies GameContentDefinitions["stages"][number];
+
+export const PRACTICE_ARENA_STAGE_DEFINITION = {
+  id: "practice-arena",
+  titleKey: "stage.practice-arena.title",
+  exProtocolOfferPolicy: "disabled",
+  arena: { ...ARENA_DEFAULT_STAGE_DEFINITION.arena },
+  obstacles: ARENA_DEFAULT_STAGE_DEFINITION.obstacles.map((obstacle) => ({
+    ...obstacle,
+  })),
+  encounterDeckId: ENDLESS_ENCOUNTER_DECK_ID,
+  enemyPoolId: "practice-core",
+  difficulty: {
+    waves: [
+      {
+        start: 0,
+        spawnInterval: 1.4,
+        speedMultiplier: 0.75,
+        maxEnemies: 6,
+        spawnBudget: 1,
+        enemyWeights: { chaser: 1, brute: 0.65 },
+      },
+    ],
+    enemyHpMultipliers: {
+      chaser: 0.8,
+      brute: 0.8,
+      fast: 0.8,
+      ranged: 0.8,
+    },
+    threat: {
+      pressureStartAt: Number.MAX_SAFE_INTEGER,
+      statStartAt: Number.MAX_SAFE_INTEGER,
+    },
+    rewardScaling: {
+      enemyXpMultiplier: 1,
+      enemyScoreMultiplier: 1,
+      healDropChanceMultiplier: 1,
+    },
+  },
+  clearCondition: { type: "endless" },
+} satisfies GameContentDefinitions["stages"][number];
+
 export const GAME_CONTENT_DEFINITIONS = {
   modes: [
     {
@@ -177,11 +224,29 @@ export const GAME_CONTENT_DEFINITIONS = {
       stageIds: ["basic-training"],
       defaultStageId: "basic-training",
     },
+    {
+      id: "story",
+      titleKey: "mode.story.title",
+      runtimeKind: "story",
+      recordPolicy: "none",
+      stageIds: ["story-intro"],
+      defaultStageId: "story-intro",
+    },
+    {
+      id: "practice",
+      titleKey: "mode.practice.title",
+      runtimeKind: "practice",
+      recordPolicy: "none",
+      stageIds: ["practice-arena"],
+      defaultStageId: "practice-arena",
+    },
   ],
   stages: [
     ARENA_DEFAULT_STAGE_DEFINITION,
     FINAL_EXPEDITION_STAGE_DEFINITION,
     BASIC_TRAINING_STAGE_DEFINITION,
+    STORY_INTRO_STAGE_DEFINITION,
+    PRACTICE_ARENA_STAGE_DEFINITION,
   ],
   enemyPools: [
     {
@@ -190,6 +255,10 @@ export const GAME_CONTENT_DEFINITIONS = {
     },
     {
       id: "expedition-core",
+      enemyTypeIds: ["chaser", "brute", "fast", "ranged"],
+    },
+    {
+      id: "practice-core",
       enemyTypeIds: ["chaser", "brute", "fast", "ranged"],
     },
   ],

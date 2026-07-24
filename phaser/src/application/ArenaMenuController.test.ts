@@ -16,15 +16,20 @@ describe("ArenaMenuController", () => {
       modeId: "endless",
       stageId: "arena-default",
     });
+    expect(controller.handle("startExpedition", createContext()).handled).toBe(false);
+    expect(controller.handle("startTraining", createContext()).handled).toBe(false);
+    expect(controller.handle("story", createContext()).handled).toBe(true);
+    expect(controller.state.secondaryMenu).toBe("story");
     expect(controller.handle("startExpedition", createContext()).command).toEqual({
       type: "showWeaponSelect",
       modeId: "expedition",
       stageId: "final-expedition",
     });
+    controller.open("story");
     expect(controller.handle("startTraining", createContext()).command).toEqual({
       type: "startTraining",
-      modeId: "training",
-      stageId: "basic-training",
+      modeId: "story",
+      stageId: "story-intro",
     });
     expect(
       controller.handle("start", createContext({ status: "trainingComplete" })).command,
@@ -72,6 +77,101 @@ describe("ArenaMenuController", () => {
       historyWeaponFilter: "all",
       historyPage: 0,
     });
+  });
+
+  it("opens one help screen and returns to its originating context", () => {
+    const { controller } = createController();
+    const context = createContext();
+
+    controller.handle("settings", context);
+    controller.handle("help", context);
+    expect(controller.state).toMatchObject({
+      secondaryMenu: "help",
+      helpReturnMenu: "settings",
+      helpPage: "controls",
+    });
+
+    controller.handle("helpEnemies", context);
+    expect(controller.state.helpPage).toBe("enemies");
+    controller.handle("helpField", context);
+    expect(controller.state.helpPage).toBe("field");
+
+    controller.handle("back", context);
+    expect(controller.state).toMatchObject({
+      secondaryMenu: "settings",
+      helpReturnMenu: null,
+    });
+
+    controller.handle("back", context);
+    controller.handle("help", createContext({ status: "playing" }));
+    controller.handle("back", createContext({ status: "playing" }));
+    expect(controller.state.secondaryMenu).toBeNull();
+  });
+
+  it("configures and starts a non-recorded Practice run", () => {
+    const { controller } = createController();
+    const context = createContext();
+
+    expect(controller.handle("practice", context).handled).toBe(true);
+    expect(controller.state).toMatchObject({
+      secondaryMenu: "practice",
+      practiceOptions: {
+        invincible: true,
+        intensity: "relaxed",
+        enemyTypeIds: ["chaser", "brute"],
+      },
+    });
+
+    expect(controller.handle("practiceSettings", context).handled).toBe(false);
+    controller.reset();
+    controller.handle("practiceSettings", createContext({ status: "playing" }));
+    expect(controller.state.secondaryMenu).toBe("practiceSettings");
+    controller.handle("practiceInvinciblePrevious", context);
+    controller.handle("practiceIntensityNext", context);
+    controller.handle("practiceEnemyChaser", context);
+    controller.handle("practiceEnemyFast", context);
+    controller.handle("back", context);
+    expect(controller.state.secondaryMenu).toBeNull();
+
+    expect(
+      controller.handle("practiceStartSpread", context).command,
+    ).toEqual({
+      type: "startPractice",
+      modeId: "practice",
+      stageId: "practice-arena",
+      weaponType: "spread",
+      options: {
+        invincible: false,
+        intensity: "standard",
+        enemyTypeIds: ["brute", "fast"],
+      },
+    });
+  });
+
+  it("cycles Practice intensity in both directions", () => {
+    const { controller } = createController();
+    const context = createContext({ status: "playing" });
+    controller.handle("practiceSettings", context);
+
+    controller.handle("practiceIntensityPrevious", context);
+    expect(controller.state.practiceOptions.intensity).toBe("busy");
+
+    controller.handle("practiceIntensityNext", context);
+    expect(controller.state.practiceOptions.intensity).toBe("relaxed");
+  });
+
+  it("keeps at least one enemy enabled in Practice", () => {
+    const { controller } = createController();
+    const context = createContext();
+
+    controller.handle("practice", context);
+    controller.reset();
+    controller.handle("practiceSettings", createContext({ status: "playing" }));
+    controller.handle("practiceEnemyChaser", context);
+    controller.handle("practiceEnemyBrute", context);
+
+    expect(controller.state.practiceOptions.enemyTypeIds).toEqual(["brute"]);
+    expect(controller.state.notice).toBe("敵を1種類以上選んでください");
   });
 
   it("requires confirmation before clearing history and exposes updated records", () => {

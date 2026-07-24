@@ -69,7 +69,7 @@ try {
   await clickCanvasLogical(page, 340, 495);
   await page.waitForTimeout(250);
   await capture(page, "02-settings.png");
-  await clickCanvasLogical(page, 480, 347);
+  await clickCanvasLogical(page, 625, 171);
   await page.waitForTimeout(200);
   const autoFireEnabled = await page.evaluate(() => {
     const raw = localStorage.getItem("arena-core.settings.v1");
@@ -88,7 +88,7 @@ try {
   await capture(page, "04-history-empty.png");
   await pressGameKey(page, "Escape");
 
-  await clickCanvasLogical(page, 480, 307);
+  await clickCanvasLogical(page, 340, 297);
   const pulseChoice = page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']");
   await pulseChoice.waitFor({ state: "visible" });
   await capture(page, "05-weapon-select.png");
@@ -130,7 +130,7 @@ try {
   await page.waitForTimeout(300);
   await capture(page, "11-returned-title.png");
 
-  await clickCanvasLogical(page, 480, 339);
+  await clickCanvasLogical(page, 620, 297);
   const spreadChoice = page.locator(
     "[data-choice-kind='weapon'][data-choice-id='spread']",
   );

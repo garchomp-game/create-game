@@ -293,6 +293,7 @@ export class ArenaDebugController {
       },
       status: world.state.status,
       tutorial: this.dependencies.session.tutorialSnapshot,
+      practice: world.practice ? structuredClone(world.practice) : null,
       autoPilotEnabled: autoPilot.enabled,
       autoPilotMode: autoPilot.mode,
       autoPilotIntentMode: autoPilot.intentMode,

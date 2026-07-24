@@ -25,13 +25,12 @@ export async function openArenaCaptureScenario(
     .poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__)))
     .toBe(true);
 
-  await moveMouseToCanvasLogical(
-    page,
-    480,
-    ARENA_CAPTURE_SCENARIOS[scenarioId].expectedBoss ? 339 : 297,
-  );
-  await page.mouse.down();
-  await page.mouse.up();
+  if (ARENA_CAPTURE_SCENARIOS[scenarioId].expectedBoss) {
+    await clickCanvasLogical(page, 480, 189);
+    await clickCanvasLogical(page, 480, 319);
+  } else {
+    await clickCanvasLogical(page, 276, 283);
+  }
   await page
     .locator("[data-choice-kind='weapon'][data-choice-id='pulse']")
     .click();
@@ -56,6 +55,16 @@ export async function openArenaCaptureScenario(
       ),
     )
     .toBe(scenarioId);
+}
+
+async function clickCanvasLogical(
+  page: Page,
+  logicalX: number,
+  logicalY: number,
+): Promise<void> {
+  await moveMouseToCanvasLogical(page, logicalX, logicalY);
+  await page.mouse.down();
+  await page.mouse.up();
 }
 
 export async function assertArenaCaptureStructure(

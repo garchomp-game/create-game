@@ -10,6 +10,7 @@ import type {
 } from "../../domain/types";
 import { getCollapseSafeBounds } from "../../simulation/systems/collapseSystem";
 import { HUD_LEFT_PANEL_BOUNDS } from "./PhaserHudLayout";
+import { drawRecoveryKitIcon } from "./PhaserRecoveryKitIcon";
 
 export class PhaserArenaWorldView {
   constructor(
@@ -726,21 +727,13 @@ export class PhaserArenaWorldView {
     graphics: Phaser.GameObjects.Graphics,
     pickup: WorldState["pickups"][number],
   ): void {
-    const view = this.viewConfig.pickup;
-    const { x, y } = pickup.position;
-    const size = pickup.radius * 2.25;
-    const left = x - size / 2;
-    const top = y - size / 2;
-    const crossLong = pickup.radius * 1.22;
-    const crossShort = Math.max(3, pickup.radius * 0.38);
-
-    graphics.fillStyle(view.healFill, 1);
-    graphics.fillRoundedRect(left, top, size, size, 3);
-    graphics.lineStyle(2, view.healStroke, 1);
-    graphics.strokeRoundedRect(left, top, size, size, 3);
-    graphics.fillStyle(view.healCross, 1);
-    graphics.fillRect(x - crossShort / 2, y - crossLong / 2, crossShort, crossLong);
-    graphics.fillRect(x - crossLong / 2, y - crossShort / 2, crossLong, crossShort);
+    drawRecoveryKitIcon(
+      graphics,
+      pickup.position.x,
+      pickup.position.y,
+      pickup.radius * 2.25,
+      this.viewConfig.pickup,
+    );
   }
 
   private drawEnemyMark(

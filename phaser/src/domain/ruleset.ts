@@ -4,6 +4,8 @@ export const RULESET_PROFILE_IDS = [
   "legacy-endless-v068",
   "legacy-final-expedition-rc6",
   "legacy-training-v07",
+  "story-onboarding-v08",
+  "practice-sandbox-v08",
   "candidate-ex-endless-c1",
   "candidate-ex-final-expedition-c1",
   "candidate-ex-endless-c2",

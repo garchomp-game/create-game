@@ -233,6 +233,118 @@ describe("ArenaSession", () => {
     expect(session.tutorialSnapshot?.phase).toBe("active");
   });
 
+  it("starts Practice with fixed difficulty and only the selected enemies", () => {
+    const session = new ArenaSession(SIMULATION_CONFIG);
+    session.start({
+      seed: 20260724,
+      weaponType: "spread",
+      modeId: "practice",
+      stageId: "practice-arena",
+      practiceOptions: {
+        invincible: true,
+        intensity: "busy",
+        enemyTypeIds: ["fast", "ranged"],
+      },
+    });
+
+    expect(session.runtimeKind).toBe("practice");
+    expect(session.recordPolicy).toBe("none");
+    expect(session.rulesetProfile).toMatchObject({
+      id: "practice-sandbox-v08",
+      rankPolicy: "none",
+    });
+    expect(session.world.practice).toEqual({
+      options: {
+        invincible: true,
+        intensity: "busy",
+        enemyTypeIds: ["fast", "ranged"],
+      },
+    });
+    expect(session.config.features).toMatchObject({
+      exProtocols: false,
+      encounterDeck: false,
+      endlessContract: false,
+      arenaCollapse: false,
+    });
+    expect(session.config.waves).toEqual([
+      {
+        start: 0,
+        spawnInterval: 0.6,
+        speedMultiplier: 0.95,
+        maxEnemies: 20,
+        spawnBudget: 3,
+        enemyWeights: { fast: 0.9, ranged: 0.55 },
+      },
+    ]);
+    expect(session.config.enemies).toMatchObject({
+      chaser: { spawnCost: 1 },
+      brute: { spawnCost: 1 },
+      fast: { spawnCost: 1 },
+      ranged: { spawnCost: 1 },
+    });
+    expect(session.config.threat).toMatchObject({
+      pressureStartAt: Number.MAX_SAFE_INTEGER,
+      statStartAt: Number.MAX_SAFE_INTEGER,
+    });
+    expect(session.tutorialSnapshot).toBeNull();
+  });
+
+  it("can spawn a high-cost enemy by itself at relaxed Practice intensity", () => {
+    const session = new ArenaSession(SIMULATION_CONFIG);
+    session.start({
+      seed: 20260724,
+      weaponType: "pulse",
+      modeId: "practice",
+      stageId: "practice-arena",
+      practiceOptions: {
+        invincible: true,
+        intensity: "relaxed",
+        enemyTypeIds: ["brute"],
+      },
+    });
+
+    for (let index = 0; index < 120; index += 1) {
+      session.step({ ...input, shootHeld: false }, 1 / 60);
+    }
+
+    expect(session.world.enemies.length).toBeGreaterThan(0);
+    expect(session.world.enemies.every((enemy) => enemy.typeId === "brute")).toBe(
+      true,
+    );
+  });
+
+  it("applies Practice options to the active run and future spawns", () => {
+    const session = new ArenaSession(SIMULATION_CONFIG);
+    session.start({
+      seed: 20260724,
+      weaponType: "pulse",
+      modeId: "practice",
+      stageId: "practice-arena",
+    });
+
+    session.updatePracticeOptions({
+      invincible: false,
+      intensity: "standard",
+      enemyTypeIds: ["fast", "ranged"],
+    });
+
+    expect(session.world.practice?.options).toEqual({
+      invincible: false,
+      intensity: "standard",
+      enemyTypeIds: ["fast", "ranged"],
+    });
+    expect(session.config.waves).toEqual([
+      {
+        start: 0,
+        spawnInterval: 0.9,
+        speedMultiplier: 0.85,
+        maxEnemies: 12,
+        spawnBudget: 2,
+        enemyWeights: { fast: 0.9, ranged: 0.55 },
+      },
+    ]);
+  });
+
   it("replays Training events and world state deterministically", () => {
     const left = new ArenaSession(SIMULATION_CONFIG);
     const right = new ArenaSession(SIMULATION_CONFIG);

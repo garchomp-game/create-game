@@ -1,4 +1,8 @@
-import type { MenuAction, SecondaryMenu } from "../application/ArenaMenuTypes";
+import type {
+  HelpPage,
+  MenuAction,
+  SecondaryMenu,
+} from "../application/ArenaMenuTypes";
 import {
   compareRunPerformance,
   getExpeditionTacticalScore,
@@ -8,6 +12,7 @@ import { RELEASE_CHANNEL_LABEL } from "../config/version";
 import { toRunCentiseconds } from "../domain/runRecords";
 import type { RankIneligibilityReason, RunRecord } from "../domain/runRecords";
 import type {
+  EnemyTypeId,
   GameStatus,
   PlayerDamageSource,
   SimulationConfig,
@@ -30,6 +35,9 @@ export type ArenaScreenKind =
   | "history"
   | "ranking"
   | "settings"
+  | "story"
+  | "practice"
+  | "help"
   | "gameOver"
   | "upgradeSelect"
   | "protocolSelect"
@@ -44,10 +52,32 @@ export type ArenaScreenViewModel = {
   kind: ArenaScreenKind;
   status: GameStatus;
   secondaryMenu: SecondaryMenu | null;
+  helpPage: HelpPage;
   statusText: string | null;
   detailText: string | null;
+  practiceSettings: PracticeSettingsScreenViewModel | null;
   menuLabels: Partial<Record<MenuAction, string>>;
   focusedMenuAction: MenuAction | null;
+};
+
+export type PracticeSettingsScreenViewModel = {
+  heading: string;
+  notice: string | null;
+  invincibleLabel: string;
+  invincibleValue: string;
+  intensityLabel: string;
+  intensityValue: string;
+  enemiesHeading: string;
+  enemies: ReadonlyArray<{
+    typeId: EnemyTypeId;
+    action:
+      | "practiceEnemyChaser"
+      | "practiceEnemyBrute"
+      | "practiceEnemyFast"
+      | "practiceEnemyRanged";
+    label: string;
+    enabled: boolean;
+  }>;
 };
 
 export function createArenaScreenViewModel(
@@ -60,6 +90,8 @@ export function createArenaScreenViewModel(
   const base = {
     status: world.state.status,
     secondaryMenu,
+    helpPage: uiState?.helpPage ?? "controls",
+    practiceSettings: null,
     menuLabels: createMenuLabels(uiState),
     focusedMenuAction: uiState?.focusedMenuAction ?? null,
   };
@@ -80,12 +112,101 @@ export function createArenaScreenViewModel(
       detailText: null,
     };
   }
+  if (secondaryMenu === "help") {
+    return {
+      ...base,
+      kind: "help",
+      statusText: null,
+      detailText: null,
+      menuLabels: {
+        ...base.menuLabels,
+        back: "閉じる",
+      },
+    };
+  }
   if (secondaryMenu === "settings") {
     return {
       ...base,
       kind: "settings",
       statusText: `${TEXT.ui.settingsTitle}\n${uiState!.profile.displayName ?? "ゲスト"}  ${uiState!.profile.id.slice(0, 8)}\n${uiState!.notice ?? "選択すると値が切り替わります"}`,
       detailText: null,
+    };
+  }
+  if (secondaryMenu === "story") {
+    return {
+      ...base,
+      kind: "story",
+      statusText: [
+        "STORY OPERATIONS",
+        "初期作戦で機体を起動し、戦闘の基礎を習得",
+        "最終遠征で四方からの総攻撃を突破せよ",
+      ].join("\n"),
+      detailText: null,
+    };
+  }
+  if (secondaryMenu === "practice") {
+    return {
+      ...base,
+      kind: "practice",
+      statusText: [
+        "PRACTICE SANDBOX",
+        "難易度固定 / 記録・ランキング対象外",
+        uiState!.notice ?? "開始武器を選択",
+      ].join("\n"),
+      detailText: null,
+    };
+  }
+  if (secondaryMenu === "practiceSettings") {
+    const options = uiState!.practiceOptions;
+    return {
+      ...base,
+      kind: "practice",
+      statusText: null,
+      detailText: null,
+      practiceSettings: {
+        heading: "練習条件",
+        notice: uiState!.notice,
+        invincibleLabel: TEXT.ui.menu.practiceInvincible,
+        invincibleValue: options.invincible ? "オン" : "オフ",
+        intensityLabel: TEXT.ui.menu.practiceIntensity,
+        intensityValue:
+          options.intensity === "busy"
+            ? "多め"
+            : options.intensity === "standard"
+              ? "標準"
+              : "少なめ",
+        enemiesHeading: "出現する敵",
+        enemies: [
+          {
+            typeId: "chaser",
+            action: "practiceEnemyChaser",
+            label: TEXT.ui.menu.practiceEnemyChaser,
+            enabled: options.enemyTypeIds.includes("chaser"),
+          },
+          {
+            typeId: "brute",
+            action: "practiceEnemyBrute",
+            label: TEXT.ui.menu.practiceEnemyBrute,
+            enabled: options.enemyTypeIds.includes("brute"),
+          },
+          {
+            typeId: "fast",
+            action: "practiceEnemyFast",
+            label: TEXT.ui.menu.practiceEnemyFast,
+            enabled: options.enemyTypeIds.includes("fast"),
+          },
+          {
+            typeId: "ranged",
+            action: "practiceEnemyRanged",
+            label: TEXT.ui.menu.practiceEnemyRanged,
+            enabled: options.enemyTypeIds.includes("ranged"),
+          },
+        ],
+      },
+      menuLabels: {
+        ...base.menuLabels,
+        back: "練習へ戻る",
+      },
     };
   }
 
@@ -95,7 +216,7 @@ export function createArenaScreenViewModel(
         ...base,
         kind: "gameOver",
         statusText: formatGameOverText(world, uiState),
-        detailText: formatGameOverDetails(uiState),
+        detailText: formatGameOverDetails(world, uiState),
       };
     case "upgradeSelect":
       return { ...base, kind: "upgradeSelect", statusText: null, detailText: null };
@@ -106,10 +227,14 @@ export function createArenaScreenViewModel(
     case "contractSelect":
       return { ...base, kind: "contractSelect", statusText: null, detailText: null };
     case "trainingComplete":
+      {
+        const isStory = tutorialSnapshot?.flowKind === "story";
       return {
         ...base,
         kind: "trainingComplete",
-        statusText: `${TEXT.ui.trainingCompleteTitle}\n${TEXT.ui.trainingCompleteDescription}`,
+        statusText: isStory
+          ? `${TEXT.ui.storyCompleteTitle}\n${TEXT.ui.storyCompleteDescription}`
+          : `${TEXT.ui.trainingCompleteTitle}\n${TEXT.ui.trainingCompleteDescription}`,
         detailText: null,
         menuLabels: {
           ...base.menuLabels,
@@ -117,14 +242,20 @@ export function createArenaScreenViewModel(
           title: "タイトルへ戻る",
         },
       };
+      }
     case "paused": {
       const trainingPaused = Boolean(
         tutorialSnapshot && tutorialSnapshot.phase !== "complete",
       );
+      const storyPaused = tutorialSnapshot?.flowKind === "story";
       return {
         ...base,
         kind: "paused",
-        statusText: trainingPaused ? TEXT.ui.trainingPaused : TEXT.ui.paused,
+        statusText: trainingPaused
+          ? storyPaused
+            ? TEXT.ui.storyPaused
+            : TEXT.ui.trainingPaused
+          : TEXT.ui.paused,
         detailText: `${TEXT.hud.weaponNames[world.state.weaponType]}\n${formatCapstoneProgress(world, simulationConfig)}\n${formatRecentSelections(world)}`,
         menuLabels: trainingPaused
           ? {
@@ -132,9 +263,15 @@ export function createArenaScreenViewModel(
               resume:
                 tutorialSnapshot?.stepId === "chooseUpgrade"
                   ? "強化選択へ戻る"
-                  : "訓練を再開",
-              restart: "基本訓練をやり直す",
-              title: "訓練を中断してタイトルへ",
+                  : storyPaused
+                    ? "作戦を再開"
+                    : "訓練を再開",
+              restart: storyPaused
+                ? "初期作戦をやり直す"
+                : "基本訓練をやり直す",
+              title: storyPaused
+                ? "作戦を中断してタイトルへ"
+                : "訓練を中断してタイトルへ",
             }
           : base.menuLabels,
       };
@@ -145,8 +282,8 @@ export function createArenaScreenViewModel(
       return {
         ...base,
         kind: "title",
-        statusText: `${TEXT.ui.titleScreen}\nENDLESS / EXPEDITION / TRAINING\n生存限界か、最終決戦か\n${RELEASE_CHANNEL_LABEL} v${uiState?.releaseIdentity.appVersion ?? import.meta.env.VITE_APP_VERSION}`,
-        detailText: null,
+        statusText: TEXT.ui.titleScreen,
+        detailText: `照準と回避で、生存限界を更新せよ\n${RELEASE_CHANNEL_LABEL} v${uiState?.releaseIdentity.appVersion ?? import.meta.env.VITE_APP_VERSION}`,
       };
     default:
       return { ...base, kind: "none", statusText: null, detailText: null };
@@ -155,6 +292,14 @@ export function createArenaScreenViewModel(
 
 function formatGameOverText(world: WorldState, uiState?: ArenaUiState): string {
   const summary = createRunResultSummary(world);
+  if (world.practice) {
+    return [
+      "PRACTICE 終了",
+      TEXT.ui.result.scoreTime(summary.score, formatTime(summary.elapsed)),
+      TEXT.ui.result.levelKills(summary.level, summary.enemiesKilled),
+      "記録・ランキング対象外",
+    ].join("\n");
+  }
   const record = uiState?.latestRunRecord;
   const bestLine = formatBestLine(
     record,
@@ -201,7 +346,25 @@ function formatGameOverText(world: WorldState, uiState?: ArenaUiState): string {
   return lines.filter(Boolean).join("\n");
 }
 
-function formatGameOverDetails(uiState?: ArenaUiState): string {
+function formatGameOverDetails(
+  world: WorldState,
+  uiState?: ArenaUiState,
+): string {
+  if (world.practice) {
+    const options = world.practice.options;
+    return [
+      `無敵 ${options.invincible ? "オン" : "オフ"}`,
+      `出現量 ${
+        options.intensity === "busy"
+          ? "多め"
+          : options.intensity === "standard"
+            ? "標準"
+            : "少なめ"
+      }`,
+      `敵 ${options.enemyTypeIds.map(formatPracticeEnemyName).join(" / ")}`,
+      "同じ条件で再開できます",
+    ].join("\n");
+  }
   const record = uiState?.latestRunRecord;
   if (!record) return "記録を保存できませんでした";
   const eligibility = isRankableRun(record)
@@ -224,6 +387,14 @@ function formatGameOverDetails(uiState?: ArenaUiState): string {
     `ルール: ${record.rulesetVersion}`,
     uiState.notice ?? "",
   ].filter(Boolean).join("\n");
+}
+
+function formatPracticeEnemyName(typeId: string): string {
+  if (typeId === "chaser") return "追跡体";
+  if (typeId === "brute") return "重装体";
+  if (typeId === "fast") return "高速体";
+  if (typeId === "ranged") return "射撃体";
+  return typeId;
 }
 
 function formatBestLine(
@@ -513,6 +684,18 @@ function createMenuLabels(
     settingsShake: `${TEXT.ui.menu.settingsShake}  ${percent(uiState.settings.shakeIntensity)}`,
     settingsFlash: `${TEXT.ui.menu.settingsFlash}  ${percent(uiState.settings.flashIntensity)}`,
     settingsAutoFire: `${TEXT.ui.menu.settingsAutoFire}  ${enabled(uiState.settings.autoFireEnabled)}`,
+    practiceInvincible: `${TEXT.ui.menu.practiceInvincible}  ${enabled(uiState.practiceOptions.invincible)}`,
+    practiceIntensity: `${TEXT.ui.menu.practiceIntensity}  ${
+      uiState.practiceOptions.intensity === "busy"
+        ? "多め"
+        : uiState.practiceOptions.intensity === "standard"
+          ? "標準"
+          : "少なめ"
+    }`,
+    practiceEnemyChaser: `${uiState.practiceOptions.enemyTypeIds.includes("chaser") ? "[ON]" : "[OFF]"} ${TEXT.ui.menu.practiceEnemyChaser}`,
+    practiceEnemyBrute: `${uiState.practiceOptions.enemyTypeIds.includes("brute") ? "[ON]" : "[OFF]"} ${TEXT.ui.menu.practiceEnemyBrute}`,
+    practiceEnemyFast: `${uiState.practiceOptions.enemyTypeIds.includes("fast") ? "[ON]" : "[OFF]"} ${TEXT.ui.menu.practiceEnemyFast}`,
+    practiceEnemyRanged: `${uiState.practiceOptions.enemyTypeIds.includes("ranged") ? "[ON]" : "[OFF]"} ${TEXT.ui.menu.practiceEnemyRanged}`,
     historyFilterAll:
       uiState.historyWeaponFilter === "all" ? "[すべて]" : TEXT.ui.menu.historyFilterAll,
     historyFilterPulse:

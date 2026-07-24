@@ -4,7 +4,7 @@ import { TUTORIAL_TRANSFER_CHECKLIST_BOUNDS } from "../../src/adapters/phaser/Ph
 import { SIMULATION_CONFIG } from "../../src/config/gameConfig";
 import type { TutorialStepId } from "../../src/domain/tutorial";
 
-test.describe("basic Training", () => {
+test.describe("Story onboarding", () => {
   test("completes through public inputs without changing local run data", async ({
     page,
   }) => {
@@ -13,7 +13,7 @@ test.describe("basic Training", () => {
     await seedExistingRunRecord(page);
     const before = await readLocalState(page);
 
-    await clickCanvasLogical(page, 480, 393);
+    await openStoryIntro(page);
     await expectTrainingStep(page, "move");
     await expect(page.locator(".arena-tutorial-dialog--visible")).toContainText(
       "Dで右へ",
@@ -92,28 +92,12 @@ test.describe("basic Training", () => {
       await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().hp),
     ).toBe(100);
     await shootCurrentTutorialTarget(page);
-    await expectTrainingStep(page, "collectXp");
-    await continueTutorial(page, "collectXp");
-    await moveToCurrentTutorialTarget(page);
-    await expectTrainingStep(page, "chooseUpgrade");
-    await expect(page.locator(".arena-tutorial-dialog--visible")).toContainText(
-      "XPを回収しました",
-    );
-
-    await continueTutorial(page, "chooseUpgrade");
-    await holdKey(page, "Escape", 120);
-    await expect
-      .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
-      .toBe("paused");
-    await clickCanvasLogical(page, 480, 305);
-    await expect
-      .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
-      .toBe("upgradeSelect");
-    await holdKey(page, "Digit1", 120);
     await expectTrainingStep(page, "dodgeProjectile");
-    await expect(page.locator(".arena-tutorial-dialog--visible")).toContainText(
-      "強化を取得しました：",
-    );
+    expect(
+      await page.evaluate(
+        () => window.__ARENA_DEBUG__?.getSnapshot().upgradeRanks.rapidFire,
+      ),
+    ).toBe(0);
 
     await continueTutorial(page, "dodgeProjectile");
     await holdKey(page, "KeyW", 700);
@@ -147,24 +131,29 @@ test.describe("basic Training", () => {
     await moveToCurrentTutorialTarget(page);
     await expectTrainingStep(page, "transferDrill");
     await expect(page.locator(".arena-tutorial-dialog--visible")).toContainText(
-      "最後は案内なしの実戦です",
+      "連射強化Iを固定装備",
     );
     await continueTutorial(page, "transferDrill");
     expect(
       await page.evaluate(() => {
-        const tutorial = window.__ARENA_DEBUG__?.getSnapshot().tutorial;
+        const snapshot = window.__ARENA_DEBUG__?.getSnapshot();
+        const tutorial = snapshot?.tutorial;
         return tutorial
-          ? { stepNumber: tutorial.stepNumber, stepCount: tutorial.stepCount }
+          ? {
+              stepNumber: tutorial.stepNumber,
+              stepCount: tutorial.stepCount,
+              rapidFire: snapshot.upgradeRanks.rapidFire,
+            }
           : null;
       }),
-    ).toEqual({ stepNumber: 9, stepCount: 9 });
+    ).toEqual({ stepNumber: 7, stepCount: 10, rapidFire: 1 });
     const transferRepairPosition = await page.evaluate(
       () =>
         window.__ARENA_DEBUG__?.getSnapshot().tutorial?.transfer.repairPosition ??
         null,
     );
     if (!transferRepairPosition) {
-      throw new Error("Transfer REPAIR position is unavailable.");
+      throw new Error("Transfer recovery position is unavailable.");
     }
     expect(
       circleIntersectsRect(
@@ -175,42 +164,37 @@ test.describe("basic Training", () => {
     ).toBe(false);
     expect(
       await page.evaluate(
-        () => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.transfer.pickups,
-      ),
-    ).toBe(0);
-    expect(
-      await page.evaluate(
         () => window.__ARENA_DEBUG__?.getSnapshot().pendingUpgradeChoices,
       ),
     ).toEqual([]);
 
-    await shootToward(page, { x: 0, y: 270 }, 2_200);
-    await shootToward(page, { x: 960, y: 270 }, 3_200);
-    await movePlayerAxisTo(page, "y", transferRepairPosition.y);
-    await movePlayerAxisTo(page, "x", transferRepairPosition.x);
+    await shootCardinalDirections(page);
+    await finishCombatDrill(page, "transferDrill");
+    await expectTrainingStep(page, "collectXp");
+    await continueTutorial(page, "collectXp");
+    await moveToCurrentTutorialTarget(page);
+    await expectTrainingStep(page, "chooseUpgrade");
+    await expect(page.locator(".arena-tutorial-dialog--visible")).toContainText(
+      "XPを回収しました",
+    );
+
+    await continueTutorial(page, "chooseUpgrade");
+    await holdKey(page, "Escape", 120);
     await expect
-      .poll(
-        () =>
-          page.evaluate(
-            () => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.transfer.pickups,
-          ),
-        { timeout: 5_000 },
-      )
-      .toBeGreaterThanOrEqual(1);
-    await movePlayerAxisTo(page, "y", 270);
-
-    const aimPoints = [
-      { x: 480, y: 0 },
-      { x: 0, y: 270 },
-      { x: 960, y: 270 },
-      { x: 480, y: 540 },
-    ];
-    for (const point of aimPoints) {
-      if ((await getTransferKills(page)) >= 3) break;
-      await shootToward(page, point, 1_500);
-    }
-
-    await finishTransferDrill(page);
+      .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+      .toBe("paused");
+    await clickCanvasLogical(page, 480, 305);
+    await expect
+      .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+      .toBe("upgradeSelect");
+    await holdKey(page, "Digit1", 120);
+    await expectTrainingStep(page, "deploymentDrill");
+    await expect(page.locator(".arena-tutorial-dialog--visible")).toContainText(
+      "強化を取得しました：",
+    );
+    await continueTutorial(page, "deploymentDrill");
+    await shootCardinalDirections(page);
+    await finishCombatDrill(page, "deploymentDrill");
     await expectTrainingStep(page, "complete");
     await expect(page.locator("canvas")).toBeVisible();
     await expect
@@ -237,8 +221,7 @@ test.describe("basic Training", () => {
     await seedExistingRunRecord(page);
     const before = await readLocalState(page);
 
-    await holdKey(page, "ArrowDown", 120);
-    await holdKey(page, "ArrowDown", 120);
+    await holdKey(page, "Enter", 120);
     await holdKey(page, "Enter", 120);
     await expectTrainingStep(page, "move");
 
@@ -278,6 +261,16 @@ async function gotoArena(page: Page): Promise<void> {
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
     .toBe("title");
+}
+
+async function openStoryIntro(page: Page): Promise<void> {
+  await clickCanvasLogical(page, 480, 189);
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
+    )
+    .toBe("story");
+  await clickCanvasLogical(page, 480, 217);
 }
 
 async function seedExistingRunRecord(page: Page): Promise<void> {
@@ -529,15 +522,21 @@ async function shootToward(
   await holdKey(page, "Space", durationMs);
 }
 
-async function getTransferKills(page: Page): Promise<number> {
-  return (
-    (await page.evaluate(
-      () => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.transfer.kills,
-    )) ?? 0
-  );
+async function shootCardinalDirections(page: Page): Promise<void> {
+  for (const point of [
+    { x: 480, y: 0 },
+    { x: 0, y: 270 },
+    { x: 960, y: 270 },
+    { x: 480, y: 540 },
+  ]) {
+    await shootToward(page, point, 1_500);
+  }
 }
 
-async function finishTransferDrill(page: Page): Promise<void> {
+async function finishCombatDrill(
+  page: Page,
+  stepId: "transferDrill" | "deploymentDrill",
+): Promise<void> {
   const patrolPoints = [
     { x: 480, y: 270 },
     { x: 120, y: 270 },
@@ -560,19 +559,19 @@ async function finishTransferDrill(page: Page): Promise<void> {
   await page.keyboard.down("Space");
   try {
     for (let index = 0; Date.now() < deadline; index += 1) {
-      const status = await page.evaluate(
-        () => window.__ARENA_DEBUG__?.getSnapshot().status,
+      const currentStep = await page.evaluate(
+        () => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.stepId,
       );
-      if (status === "trainingComplete") return;
+      if (currentStep !== stepId) return;
       const point = patrolPoints[index % patrolPoints.length]!;
       await moveMouseLogical(page, 480, 270);
-      await movePlayerAxisTo(page, "y", point.y, 24, "transferDrill");
-      await movePlayerAxisTo(page, "x", point.x, 28, "transferDrill");
+      await movePlayerAxisTo(page, "y", point.y, 24, stepId);
+      await movePlayerAxisTo(page, "x", point.x, 28, stepId);
     }
   } finally {
     await page.keyboard.up("Space");
   }
-  throw new Error("Transfer drill did not complete through normal play.");
+  throw new Error(`${stepId} did not complete through normal play.`);
 }
 
 async function moveMouseLogical(page: Page, x: number, y: number): Promise<void> {

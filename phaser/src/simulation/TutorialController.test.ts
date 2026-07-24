@@ -391,6 +391,75 @@ describe("TutorialController", () => {
     expect(world.state.status).toBe("trainingComplete");
   });
 
+  it("delays Story XP and free upgrade choice until after a fixed-skill mission", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    const controller = new TutorialController({ flowKind: "story" });
+    controller.initialize(world, SIMULATION_CONFIG);
+
+    expect(controller.getSnapshot()).toMatchObject({
+      flowKind: "story",
+      missionNumber: 1,
+      missionCount: 3,
+      missionTitle: "機体起動",
+      stepId: "move",
+      stepCount: 10,
+    });
+
+    reachAimStep(controller, world);
+    expect(world.enemies[0]).toMatchObject({ speed: 0, xpValue: 0 });
+    const stationary = controller.getSnapshot().target!;
+    world.enemies = [];
+    advanceFrame(controller, world, [
+      enemyKilled(stationary.id!, stationary.position, 0),
+    ]);
+    expect(world.enemies[0]).toMatchObject({ xpValue: 0 });
+
+    const moving = controller.getSnapshot().target!;
+    world.enemies = [];
+    advanceFrame(controller, world, [
+      enemyKilled(moving.id!, moving.position, 0),
+    ]);
+    expect(controller.getSnapshot()).toMatchObject({
+      stepId: "dodgeProjectile",
+      missionNumber: 2,
+      missionTitle: "初回迎撃",
+    });
+    expect(world.pickups).toEqual([]);
+    expect(world.progression.upgradeRanks.rapidFire).toBe(0);
+
+    activateCurrentStep(controller, world);
+    advanceFrame(controller, world, [], () => {
+      world.state.elapsed += 1;
+    });
+    world.enemyProjectiles = [];
+    advanceFrame(controller, world);
+    world.enemyProjectiles = [];
+    advanceFrame(controller, world);
+    expect(controller.getSnapshot().stepId).toBe("collectRepair");
+
+    activateCurrentStep(controller, world);
+    const healId = controller.getSnapshot().target!.id!;
+    world.pickups = [];
+    advanceFrame(controller, world, [
+      {
+        type: "pickup.collected",
+        pickupId: healId,
+        pickupKind: "heal",
+        xpValue: 0,
+        healValue: 12,
+        hpRecovered: 12,
+      },
+    ]);
+    expect(controller.getSnapshot().stepId).toBe("transferDrill");
+
+    activateCurrentStep(controller, world);
+    expect(world.progression.upgradeRanks.rapidFire).toBe(1);
+    expect(world.progression.xpToNext).toBe(100);
+    expect(world.enemies).toHaveLength(3);
+    expect(world.enemies.every((enemy) => enemy.xpValue === 0)).toBe(true);
+    expect(world.progression.pendingUpgradeChoices).toEqual([]);
+  });
+
   it("restores the current step checkpoint after projectile damage", () => {
     const world = createWorld(SIMULATION_CONFIG);
     const controller = new TutorialController();

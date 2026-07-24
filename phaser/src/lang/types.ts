@@ -9,9 +9,24 @@ import type {
 import type { UpgradePreviewStat } from "../simulation/upgradePreview";
 
 export type MenuActionLabel =
+  | "story"
   | "start"
   | "startExpedition"
   | "startTraining"
+  | "practice"
+  | "practiceSettings"
+  | "practiceInvincible"
+  | "practiceInvinciblePrevious"
+  | "practiceInvincibleNext"
+  | "practiceIntensity"
+  | "practiceIntensityPrevious"
+  | "practiceIntensityNext"
+  | "practiceEnemyChaser"
+  | "practiceEnemyBrute"
+  | "practiceEnemyFast"
+  | "practiceEnemyRanged"
+  | "practiceStartPulse"
+  | "practiceStartSpread"
   | "selectPulse"
   | "selectSpread"
   | "contractStandard"
@@ -22,6 +37,10 @@ export type MenuActionLabel =
   | "history"
   | "ranking"
   | "settings"
+  | "help"
+  | "helpControls"
+  | "helpEnemies"
+  | "helpField"
   | "betaInfo"
   | "back"
   | "historyPrevious"
@@ -62,6 +81,9 @@ export type UiText = {
   trainingPaused: string;
   trainingCompleteTitle: string;
   trainingCompleteDescription: string;
+  storyPaused: string;
+  storyCompleteTitle: string;
+  storyCompleteDescription: string;
   trainingRetry: {
     enemyProjectile: string;
     damage: string;
@@ -87,7 +109,8 @@ export type UiText = {
     | "dodgeProjectile"
     | "collectRepair"
     | "chooseUpgrade"
-    | "transferDrill",
+    | "transferDrill"
+    | "deploymentDrill",
     {
       title: string;
       instruction: string;

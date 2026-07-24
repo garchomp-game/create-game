@@ -9,7 +9,6 @@ const TRAINING_VISUAL_FIXTURES = [
   { stepId: "navigate", snapshotName: "navigate" },
   { stepId: "contactDamage", snapshotName: "contact" },
   { stepId: "aimAndKill", snapshotName: "aim" },
-  { stepId: "collectXp", snapshotName: "xp" },
   { stepId: "dodgeProjectile", snapshotName: "dodge" },
   { stepId: "collectRepair", snapshotName: "repair" },
   { stepId: "transferDrill", snapshotName: "transfer" },
@@ -39,10 +38,28 @@ async function moveMouseToCanvasLogical(page: Page, logicalX: number, logicalY: 
   );
 }
 
-async function showExpeditionCommanderPresentation(page: Page): Promise<void> {
-  await moveMouseToCanvasLogical(page, 480, 339);
+async function clickCanvasLogical(
+  page: Page,
+  logicalX: number,
+  logicalY: number,
+): Promise<void> {
+  await moveMouseToCanvasLogical(page, logicalX, logicalY);
   await page.mouse.down();
   await page.mouse.up();
+}
+
+async function openStoryIntro(page: Page): Promise<void> {
+  await clickCanvasLogical(page, 480, 189);
+  await clickCanvasLogical(page, 480, 217);
+}
+
+async function openFinalExpedition(page: Page): Promise<void> {
+  await clickCanvasLogical(page, 480, 189);
+  await clickCanvasLogical(page, 480, 319);
+}
+
+async function showExpeditionCommanderPresentation(page: Page): Promise<void> {
+  await openFinalExpedition(page);
   await page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']").click();
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
@@ -65,9 +82,7 @@ async function showExpeditionCommanderPresentation(page: Page): Promise<void> {
 }
 
 async function showExpeditionChargerPresentation(page: Page): Promise<void> {
-  await moveMouseToCanvasLogical(page, 480, 339);
-  await page.mouse.down();
-  await page.mouse.up();
+  await openFinalExpedition(page);
   await page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']").click();
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
@@ -94,9 +109,7 @@ async function showExpeditionBossPresentation(
   attackId: BossAttackId,
   phase: 1 | 2,
 ): Promise<void> {
-  await moveMouseToCanvasLogical(page, 480, 339);
-  await page.mouse.down();
-  await page.mouse.up();
+  await openFinalExpedition(page);
   await page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']").click();
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "playing",
@@ -178,9 +191,7 @@ async function showTrainingPresentation(
   page: Page,
   targetStep: TutorialStepId,
 ): Promise<void> {
-  await moveMouseToCanvasLogical(page, 480, 393);
-  await page.mouse.down();
-  await page.mouse.up();
+  await openStoryIntro(page);
   await expect
     .poll(() =>
       page.evaluate(
@@ -298,26 +309,6 @@ async function showTrainingPresentation(
         };
       });
       activateCurrentStep();
-      if (requestedStep === "collectXp") return;
-
-      runUntilStepChanges("collectXp", 420, () => {
-        const snapshot = debug.getSnapshot();
-        const target = snapshot.tutorial?.target?.position;
-        if (!target) throw new Error("XP target is unavailable.");
-        const yDifference = target.y - snapshot.player.y;
-        const xDifference = target.x - snapshot.player.x;
-        if (Math.abs(yDifference) > 10) {
-          return { move: { x: 0, y: Math.sign(yDifference) } };
-        }
-        return { move: { x: Math.sign(xDifference), y: 0 } };
-      });
-
-      activateCurrentStep();
-      debug.step({ upgradeChoicePressed: 0 }, 1 / 60);
-      if (currentStep() !== "dodgeProjectile") {
-        throw new Error("Training fixture did not apply its fixed upgrade.");
-      }
-      activateCurrentStep();
       if (requestedStep === "dodgeProjectile") return;
       runUntilStepChanges("dodgeProjectile", 720, () => ({
         move: { x: 0, y: -1 },
@@ -375,6 +366,72 @@ test("matches the fixed title frame", async ({ page }) => {
   });
 });
 
+test("matches the Story operation selection frame", async ({ page }) => {
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+
+  await clickCanvasLogical(page, 480, 189);
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
+    )
+    .toBe("story");
+
+  await expect(canvas).toHaveScreenshot("arena-story-operations.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("shows the Practice setup and fixed in-arena control guide", async ({
+  page,
+}) => {
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+
+  await moveMouseToCanvasLogical(page, 620, 280);
+  await page.mouse.down();
+  await page.mouse.up();
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
+    )
+    .toBe("practice");
+  await expect(canvas).toHaveScreenshot("arena-practice-setup.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+
+  await moveMouseToCanvasLogical(page, 300, 250);
+  await page.mouse.down();
+  await page.mouse.up();
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+    .toBe("playing");
+  await moveMouseToCanvasLogical(page, 480, 31);
+  await page.mouse.down();
+  await page.mouse.up();
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
+    )
+    .toBe("practiceSettings");
+  await expect(canvas).toHaveScreenshot("arena-practice-settings.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+
+  await moveMouseToCanvasLogical(page, 480, 464);
+  await page.mouse.down();
+  await page.mouse.up();
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
+    )
+    .toBeNull();
+  await page.evaluate(() => window.__ARENA_DEBUG__?.setPaused(true));
+  await expect(canvas).toHaveScreenshot("arena-practice-guide.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
 for (const fixture of TRAINING_VISUAL_FIXTURES) {
   test(`keeps the Training ${fixture.stepId} target clear of its instruction panel`, async ({
     page,
@@ -400,9 +457,7 @@ test("shows four movement directions before the first Training input", async ({
   page,
 }) => {
   await gotoArena(page);
-  await moveMouseToCanvasLogical(page, 480, 393);
-  await page.mouse.down();
-  await page.mouse.up();
+  await openStoryIntro(page);
   const dialog = page.locator(".arena-tutorial-dialog--visible");
   await expect(dialog).toBeVisible();
   await expect(dialog.locator("[data-tutorial-cue='move']")).toContainText(
@@ -505,7 +560,7 @@ test("matches the starting weapon selection frame", async ({ page }) => {
   await gotoArena(page);
   const game = page.locator("#game");
 
-  await moveMouseToCanvasLogical(page, 480, 307);
+  await moveMouseToCanvasLogical(page, 276, 283);
   await page.mouse.down();
   await page.mouse.up();
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
@@ -660,6 +715,34 @@ test("matches the settings frame", async ({ page }) => {
   });
 });
 
+test("matches the shared control and legend help frame", async ({ page }) => {
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+  await page.evaluate(() => window.__ARENA_DEBUG__?.openMenu("help"));
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
+    )
+    .toBe("help");
+  await page.waitForTimeout(150);
+
+  await expect(canvas).toHaveScreenshot("arena-help.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+  await moveMouseToCanvasLogical(page, 480, 111);
+  await page.mouse.down();
+  await page.mouse.up();
+  await expect(canvas).toHaveScreenshot("arena-help-enemies.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+  await moveMouseToCanvasLogical(page, 640, 111);
+  await page.mouse.down();
+  await page.mouse.up();
+  await expect(canvas).toHaveScreenshot("arena-help-field.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
 test("matches the run history frame", async ({ page }) => {
   await seedVisualRunRecords(page);
   const canvas = page.locator("canvas");
@@ -805,7 +888,7 @@ test("matches the fixed upgraded Spread split shot frame", async ({ page }) => {
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
-  await moveMouseToCanvasLogical(page, 480, 307);
+  await moveMouseToCanvasLogical(page, 276, 283);
   await page.mouse.down();
   await page.mouse.up();
   await page.locator("[data-choice-kind='weapon'][data-choice-id='spread']").click();
@@ -855,7 +938,7 @@ test("matches the Pulse ricochet boundary field frame", async ({ page }) => {
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
-  await moveMouseToCanvasLogical(page, 480, 307);
+  await moveMouseToCanvasLogical(page, 276, 283);
   await page.mouse.down();
   await page.mouse.up();
   await page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']").click();

@@ -7,6 +7,8 @@ import {
   DEFAULT_DIFFICULTY_ID,
   DEFAULT_MODE_ID,
   DEFAULT_STAGE_ID,
+  PRACTICE_MODE_ID,
+  STORY_MODE_ID,
   TRAINING_MODE_ID,
 } from "../../config/version";
 import { BASIC_TUTORIAL_SEED } from "../../simulation/TutorialController";
@@ -36,6 +38,11 @@ import {
 } from "../../application/runRecords";
 import type { RunOrigin } from "../../domain/runRecords";
 import type { LocalProfile, ProfileSettings } from "../../domain/profile";
+import {
+  clonePracticeRunOptions,
+  createDefaultPracticeRunOptions,
+  type PracticeRunOptions,
+} from "../../domain/practice";
 import type {
   GameEvent,
   InputSnapshot,
@@ -102,6 +109,8 @@ export class ArenaScene extends Phaser.Scene {
   private selectedWeapon: WeaponTypeId = SIMULATION_CONFIG.defaultWeapon;
   private selectedModeId = DEFAULT_MODE_ID;
   private selectedStageId = DEFAULT_STAGE_ID;
+  private selectedPracticeOptions: PracticeRunOptions =
+    createDefaultPracticeRunOptions();
   private session!: ArenaSession;
   private runRecordStore!: RunRecordStorePort;
   private runLifecycle!: RunLifecycleController;
@@ -222,6 +231,7 @@ export class ArenaScene extends Phaser.Scene {
       this.world.progression.pendingUpgradeChoices.length,
       this.settings.autoFireEnabled,
       this.menuController.state.secondaryMenu,
+      Boolean(this.world.practice),
     );
     const adapterChoiceInputMethod = this.inputAdapter.consumeChoiceInputMethod();
     if (choiceInput.upgradeChoice !== null) {
@@ -300,7 +310,8 @@ export class ArenaScene extends Phaser.Scene {
     this.arenaRenderer.resetPerformance();
     const fixedSeed = this.getFixedRunSeed();
     const runSeed =
-      this.selectedModeId === TRAINING_MODE_ID
+      this.selectedModeId === TRAINING_MODE_ID ||
+      this.selectedModeId === STORY_MODE_ID
         ? BASIC_TUTORIAL_SEED
         : this.createRunSeed(fixedSeed);
     this.session.start({
@@ -310,6 +321,10 @@ export class ArenaScene extends Phaser.Scene {
       modeId: this.selectedModeId,
       stageId: this.selectedStageId,
       rulesetProfileId: this.getRequestedRulesetProfileId(),
+      practiceOptions:
+        this.selectedModeId === PRACTICE_MODE_ID
+          ? this.selectedPracticeOptions
+          : undefined,
     });
     this.bossShadowMonitor.reset(this.world);
     this.encounterReliefMonitor.reset(this.world);
@@ -458,10 +473,13 @@ export class ArenaScene extends Phaser.Scene {
       this.world.state.status,
       this.world.progression.pendingUpgradeChoices.length,
       secondaryMenu,
+      Boolean(this.world.practice),
     );
     this.arenaRenderer.render(
       this.world,
-      autoPilot.enabled ? null : this.inputAdapter.getPointerWorld(),
+      autoPilot.enabled || secondaryMenu !== null
+        ? null
+        : this.inputAdapter.getPointerWorld(),
       this.createUiState(),
       autoPilot.enabled,
       autoPilot.mode,
@@ -603,6 +621,13 @@ export class ArenaScene extends Phaser.Scene {
     if (!outcome.handled) return false;
 
     this.applyMenuActionOutcome(outcome);
+    if (this.world.practice && isPracticeOptionAction(action)) {
+      const options = clonePracticeRunOptions(
+        this.menuController.state.practiceOptions,
+      );
+      this.selectedPracticeOptions = clonePracticeRunOptions(options);
+      this.session.updatePracticeOptions(options);
+    }
     return true;
   }
 
@@ -633,6 +658,15 @@ export class ArenaScene extends Phaser.Scene {
       this.resetGame("playing");
       return;
     }
+    if (command.type === "startPractice") {
+      this.selectedModeId = command.modeId;
+      this.selectedStageId = command.stageId;
+      this.selectedWeapon = command.weaponType;
+      this.selectedPracticeOptions = clonePracticeRunOptions(command.options);
+      this.autoPilotController.setEnabled(false);
+      this.resetGame("playing");
+      return;
+    }
     if (command.type === "startRun") {
       this.selectedWeapon = command.weaponType;
       this.resetGame("playing");
@@ -656,11 +690,13 @@ export class ArenaScene extends Phaser.Scene {
     const menuState = this.menuController.state;
     return createPhaserUiState({
       secondaryMenu: menuState.secondaryMenu,
+      helpPage: menuState.helpPage,
       runHistory: this.runLifecycle.getHistory(),
       runRankings: this.runLifecycle.getRankings(),
       runContext: this.runLifecycle.getContext(),
       profile: this.profile,
       settings: this.settings,
+      practiceOptions: menuState.practiceOptions,
       latestRunRecord: this.runLifecycle.getLatestRecord(),
       previousBest: this.runLifecycle.getPreviousBest(),
       previousWeaponBest: this.runLifecycle.getPreviousWeaponBest(),
@@ -822,6 +858,21 @@ export class ArenaScene extends Phaser.Scene {
     return this.session.seed;
   }
 
+}
+
+function isPracticeOptionAction(action: MenuAction): boolean {
+  return (
+    action === "practiceInvincible" ||
+    action === "practiceInvinciblePrevious" ||
+    action === "practiceInvincibleNext" ||
+    action === "practiceIntensity" ||
+    action === "practiceIntensityPrevious" ||
+    action === "practiceIntensityNext" ||
+    action === "practiceEnemyChaser" ||
+    action === "practiceEnemyBrute" ||
+    action === "practiceEnemyFast" ||
+    action === "practiceEnemyRanged"
+  );
 }
 
 function getConfiguredAutoPilotPatrolStrategy(): AutoPilotPatrolStrategy {

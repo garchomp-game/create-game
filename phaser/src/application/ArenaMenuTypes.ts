@@ -1,11 +1,34 @@
-export type SecondaryMenu = "history" | "ranking" | "settings";
+export type SecondaryMenu =
+  | "history"
+  | "ranking"
+  | "settings"
+  | "practice"
+  | "story"
+  | "practiceSettings"
+  | "help";
 
 export type HistoryWeaponFilter = "all" | "pulse" | "spread";
+export type HelpPage = "controls" | "enemies" | "field";
 
 export type MenuAction =
+  | "story"
   | "start"
   | "startExpedition"
   | "startTraining"
+  | "practice"
+  | "practiceSettings"
+  | "practiceInvincible"
+  | "practiceInvinciblePrevious"
+  | "practiceInvincibleNext"
+  | "practiceIntensity"
+  | "practiceIntensityPrevious"
+  | "practiceIntensityNext"
+  | "practiceEnemyChaser"
+  | "practiceEnemyBrute"
+  | "practiceEnemyFast"
+  | "practiceEnemyRanged"
+  | "practiceStartPulse"
+  | "practiceStartSpread"
   | "selectPulse"
   | "selectSpread"
   | "contractStandard"
@@ -16,6 +39,10 @@ export type MenuAction =
   | "history"
   | "ranking"
   | "settings"
+  | "help"
+  | "helpControls"
+  | "helpEnemies"
+  | "helpField"
   | "betaInfo"
   | "back"
   | "historyPrevious"

@@ -199,12 +199,55 @@ describe("ArenaTutorialPresenter", () => {
       notice: "敵弾に当たりました\n回避 0/2から再開します",
     });
   });
+
+  it("uses mission framing and fixed-skill copy for the Story flow", () => {
+    expect(
+      createArenaTutorialViewModel(
+        makeSnapshot({
+          flowKind: "story",
+          missionNumber: 1,
+          missionCount: 3,
+          missionTitle: "機体起動",
+          phase: "briefing",
+        }),
+        "trainingBriefing",
+      ),
+    ).toMatchObject({
+      eyebrow: "STORY MISSION 1/3  機体起動",
+      title: "機体起動",
+      actionLabel: "機体を起動",
+    });
+
+    expect(
+      createArenaTutorialViewModel(
+        makeSnapshot({
+          flowKind: "story",
+          missionNumber: 2,
+          missionCount: 3,
+          missionTitle: "初回迎撃",
+          stepId: "transferDrill",
+          stepNumber: 7,
+          stepCount: 10,
+          phase: "briefing",
+        }),
+        "trainingBriefing",
+      ),
+    ).toMatchObject({
+      title: "初回迎撃",
+      briefing: "連射強化Iを固定装備します。\nこの作戦中は他の強化は発生しません。",
+      actionLabel: "初回迎撃を開始",
+    });
+  });
 });
 
 function makeSnapshot(
   overrides: Partial<TutorialSnapshot> = {},
 ): TutorialSnapshot {
   return {
+    flowKind: "basic-training",
+    missionNumber: 1,
+    missionCount: 1,
+    missionTitle: "基本訓練",
     stepId: "move",
     phase: "active",
     stepNumber: 1,
