@@ -23,7 +23,7 @@ import {
 import { spawnEnemyAtPosition } from "./systems/spawnSystem";
 
 export const BASIC_TUTORIAL_SEED = 20260720;
-export const BASIC_TUTORIAL_HINT_SECONDS = [8, 20] as const;
+export const BASIC_TUTORIAL_NO_PROGRESS_HINT_SECONDS = [5, 10] as const;
 export const BASIC_TUTORIAL_MOVE_DISTANCE = 64;
 export const BASIC_TUTORIAL_NAVIGATION_START = {
   x: 160,
@@ -97,6 +97,7 @@ export class TutorialController {
   private phase: TutorialPhase = "briefing";
   private stepActiveSeconds = 0;
   private totalActiveSeconds = 0;
+  private noProgressSeconds = 0;
   private movementDistance = 0;
   private dodgePasses = 0;
   private trackedProjectileId: string | null = null;
@@ -143,7 +144,12 @@ export class TutorialController {
     config: SimulationConfig,
     events: GameEvent[],
     frameBefore: { elapsed: number; playerPosition: Vec2 },
-    input: Pick<InputSnapshot, "tutorialContinuePressed"> = {},
+    input: Partial<
+      Pick<
+        InputSnapshot,
+        "aimWorld" | "move" | "shootHeld" | "tutorialContinuePressed"
+      >
+    > = {},
   ): GameEvent[] {
     const added = this.drainPendingEvents();
 
@@ -178,7 +184,38 @@ export class TutorialController {
       this.retryNoticeSecondsRemaining - activeDelta,
     );
     if (this.retryNoticeSecondsRemaining === 0) this.retryReason = null;
+    const targetPositionBefore = this.target
+      ? { ...this.target.position }
+      : null;
     this.syncTargetPosition(world);
+    if (activeDelta > 0 && this.isHintEligible()) {
+      const previousHintLevel = getHintLevel(this.noProgressSeconds);
+      if (
+        this.hasMeaningfulProgress(
+          world,
+          events,
+          frameBefore,
+          input,
+          targetPositionBefore,
+        )
+      ) {
+        this.noProgressSeconds = 0;
+      } else {
+        this.noProgressSeconds += activeDelta;
+      }
+      const nextHintLevel = getHintLevel(this.noProgressSeconds);
+      if (
+        nextHintLevel > previousHintLevel &&
+        (nextHintLevel === 1 || nextHintLevel === 2)
+      ) {
+        added.push({
+          type: "tutorial.hint.shown",
+          stepId: this.stepId,
+          hintLevel: nextHintLevel,
+          noProgressSeconds: this.noProgressSeconds,
+        });
+      }
+    }
 
     if (events.some((event) => event.type === "game.over")) {
       this.retryFromCheckpoint(world, events, added);
@@ -352,7 +389,8 @@ export class TutorialController {
       stepCount: TASK_STEPS.length,
       stepActiveSeconds: this.stepActiveSeconds,
       totalActiveSeconds: this.totalActiveSeconds,
-      hintLevel: getHintLevel(this.stepActiveSeconds),
+      noProgressSeconds: this.noProgressSeconds,
+      hintLevel: getHintLevel(this.noProgressSeconds),
       progress: this.getProgress(),
       target: this.target ? structuredClone(this.target) : null,
       lastCompletedStepId: this.lastCompletedStepId,
@@ -399,6 +437,7 @@ export class TutorialController {
     this.stepId = stepId;
     this.phase = stepId === "complete" ? "complete" : "briefing";
     this.stepActiveSeconds = 0;
+    this.noProgressSeconds = 0;
     this.target = null;
     this.targetEnemyId = null;
     this.targetPickupId = null;
@@ -437,6 +476,7 @@ export class TutorialController {
   ): void {
     this.phase = "active";
     this.stepActiveSeconds = 0;
+    this.noProgressSeconds = 0;
     world.state.status = "playing";
 
     if (this.stepId === "move") {
@@ -686,6 +726,81 @@ export class TutorialController {
     }
   }
 
+  private isHintEligible(): boolean {
+    return (
+      this.stepId === "move" ||
+      this.stepId === "navigate" ||
+      this.stepId === "aimAndKill" ||
+      this.stepId === "collectXp" ||
+      this.stepId === "dodgeProjectile" ||
+      this.stepId === "collectRepair"
+    );
+  }
+
+  private hasMeaningfulProgress(
+    world: WorldState,
+    events: readonly GameEvent[],
+    frameBefore: { playerPosition: Vec2 },
+    input: Partial<Pick<InputSnapshot, "aimWorld" | "move" | "shootHeld">>,
+    targetPositionBefore: Vec2 | null,
+  ): boolean {
+    const playerDistance = Math.hypot(
+      world.player.position.x - frameBefore.playerPosition.x,
+      world.player.position.y - frameBefore.playerPosition.y,
+    );
+
+    if (
+      this.stepId === "move" ||
+      this.stepId === "navigate" ||
+      this.stepId === "dodgeProjectile"
+    ) {
+      return playerDistance >= 0.5 || this.didDodgeProjectilePass(world, events);
+    }
+
+    if (this.stepId === "aimAndKill") {
+      return (
+        input.aimWorld != null ||
+        events.some(
+          (event) =>
+            (event.type === "enemy.hit" || event.type === "enemy.killed") &&
+            event.enemyId === this.targetEnemyId,
+        )
+      );
+    }
+
+    if (
+      (this.stepId === "collectXp" || this.stepId === "collectRepair") &&
+      this.target &&
+      targetPositionBefore
+    ) {
+      const beforeDistance = Math.hypot(
+        targetPositionBefore.x - frameBefore.playerPosition.x,
+        targetPositionBefore.y - frameBefore.playerPosition.y,
+      );
+      const currentDistance = Math.hypot(
+        this.target.position.x - world.player.position.x,
+        this.target.position.y - world.player.position.y,
+      );
+      return currentDistance <= beforeDistance - 0.5;
+    }
+
+    return false;
+  }
+
+  private didDodgeProjectilePass(
+    world: WorldState,
+    events: readonly GameEvent[],
+  ): boolean {
+    return Boolean(
+      this.stepId === "dodgeProjectile" &&
+        this.trackedProjectileId &&
+        !this.didTrackedProjectileHit(events) &&
+        !world.enemyProjectiles.some(
+          (projectile) => projectile.id === this.trackedProjectileId,
+        ),
+    );
+  }
+
   private retryFromCheckpoint(
     world: WorldState,
     sourceEvents: GameEvent[],
@@ -809,9 +924,9 @@ function isInsideZone(
   return Math.hypot(position.x - zone.x, position.y - zone.y) <= zone.radius;
 }
 
-function getHintLevel(activeSeconds: number): 0 | 1 | 2 {
-  if (activeSeconds >= BASIC_TUTORIAL_HINT_SECONDS[1]) return 2;
-  if (activeSeconds >= BASIC_TUTORIAL_HINT_SECONDS[0]) return 1;
+function getHintLevel(noProgressSeconds: number): 0 | 1 | 2 {
+  if (noProgressSeconds >= BASIC_TUTORIAL_NO_PROGRESS_HINT_SECONDS[1]) return 2;
+  if (noProgressSeconds >= BASIC_TUTORIAL_NO_PROGRESS_HINT_SECONDS[0]) return 1;
   return 0;
 }
 

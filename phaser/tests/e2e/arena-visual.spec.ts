@@ -381,6 +381,74 @@ for (const fixture of TRAINING_VISUAL_FIXTURES) {
   });
 }
 
+test("shows the movement input cue only after the H1 no-progress window", async ({
+  page,
+}) => {
+  await gotoArena(page);
+  await showTrainingPresentation(page, "move");
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
+    if (!debug) throw new Error("Debug API is not available.");
+    debug.setPaused(false);
+    for (let frame = 0; frame < 306; frame += 1) {
+      debug.step({ move: { x: 0, y: 0 } }, 1 / 60);
+    }
+    debug.setPaused(true);
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.hintLevel,
+      ),
+    )
+    .toBe(1);
+
+  await expect(page.locator("canvas")).toHaveScreenshot(
+    "arena-training-move-h1.png",
+    { maxDiffPixelRatio: 0.01 },
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(100);
+  await expect(page.locator("canvas")).toHaveScreenshot(
+    "arena-training-move-h1-portrait.png",
+    { maxDiffPixelRatio: 0.01 },
+  );
+});
+
+test("shows the mouse cue without covering the aim target at H1", async ({
+  page,
+}) => {
+  await gotoArena(page);
+  await showTrainingPresentation(page, "aimAndKill");
+  await page.evaluate(() => {
+    const debug = window.__ARENA_DEBUG__;
+    if (!debug) throw new Error("Debug API is not available.");
+    debug.setPaused(false);
+    for (let frame = 0; frame < 306; frame += 1) {
+      debug.step({ move: { x: 0, y: 0 }, aimWorld: null }, 1 / 60);
+    }
+    debug.setPaused(true);
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.hintLevel,
+      ),
+    )
+    .toBe(1);
+
+  await expect(page.locator("canvas")).toHaveScreenshot(
+    "arena-training-aim-h1.png",
+    { maxDiffPixelRatio: 0.01 },
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(100);
+  await expect(page.locator("canvas")).toHaveScreenshot(
+    "arena-training-aim-h1-portrait.png",
+    { maxDiffPixelRatio: 0.01 },
+  );
+});
+
 test("shows the observer auto pilot status without covering the HUD", async ({ page }) => {
   await gotoArena(page);
   const canvas = page.locator("canvas");

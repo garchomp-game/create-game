@@ -29,19 +29,37 @@ describe("ArenaTutorialPresenter", () => {
       presentation: "briefing",
       title: "移動",
       instruction: "WASD / 矢印キーで移動",
-      actionLabel: "移動練習を開始",
+      actionLabel: "移動を始める",
       success: null,
       target: null,
       progress: null,
     });
-    expect(view?.briefing).toContain("全9課題・約3分");
+    expect(view?.briefing).toContain("キーを押して自機を動かします");
   });
 
-  it("reveals staged hints and a guide only after their thresholds", () => {
+  it("uses an input cue for H1 without adding copy", () => {
+    const view = createArenaTutorialViewModel(
+      makeSnapshot({
+        hintLevel: 1,
+        noProgressSeconds: 5,
+      }),
+      "playing",
+    );
+
+    expect(view).toMatchObject({
+      hint: null,
+      cueKind: "move",
+      cueLevel: 1,
+      showGuideLine: false,
+    });
+  });
+
+  it("reveals concrete copy and a guide only at H2", () => {
     const snapshot = makeSnapshot({
       stepId: "navigate",
       stepNumber: 2,
       hintLevel: 2,
+      noProgressSeconds: 10,
       target: {
         kind: "zone",
         id: null,
@@ -57,6 +75,9 @@ describe("ArenaTutorialPresenter", () => {
     expect(createArenaTutorialViewModel(snapshot, "playing")).toMatchObject({
       visible: true,
       title: "進路変更",
+      hint: "折れ線を目安に、壁の外側へ回り込んでください",
+      cueKind: "move",
+      cueLevel: 2,
       showGuideLine: true,
       target: {
         kind: "zone",
@@ -155,6 +176,7 @@ function makeSnapshot(
     stepCount: 9,
     stepActiveSeconds: 0,
     totalActiveSeconds: 0,
+    noProgressSeconds: 0,
     hintLevel: 0,
     progress: { current: 24, required: 64 },
     target: null,

@@ -76,6 +76,7 @@ describe("createArenaScreenViewModel", () => {
         stepCount: 9,
         stepActiveSeconds: 0,
         totalActiveSeconds: 10,
+        noProgressSeconds: 0,
         hintLevel: 0,
         progress: { current: 0, required: 1 },
         target: null,
