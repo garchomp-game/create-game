@@ -99,6 +99,8 @@ runtime候補は`dc174ec`。
 | Production build | 225 modules / pass。既存のchunk size警告のみ |
 | Transfer visual | landscape / portrait pass。Ranged silhouetteがchecklistより前面 |
 | Training public-input E2E | 全課題完走1件pass、pause / restart / title / reload 1件pass |
+| Release smoke | Chrome landscape / portrait、Firefoxの9件pass |
+| Starlight | 112 pages / pass |
 
 公開入力E2Eは最初の二回、変更箇所より前の`navigate`でkey holdが
 進まないflaky failureを再現し、同一SHAの再実行で完走した。
