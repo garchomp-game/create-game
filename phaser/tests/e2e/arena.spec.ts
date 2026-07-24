@@ -54,6 +54,16 @@ async function getCanvasCursor(page: Page): Promise<string> {
   return page.locator("canvas").evaluate((node) => getComputedStyle(node).cursor);
 }
 
+async function holdKeyForFrame(
+  page: Page,
+  code: string,
+  durationMs = 120,
+): Promise<void> {
+  await page.keyboard.down(code);
+  await page.waitForTimeout(durationMs);
+  await page.keyboard.up(code);
+}
+
 test("renders canvas and accepts movement and shooting input", async ({ page }) => {
   const consoleErrors: string[] = [];
   page.on("console", (message) => {
@@ -189,7 +199,7 @@ test("runs the final expedition from mode selection through result and retry", a
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
     .toBe("ranking");
-  await page.keyboard.press("Escape");
+  await holdKeyForFrame(page, "Escape");
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
     .toBeNull();

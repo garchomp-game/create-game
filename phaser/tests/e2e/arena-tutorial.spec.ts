@@ -189,9 +189,9 @@ test.describe("basic Training", () => {
     await seedExistingRunRecord(page);
     const before = await readLocalState(page);
 
-    await page.keyboard.press("ArrowDown");
-    await page.keyboard.press("ArrowDown");
-    await page.keyboard.press("Enter");
+    await holdKey(page, "ArrowDown", 120);
+    await holdKey(page, "ArrowDown", 120);
+    await holdKey(page, "Enter", 120);
     await expectTrainingStep(page, "move");
 
     await holdKey(page, "KeyD", 180);
