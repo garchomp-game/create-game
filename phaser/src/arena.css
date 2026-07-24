@@ -2,6 +2,107 @@
   position: relative;
 }
 
+.arena-device-gate {
+  box-sizing: border-box;
+  display: grid;
+  width: 100%;
+  min-height: 100%;
+  place-items: center;
+  overflow: auto;
+  padding: 48px 28px;
+  background: #070b11;
+  color: #f8fafc;
+  font-family: "Noto Sans CJK JP", "Noto Sans JP", "Yu Gothic", "Meiryo", "Hiragino Kaku Gothic ProN", sans-serif;
+  letter-spacing: 0;
+}
+
+.arena-device-gate__content {
+  width: min(100%, 620px);
+  text-align: center;
+}
+
+.arena-device-gate__brand {
+  margin: 0;
+  color: #67e8f9;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.arena-device-gate__title {
+  margin: 18px 0 0;
+  overflow-wrap: anywhere;
+  color: #ffffff;
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.arena-device-gate__title:focus {
+  outline: none;
+}
+
+.arena-device-gate__description-line {
+  display: block;
+}
+
+.arena-device-gate__lead {
+  margin: 26px 0 0;
+  color: #facc15;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.arena-device-gate__description,
+.arena-device-gate__instruction {
+  margin: 14px auto 0;
+  max-width: 540px;
+  color: #d5dce5;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.75;
+}
+
+.arena-device-gate__instruction {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.arena-device-gate__requirements {
+  margin: 30px 0 0;
+  padding: 18px 0;
+  border-top: 1px solid #334155;
+  border-bottom: 1px solid #334155;
+  color: #a5f3fc;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+@media (max-width: 560px) {
+  .arena-device-gate {
+    padding: 36px 22px;
+  }
+
+  .arena-device-gate__title {
+    font-size: 30px;
+  }
+
+  .arena-device-gate__title-prefix {
+    display: block;
+  }
+
+  .arena-device-gate__lead {
+    font-size: 18px;
+  }
+
+  .arena-device-gate__description,
+  .arena-device-gate__instruction {
+    font-size: 15px;
+  }
+}
+
 .arena-tutorial-dialog {
   --arena-scale: 1;
   position: absolute;
