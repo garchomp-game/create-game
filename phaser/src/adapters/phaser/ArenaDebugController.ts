@@ -195,7 +195,7 @@ export class ArenaDebugController {
       restoreHealthForSoak: () => this.restoreHealthForSoak(),
       forceGameOver: () => this.forceGameOver(),
       grantXp: (amount) => this.grantXp(amount),
-      forceUpgradeSelect: () => this.forceUpgradeSelect(),
+      forceUpgradeSelect: (preserveInput) => this.forceUpgradeSelect(preserveInput),
       forceExtraUpgradeSelect: () => this.forceExtraUpgradeSelect(),
       restart: () => {
         this.dependencies.resetGame("playing", this.debugRunOrigin);
@@ -479,9 +479,9 @@ export class ArenaDebugController {
     this.dependencies.render();
   }
 
-  private forceUpgradeSelect(): void {
+  private forceUpgradeSelect(preserveInput = false): void {
     if (this.world.state.status === "gameOver") return;
-    this.markMutation();
+    this.markMutation(!preserveInput);
     const choices = selectUpgradeChoices(
       this.config,
       this.dependencies.session.randomStreams.upgrade,

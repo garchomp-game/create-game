@@ -103,7 +103,11 @@ export class PhaserInputAdapter {
     const shootJustDown = Phaser.Input.Keyboard.JustDown(this.keys.shoot);
     this.pointerPressed = false;
     this.syncCursor(status, upgradeChoiceCount, secondaryMenu);
-    if (status !== "playing") {
+    if (
+      status !== "playing" &&
+      status !== "upgradeSelect" &&
+      status !== "contractSelect"
+    ) {
       this.hasPointerAim = false;
     }
     const pointerAimsThisFrame =

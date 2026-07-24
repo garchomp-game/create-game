@@ -212,7 +212,7 @@ export type ArenaDebugApi = {
   restoreHealthForSoak(): void;
   forceGameOver(): void;
   grantXp(amount: number): void;
-  forceUpgradeSelect(): void;
+  forceUpgradeSelect(preserveInput?: boolean): void;
   forceExtraUpgradeSelect(): void;
   restart(): void;
   startAutoPilot(weaponType?: WeaponTypeId): void;
