@@ -1,4 +1,5 @@
 import type { RunContext, RunRecord } from "../domain/runRecords";
+import type { ObservedGameEvent } from "../domain/runFacts";
 import type {
   GameEvent,
   SimulationConfig,
@@ -34,6 +35,9 @@ export class RunLifecycleController {
   private previousBest: RunRecord | null = null;
   private previousWeaponBest: RunRecord | null = null;
   private lastEvents: GameEvent[] = [];
+  private runFactEvents: ObservedGameEvent[] = [];
+  private nextRunFactSequence = 0;
+  private bossEnemyIds = new Set<string>();
 
   constructor(private readonly store: RunRecordStorePort) {
     this.coordinator = new RunRecordCoordinator(store);
@@ -48,14 +52,33 @@ export class RunLifecycleController {
     this.previousBest = null;
     this.previousWeaponBest = null;
     this.lastEvents = [];
+    this.runFactEvents = [];
+    this.nextRunFactSequence = 0;
+    this.bossEnemyIds.clear();
+    if (started) this.appendRunFactEvent({ type: "game.started" }, 0);
   }
 
-  observeEvents(events: readonly GameEvent[]): void {
+  discard(): void {
+    this.coordinator.discard();
+    this.latestRecord = null;
+    this.previousBest = null;
+    this.previousWeaponBest = null;
+    this.lastEvents = [];
+    this.runFactEvents = [];
+    this.nextRunFactSequence = 0;
+    this.bossEnemyIds.clear();
+  }
+
+  observeEvents(events: readonly GameEvent[], observedElapsed = 0): void {
     for (const event of events) {
       this.lastEvents.push(structuredClone(event));
       if (event.type === "game.started") this.coordinator.markStarted();
       if (event.type === "contract.selected") {
         this.coordinator.addModifier(`contract:${event.choice}`, event.choice === "standard");
+      }
+      if (event.type === "boss.spawned") this.bossEnemyIds.add(event.enemyId);
+      if (isRunFactEvent(event, this.bossEnemyIds)) {
+        this.appendRunFactEvent(event, resolveEventElapsed(event, observedElapsed));
       }
     }
     this.lastEvents = this.lastEvents.slice(-20);
@@ -172,4 +195,51 @@ export class RunLifecycleController {
   getLastEvents(): GameEvent[] {
     return this.lastEvents.map((event) => structuredClone(event));
   }
+
+  getRunFactEvents(): ObservedGameEvent[] {
+    return this.runFactEvents.map((entry) => structuredClone(entry));
+  }
+
+  private appendRunFactEvent(event: GameEvent, elapsed: number): void {
+    this.runFactEvents.push({
+      sequence: this.nextRunFactSequence,
+      elapsed,
+      event: structuredClone(event),
+    });
+    this.nextRunFactSequence += 1;
+  }
+}
+
+function isRunFactEvent(
+  event: GameEvent,
+  bossEnemyIds: ReadonlySet<string>,
+): boolean {
+  if (event.type === "enemy.hit") return bossEnemyIds.has(event.enemyId);
+  return RUN_FACT_EVENT_TYPES.has(event.type);
+}
+
+const RUN_FACT_EVENT_TYPES: ReadonlySet<GameEvent["type"]> = new Set([
+  "game.started",
+  "game.over",
+  "expedition.completed",
+  "expedition.failed",
+  "player.damaged",
+  "pickup.collected",
+  "enemy.killed",
+  "boss.spawned",
+  "boss.phase.changed",
+  "boss.defeated",
+  "elite.commander.spawned",
+  "elite.commander.killed",
+  "elite.commander.retired",
+  "boss.escort.deployed",
+  "collapse.advanced",
+  "boss.attack.executed",
+]);
+
+function resolveEventElapsed(event: GameEvent, fallback: number): number {
+  const elapsed = "elapsed" in event && typeof event.elapsed === "number"
+    ? event.elapsed
+    : fallback;
+  return Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0;
 }

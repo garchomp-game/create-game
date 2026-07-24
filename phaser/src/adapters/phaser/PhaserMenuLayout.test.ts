@@ -6,12 +6,20 @@ describe("PhaserMenuLayout", () => {
     expect(getMenuButtons("title", 960, 540).map((button) => button.action)).toEqual([
       "start",
       "startExpedition",
+      "startTraining",
       "ranking",
       "history",
       "settings",
       "betaInfo",
     ]);
-    expect(findMenuActionAt("title", 960, 540, 480, 499)).toBe("betaInfo");
+    expect(findMenuActionAt("title", 960, 540, 620, 495)).toBe("betaInfo");
+    expect(findMenuActionAt("title", 960, 540, 480, 393)).toBe("startTraining");
+  });
+
+  it("offers Endless deployment and title return after Training", () => {
+    expect(
+      getMenuButtons("trainingComplete", 960, 540).map((button) => button.action),
+    ).toEqual(["start", "title"]);
   });
 
   it("offers only Pulse and Spread on the starting weapon screen", () => {

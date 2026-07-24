@@ -151,17 +151,52 @@ describe("chargerEnemySystem", () => {
         type: "enemy.charger.killed",
         enemyId: charger.id,
         weaponType: "spread",
+        chargesStarted: charger.action?.charges,
       }),
     );
     expect(world.stats.encounterMetrics.charger).toMatchObject({
       spawned: 1,
       playerHits: 1,
       killed: 1,
+      killedBeforeTelegraph: 0,
       killsByWeapon: { pulse: 0, spread: 1, pierce: 0 },
     });
     expect(
       JSON.parse(JSON.stringify(world.stats)).encounterMetrics.charger,
     ).toEqual(world.stats.encounterMetrics.charger);
+  });
+
+  it("separates a first-approach kill from an approach after a prior charge", () => {
+    const first = createChargeFixture("pulse", "east");
+    first.charger.hp = 1;
+    first.world.bullets = [createBulletAt(first.charger.position, "pulse")];
+    resolveCombat(first.world, SIMULATION_CONFIG, first.events);
+    updateRunStats(first.world, first.events);
+
+    expect(first.events).toContainEqual(
+      expect.objectContaining({
+        type: "enemy.charger.killed",
+        phase: "approach",
+        chargesStarted: 0,
+      }),
+    );
+    expect(first.world.stats.encounterMetrics.charger?.killedBeforeTelegraph).toBe(1);
+
+    const later = createChargeFixture("pulse", "east");
+    later.charger.action!.charges = 1;
+    later.charger.hp = 1;
+    later.world.bullets = [createBulletAt(later.charger.position, "pulse")];
+    resolveCombat(later.world, SIMULATION_CONFIG, later.events);
+    updateRunStats(later.world, later.events);
+
+    expect(later.events).toContainEqual(
+      expect.objectContaining({
+        type: "enemy.charger.killed",
+        phase: "approach",
+        chargesStarted: 1,
+      }),
+    );
+    expect(later.world.stats.encounterMetrics.charger?.killedBeforeTelegraph).toBe(0);
   });
 });
 

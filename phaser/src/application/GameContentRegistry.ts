@@ -57,7 +57,10 @@ export class GameContentRegistry {
           `Mode "${mode.id}" default stage must be included in stageIds.`,
         );
       }
-      for (const stageId of mode.stageIds) this.requireStage(stageId);
+      for (const stageId of mode.stageIds) {
+        const stage = this.requireStage(stageId);
+        validateRecordPolicy(mode, stage);
+      }
     }
 
     for (const stage of definitions.stages) {
@@ -88,6 +91,18 @@ export class GameContentRegistry {
     const enemyPool = this.enemyPools.get(id);
     if (!enemyPool) throw new Error(`Unknown enemy pool ID "${id}".`);
     return enemyPool;
+  }
+}
+
+function validateRecordPolicy(
+  mode: ModeDefinition,
+  stage: StageDefinition,
+): void {
+  if (mode.recordPolicy !== "standard") return;
+  if (stage.difficulty?.waves.some((wave) => wave.maxEnemies <= 0)) {
+    throw new Error(
+      `Standard stage "${stage.id}" must not declare a zero-enemy wave.`,
+    );
   }
 }
 

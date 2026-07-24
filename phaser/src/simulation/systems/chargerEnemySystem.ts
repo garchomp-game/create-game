@@ -193,6 +193,7 @@ export function recordChargerKilled(
     enemyId: enemy.id,
     weaponType,
     phase: action.phase,
+    chargesStarted: action.charges,
     position: { ...enemy.position },
   });
 }

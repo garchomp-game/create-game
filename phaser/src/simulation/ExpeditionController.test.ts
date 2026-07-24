@@ -586,6 +586,44 @@ describe("ExpeditionController", () => {
     });
   });
 
+  it("does not deploy a Commander after a debug-style jump beyond its deadline", () => {
+    const fixture = selectActCard(180, 791);
+    const selectedAt = fixture.world.expedition!.director.selectedAt!;
+    const deploymentDeadlineAt = selectedAt + 2.2 + 10;
+    fixture.world.state.elapsed = deploymentDeadlineAt + 30;
+
+    const events = fixture.controller.update(
+      fixture.world,
+      fixture.random,
+      SIMULATION_CONFIG,
+      [],
+    );
+
+    expect(
+      events.filter(
+        (event) => event.type === "expedition.encounter.deployment.requested",
+      ),
+    ).toEqual([]);
+    expect(
+      fixture.world.enemies.some((enemy) => enemy.elite?.kind === "commander"),
+    ).toBe(false);
+    expect(events).toContainEqual({
+      type: "expedition.encounter.failed",
+      cardId: "commander-counterattack",
+      elapsed: deploymentDeadlineAt,
+      reason: "deployment-timeout",
+    });
+    expect(fixture.world.expedition!.director).toMatchObject({
+      phase: "failed",
+      actClockBlocked: false,
+      deploymentAttempts: 0,
+      activeStartedAt: null,
+    });
+    expect(fixture.world.expedition!.objective).toBe(
+      "反攻部隊を迎撃し、突破口を維持する",
+    );
+  });
+
   it("starts the Commander timeout at spawn and retires it without a duplicate outcome", () => {
     const fixture = selectActCard(180, 80);
     fixture.world.state.elapsed = fixture.world.expedition!.director.selectedAt! + 2.2;

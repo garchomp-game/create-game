@@ -878,3 +878,218 @@ RC6の6構成probeは、全6勝ではなく、全6のCommander撃破、Act 5、3
 - code SHAでは65 files・420 passed / 2 skipped、normal / repair probe各`1 passed / 1 skipped`、Playwright 73 passed / 1 skipped、production buildを通過した。
 
 production採否には、同じVersion PreviewでPulseの中央周回とSpreadの通常戦術を各1本、両武器ともboss phase 2と3攻撃種まで確認する手動ゲートを残す。debug時刻ジャンプと将来fallbackの共通API edge、厳密な永続LRU、GitHub Actions新設はRC6の直接blockerにせず、再現条件と着手条件を後続で管理する。
+
+## 2026-07-20: 通常UI採否を通過しRC6 controlを採用する
+
+決定: `faeb3f5e8c5e`のVersion PreviewでPulse 2本、Spread 1本の欠陥特化ランを行い、`repairBudget: null`のRC6 controlをゲームルール候補として採用する。2400 HP有限回復candidate Aは棄却したまま再調整しない。Draft PR #82をmainへ統合し、UI candidateとproduction traffic切替は別判断にする。
+
+証拠:
+
+- Pulseは430.66秒 / 44,574点でphase 1敗北後、578.93秒 / 107,011点でphase 2勝利した。
+- Spreadは584.49秒 / 108,891点でphase 2勝利した。
+- 両武器で`targeted-salvo`、`escort-pincer`、`command-pulse`を確認した。
+- 勝利ランの回復相殺率は99.96%と98.21%だったが、位置、標的、回復経路を変えない中央周回には固定できなかった。
+- 範囲外退避、障害物、通常敵撃破、回復取得、ボスへの再接近を組み合わせる必要があり、回復をさらに減らすと終盤密度へ過度に厳しくなると判断した。
+- 不可視攻撃、操作不能、soft lock、記録損失、P0 / P1不具合、50ms超フレームは確認されなかった。
+
+高い回復相殺率だけを欠陥判定に使いません。相殺率は供給量の観測値であり、無期限の安定循環には「位置、標的、回復経路を変えずに120秒以上維持できる」という行動条件も必要です。今回その条件は成立しませんでした。
+
+## 2026-07-20: 外部ゲームデザイン助言をv0.8設計入力として扱う
+
+決定: 緊張と緩和、HP以外のボス強度、攻略メタ、惜敗、再挑戦支援に関する外部助言を[外部ゲームデザイン助言メモ](../../design/external-game-design-advice/)へ原文保存し、[PH-V08-020 #83](https://github.com/garchomp-game/create-game/issues/83)でWork再レビューと設計契約化を行う。RC6採用とPR統合はこのレビューで止めず、v0.8のゲームルール実装前に結果を反映する。
+
+公平性の境界:
+
+- Endless、fixed seed、ランキング対象ランへ、履歴に応じた隠れた難度補正を入れない。
+- Campaign Assistを導入する場合は明示選択とし、difficulty、assist、rulesetをRunRecordへ残す。
+- Assist使用ランを標準ランキングへ混ぜない。
+- 「自分が上手くやった」という感覚は、判定の偽装ではなく、成功した判断と前回差の可視化で支える。
+
+Work回答は設計入力であり、採用・保留・棄却はIssue #83と本decision logへ記録する。10ステージを一括量産せず、Stage 1 / 5 / 10とEasyからHellの難度軸を設計上分けて検証する。
+
+## 2026-07-20: Work再レビューをv0.8設計契約へ採用し責務を分離する
+
+決定: [PH-V08-020 #83](https://github.com/garchomp-game/create-game/issues/83)のWork再レビューを受領し、v0.8の正本へ採用する。緊張と緩和は`Preview -> Establish -> Pair -> Priority Shift -> Peak -> Earned Relief`のEncounter文法として扱い、一度に複数のゲームルールcandidateを統合しない。最初のruntime candidateは[PH-V08-014 #76](https://github.com/garchomp-game/create-game/issues/76)のCharger衝突妨害による危険反転だけとする。
+
+責務境界:
+
+- [#77](https://github.com/garchomp-game/create-game/issues/77)は`Simulation facts -> pure ledger aggregation -> Presenter`のcandidate非依存基盤を所有し、#76固有の閾値や成功条件を持たない。
+- [#93](https://github.com/garchomp-game/create-game/issues/93)はボス攻撃文法、回復窓、反撃窓と、HP量以外の強さを比較する観測契約を所有する。runtime候補は#76採否後に単独で扱う。
+- [#94](https://github.com/garchomp-game/create-game/issues/94)は主敗因、実測事実に基づくnear-miss、同seed・武器・ruleset・divisionでの再挑戦契約を所有する。事実のない「あと少し」は表示しない。
+- [#95](https://github.com/garchomp-game/create-game/issues/95)は`Standard | Assist | Practice | Overload`、modifier、PB分離、旧記録migrationを所有する。支援ランをStandard PBへ混ぜない。
+- [#80](https://github.com/garchomp-game/create-game/issues/80)はcandidate非依存の最大密度fixture骨格を先行できる。candidate固有の色、警告音、判定は意味確定後に追加する。
+- [#81](https://github.com/garchomp-game/create-game/issues/81)は最終QA一回ではなく、RC6 baselineと各単独candidateへ再利用する検証レーンとする。未到達と未観測を分け、割合だけでなくraw countを残す。
+- [#78](https://github.com/garchomp-game/create-game/issues/78)は二時計と停止責務を文書化できるが、選択UIのruntime変更は#70採否後に行う。
+
+採否条件:
+
+- #76の半径、継続時間、対象数、衝突成立条件、比較seed、武器、ruleset、rollback、raw-count閾値を実行前に固定する。
+- 1 buildにつき1つのゲームルールcandidateをRC6 controlとpaired比較し、結果を見て同じ実験の値を動かさない。
+- candidate offではRC6のイベント列、score、XP、drop、kill、RunRecord意味論を維持する。
+- 履歴に応じて標準難度を隠れて変えるDDAは導入しない。支援は明示divisionとして記録とランキングを分離する。
+- 2400 HP有限回復candidateは0/6勝利で棄却済みのまま再投入しない。新しい回復候補が必要なら別Issue・別事前登録・別rulesetで扱う。
+
+この決定は設計・観測契約の同期であり、runtime、ruleset、RunRecord schema、production trafficを変更しない。
+
+## 2026-07-20: Encounterの期限切れ要求と予告外fallbackを共通APIで拒否する
+
+決定: `PH-QA-002`で、telegraphからdeployment deadline以後へ時刻が飛んだ場合は配置要求を発行する前にtimeoutへし、fallback geometryは元の予告方向集合を増やさない場合だけ実行する。通常のEncounter数値、Commander、Boss、rulesetは変更しない。
+
+根拠:
+
+- 通常の0.05秒stepではdeadline判定が先に走るが、debug相当の大幅な時刻ジャンプではtelegraph分岐から期限切れrequestを1件出せた。
+- 現在のfallback指定は予告方向の部分集合だが、共通APIは将来callerが`arc`から`pincer`へ切り替えて予告外方向を増やすことを防いでいなかった。
+- 再予告の状態機械を追加する必要はなく、予告集合を増やさないfallbackだけを許可すれば現行用途を維持できる。
+- 厳密な永続LRUはこの問題と独立し、現行仕様もranked record最新時刻による上限と明記済みのためschemaを増やさない。
+
+検証: Director、Controller、structured spawnの専用fixture、65 files・424 passed / 2 skipped、型検査、配布build、release smoke 6件、Starlight 92ページを通過した。RC6 normal probeは従来と同じ3/6勝、両武器各1勝以上、同一event / world hashを維持した。
+
+## 2026-07-20: Trainingと戦闘オブジェクト視覚をT1 / T2へ分離する
+
+決定: 初見プレイで観測した敗因不明と敵弾・Pickupの誤認を、難度調整や一括redesignへ直結させない。[PH-V08-025 #97](https://github.com/garchomp-game/create-game/issues/97)で現行visualの選択式Training T1を先に検証し、Training後の無提示transferでも誤認が残る場合だけ[PH-V08-026 #98](https://github.com/garchomp-game/create-game/issues/98)の視覚T2へ進む。
+
+- T1は強制初回導線にせず、`recordPolicy: none`でPB、ランキング、履歴、報酬を更新しない。
+- T2のPhase A fixtureは先行できるが、runtime visualはT1の分母付き証拠を開始条件にする。
+- #76のgameplay、#84の選択UI、#94の敗因UIを同じ比較buildへ混ぜない。
+- T0 / T1 / T2を別SHAで固定し、#81へ分類、誤認、未到達、未観測をraw countで記録する。
+- TrainingはStage 1の代替ではなく、学んだ文法を通常勝利条件へ転移させる#64を別コンテンツとして維持する。
+
+この判断は初見2runの探索的証拠に基づく仮説であり、継続率や一般的な初心者行動の証明とは扱わない。
+
+## 2026-07-20: Training T1を実装候補として固定し採用判断を分離する
+
+決定: main `b561aa6aeca5`をT0基準、`2c0348133f02`を[#97](https://github.com/garchomp-game/create-game/issues/97)のT1実装候補として固定する。コード、自動試験、画像、比較可能buildの完成を「実装完了」とし、人間が無提示transferへ知識を移せるかを確認する「採用完了」と分ける。
+
+- Trainingは`training/basic-training`、Pulse、seed `20260720`の任意・再実行可能な固定体験とする。
+- 8課題は通常のWorld、GameEvent、敵、敵弾、Pickup、強化規則で判定し、時間だけでは合格させない。
+- GameContentの`recordPolicy: none`でRun Lifecycleを開始せず、履歴、ランキング、PB、報酬、外部exportを作らない。
+- 通常モードは`recordPolicy: standard`を明示し、既存のevent / world hash、ruleset、保存schemaを維持する。
+- T1の自動greenだけでは#98のruntime視覚変更を開始しない。#81で誤認が残った場合だけ別branchのT2へ進む。
+- production traffic、#76、#84、#94をT1 buildへ混ぜない。
+
+rollbackはT1実装commitを戻すか、Training modeとタイトル導線を外す。RunRecord migrationとruleset更新は不要である。
+
+## 2026-07-21: Trainingを説明確認と実践へ分け、transferを総合演習として明示する
+
+決定: owner確認で、課題が説明と同時に開始することと、最後のtransferで案内が突然消えることを理解上の欠陥として確認した。各課題を`briefing` / `active`へ分け、確認操作まではsimulationを停止する。transferは「総合演習」と表示し、開始前に3条件を説明、実践中は条件進捗だけを表示する。
+
+- 説明は高解像度DOM dialog、戦場上のringと実践HUDは既存WebGL layerが所有する。
+- Enter / Spaceは新規押下だけを受け、直前課題で保持した射撃入力による自動承認を禁止する。
+- 完了画面は「チュートリアルは以上です」と明示し、Endless実践またはタイトル復帰を選ばせる。
+- 完了ボスはT1へ敵仕様とバランスを混ぜるため採用せず、既存の混成総合演習を明確化する。
+- 導入ムービーはスキップ、再視聴、実ゲームvisualとの一致が必要であり、#98のvisual採否前には制作しない。DOM dialogを将来の導入表示境界として維持する。
+
+この追補はTrainingの記録非介入、固定seed、通常World / GameEventによる成功判定を変えず、Endless / Expeditionのrulesetと数値を変更しない。
+
+## 2026-07-22: Training T1の測定ノイズを人間募集前に除く
+
+決定: Work再レビューの`revise`判定を受け、初心者T1前に総合演習HUD遮蔽、進路ガイド、retry説明、強化選択中断、事前学習汚染を修正する。全面再設計や敵・武器・Pickupのvisual変更は行わず、現行visualを学べるかというT1の独立変数を維持する。
+
+- 課題順を`移動 -> 進路変更 -> 撃破 -> XP -> 強化 -> 回避 -> 修復 -> 総合演習`へ固定し、XPとLEVEL UPの因果を分断しない。
+- 総合演習は上部中央の小型チェックリストだけを表示し、固定REPAIRを視認可能な安全領域へ置く。landscape / portrait画像とHUD非交差を自動保証する。
+- 進路変更は固定開始点と既存障害物で直進不能にし、20秒後だけ障害物外側の折れ線を救済表示する。
+- retryは課題単位の回数、理由、再開進捗を表示し、同じ課題内のヒント時計を巻き戻さない。回避開始には1秒のREADYを置く。
+- Trainingの強化選択中もPause、再開、訓練restart、タイトル復帰を有効にする。通常モードの強化選択契約は変更しない。
+- T1参加者にはTraining前の静止画、動画、30秒説明を見せない。総合演習と同武器のEndless 30秒probe後に、認識preflightと分類質問を行う。
+
+完了ボス、導入ムービー、複数失敗後のゴースト、総合演習の段階的micro-waveは採用しない。T1結果で再現する同一の理解欠陥がある場合だけ、別candidateとして扱う。変更はTraining限定であり、Endless / Expeditionのsimulation、ruleset、RunRecordを更新しない。
+
+## 2026-07-22: 総合演習を固定時間から盤面処理完了へ変更する
+
+決定: owner確認で、総合演習開始直後に固定REPAIRを吸収できることと、敵を早く倒した後に待ち時間だけが残ることを確認した。20秒の生存条件を外し、中央から開始して初期敵3体を全滅させ、演習中に生成されたXPとREPAIRをすべて回収した時点で完了する。
+
+- 固定REPAIRは中央の磁力圏外へ置き、取得のための意図的な移動を必要とする。
+- 初期敵とPickupの残数をチェックリストへ表示し、敵撃破によって増えたXPとREPAIRも完了対象へ含める。
+- 総合演習中の回復Pickupは失効させず、時間切れによる完了不能を作らない。
+- 固定時間を消しても、撃破、回避、取得を同時に扱う知識転移の役割は維持する。
+- 継続的な生存能力は総合演習へ重複させず、Training完了後のPulse Endless 30秒probeで測る。
+
+この変更はTraining限定であり、Endless / Expeditionの敵、drop、Pickup寿命、ruleset、RunRecordを変更しない。
+
+## 2026-07-22: Trainingのowner gateを完了し初心者T1を分離する
+
+決定: ガイド付きフローと総合演習終了条件の追補後、ownerが全課題から退出までを再確認し、Training候補として採用可能と判断した。owner gateは完了とし、以後の候補変更はCIまたはP0修正に限定する。
+
+- ownerの完走は操作可能性と意図した動線の確認に使い、初心者の理解度へ換算しない。
+- 最終SHAとimmutable Previewを固定した後、#81で事前教材なしの初心者T1を実施する。
+- 初心者T1中は候補HEADを変更せず、修正が必要なら当該runを打ち切って新candidateとして再固定する。
+- T1で敵弾、XP、REPAIRの誤認が残らない限り、#98のruntime視覚変更へ進まない。
+
+production traffic、Endless / Expeditionのsimulation、ruleset、保存schemaは変更しない。
+
+## 2026-07-22: Training T1のruntime候補と配布証拠を固定する
+
+決定: ガイド付きフローの最終runtime候補を`e872505003044b40e782c33203fb502c40057387`へ固定する。以後に行うStarlight、Issue、PRの証拠同期はruntime候補の変更として扱わず、#81の初心者T1では同SHAから作成したimmutable Previewを使う。
+
+- GitHub Actions [run 29906507015](https://github.com/garchomp-game/create-game/actions/runs/29906507015)でPhaser quality、Starlight build、Browser release smokeの3 jobが成功した。
+- Cloudflare Version IDは`f3b88d64-c430-4985-8a55-f8c0e17f4a44`、preview aliasは`v08-training-t1-e872505`で、表示された`buildCommit`は`e87250500304`と一致した。
+- 実URLsmokeでapp version、ruleset、build commit、通常run rulesetを確認し、console、page、request、HTTP errorは0件だった。
+- owner gateは完了しているが、初心者の意味理解と通常戦への転移は未証明である。採用判断は#81まで保留する。
+- production trafficは変更せず、#98のruntime視覚候補はT1で誤認が残る場合だけ開始する。
+
+文書だけを更新した後続commitをPR #99のheadに置く場合も、runtime候補SHAとPreview Version IDを併記し、後続SHAを人間T1の実行対象と誤認させない。
+
+## 2026-07-23: 敵本体の接触ダメージを射撃前の観察課題として教える
+
+決定: owner確認で、従来の8課題は敵弾の回避を教える一方、敵本体との接触でも被ダメージになることを説明していないと判断した。射撃練習の直前へ`contactDamage`を追加し、Trainingを9課題へ変更する。接触実装commitは`2a4fba8a890613be430c8ccf218a86c7522c2cb1`、最新main統合済みruntime候補は`78b79da9c5aad7f7998ef7b5b1938f80850fdb6a`とする。
+
+- 自機を左`(200, 270)`、Chaserを右`(760, 270)`へ置き、障害物に遮られない中央レーンで通常速度の接近を見せる。
+- 観察課題だけ移動、照準、射撃を無効化する。Pause、restart、タイトル復帰は中断可能性を守るため残す。
+- 対象Chaserの接触由来`player.damaged`を成功条件とし、タイマーだけで課題を通過させない。
+- 接触後のbriefingでは減少HPを残して因果を見せ、射撃練習の開始時にHPを最大値へ戻し、左右配置を再生成する。
+- 旧8課題runtime `e87250500304`とimmutable Previewはsupersededとして履歴に残し、初心者T1には後継SHAから作る新Previewを使う。
+
+この変更はTrainingだけに閉じ、通常モードの入力、敵速度、接触ダメージ、ruleset、RunRecordを変更しない。evidence-sync head `2a72ceb`の[GitHub Actions run 29982750944](https://github.com/garchomp-game/create-game/actions/runs/29982750944)で3 job greenを取得した。人間T1へ進む前に残すゲートはowner再確認と新immutable Previewである。
+
+## 2026-07-23: 9課題Trainingをmain採用し、人間T1を別ゲートとして残す
+
+決定: ownerが接触観察から射撃開始までを再確認し、9課題Trainingの操作導線を採用可能と判断した。runtime `78b79da9c5aa`の実装をPR #99からmainへ統合し、初心者の意味理解と通常戦への転移は[#81](https://github.com/garchomp-game/create-game/issues/81)で別に判定する。
+
+- 配布build `2247bd9cd16a`をCloudflare Version `7eaaf10f-fd82-4032-b363-5d4b44db8293`としてuploadし、固定Preview `v08-training-t1-contact-2247bd9`で版情報、通常run、Training開始、error 0件を確認した。
+- production trafficは変更しない。旧8課題Previewはsupersededの履歴として残す。
+- #81では事前教材を見せず、固定Previewを変更しない。候補を修正する場合は募集を止め、新しいcellとして再固定する。
+- #98のruntime視覚変更は#81で誤認が残る場合だけ開始する。
+- 人間T1の日程待ち中は#76の値、seed、raw-count閾値、停止条件の事前登録まで並行できるが、Training buildへruntime変更を混ぜない。
+
+この判断により[#97](https://github.com/garchomp-game/create-game/issues/97)は実装完了として閉じ、学習効果の未完了条件は#81へ一本化する。
+## 2026-07-22: 批判的レビューを採用し、危険反転よりcontrol観測を先行する
+
+決定: `Arena-Core-v08-Critical-Game-Design-Review-20260722.md`の`revise roadmap`判定を採用する。Arena Coreの現行コアは「四方から迫る圧力の中で、移動と照準を分離し、敵役割・障害物・回収経路を組み替えながら、倒し続けて生き延びる」と定義し、「危険を反撃機会へ変える」は未検証のv0.8拡張仮説へ戻す。
+
+前の2026-07-20判断を次の範囲で更新する。
+
+- #81のT0 / T1 transferは30秒で終了せず、死亡または90秒まで観測する。Ranged開始が60秒であるため、30 / 60 / 90秒到達、Ranged到達、発射、被曝、反応を分ける。
+- transfer前にfixture、動画、最小説明を見せない。T0とT1は同じ初心者へ連続実施しない。
+- #76のruntime candidateより先に、現行Chargerの`spawned / killed-before-telegraph / telegraph / charge / obstacle / boundary / recovery`をcontrolで集約する。
+- 最初の経験者3名中2名が予告前撃破、または熟練runの大半でcharge未発生なら#76 runtimeを停止する。Charger HPと反転効果を同時変更しない。
+- #78の選択wall-clock計測はUI採否後まで待たず、現行UIとcandidate UIの双方を比較できる共通観測にする。
+- 必須run後に5分の自由選択を置き、Endless / Expeditionが異なる再挑戦理由を作れているか、実際の選択と開始で確認する。
+- Practice、Assist、Overloadを単一の強さ順`division`へまとめず、mode、modifier、record policy、比較eligibilityを別軸にする。
+- 通常強化は現状「完成buildの個性」ではなく「取得順によるラン中の判断差」と表現する。
+- ユーザー向けの「戦術点」は「撃破点」へ改める。Endlessは撃破点、Expeditionは完遂後の総クリア時間が主記録であることを一文表示する。
+
+#93の回復nerfや新Boss攻撃、#98のvisual runtime、大規模build tree、Stage量産、世界観本実装は、対応するcontrol証拠が揃うまで進めない。詳細な採否と停止条件は[v0.8 批判的レビューの採用判断](../../design/v08-critical-review-adoption/)を正本とする。
+
+## 2026-07-22: 危険イベントのrecoveryを緩和と仮定せずshadow事実を取る
+
+決定: 現行Endlessの`recovery`はイベント専用spawn overrideを外すだけで、通常wave、残敵、敵弾を止めない。区間名からearned relief成立を推測せず、[PH-V08-027 #110](https://github.com/garchomp-game/create-game/issues/110)で`encounter.recovery.started`後5秒を独立観測する。
+
+- 開始・5秒後・次警告時の残敵、敵弾、地上XP、地上REPAIR、HPをepisodeごとに保存する。
+- 5秒間のXP回収、被ダメージ、実回復、REPAIR取得、通常敵撃破を保存する。
+- 5秒未満で終わったrunは`partial`として未観測と失敗を分ける。
+- shadowはdev/debug run export専用とし、runtime数値、RNG、GameEvent、RunStats、RunRecord、rulesetを変更しない。
+- spawn抑制やdrop変更は、shadow事実と無誘導の口頭回答が立て直し不成立を示した場合だけ、別Issueの単一candidateとして事前登録する。
+
+Charger危険反転、選択UI、ボス調整を同じ比較buildへ混ぜない。
+
+## 2026-07-23: shadow計装だけをcontrol観測buildへ結合する
+
+決定: [PH-V08-028 #112](https://github.com/garchomp-game/create-game/issues/112)で、選択wall-clock、Boss攻撃、危険イベント後5秒のshadowと、現行Charger・敗因の純粋集約を同じRC6 controlへ結合する。人間がPRごとに同じrunを繰り返さず、同一run exportから事実を取得できることを目的とする。
+
+- Charger危険反転、選択UI変更、Boss調整、event spawn抑制は含めない。
+- RNG、敵数値、ruleset、RunRecord、ランキングを変更しない。
+- gameplay candidateは引き続き1 build 1件とし、この結合buildへ直接追加しない。
+- 自動QAは計装の共存だけを保証し、緩和、攻略性、面白さの人間ゲートを代替しない。
+- 独立PRのreview責務を維持し、main採用時は観測フィールドを保持して順次rebaseする。
+
+実施run、無誘導質問、JSON pathは[v0.8 control観測build 実施手順](../../playtest/v08-observation-control-runbook/)を正本とする。

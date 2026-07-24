@@ -1,0 +1,125 @@
+---
+title: v0.8 実行計画
+description: RC6を固定したまま、設計契約、単独candidate、統合採否を依存順に進める作業計画。
+---
+
+最終整理日: 2026-07-22
+
+## 目的
+
+v0.8では機能量を増やす前に、Arena Coreの面白さの核を小さいcandidateで検証します。このページは、各Issueの詳細を繰り返すのではなく、**何を同時に変えず、どの証拠が揃ったら次へ進むか**を管理する実行表です。
+
+体験仮説は[v0.8 面白さの核の検証](../../design/core-promise-validation/)、批判的レビューの採否と停止条件は[v0.8 批判的レビューの採用判断](../../design/v08-critical-review-adoption/)、現行実装値は[現行の緊張・緩和カーブ棚卸し](../../design/current-pressure-curve-inventory/)、計装境界は[v0.8 観測可能性の事前監査](../../engineering/v08-observability-preflight/)を正本とします。
+
+## 固定する基準
+
+- ゲームルール基準はmainへ統合済みのRC6、`phaser-v0.7.0-final-expedition-rc6`とする。
+- productionは配布候補のSHAと採否が揃うまでv0.6.8を100%維持する。
+- UI候補はDraft PR #84で評価し、ゲームルールcandidateへ混ぜない。
+- Endless、fixed seed、ランキング対象へ履歴依存の隠れた難度補正を入れない。
+- 1つのcandidateで変える主要仮説は1件に限定する。
+- 観戦AIの勝敗、開発者の最高得点、単一seedだけで人間向け採否を決めない。
+- 不採用candidateは設定またはdata境界から外し、RC6へ戻せるようにする。
+
+## 統合済み基盤と独立候補
+
+| 順序 | 対象 | 現在地 | 次のゲート |
+| ---: | --- | --- | --- |
+| 1 | [#86](https://github.com/garchomp-game/create-game/issues/86) / PR #87 / #96 | workflowとFirefox WebGL修正をmainへ統合済み。後続main `df61f14`まで3 jobがgreen | 完了。required check化は安定運用後に別判断 |
+| 2 | [#88](https://github.com/garchomp-game/create-game/issues/88) / PR #89 | main `c7ec724`へ統合済み。ローカル回帰、normal probe、PR / main CIがgreen | 完了 |
+| 3 | PR #90 | UI比較手順をmain `df61f14`へ統合し、PR / main CIがgreen | 完了 |
+| 4 | PR #91 / #101 | 圧力カーブ、計装、保守性、#83の設計判断、#97 / #98レーンをmainへ統合済み | 完了。後続判断は新しいPRへ分離 |
+| 5 | PR #102 / #103 / #104 / #99 | Run Fact Kernel、最大密度fixture骨格、9課題Trainingをmain `565d401a92f6`まで統合済み | 完了。各consumerは独立Issueで不足を追加 |
+| 6 | Draft PR #113 | control観測を旧main上で結合済み | 最新mainへ修復統合し、exact HEADで再QAする |
+| 別経路 | Draft PR #84 | RC6 UI candidateとPreviewを公開済み | #78の停止時間計測と人間比較を揃えて採用、再調整、棄却を決める |
+
+2026-07-20のGitHub Actions障害は同日04:44 UTCに解消しました。障害中の`startup_failure`はコード失敗にもgreen証跡にも含めません。復旧後のPR #91でheadless FirefoxのWebGL context生成失敗を検出し、PR #96でFirefoxだけをheaded + Xvfb + software GLへ切り替えました。検査をskipせず、PR #96のrun `29731009204`とmain `8635ca0`のrun `29731165320`はいずれも3 jobがgreenです。
+
+## 実行Wave
+
+| Wave | Issue | 変更する仮説 | 開始条件 | 完了時の判断 |
+| ---: | --- | --- | --- | --- |
+| 0A | [#83](https://github.com/garchomp-game/create-game/issues/83) | 緊張・緩和、near-miss、攻略メタ、公平性の契約 | Work回答と現行カーブ棚卸し | 判断済み。PR #91とdecision logへ責務表を同期 |
+| 0B | [#66](https://github.com/garchomp-game/create-game/issues/66) | 世界観、視覚言語、素材境界 | gameplay数値を変えない比較案 | 背景、敵、警告へ展開できる1方向を選ぶ |
+| UI | [#68](https://github.com/garchomp-game/create-game/issues/68) / [#67](https://github.com/garchomp-game/create-game/issues/67) / [#70](https://github.com/garchomp-game/create-game/issues/70) | 選択画面の可読性と再開操作 | PR #84と比較手順 | candidateを採用、再調整、棄却のいずれかに固定 |
+| T1 | [#97](https://github.com/garchomp-game/create-game/issues/97) | 現行visualのTrainingで説明不足を切り分ける | 9課題runtime、owner gate、CI、Previewを固定しmain採用済み | #81でT0 / T1を分け、事前教材なしのEndlessを死亡または90秒まで観測 |
+| T2 | [#98](https://github.com/garchomp-game/create-game/issues/98) | 撃つ・避ける・取るの視覚意味を変える必要があるか | Phase A fixtureは先行可。runtimeはT1で誤認が残る場合だけ | 変更不要、採用、再設計、延期、棄却を固定 |
+| 0C | [#77](https://github.com/garchomp-game/create-game/issues/77) | candidate非依存のfact、episode、純粋ledger | PR #102をmain `10198a9e810b`へ統合済み | Phase 0完了。Presenterと容量上限付きsummaryは後続consumerの不足確認後 |
+| 0D | [#93](https://github.com/garchomp-game/create-game/issues/93) | Boss Attack Cardと回復・反撃窓の観測 | RC6 control。runtime候補は入れない | 3攻撃の文法、chain、shadow指標を定義 |
+| 0E | [#94](https://github.com/garchomp-game/create-game/issues/94) | 主敗因、factual near-miss、同条件再挑戦 | #77の共通fact境界 | 純粋集約fixtureとViewModelを固定 |
+| 0F | [#95](https://github.com/garchomp-game/create-game/issues/95) | mode、modifier、記録policy、比較eligibilityの分離 | RC6の記録比較契約 | 単一division序列へ押し込まず、正規化とmigrationを先に保証 |
+| 0G | [#80](https://github.com/garchomp-game/create-game/issues/80) | 最大密度fixtureの基盤 | PR #103をmain `41ed5f04a9f4`へ統合済み | skeleton完了。最大密度scenarioと警告優先度はcandidate意味確定後 |
+| 0H | [#78](https://github.com/garchomp-game/create-game/issues/78) | 選択停止時間と再開事故の時計境界 | 責務設計とshadow接続を先行する。UI採否を待たない | wall-clockとsimulation timeを混ぜず、両UIで比較可能にする |
+| 0I | [#76](https://github.com/garchomp-game/create-game/issues/76) | 現行Chargerに学習可能な突進機会があるか | controlのevent集約と停止条件 | `spawned / killed-before-telegraph / telegraph / charge / obstacle / boundary / recovery`を分離 |
+| 1 | [#76](https://github.com/garchomp-game/create-game/issues/76) | Charger衝突妨害で危険を反撃機会へ変えられるか | control viability通過後に定数、seed、window、raw-count基準、rollbackを事前登録 | HPやspawnを変えず、RC6と別buildでpaired比較 |
+| 2 | [#81](https://github.com/garchomp-game/create-game/issues/81) | candidateを理解し、自発的に次を選ぶか | T1は固定Previewで開始可。後続cellは各単独build固定後 | 初心者・経験者を分け、90秒transferと5分自由選択をraw countで判断 |
+| 3 | [#93](https://github.com/garchomp-game/create-game/issues/93) | Bossの回復または反撃窓1件 | #76の判断記録後。必要な場合だけ | #76と別buildでcontrolと比較 |
+| 4 | [#95](https://github.com/garchomp-game/create-game/issues/95) / [#94](https://github.com/garchomp-game/create-game/issues/94) | 記録分離後の結果・再挑戦UX | division / eligibility / migration完了 | Standardを守ったまま結果導線を接続 |
+| Later | [#92](https://github.com/garchomp-game/create-game/issues/92) / [#79](https://github.com/garchomp-game/create-game/issues/79) | 通常強化offer / 武器教義 | 前段candidateの観察後。互いに別build | 候補運と教義効果を混ぜず個別採否 |
+
+Wave 0はsimulation非介入の契約と観測です。並行可能でも1 Issue・1 branch・1 Draft PRを守ります。Training T1は#76のgameplay candidateと分離し、視覚T2はT1の誤認証拠がある場合だけ開始します。#81は最後だけのQAではなく、baseline、Training、単独candidate、統合buildで同じ手順を再利用する検証レーンです。#76はcontrol viabilityと反転candidateを同じ変更へまとめません。
+
+## 依存関係
+
+```text
+RC6 baseline
+  |-- #83 design contract -----> #77 common ledger -----> #76 Charger control viability
+  |                                  |                              |
+  |                                  |                              +-- pass --> #76 reversal candidate --> #81 lane
+  |                                  +---- #93 Phase A / #94 Phase A
+  |                                  +---- #95 record-axis contract ----> #94 result / retry UI
+  |
+  |-- #80 baseline fixture skeleton ---- candidate semantics ----> visual / audio finalization
+  |
+  |-- #97 Training T1 ----> #81 T0/T1 90s transfer ----> #98 visual T2 (only if confusion remains) ----> #80
+  |
+  |-- #78 choice telemetry ----> #84 UI adoption
+  |
+  +-- #81 Endless/Expedition free choice ----> mode-role decision
+
+#92 offer fairness ---- separate later build ---- #79 doctrine
+```
+
+#77はcandidate固有の合格値を所有せず、Simulation factsを純粋集約する共通基盤です。Phase 0はPR #102で統合済みです。#80のviewport、layer manifest、audio routing observation、snapshot harnessもPR #103で統合済みで、candidate固有の色・形・音だけを意味論確定後に固定します。#76 controlと反転candidate、#76と#93のruntime候補、#92と#79はそれぞれ同じbuildへ混ぜません。
+
+## candidateごとの証拠
+
+各candidateはPR本文と対応Issueへ次を残します。
+
+1. baseline SHA、candidate SHA、app / ruleset / profile。
+2. 変更した仮説1件と、意図的に固定した項目。
+3. unit、型検査、production build、release smoke。
+4. 適用範囲に応じたfixed fixture、paired seed、画像、実GPU確認。
+5. 人間テストが必要な項目と、自動試験で代替できない理由。
+6. 採用、再調整、棄却、延期の基準と実結果。
+7. rollback方法と、旧記録を分離する`rulesetVersion`要否。
+
+ゲームルールを変えるcandidateは新しいrulesetへ分けます。表示・開発計装だけでsimulation、乱数、保存、順位が不変なら、rulesetを不要に更新せずhash不変で証明します。
+
+## 設計判断後も固定しない値
+
+#83の設計契約と責務順は決まりました。ただし次の値は、対象Issueへbaseline、seed、観察window、stop conditionとともに事前登録するまで固定しません。
+
+- #76の`effectRadius`、`durationMs`、`maxTargets`、対象enemy kind。
+- #76のcontrol viabilityを通過する前のCharger HP、出現頻度、初回待機時間。
+- #93の回復または反撃窓candidateと値。
+- #94の表示条件、時間窓、次の一手選択規則。
+- Assist / Practiceの数値と提案trigger。
+- 通常強化のカテゴリ最低保証、bag方式、最大未提示gap。
+- 武器教義の最終強化値。
+- 回復、敵密度、XP曲線の再調整。
+- Stage 1 / 5 / 10のproduction実装。
+
+## 作業再開チェック
+
+1. **完了**: 品質ゲート、Encounter境界、比較手順、9課題Training、v0.8正本をmainへ統合し、main `565d401a92f6`まで基盤を更新した。
+2. **完了**: #83の判断、#93から#95、#97 / #98の責務、#81の再利用レーンをStarlightへ同期した。
+3. **完了**: #97のTraining runtime `78b79da9c5aa`、ローカル自動証拠、owner再確認、PR CI、固定Previewを完了し、main採用を決定した。#81の初心者T1は人間検証レーンとして継続する。
+4. **完了**: #77 Phase 0のfact / episode / invalid-state schemaをmainへ統合した。
+5. **完了**: #80の共通capture skeletonと#81のbaseline手順を固定した。
+6. T0 / T1の死亡または90秒transferと、必須run後5分の自由選択を#81へ固定している。
+7. #78のwall-clock観測と、#76 control viabilityのevent集約をsimulation非介入で実行できる。
+8. #76 control viabilityが通過した場合だけ、変更する仮説、値、seed、raw-count基準、stop condition、rollbackを事前登録している。
+9. production v0.6.8を変更しないことを再確認している。
+
+この9項目が揃うまで、#76のruntime実装を開始しません。

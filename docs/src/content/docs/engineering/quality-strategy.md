@@ -13,6 +13,22 @@ npm run test:e2e
 npm run build
 ```
 
+## GitHub Actions
+
+`.github/workflows/quality.yml`はpull requestとmain pushへ、次の3 statusをcommit SHA単位で付けます。
+
+| Job | 自動実行する契約 |
+| --- | --- |
+| `Phaser quality` | `npm ci`、型検査、unit / simulation、production build、配布artifact検査 |
+| `Starlight build` | `npm ci`、telemetry無効の静的build |
+| `Browser release smoke` | Playwright同梱ChromiumとFirefoxによる公開経路、desktop / portrait、WebGL、版情報、ローカルデータ削除 |
+
+CIはNode 24を使い、repository内容の読取権限だけを持ちます。Cloudflare secret、deploy、production trafficは扱いません。同じbranchで新しいcommitがpushされた場合は古いrunをcancelします。ブラウザ失敗時だけtraceとscreenshotを7日間artifactへ残します。
+
+CIではPlaywright同梱Chromium、ローカルでは既定で`/usr/bin/google-chrome`を使います。`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`を指定した場合は両環境でその値を優先します。GitHub-hosted Ubuntuのheadless FirefoxでWebGL context生成に失敗したため、CIのFirefoxだけを`ARENA_FIREFOX_HEADED=1`でheadedにし、`xvfb-run`とMesa software renderingの下で同じWebGL smokeを実行します。Firefoxの検査やWebGL要件はskipしません。
+
+全E2E画像、v0.7 probe、15分GPU耐久、通常UI採否は毎PRへ含めません。描画、ゲームルール、長時間性能、人間の所感に応じて、以下の手動ゲートを追加します。
+
 実時間15分のブラウザ耐久試験は、バランスによる死亡を防ぐデバッグ保護付きの描画・メモリ試験として明示的に実行します。
 
 ```bash

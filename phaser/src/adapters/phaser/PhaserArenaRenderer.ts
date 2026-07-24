@@ -12,6 +12,9 @@ import { PhaserArenaWorldView } from "./PhaserArenaWorldView";
 import { PhaserHud } from "./PhaserHud";
 import { PhaserTacticalBackground } from "./PhaserTacticalBackground";
 import type { PhaserUiState } from "./PhaserUiState";
+import type { TutorialSnapshot } from "../../domain/tutorial";
+import { createArenaTutorialViewModel } from "../../presentation/ArenaTutorialPresenter";
+import { PhaserTutorialLayer } from "./PhaserTutorialLayer";
 
 export class PhaserArenaRenderer {
   private readonly graphics: Phaser.GameObjects.Graphics;
@@ -19,6 +22,7 @@ export class PhaserArenaRenderer {
   private readonly worldView: PhaserArenaWorldView;
   private readonly screenView: PhaserArenaScreenView;
   private readonly hud: PhaserHud;
+  private readonly tutorialLayer: PhaserTutorialLayer;
   private renderedFrames = 0;
   private worldRenderTotalMs = 0;
   private worldRenderMaxMs = 0;
@@ -40,6 +44,7 @@ export class PhaserArenaRenderer {
     this.graphics = scene.add.graphics().setDepth(0);
     this.worldView = new PhaserArenaWorldView(simulationConfig, viewConfig);
     this.hud = new PhaserHud(scene, simulationConfig);
+    this.tutorialLayer = new PhaserTutorialLayer(scene, simulationConfig);
     this.screenView = new PhaserArenaScreenView(scene, simulationConfig);
   }
 
@@ -49,8 +54,14 @@ export class PhaserArenaRenderer {
     uiState?: PhaserUiState,
     autoPilotEnabled = false,
     autoPilotMode: AutoPilotMode | null = null,
+    tutorialSnapshot: TutorialSnapshot | null = null,
   ): void {
-    const screen = createArenaScreenViewModel(world, this.simulationConfig, uiState);
+    const screen = createArenaScreenViewModel(
+      world,
+      this.simulationConfig,
+      uiState,
+      tutorialSnapshot,
+    );
 
     const worldStartedAt = now();
     this.worldView.render(this.graphics, world, pointerWorld);
@@ -62,6 +73,10 @@ export class PhaserArenaRenderer {
       uiState?.secondaryMenu === null || uiState?.secondaryMenu === undefined,
       autoPilotEnabled,
       autoPilotMode,
+    );
+    this.tutorialLayer.render(
+      world,
+      createArenaTutorialViewModel(tutorialSnapshot, world.state.status),
     );
     this.worldView.renderCursor(this.graphics, pointerWorld);
     const screenDuration = now() - screenStartedAt;

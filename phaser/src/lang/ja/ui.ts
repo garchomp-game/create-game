@@ -5,6 +5,7 @@ export const uiText: UiText = {
   titleScreen: "ARENA CORE",
   endlessMode: "ENDLESS\n照準と位置取りで、押し寄せる敵を生き延びろ",
   expeditionMode: "FINAL EXPEDITION\n四方からの総攻撃を退け、敵中枢を撃破せよ",
+  trainingMode: "TRAINING\n撃つ・避ける・取るを実戦操作で確認",
   weaponSelectTitle: "開始武器を選択",
   weaponSelectDescription:
     "パルス: 連射と継続照準に優れた標準型\n拡散: 近距離で複数の敵を捉える広角型",
@@ -21,6 +22,14 @@ export const uiText: UiText = {
   rankingEligible: "ランキング対象",
   rankingIneligible: (reasons) => `ランキング対象外: ${reasons}`,
   paused: "一時停止",
+  trainingPaused: "基本訓練を一時停止",
+  trainingCompleteTitle: "TRAINING COMPLETE",
+  trainingCompleteDescription:
+    "チュートリアルは以上です！\n撃つ ✓　避ける ✓　取る ✓\n次の目標：訓練と同じパルスで30秒生存\nこの訓練では記録やランキングは更新されません",
+  trainingRetry: {
+    enemyProjectile: "敵弾に当たりました",
+    damage: "ダメージを受けました",
+  },
   upgradeHeading: (level) => `レベル ${level}\n強化を選択`,
   extraUpgradeHeading: (extraLevel, cycle) =>
     `EXTRA LEVEL ${extraLevel} / CYCLE ${cycle}\n限界強化を選択`,
@@ -36,6 +45,7 @@ export const uiText: UiText = {
   menu: {
     start: "エンドレス開始",
     startExpedition: "最終遠征に挑む",
+    startTraining: "基本訓練",
     selectPulse: "パルスを選ぶ",
     selectSpread: "拡散を選ぶ",
     contractStandard: "標準を維持",
@@ -62,6 +72,98 @@ export const uiText: UiText = {
     settingsShake: "画面揺れ",
     settingsFlash: "画面点滅",
     settingsAutoFire: "自動射撃",
+  },
+  trainingSteps: {
+    move: {
+      title: "移動",
+      instruction: "WASD / 矢印キーで移動",
+      briefing:
+        "全9課題・約3分。最後に案内なしの総合演習を行います。Escでいつでも中断できます。\n最初は照準とは独立した自機の移動を試しましょう。",
+      actionLabel: "移動練習を開始",
+      hint1: "押している方向へ自機が移動します",
+      hint2: "同じ場所に留まらず、64px以上移動してください",
+      success: "✓ 移動できました",
+    },
+    navigate: {
+      title: "進路変更",
+      instruction: "壁を迂回して目標区域へ移動",
+      briefing:
+        "障害物は通り抜けられません。安全な側へ回り込み、黄色い目標区域まで移動します。",
+      actionLabel: "進路変更を開始",
+      hint1: "壁には通り抜けられません",
+      hint2: "折れ線を目安に、壁の外側へ回り込んでください",
+      success: "✓ 壁を迂回できました",
+    },
+    contactDamage: {
+      title: "敵との接触",
+      instruction: "操作せず、敵が接近する様子を観察",
+      briefing:
+        "次は敵が自機へ接近します。この課題だけ移動と射撃は停止します。敵本体の動きを見てください。",
+      actionLabel: "敵の接近を観察",
+      hint1: "この課題では移動と射撃を停止しています",
+      hint2: "敵本体と自機の距離に注目してください",
+      success: "注意：敵本体への接触でもHPが減ります",
+    },
+    aimAndKill: {
+      title: "照準と射撃",
+      instruction: "照準を敵本体へ合わせて撃破",
+      briefing:
+        "HPを100へ戻します。移動しながらマウスで照準を操作し、敵本体へ狙いを合わせて撃破します。",
+      actionLabel: "HPを戻して射撃練習へ",
+      hint1: "マウスを動かすと照準方向が変わります",
+      hint2: "自動射撃がオフなら左クリックかSpaceで射撃します",
+      success: "✓ 敵を撃破しました",
+    },
+    collectXp: {
+      title: "XP回収",
+      instruction: "緑のXPへ近づいて取得",
+      briefing:
+        "敵を倒すとXPが残ります。近くまで移動すると自機へ引き寄せられ、取得できます。",
+      actionLabel: "XP回収を開始",
+      hint1: "近づくとXPが自機へ吸引されます",
+      hint2: "リングで示した取得物へ移動してください",
+      success: "✓ XPを回収しました",
+    },
+    dodgeProjectile: {
+      title: "敵弾回避",
+      instruction: "桃色の敵弾は撃ち落とせません。2回避ける",
+      briefing:
+        "外周から飛んでくる桃色のひし形は敵弾です。自機の射撃では消せないため、射線から外れて2発を回避します。",
+      actionLabel: "回避練習を開始",
+      hint1: "敵弾の進行線から上下へ外れてください",
+      hint2: "射撃では消えません。移動だけで安全位置へ抜けます",
+      success: "✓ 敵弾を回避できました",
+    },
+    collectRepair: {
+      title: "修復",
+      instruction: "訓練用損傷を、十字のREPAIRで回復",
+      briefing:
+        "この課題に入る際、HPを訓練用に減らしました。十字のREPAIRへ近づき、実際に回復しましょう。",
+      actionLabel: "修復練習を開始",
+      hint1: "REPAIRも近づくと自機へ吸引されます",
+      hint2: "リングで示したREPAIRへ移動してください",
+      success: "✓ HPを修復しました",
+    },
+    chooseUpgrade: {
+      title: "強化選択",
+      instruction: "XP回収でLEVEL UP。強化を一つ選択",
+      briefing:
+        "XPゲージが満タンになるとLEVEL UPし、戦闘を停止して強化を選びます。選んだ効果は直後から反映されます。",
+      actionLabel: "強化選択へ進む",
+      hint1: "1 / 2 / 3キー、またはクリックで選べます",
+      hint2: "選んだ効果は、この後の回避と総合演習へ反映されます",
+      success: "✓ 強化を取得しました",
+    },
+    transferDrill: {
+      title: "総合演習",
+      instruction: "敵をすべて倒し、XPとREPAIRをすべて回収",
+      briefing:
+        "個別練習はここまでです。条件の順番は自由です。\n案内リングを消した短い実戦で、すべての敵と取得物を処理します。危険なときは回避を優先してください。",
+      actionLabel: "総合演習を開始",
+      hint1: "",
+      hint2: "",
+      success: "✓ 総合演習を完了しました",
+    },
   },
   damageSource: {
     enemyContact: (enemyName) => `${enemyName}との接触`,

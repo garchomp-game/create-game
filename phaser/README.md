@@ -26,6 +26,8 @@ npm run smoke:production
 npm audit --audit-level=high
 ```
 
+pull requestとmain pushではGitHub Actionsが型検査、unit / simulation、`build:deploy`、Starlight build、Chromium / Firefoxのrelease smokeを実行します。全画像E2E、v0.7 probe、15分GPU耐久、Cloudflare deployは変更内容に応じた手動ゲートです。
+
 `test:e2e`は機能・画像回帰に加え、Chromeの960 x 540 / 390 x 844とFirefoxの960 x 540で公開経路を確認します。`smoke:production`は公開URLを通常UIだけで一巡し、保存された版情報まで検査します。公開経路だけを再実行する場合:
 
 ```bash

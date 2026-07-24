@@ -57,7 +57,17 @@ export function planStructuredSpawn(
   );
   let geometryId = request.geometryId;
 
-  if (placements.length === 0 && request.fallbackGeometryId) {
+  const fallbackDirections = request.fallbackGeometryId
+    ? getGeometryDirections(request.fallbackGeometryId, request.direction)
+    : [];
+  const preservesTelegraph = fallbackDirections.every((direction) =>
+    telegraph.directions.includes(direction)
+  );
+  if (
+    placements.length === 0 &&
+    request.fallbackGeometryId &&
+    preservesTelegraph
+  ) {
     metrics.fallbackUsed = true;
     geometryId = request.fallbackGeometryId;
     placements = collectSafePlacements(
@@ -67,7 +77,6 @@ export function planStructuredSpawn(
       random,
       metrics,
     );
-    telegraph.directions = getGeometryDirections(geometryId, request.direction);
   }
 
   if (placements.length === 0) {

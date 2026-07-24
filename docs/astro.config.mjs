@@ -60,6 +60,9 @@ export default defineConfig({
           label: "計画と運用",
           items: [
             { label: "直近フェーズ", slug: "project-management/next-phase-plan" },
+            { label: "v0.8 Issue・PR readiness", slug: "project-management/v08-issue-pr-readiness-20260724" },
+            { label: "GitHub mutation台帳", slug: "project-management/github-mutation-ledger-20260724" },
+            { label: "v0.8 作業開始前レビュー", slug: "project-management/v08-pre-work-review" },
             { label: "v0.5作業計画", slug: "project-management/endless-polish-plan" },
             { label: "v0.5チケット詳細", slug: "project-management/v05-tickets" },
             { label: "v0.6チケット詳細", slug: "project-management/v06-tickets" },

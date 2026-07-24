@@ -5,6 +5,7 @@ import type {
   ProfileSettingsUpdate,
 } from "../../domain/profile";
 import type { RunComparisonQuery, RunOrigin } from "../../domain/runRecords";
+import type { EncounterReliefReport } from "../../domain/encounterRelief";
 import type {
   BossAttackId,
   GameEvent,
@@ -38,7 +39,15 @@ import {
   getArenaEnemyTypeCounts,
   getArenaObstacleContactCounts,
 } from "../telemetry/ArenaRunExport";
-import type { AudioCueId } from "./PhaserAudioEventRouter";
+import type {
+  AudioCueId,
+  AudioRoutingSnapshot,
+} from "./PhaserAudioEventRouter";
+import {
+  applyArenaCaptureScenario,
+  readArenaCaptureLayers,
+  type ArenaCaptureScenarioId,
+} from "./ArenaCaptureScenarios";
 import type {
   ArenaDebugApi,
   ArenaRunExport,
@@ -59,6 +68,14 @@ import type { FeedbackSnapshot } from "./PhaserFeedbackLayer";
 import type { MusicSnapshot } from "./PhaserMusicController";
 import type { SecondaryMenu } from "../../application/ArenaMenuTypes";
 import type { ArenaRenderPerformanceSnapshot } from "./PhaserArenaRenderer";
+import type { ChoiceInteractionReport } from "../../application/ChoiceInteractionMonitor";
+import type { BossShadowReport } from "../../domain/bossShadow";
+import type { RunOutcomeInsightViewModel } from "../../domain/runOutcomeInsights";
+import {
+  aggregateRunFacts,
+  createRunFactScope,
+} from "../../application/runFactKernel";
+import { createRunOutcomeInsight } from "../../application/runOutcomeInsights";
 
 export type ArenaDebugControllerDependencies = {
   session: ArenaSession;
@@ -83,7 +100,11 @@ export type ArenaDebugControllerDependencies = {
   getFixedSeed(): number | null;
   getFeedbackSnapshot(): FeedbackSnapshot;
   getAudioCues(): AudioCueId[];
+  getAudioRoutingSnapshot(): AudioRoutingSnapshot;
   getMusicSnapshot(): MusicSnapshot;
+  getChoiceInteractionReport(): ChoiceInteractionReport;
+  getBossShadowReport(): BossShadowReport;
+  getEncounterReliefReport(): EncounterReliefReport;
   clearTransientInput(): void;
   recordResult(result: StepWorldResult): void;
   resetGame(status: WorldState["state"]["status"], origin?: RunOrigin): void;
@@ -96,6 +117,7 @@ export type ArenaDebugControllerDependencies = {
 export class ArenaDebugController {
   private pausedState = false;
   private soakProtectionEnabled = false;
+  private activeCaptureScenarioId: ArenaCaptureScenarioId | null = null;
 
   constructor(private readonly dependencies: ArenaDebugControllerDependencies) {}
 
@@ -105,6 +127,7 @@ export class ArenaDebugController {
 
   resetRun(): void {
     this.soakProtectionEnabled = false;
+    this.activeCaptureScenarioId = null;
   }
 
   prepareSoakProtection(): void {
@@ -144,6 +167,7 @@ export class ArenaDebugController {
         quitToTitlePressed: input.quitToTitlePressed,
         upgradeChoicePressed: null,
         contractChoicePressed: null,
+        tutorialContinuePressed: false,
       },
       0,
     );
@@ -156,6 +180,7 @@ export class ArenaDebugController {
       getSnapshot: () => this.getSnapshot(),
       getRunExport: () => this.getRunExport(),
       getRunExportJson: () => JSON.stringify(this.getRunExport(), null, 2),
+      downloadRunExport: () => this.downloadRunExport(),
       getRunRecords: () => this.dependencies.runRecordStore.load().records,
       getRunHistory: () => this.dependencies.runRecordStore.load().history,
       getRunRankingRecords: () =>
@@ -206,6 +231,8 @@ export class ArenaDebugController {
         this.setExpeditionChargerFixture(),
       setExpeditionBossFixture: (attackId = "targeted-salvo", phase = 1) =>
         this.setExpeditionBossFixture(attackId, phase),
+      loadCaptureScenario: (scenarioId) =>
+        this.loadCaptureScenario(scenarioId),
       armExpeditionBossDefeat: () => this.armExpeditionBossDefeat(),
       step: (input = {}, deltaSeconds = 1 / 60) =>
         this.stepWorld(input, deltaSeconds),
@@ -228,6 +255,10 @@ export class ArenaDebugController {
         this.dependencies.getActualFps(),
       ),
       renderPerformance: this.dependencies.getRenderPerformance(),
+      choiceInteraction: this.dependencies.getChoiceInteractionReport(),
+      bossShadow: this.dependencies.getBossShadowReport(),
+      encounterRelief: this.dependencies.getEncounterReliefReport(),
+      runOutcomeInsight: this.getRunOutcomeInsight(),
       lastEvents: this.dependencies.runLifecycle.getLastEvents(),
     });
   }
@@ -254,6 +285,7 @@ export class ArenaDebugController {
         seeds: { ...randomStreams.seeds },
       },
       status: world.state.status,
+      tutorial: this.dependencies.session.tutorialSnapshot,
       autoPilotEnabled: autoPilot.enabled,
       autoPilotMode: autoPilot.mode,
       autoPilotIntentMode: autoPilot.intentMode,
@@ -264,6 +296,8 @@ export class ArenaDebugController {
         this.dependencies.getActualFps(),
       ),
       renderPerformance: this.dependencies.getRenderPerformance(),
+      choiceInteraction: this.dependencies.getChoiceInteractionReport(),
+      bossShadow: this.dependencies.getBossShadowReport(),
       elapsed: world.state.elapsed,
       difficultyElapsed: getDifficultyElapsed(world),
       hp: world.state.hp,
@@ -288,6 +322,8 @@ export class ArenaDebugController {
         world.progression.extraUpgradeRanks,
       ),
       encounter: structuredClone(world.encounter),
+      encounterRelief: this.dependencies.getEncounterReliefReport(),
+      runOutcomeInsight: this.getRunOutcomeInsight(),
       expedition: world.expedition ? structuredClone(world.expedition) : null,
       wave: { ...getWaveBand(config, getDifficultyElapsed(world)) },
       stats: copyRunStats(world),
@@ -300,11 +336,54 @@ export class ArenaDebugController {
       enemyProjectileCount: world.enemyProjectiles.length,
       pickupCount: world.pickups.length,
       obstacleContacts: getArenaObstacleContactCounts(world),
+      captureScenario: this.activeCaptureScenarioId
+        ? {
+            id: this.activeCaptureScenarioId,
+            layers: readArenaCaptureLayers(world, config),
+          }
+        : null,
       feedback: this.dependencies.getFeedbackSnapshot(),
       audioCues: this.dependencies.getAudioCues(),
+      audioRouting: this.dependencies.getAudioRoutingSnapshot(),
       music: this.dependencies.getMusicSnapshot(),
       lastEvents: this.dependencies.runLifecycle.getLastEvents(),
     };
+  }
+
+  private getRunOutcomeInsight(): RunOutcomeInsightViewModel | null {
+    const context = this.dependencies.runLifecycle.getContext();
+    if (!context) return null;
+    const events = this.dependencies.runLifecycle.getRunFactEvents();
+    return createRunOutcomeInsight(
+      aggregateRunFacts(createRunFactScope(context), events),
+      events,
+    );
+  }
+
+  private downloadRunExport(): ReturnType<ArenaDebugApi["downloadRunExport"]> {
+    try {
+      const runExport = this.getRunExport();
+      const filename = createRunExportFilename(runExport);
+      const url = URL.createObjectURL(
+        new Blob([JSON.stringify(runExport, null, 2)], {
+          type: "application/json",
+        }),
+      );
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = filename;
+      anchor.hidden = true;
+      document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+      return { ok: true, filename };
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
   }
 
   private stepWorld(input: Partial<InputSnapshot>, deltaSeconds: number): void {
@@ -552,6 +631,18 @@ export class ArenaDebugController {
     }
   }
 
+  private loadCaptureScenario(scenarioId: ArenaCaptureScenarioId): boolean {
+    this.markMutation();
+    const loaded = applyArenaCaptureScenario(
+      this.world,
+      this.config,
+      scenarioId,
+    );
+    this.activeCaptureScenarioId = loaded ? scenarioId : null;
+    if (loaded) this.dependencies.render();
+    return loaded;
+  }
+
   private armExpeditionBossDefeat(): void {
     this.markMutation();
     if (armExpeditionBossDefeatFixture(this.world)) {
@@ -565,6 +656,7 @@ export class ArenaDebugController {
   }
 
   private markMutation(clearInput = true): void {
+    this.activeCaptureScenarioId = null;
     this.dependencies.runLifecycle.markDebugMutation();
     if (clearInput) this.dependencies.clearTransientInput();
   }
@@ -589,4 +681,15 @@ export class ArenaDebugController {
   private get debugRunOrigin(): RunOrigin {
     return this.dependencies.getBaseRunOrigin() === "test" ? "test" : "debug";
   }
+}
+
+function createRunExportFilename(runExport: ArenaRunExport): string {
+  const capturedAt = runExport.capturedAt.replace(/[^0-9A-Za-z]+/g, "-");
+  return [
+    "arena-core",
+    runExport.modeId,
+    runExport.stageId,
+    runExport.seed,
+    capturedAt,
+  ].join("-") + ".json";
 }

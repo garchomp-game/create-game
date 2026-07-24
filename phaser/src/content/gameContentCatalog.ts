@@ -115,12 +115,46 @@ export const FINAL_EXPEDITION_STAGE_DEFINITION = {
   bossId: FINAL_COMMAND_SHIP_BOSS_ID,
 } satisfies GameContentDefinitions["stages"][number];
 
+export const BASIC_TRAINING_STAGE_DEFINITION = {
+  id: "basic-training",
+  titleKey: "stage.basic-training.title",
+  arena: { ...ARENA_DEFAULT_STAGE_DEFINITION.arena },
+  obstacles: ARENA_DEFAULT_STAGE_DEFINITION.obstacles.map((obstacle) => ({
+    ...obstacle,
+  })),
+  encounterDeckId: ENDLESS_ENCOUNTER_DECK_ID,
+  enemyPoolId: "endless-core",
+  difficulty: {
+    waves: [
+      {
+        start: 0,
+        spawnInterval: 60,
+        speedMultiplier: 1,
+        maxEnemies: 0,
+        spawnBudget: 1,
+        enemyWeights: { chaser: 1 },
+      },
+    ],
+    threat: {
+      pressureStartAt: Number.MAX_SAFE_INTEGER,
+      statStartAt: Number.MAX_SAFE_INTEGER,
+    },
+    rewardScaling: {
+      enemyXpMultiplier: 1,
+      enemyScoreMultiplier: 1,
+      healDropChanceMultiplier: 1,
+    },
+  },
+  clearCondition: { type: "training" },
+} satisfies GameContentDefinitions["stages"][number];
+
 export const GAME_CONTENT_DEFINITIONS = {
   modes: [
     {
       id: "endless",
       titleKey: "mode.endless.title",
       runtimeKind: "endless",
+      recordPolicy: "standard",
       stageIds: ["arena-default"],
       defaultStageId: "arena-default",
     },
@@ -128,11 +162,24 @@ export const GAME_CONTENT_DEFINITIONS = {
       id: "expedition",
       titleKey: "mode.expedition.title",
       runtimeKind: "expedition",
+      recordPolicy: "standard",
       stageIds: ["final-expedition"],
       defaultStageId: "final-expedition",
     },
+    {
+      id: "training",
+      titleKey: "mode.training.title",
+      runtimeKind: "training",
+      recordPolicy: "none",
+      stageIds: ["basic-training"],
+      defaultStageId: "basic-training",
+    },
   ],
-  stages: [ARENA_DEFAULT_STAGE_DEFINITION, FINAL_EXPEDITION_STAGE_DEFINITION],
+  stages: [
+    ARENA_DEFAULT_STAGE_DEFINITION,
+    FINAL_EXPEDITION_STAGE_DEFINITION,
+    BASIC_TRAINING_STAGE_DEFINITION,
+  ],
   enemyPools: [
     {
       id: "endless-core",

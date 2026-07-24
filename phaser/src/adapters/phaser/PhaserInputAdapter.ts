@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import type { GameStatus, InputSnapshot, Vec2 } from "../../domain/types";
+import type { ChoiceInteractionInputMethod } from "../../application/ChoiceInteractionMonitor";
 import { normalize } from "../../math/vector";
 import {
   findMenuActionAt,
@@ -37,6 +38,7 @@ export class PhaserInputAdapter {
   private pointerPressed = false;
   private currentCursor = "";
   private pendingMenuAction: MenuAction | null = null;
+  private pendingChoiceInputMethod: ChoiceInteractionInputMethod | null = null;
   private focusedMenuIndex = 0;
   private menuContextKey = "";
 
@@ -94,8 +96,11 @@ export class PhaserInputAdapter {
     autoFireEnabled = true,
     secondaryMenu: SecondaryMenu | null = null,
   ): InputSnapshot {
+    this.pendingChoiceInputMethod = null;
     const pointer = this.scene.input.activePointer;
     const pointerPressed = this.pointerPressed;
+    const startJustDown = Phaser.Input.Keyboard.JustDown(this.keys.start);
+    const shootJustDown = Phaser.Input.Keyboard.JustDown(this.keys.shoot);
     this.pointerPressed = false;
     this.syncCursor(status, upgradeChoiceCount, secondaryMenu);
     if (
@@ -145,12 +150,12 @@ export class PhaserInputAdapter {
     }
     const keyboardActivated =
       menuButtons.length > 0 &&
-      (Phaser.Input.Keyboard.JustDown(this.keys.start) ||
-        (status === "title" &&
-          secondaryMenu === null &&
-          Phaser.Input.Keyboard.JustDown(this.keys.shoot)));
+      (startJustDown ||
+        (status === "title" && secondaryMenu === null && shootJustDown));
     const backActivated =
-      (secondaryMenu !== null || status === "weaponSelect") &&
+      (secondaryMenu !== null ||
+        status === "weaponSelect" ||
+        status === "trainingComplete") &&
       Phaser.Input.Keyboard.JustDown(this.keys.escape);
     const menuAction = backActivated
       ? "back"
@@ -170,23 +175,35 @@ export class PhaserInputAdapter {
             pointer.y,
           )
         : null;
+    const keyboardUpgradeChoice = this.readUpgradeChoice();
     const startPressed = menuAction === "start";
+    const tutorialContinuePressed =
+      status === "trainingBriefing" &&
+      (startJustDown || shootJustDown);
     const contractChoicePressed =
       menuAction === "contractStandard"
         ? 0
         : menuAction === "contractOverdrive"
           ? 1
           : null;
+    if (clickedUpgradeChoice !== null) {
+      this.pendingChoiceInputMethod = "pointer";
+    } else if (keyboardUpgradeChoice !== null) {
+      this.pendingChoiceInputMethod = "keyboard";
+    } else if (contractChoicePressed !== null) {
+      this.pendingChoiceInputMethod = pointerPressed ? "pointer" : "keyboard";
+    }
 
     return {
       move: this.readMove(),
       aimWorld: pointerAimsThisFrame ? { x: pointer.x, y: pointer.y } : null,
       startPressed,
       shootHeld:
-        this.keys.shoot.isDown ||
-        pointer.leftButtonDown() ||
-        (status === "playing" && pointerPressed) ||
-        (autoFireEnabled && status === "playing" && this.hasPointerAim),
+        status === "playing" &&
+        (this.keys.shoot.isDown ||
+          pointer.leftButtonDown() ||
+          pointerPressed ||
+          (autoFireEnabled && this.hasPointerAim)),
       restartPressed:
         Phaser.Input.Keyboard.JustDown(this.keys.restart) || menuAction === "restart",
       pausePressed:
@@ -195,9 +212,16 @@ export class PhaserInputAdapter {
         menuAction === "resume",
       quitToTitlePressed:
         Phaser.Input.Keyboard.JustDown(this.keys.quitToTitle) || menuAction === "title",
-      upgradeChoicePressed: clickedUpgradeChoice ?? this.readUpgradeChoice(),
+      upgradeChoicePressed: clickedUpgradeChoice ?? keyboardUpgradeChoice,
       contractChoicePressed,
+      tutorialContinuePressed,
     };
+  }
+
+  consumeChoiceInputMethod(): ChoiceInteractionInputMethod | null {
+    const inputMethod = this.pendingChoiceInputMethod;
+    this.pendingChoiceInputMethod = null;
+    return inputMethod;
   }
 
   readDebugTogglePressed(): boolean {
@@ -239,6 +263,7 @@ export class PhaserInputAdapter {
     this.pointerPressed = false;
     this.hasPointerAim = false;
     this.pendingMenuAction = null;
+    this.pendingChoiceInputMethod = null;
   }
 
   syncCursor(

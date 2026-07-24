@@ -9,8 +9,10 @@ import {
   DEFAULT_MODE_ID,
   DEFAULT_STAGE_ID,
   RULESET_VERSION,
+  TRAINING_MODE_ID,
   resolveRunRulesetVersion,
 } from "../../config/version";
+import { BASIC_TUTORIAL_SEED } from "../../simulation/TutorialController";
 import { resolveRunOrigin, resolveSeedCategory } from "../../application/runEnvironment";
 import {
   ArenaMenuController,
@@ -20,6 +22,13 @@ import { ArenaSession } from "../../application/ArenaSession";
 import { AutoPilotController } from "../../application/AutoPilotController";
 import { PerformanceMonitor } from "../../application/PerformanceMonitor";
 import { RunLifecycleController } from "../../application/RunLifecycleController";
+import { BossEncounterShadowMonitor } from "../../application/BossEncounterShadowMonitor";
+import {
+  ChoiceInteractionMonitor,
+  createChoiceInteractionSurface,
+  type ChoiceInteractionInputMethod,
+} from "../../application/ChoiceInteractionMonitor";
+import { EncounterReliefMonitor } from "../../application/EncounterReliefMonitor";
 import {
   createRankEligibility,
   createRankingBoardQueries,
@@ -28,6 +37,7 @@ import type { RunOrigin } from "../../domain/runRecords";
 import type { LocalProfile, ProfileSettings } from "../../domain/profile";
 import type {
   GameEvent,
+  InputSnapshot,
   SimulationConfig,
   StepWorldResult,
   ViewConfig,
@@ -57,6 +67,8 @@ import { LocalProfileStore } from "../storage/LocalProfileStore";
 import { LocalRunRecordStore } from "../storage/LocalRunRecordStore";
 import { DevRunExportClient } from "../telemetry/DevRunExportClient";
 import { ArenaChoiceOverlay } from "../dom/ArenaChoiceOverlay";
+import { ArenaTutorialDialog } from "../dom/ArenaTutorialDialog";
+import { createArenaTutorialViewModel } from "../../presentation/ArenaTutorialPresenter";
 
 const loadArenaDebugModules =
   import.meta.env.DEV ||
@@ -71,6 +83,7 @@ const loadArenaDebugModules =
 export class ArenaScene extends Phaser.Scene {
   private inputAdapter!: PhaserInputAdapter;
   private choiceOverlay!: ArenaChoiceOverlay;
+  private tutorialDialog!: ArenaTutorialDialog;
   private arenaRenderer!: PhaserArenaRenderer;
   private debugOverlay!: PhaserDebugOverlay;
   private feedbackLayer!: PhaserFeedbackLayer;
@@ -78,6 +91,9 @@ export class ArenaScene extends Phaser.Scene {
   private musicController!: PhaserMusicController;
   private logger = new ConsoleLogger("warn");
   private performanceMonitor!: PerformanceMonitor;
+  private choiceInteractionMonitor!: ChoiceInteractionMonitor;
+  private bossShadowMonitor!: BossEncounterShadowMonitor;
+  private encounterReliefMonitor!: EncounterReliefMonitor;
   private simulationConfig: SimulationConfig = SIMULATION_CONFIG;
   private viewConfig: ViewConfig = VIEW_CONFIG;
   private selectedWeapon: WeaponTypeId = SIMULATION_CONFIG.defaultWeapon;
@@ -133,6 +149,9 @@ export class ArenaScene extends Phaser.Scene {
       metrics,
       new FrameSpikeReporter(this.logger, metrics),
     );
+    this.choiceInteractionMonitor = new ChoiceInteractionMonitor({ nowMs: now });
+    this.bossShadowMonitor = new BossEncounterShadowMonitor();
+    this.encounterReliefMonitor = new EncounterReliefMonitor();
     this.session = new ArenaSession(this.simulationConfig);
     this.runRecordStore = new LocalRunRecordStore(storage);
     this.runLifecycle = new RunLifecycleController(this.runRecordStore);
@@ -144,10 +163,17 @@ export class ArenaScene extends Phaser.Scene {
     });
     this.inputAdapter = new PhaserInputAdapter(this);
     this.choiceOverlay = new ArenaChoiceOverlay(this.game.canvas, this.simulationConfig);
+    this.tutorialDialog = new ArenaTutorialDialog(
+      this.game.canvas,
+      this.simulationConfig,
+    );
     this.arenaRenderer = new PhaserArenaRenderer(this, this.simulationConfig, this.viewConfig);
     this.feedbackLayer = new PhaserFeedbackLayer(this);
     this.feedbackLayer.configure(this.settings);
-    this.audioRouter = new PhaserAudioEventRouter(this);
+    this.audioRouter = new PhaserAudioEventRouter(
+      this,
+      loadArenaDebugModules !== null,
+    );
     this.audioRouter.configure(this.settings);
     this.musicController = new PhaserMusicController(this);
     this.musicController.configure(this.settings);
@@ -158,7 +184,10 @@ export class ArenaScene extends Phaser.Scene {
     this.resetGame("title");
     const requestedAutoPilotWeapon = this.getRequestedAutoPilotWeapon();
     if (requestedAutoPilotWeapon) this.startAutoPilot(requestedAutoPilotWeapon);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.choiceOverlay.destroy());
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.choiceOverlay.destroy();
+      this.tutorialDialog.destroy();
+    });
     if (loadArenaDebugModules) {
       void this.initializeDebugController();
       this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -173,18 +202,27 @@ export class ArenaScene extends Phaser.Scene {
       this.setAutoPilotEnabled(!this.autoPilotController.enabled);
     }
     const choiceInput = this.choiceOverlay.consumeInput();
+    const tutorialContinueRequested = this.tutorialDialog.consumeContinue();
     const manualInput = this.inputAdapter.read(
       this.world.state.status,
       this.world.progression.pendingUpgradeChoices.length,
       this.settings.autoFireEnabled,
       this.menuController.state.secondaryMenu,
     );
+    const adapterChoiceInputMethod = this.inputAdapter.consumeChoiceInputMethod();
     if (choiceInput.upgradeChoice !== null) {
       manualInput.upgradeChoicePressed = choiceInput.upgradeChoice;
     }
     if (choiceInput.contractChoice !== null) {
       manualInput.contractChoicePressed = choiceInput.contractChoice;
     }
+    if (tutorialContinueRequested) {
+      manualInput.tutorialContinuePressed = true;
+    }
+    this.recordChoiceSelection(
+      manualInput,
+      choiceInput.inputMethod ?? adapterChoiceInputMethod,
+    );
     const canvasMenuAction = this.inputAdapter.consumeMenuAction();
     const menuAction = choiceInput.menuAction ?? canvasMenuAction;
     if (menuAction && this.handleMenuAction(menuAction)) {
@@ -214,6 +252,13 @@ export class ArenaScene extends Phaser.Scene {
     );
     const result = this.session.step(input, deltaMs / 1000);
     this.debugController?.normalizeSoakHealth();
+    this.choiceInteractionMonitor.observeResume({
+      simulationSeconds: this.world.state.elapsed,
+      moveInput: Math.hypot(input.move.x, input.move.y) > 0,
+      aimInput: input.aimWorld !== null,
+      shootInput: input.shootHeld,
+      ...this.getChoiceInteractionCounters(),
+    });
     this.recordResult(result, this.game.loop.rawDelta);
     if (result.events.some((event) => event.type === "game.restart.requested")) {
       this.resetGame("playing");
@@ -236,10 +281,14 @@ export class ArenaScene extends Phaser.Scene {
     this.autoPilotController.resetForRun(status);
     this.inputAdapter.clearTransientInput();
     this.choiceOverlay.clearInput();
+    this.tutorialDialog.clearInput();
     this.performanceMonitor.reset();
     this.arenaRenderer.resetPerformance();
     const fixedSeed = this.getFixedRunSeed();
-    const runSeed = this.createRunSeed(fixedSeed);
+    const runSeed =
+      this.selectedModeId === TRAINING_MODE_ID
+        ? BASIC_TUTORIAL_SEED
+        : this.createRunSeed(fixedSeed);
     this.session.start({
       seed: runSeed,
       weaponType: this.selectedWeapon,
@@ -247,53 +296,62 @@ export class ArenaScene extends Phaser.Scene {
       modeId: this.selectedModeId,
       stageId: this.selectedStageId,
     });
+    this.bossShadowMonitor.reset(this.world);
+    this.encounterReliefMonitor.reset(this.world);
     this.debugController?.resetRun();
-    const runOrigin =
-      runOriginOverride ??
-      (this.autoPilotController.enabled
-        ? this.getDebugRunOrigin()
-        : this.getBaseRunOrigin());
-    this.runLifecycle.begin(
-      {
-        id: this.createRunId(),
-        profileId: this.profile.id,
-        startedAt: new Date().toISOString(),
-        modeId: this.session.modeId,
-        stageId: this.session.stageId,
-        difficultyId: DEFAULT_DIFFICULTY_ID,
-        rulesetVersion: resolveRunRulesetVersion(
-          this.session.modeId,
-          this.session.stageId,
-        ),
-        seedCategory: resolveSeedCategory(fixedSeed),
-        weaponId: this.world.state.weaponType,
-        modifierIds: [
-          `auto-fire:${this.settings.autoFireEnabled ? "on" : "off"}`,
-          ...(this.autoPilotController.enabled
-            ? [AUTO_PILOT_MODIFIER_ID]
-            : []),
-          ...(this.autoPilotController.enabled &&
-              this.autoPilotController.patrolStrategy === "visit-history-v1"
-            ? [AUTO_PILOT_PATROL_MODIFIER_ID]
-            : []),
-        ],
-        appVersion: APP_VERSION,
-        buildCommit: this.getBuildCommit(),
-        seed: runSeed,
-        runOrigin,
-        rankEligibility: createRankEligibility(
+    if (this.session.recordPolicy === "none") {
+      this.runLifecycle.discard();
+    } else {
+      const runOrigin =
+        runOriginOverride ??
+        (this.autoPilotController.enabled
+          ? this.getDebugRunOrigin()
+          : this.getBaseRunOrigin());
+      this.runLifecycle.begin(
+        {
+          id: this.createRunId(),
+          profileId: this.profile.id,
+          startedAt: new Date().toISOString(),
+          modeId: this.session.modeId,
+          stageId: this.session.stageId,
+          difficultyId: DEFAULT_DIFFICULTY_ID,
+          rulesetVersion: resolveRunRulesetVersion(
+            this.session.modeId,
+            this.session.stageId,
+          ),
+          seedCategory: resolveSeedCategory(fixedSeed),
+          weaponId: this.world.state.weaponType,
+          modifierIds: [
+            `auto-fire:${this.settings.autoFireEnabled ? "on" : "off"}`,
+            ...(this.autoPilotController.enabled
+              ? [AUTO_PILOT_MODIFIER_ID]
+              : []),
+            ...(this.autoPilotController.enabled &&
+                this.autoPilotController.patrolStrategy === "visit-history-v1"
+              ? [AUTO_PILOT_PATROL_MODIFIER_ID]
+              : []),
+          ],
+          appVersion: APP_VERSION,
+          buildCommit: this.getBuildCommit(),
+          seed: runSeed,
           runOrigin,
-          !this.autoPilotController.enabled,
-        ),
-      },
-      status === "playing",
-    );
+          rankEligibility: createRankEligibility(
+            runOrigin,
+            !this.autoPilotController.enabled,
+          ),
+        },
+        status === "playing",
+      );
+    }
+    this.choiceInteractionMonitor.reset(this.autoPilotController.enabled);
     this.menuController.reset();
     this.feedbackLayer.reset();
     this.audioRouter.reset();
   }
 
   private recordResult(result: StepWorldResult, observedRawDtMs?: number): void {
+    this.bossShadowMonitor.observe(this.world, result.events);
+    this.encounterReliefMonitor.observe(this.world, result.events);
     const gameOver = result.events.some((event) => event.type === "game.over");
     this.performanceMonitor.record(
       result.metrics,
@@ -302,13 +360,15 @@ export class ArenaScene extends Phaser.Scene {
       gameOver,
     );
 
-    this.runLifecycle.observeEvents(result.events);
+    if (this.session.recordPolicy === "standard") {
+      this.runLifecycle.observeEvents(result.events, this.world.state.elapsed);
+    }
     for (const event of result.events) {
       this.logEvent(event);
     }
     this.feedbackLayer.handleEvents(result.events, this.world);
     this.audioRouter.handleEvents(result.events);
-    if (gameOver) {
+    if (gameOver && this.session.recordPolicy === "standard") {
       this.finalizeRunRecord();
     }
   }
@@ -366,8 +426,19 @@ export class ArenaScene extends Phaser.Scene {
       this.createUiState(),
       autoPilot.enabled,
       autoPilot.mode,
+      this.session.tutorialSnapshot,
     );
     this.choiceOverlay.render(this.world, secondaryMenu === null);
+    this.tutorialDialog.render(
+      createArenaTutorialViewModel(
+        this.session.tutorialSnapshot,
+        this.world.state.status,
+      ),
+    );
+    this.choiceInteractionMonitor.syncSurface(
+      secondaryMenu === null ? createChoiceInteractionSurface(this.world) : null,
+      this.world.state.elapsed,
+    );
     this.musicController.sync(
       this.world.state.status,
       this.world.expedition?.outcome ?? null,
@@ -415,7 +486,14 @@ export class ArenaScene extends Phaser.Scene {
       getFixedSeed: () => this.getFixedRunSeed(),
       getFeedbackSnapshot: () => this.feedbackLayer.getSnapshot(),
       getAudioCues: () => this.audioRouter.getLastCues(),
+      getAudioRoutingSnapshot: () => this.audioRouter.getRoutingSnapshot(),
       getMusicSnapshot: () => this.musicController.getSnapshot(),
+      getChoiceInteractionReport: () =>
+        this.choiceInteractionMonitor.getReport(this.world.state.elapsed),
+      getBossShadowReport: () =>
+        this.bossShadowMonitor.getReport(this.world.state.elapsed),
+      getEncounterReliefReport: () =>
+        this.encounterReliefMonitor.getReport(this.world.state.elapsed),
       clearTransientInput: () => this.inputAdapter.clearTransientInput(),
       recordResult: (result) => this.recordResult(result),
       resetGame: (status, origin) => this.resetGame(status, origin),
@@ -432,6 +510,12 @@ export class ArenaScene extends Phaser.Scene {
   private submitDevRunExport(): Promise<{ ok: boolean; path?: string; error?: string }> {
     if (!import.meta.env.DEV || !this.devRunExportClient) {
       return Promise.resolve({ ok: false, error: "Run export logging is only available in dev." });
+    }
+    if (this.session.recordPolicy === "none") {
+      return Promise.resolve({
+        ok: false,
+        error: "Training sessions do not create run exports.",
+      });
     }
 
     const runExport = this.debugController?.getRunExport();
@@ -500,6 +584,14 @@ export class ArenaScene extends Phaser.Scene {
       this.selectedModeId = command.modeId;
       this.selectedStageId = command.stageId;
       this.resetGame("weaponSelect");
+      return;
+    }
+    if (command.type === "startTraining") {
+      this.selectedModeId = command.modeId;
+      this.selectedStageId = command.stageId;
+      this.selectedWeapon = "pulse";
+      this.autoPilotController.setEnabled(false);
+      this.resetGame("playing");
       return;
     }
     if (command.type === "startRun") {
@@ -621,6 +713,7 @@ export class ArenaScene extends Phaser.Scene {
 
     this.autoPilotController.setEnabled(enabled);
     if (!enabled) return;
+    this.choiceInteractionMonitor.markAutoPilotObserved();
     this.runLifecycle.markDebugMutation();
     this.runLifecycle.addModifier(AUTO_PILOT_MODIFIER_ID, false);
     if (this.autoPilotController.patrolStrategy === "visit-history-v1") {
@@ -634,6 +727,33 @@ export class ArenaScene extends Phaser.Scene {
   private createRunId(): string {
     if (window.crypto?.randomUUID) return window.crypto.randomUUID();
     return `run-${Date.now()}-${this.runSeed}`;
+  }
+
+  private recordChoiceSelection(
+    input: InputSnapshot,
+    inputMethod: ChoiceInteractionInputMethod | null,
+  ): void {
+    if (inputMethod === null) return;
+    const selectedIndex = this.world.state.status === "upgradeSelect"
+      ? input.upgradeChoicePressed
+      : this.world.state.status === "contractSelect"
+        ? input.contractChoicePressed ?? null
+        : null;
+    if (selectedIndex === null) return;
+    this.choiceInteractionMonitor.select(
+      selectedIndex,
+      inputMethod,
+      this.world.state.elapsed,
+      this.getChoiceInteractionCounters(),
+    );
+  }
+
+  private getChoiceInteractionCounters() {
+    return {
+      movementDistance: this.world.stats.movementDistance,
+      shotsFired: this.world.stats.shotsFired,
+      damageTaken: this.world.stats.damageTaken,
+    };
   }
 
   private initializeProfile(storage: Pick<Storage, "getItem" | "setItem" | "removeItem">): void {

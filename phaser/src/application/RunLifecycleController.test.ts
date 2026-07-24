@@ -46,6 +46,10 @@ describe("RunLifecycleController", () => {
       "contract.selected",
       "game.over",
     ]);
+    expect(controller.getRunFactEvents().map((entry) => entry.event.type)).toEqual([
+      "game.started",
+      "game.over",
+    ]);
   });
 
   it("keeps the previous personal best and does not celebrate a lower score", () => {
@@ -130,7 +134,95 @@ describe("RunLifecycleController", () => {
     expect(controller.getLatestRecord()).toBeNull();
     expect(controller.getPreviousBest()).toBeNull();
   });
+
+  it("discards a non-recording session without writing or clearing saved boards", () => {
+    const store = new MemoryRunRecordStore();
+    const controller = new RunLifecycleController(store);
+    const world = createWorld(SIMULATION_CONFIG);
+    controller.begin(makeContext(), true);
+    controller.observeEvents([{ type: "game.started" }]);
+
+    controller.discard();
+    const outcome = controller.finalize(
+      world,
+      SIMULATION_CONFIG,
+      "2026-07-20T00:00:00Z",
+    );
+
+    expect(outcome.result.status).toBe("notStarted");
+    expect(store.saveAttempts).toBe(0);
+    expect(controller.getContext()).toBeNull();
+    expect(controller.getLastEvents()).toEqual([]);
+    expect(controller.getRunFactEvents()).toEqual([]);
+  });
+
+  it("retains outcome facts and boss HP without retaining ordinary hit traffic", () => {
+    const controller = new RunLifecycleController(new MemoryRunRecordStore());
+    controller.begin(makeExpeditionContext("facts"), true);
+    controller.observeEvents([
+      enemyHit("regular-enemy", 10),
+      {
+        type: "boss.spawned",
+        bossId: "command-ship",
+        enemyId: "boss-enemy",
+        position: { x: 480, y: 120 },
+        maximumHp: 3400,
+        repairBudgetInitial: null,
+        elapsed: 80,
+      },
+      enemyHit("boss-enemy", 3200),
+      {
+        type: "player.damaged",
+        damage: 12,
+        hpAfter: 88,
+        source: {
+          kind: "contact",
+          enemyId: "enemy-fast",
+          enemyType: "fast",
+        },
+      },
+      {
+        type: "expedition.failed",
+        actId: "command-ship",
+        elapsed: 100,
+        score: 2000,
+        tacticalScore: 2000,
+        scoreBeforeBonus: 2000,
+        clearScoreBonus: 0,
+        timeScoreBonus: 0,
+        timeMedal: null,
+        bossFightDuration: 20,
+      },
+    ], 99);
+
+    const facts = controller.getRunFactEvents();
+    expect(facts.map((entry) => entry.event.type)).toEqual([
+      "game.started",
+      "boss.spawned",
+      "enemy.hit",
+      "player.damaged",
+      "expedition.failed",
+    ]);
+    expect(facts.map((entry) => entry.sequence)).toEqual([0, 1, 2, 3, 4]);
+    expect(facts[3]?.elapsed).toBe(99);
+  });
 });
+
+function enemyHit(enemyId: string, hpAfter: number) {
+  return {
+    type: "enemy.hit" as const,
+    bulletId: "bullet-1",
+    volleyId: 1,
+    enemyId,
+    enemyType: "brute" as const,
+    weaponType: "pulse" as const,
+    ricochetsUsed: 0,
+    ricochetSurfaceKind: null,
+    ricochetBoundarySide: null,
+    damage: 10,
+    hpAfter,
+  };
+}
 
 class MemoryRunRecordStore implements RunRecordStorePort {
   records: RunRecord[] = [];

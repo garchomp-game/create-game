@@ -1,4 +1,11 @@
-import type { AudioCueId } from "./PhaserAudioEventRouter";
+import type {
+  AudioCueId,
+  AudioRoutingSnapshot,
+} from "./PhaserAudioEventRouter";
+import type {
+  ArenaCaptureLayerSnapshot,
+  ArenaCaptureScenarioId,
+} from "./ArenaCaptureScenarios";
 import type { FeedbackSnapshot } from "./PhaserFeedbackLayer";
 import type { MusicSnapshot } from "./PhaserMusicController";
 import type { SecondaryMenu } from "./PhaserMenuLayout";
@@ -38,6 +45,7 @@ import type {
   WaveBand,
   WeaponTypeId,
 } from "../../domain/types";
+import type { TutorialSnapshot } from "../../domain/tutorial";
 import type {
   AutoPilotMode,
   AutoPilotOverrideReason,
@@ -45,6 +53,10 @@ import type {
 import type { BuildComposition } from "../../simulation/buildComposer";
 import type { ArenaPerformanceSnapshot } from "../../application/PerformanceMonitor";
 import type { ArenaRenderPerformanceSnapshot } from "./PhaserArenaRenderer";
+import type { ChoiceInteractionReport } from "../../application/ChoiceInteractionMonitor";
+import type { BossShadowReport } from "../../domain/bossShadow";
+import type { EncounterReliefReport } from "../../domain/encounterRelief";
+import type { RunOutcomeInsightViewModel } from "../../domain/runOutcomeInsights";
 export type { ArenaPerformanceSnapshot } from "../../application/PerformanceMonitor";
 
 export type ArenaObstacleContactCounts = {
@@ -71,6 +83,7 @@ export type ArenaDebugSnapshot = {
   seed: number;
   randomStreams: ArenaRandomStreamSnapshot;
   status: GameStatus;
+  tutorial: TutorialSnapshot | null;
   autoPilotEnabled: boolean;
   autoPilotMode: AutoPilotMode | null;
   autoPilotIntentMode: AutoPilotMode | null;
@@ -79,6 +92,8 @@ export type ArenaDebugSnapshot = {
   autoPilotTargetId: string | null;
   performance: ArenaPerformanceSnapshot;
   renderPerformance: ArenaRenderPerformanceSnapshot;
+  choiceInteraction: ChoiceInteractionReport;
+  bossShadow: BossShadowReport;
   elapsed: number;
   difficultyElapsed: number;
   hp: number;
@@ -97,6 +112,8 @@ export type ArenaDebugSnapshot = {
   runtime: RuntimeModifiers;
   buildComposition: BuildComposition;
   encounter: EncounterState;
+  encounterRelief: EncounterReliefReport;
+  runOutcomeInsight: RunOutcomeInsightViewModel | null;
   expedition: ExpeditionState | null;
   wave: WaveBand;
   stats: RunStats;
@@ -109,8 +126,13 @@ export type ArenaDebugSnapshot = {
   enemyProjectileCount: number;
   pickupCount: number;
   obstacleContacts: ArenaObstacleContactCounts;
+  captureScenario: {
+    id: ArenaCaptureScenarioId;
+    layers: ArenaCaptureLayerSnapshot;
+  } | null;
   feedback: FeedbackSnapshot;
   audioCues: AudioCueId[];
+  audioRouting: AudioRoutingSnapshot;
   music: MusicSnapshot;
   lastEvents: GameEvent[];
 };
@@ -135,6 +157,8 @@ export type ArenaRunExport = {
   status: GameStatus;
   performance: ArenaPerformanceSnapshot;
   renderPerformance: ArenaRenderPerformanceSnapshot;
+  choiceInteraction: ChoiceInteractionReport;
+  bossShadow: BossShadowReport;
   elapsed: number;
   difficultyElapsed: number;
   wave: WaveBand;
@@ -160,6 +184,8 @@ export type ArenaRunExport = {
   runtime: RuntimeModifiers;
   buildComposition: BuildComposition;
   encounter: EncounterState;
+  encounterRelief: EncounterReliefReport;
+  runOutcomeInsight: RunOutcomeInsightViewModel | null;
   expedition: ExpeditionState | null;
   lastEvents: GameEvent[];
 };
@@ -168,6 +194,11 @@ export type ArenaDebugApi = {
   getSnapshot(): ArenaDebugSnapshot;
   getRunExport(): ArenaRunExport;
   getRunExportJson(): string;
+  downloadRunExport(): {
+    ok: boolean;
+    filename?: string;
+    error?: string;
+  };
   getRunRecords(): RunRecord[];
   getRunHistory(): RunRecord[];
   getRunRankingRecords(): RunRecord[];
@@ -196,6 +227,7 @@ export type ArenaDebugApi = {
   setExpeditionCommanderFixture(): void;
   setExpeditionChargerFixture(): void;
   setExpeditionBossFixture(attackId?: BossAttackId, phase?: 1 | 2): void;
+  loadCaptureScenario(scenarioId: ArenaCaptureScenarioId): boolean;
   armExpeditionBossDefeat(): void;
   step(input?: Partial<InputSnapshot>, deltaSeconds?: number): void;
 };

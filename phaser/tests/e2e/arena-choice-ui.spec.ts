@@ -226,3 +226,60 @@ test("keeps the previous aim active after a number-key upgrade", async ({ page }
     before.lastAim,
   );
 });
+
+test("records pointer and keyboard choices with a one-second resume window", async ({ page }) => {
+  await page.goto("/");
+  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.restart();
+    window.__ARENA_DEBUG__?.forceUpgradeSelect();
+  });
+
+  const firstUpgrade = page.locator("[data-choice-kind='upgrade']").first();
+  await firstUpgrade.click();
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "playing",
+  );
+  const selectedAt = await page.evaluate(
+    () => window.__ARENA_DEBUG__?.getSnapshot().choiceInteraction.samples[0]?.selectedAtSimulationSeconds,
+  );
+  expect(selectedAt).toBeDefined();
+
+  const canvas = page.locator("canvas");
+  const canvasBox = await canvas.boundingBox();
+  if (!canvasBox) throw new Error("Canvas is not visible.");
+  await page.mouse.move(canvasBox.x + canvasBox.width * 0.75, canvasBox.y + canvasBox.height * 0.5);
+  await page.keyboard.down("w");
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().elapsed))
+    .toBeGreaterThanOrEqual(selectedAt! + 1);
+  await page.keyboard.up("w");
+
+  const pointerReport = await page.evaluate(
+    () => window.__ARENA_DEBUG__?.getSnapshot().choiceInteraction,
+  );
+  expect(pointerReport?.samples[0]).toMatchObject({
+    phase: "upgrade",
+    inputMethod: "pointer",
+    resumeWindow: { completed: true },
+  });
+  expect(pointerReport!.samples[0]!.resumeWindow.movementInputFrames).toBeGreaterThan(0);
+  expect(pointerReport!.samples[0]!.resumeWindow.aimInputFrames).toBeGreaterThan(0);
+
+  await page.evaluate(() => window.__ARENA_DEBUG__?.forceExtraUpgradeSelect());
+  const extraUpgrade = page.locator("[data-choice-kind='upgrade']").first();
+  await extraUpgrade.focus();
+  await page.keyboard.press("1");
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
+    "playing",
+  );
+  const finalReport = await page.evaluate(
+    () => window.__ARENA_DEBUG__?.getSnapshot().choiceInteraction,
+  );
+  expect(finalReport?.samples).toHaveLength(2);
+  expect(finalReport?.samples[1]).toMatchObject({
+    phase: "extra",
+    inputMethod: "keyboard",
+  });
+  expect(finalReport?.summary.inputMethodCounts).toEqual({ keyboard: 1, pointer: 1 });
+});

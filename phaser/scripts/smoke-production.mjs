@@ -66,7 +66,7 @@ try {
   );
   await capture(page, "01-title.png");
 
-  await clickCanvasLogical(page, 480, 451);
+  await clickCanvasLogical(page, 340, 495);
   await page.waitForTimeout(250);
   await capture(page, "02-settings.png");
   await clickCanvasLogical(page, 480, 347);
@@ -78,12 +78,12 @@ try {
   assert(autoFireEnabled === false, "settings did not persist auto-fire off");
   await pressGameKey(page, "Escape");
 
-  await clickCanvasLogical(page, 480, 355);
+  await clickCanvasLogical(page, 340, 447);
   await page.waitForTimeout(200);
   await capture(page, "03-ranking.png");
   await pressGameKey(page, "Escape");
 
-  await clickCanvasLogical(page, 480, 403);
+  await clickCanvasLogical(page, 620, 447);
   await page.waitForTimeout(200);
   await capture(page, "04-history-empty.png");
   await pressGameKey(page, "Escape");
@@ -116,12 +116,12 @@ try {
   await page.waitForTimeout(300);
   await capture(page, "07-result.png");
 
-  await clickCanvasLogical(page, 480, 439);
+  await clickCanvasLogical(page, 480, 463);
   await page.waitForTimeout(250);
   await capture(page, "08-history-saved.png");
   await pressGameKey(page, "Escape");
 
-  await clickCanvasLogical(page, 480, 387);
+  await clickCanvasLogical(page, 480, 367);
   await page.waitForTimeout(800);
   await capture(page, "09-retry.png");
   await pressGameKey(page, "Escape");
@@ -144,7 +144,7 @@ try {
   await clickCanvasLogical(page, 480, 409);
   await page.waitForTimeout(300);
 
-  await clickCanvasLogical(page, 480, 499);
+  await clickCanvasLogical(page, 620, 495);
   await page.waitForURL(/\/beta-info(?:\.html)?\/?$/);
   assert((await page.locator("#app-version").textContent()) === expected.appVersion, "beta app mismatch");
   assert(

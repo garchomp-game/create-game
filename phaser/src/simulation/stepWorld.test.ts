@@ -1335,6 +1335,39 @@ describe("stepWorld", () => {
     expect(startResult.events).toContainEqual({ type: "game.started" });
   });
 
+  it("freezes gameplay while a Training briefing waits for confirmation", () => {
+    const world = createWorld(GAME_CONFIG);
+    world.state.status = "trainingBriefing";
+    const initialPosition = { ...world.player.position };
+
+    const frozen = stepWorld(
+      world,
+      { ...neutralInput, move: { x: 1, y: 0 }, shootHeld: true },
+      1,
+      createRandomStreams(GAME_CONFIG.seed),
+      GAME_CONFIG,
+    );
+
+    expect(world.state.elapsed).toBe(0);
+    expect(world.player.position).toEqual(initialPosition);
+    expect(world.bullets).toEqual([]);
+    expect(frozen.metrics).toContainEqual({
+      type: "timing",
+      name: "frame.dt_ms",
+      valueMs: 0,
+    });
+
+    const paused = stepWorld(
+      world,
+      { ...neutralInput, pausePressed: true },
+      1 / 60,
+      createRandomStreams(GAME_CONFIG.seed),
+      GAME_CONFIG,
+    );
+    expect(world.state.status).toBe("paused");
+    expect(paused.events).toContainEqual({ type: "game.paused", elapsed: 0 });
+  });
+
   it("toggles pause and keeps simulation state frozen while paused", () => {
     const world = createWorld(GAME_CONFIG);
     const random = createRandomStreams(GAME_CONFIG.seed);

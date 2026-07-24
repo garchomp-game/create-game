@@ -3,11 +3,11 @@ title: 最終遠征RC6の時計と記録規則
 description: Encounter Directorの時計、Commanderの期限、Expedition記録の比較scope、ruleset分離を固定するADR。
 ---
 
-最終更新日: 2026-07-19
+最終更新日: 2026-07-20
 
 ## 状態
 
-設計決定として採用。`PH-V07-010`の時計とCommanderライフサイクル、`PH-V07-011`の記録規則とRC6 rulesetは2026-07-19に実装しました。フォローアップ監査で見つかったボス遭遇終端、390秒境界、profile別PB、ランキング表示、probe分岐もRC6安定化差分へ取り込みました。提出物再レビューのrelease contract追補と自動証跡の再取得はcode commit `c908450a7101`で完了しています。`PH-V07-012`の2400 HP有限回復候補は棄却し、RC6 controlを維持します。RC6 build自体はまだproduction未採用で、通常UI欠陥特化ランを通過してから昇格を判断します。
+設計決定およびゲームルール候補として採用。`PH-V07-010`の時計とCommanderライフサイクル、`PH-V07-011`の記録規則とRC6 rulesetは2026-07-19に実装しました。フォローアップ監査で見つかったボス遭遇終端、390秒境界、profile別PB、ランキング表示、probe分岐もRC6安定化差分へ取り込みました。提出物再レビューのrelease contract追補と自動証跡の再取得はcode commit `c908450a7101`で完了しています。`PH-V07-012`の2400 HP有限回復候補は棄却し、通常UIのPulse 2本・Spread 1本で中央周回と回復循環を再確認したうえでRC6 controlを採用しました。production trafficはリポジトリ統合と配布SHA固定までv0.6.8を維持します。
 
 ## 文脈
 

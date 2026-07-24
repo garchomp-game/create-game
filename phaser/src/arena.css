@@ -2,6 +2,146 @@
   position: relative;
 }
 
+.arena-tutorial-dialog {
+  --arena-scale: 1;
+  position: absolute;
+  z-index: 35;
+  display: none;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: calc(34px * var(--arena-scale));
+  background: rgba(2, 6, 23, 0.7);
+  color: #f8fafc;
+  font-family: "Noto Sans CJK JP", "Noto Sans JP", "Yu Gothic", "Meiryo", "Hiragino Kaku Gothic ProN", sans-serif;
+  letter-spacing: 0;
+  pointer-events: none;
+}
+
+.arena-tutorial-dialog--visible {
+  display: flex;
+  pointer-events: auto;
+}
+
+.arena-tutorial-dialog__panel {
+  box-sizing: border-box;
+  width: min(680px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  padding: calc(30px * var(--arena-scale)) calc(38px * var(--arena-scale));
+  border: calc(2px * var(--arena-scale)) solid #22d3ee;
+  border-radius: calc(7px * var(--arena-scale));
+  background: rgba(9, 15, 25, 0.98);
+  box-shadow: 0 calc(18px * var(--arena-scale)) calc(48px * var(--arena-scale)) rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+
+.arena-tutorial-dialog__eyebrow {
+  margin: 0;
+  color: #67e8f9;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.arena-tutorial-dialog__success {
+  margin: 0 0 calc(12px * var(--arena-scale));
+  white-space: pre-line;
+  color: #86efac;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.arena-tutorial-dialog__title {
+  margin: calc(8px * var(--arena-scale)) 0 0;
+  overflow-wrap: anywhere;
+  color: #ffffff;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.arena-tutorial-dialog__objective {
+  margin: calc(16px * var(--arena-scale)) 0 0;
+  color: #facc15;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.arena-tutorial-dialog__body {
+  margin: calc(15px * var(--arena-scale)) auto 0;
+  max-width: 560px;
+  white-space: pre-line;
+  color: #d5dce5;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.7;
+}
+
+.arena-tutorial-dialog__continue {
+  min-width: min(320px, 100%);
+  margin-top: calc(24px * var(--arena-scale));
+  padding: calc(12px * var(--arena-scale)) calc(26px * var(--arena-scale));
+  border: calc(2px * var(--arena-scale)) solid #22d3ee;
+  border-radius: calc(6px * var(--arena-scale));
+  background: #0e7490;
+  color: #ffffff;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.arena-tutorial-dialog__continue:hover,
+.arena-tutorial-dialog__continue:focus-visible {
+  border-color: #ffffff;
+  background: #155e75;
+  outline: calc(2px * var(--arena-scale)) solid #facc15;
+  outline-offset: calc(3px * var(--arena-scale));
+}
+
+.arena-tutorial-dialog__key-hint {
+  margin: calc(12px * var(--arena-scale)) 0 0;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.arena-tutorial-dialog--compact .arena-tutorial-dialog__panel {
+  padding: calc(22px * var(--arena-scale)) calc(28px * var(--arena-scale));
+}
+
+.arena-tutorial-dialog--compact .arena-tutorial-dialog__title {
+  font-size: 25px;
+}
+
+.arena-tutorial-dialog--portrait {
+  padding: 24px;
+}
+
+.arena-tutorial-dialog--portrait .arena-tutorial-dialog__panel {
+  width: min(100%, 520px);
+  padding: 28px 24px;
+}
+
+.arena-tutorial-dialog--portrait .arena-tutorial-dialog__title {
+  font-size: 27px;
+}
+
+.arena-tutorial-dialog--portrait .arena-tutorial-dialog__objective {
+  font-size: 17px;
+}
+
+.arena-tutorial-dialog--portrait .arena-tutorial-dialog__body {
+  font-size: 15px;
+}
+
 .arena-choice-overlay {
   --arena-scale: 1;
   position: absolute;

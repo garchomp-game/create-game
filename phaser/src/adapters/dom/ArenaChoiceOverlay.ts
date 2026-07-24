@@ -1,3 +1,4 @@
+import type { ChoiceInteractionInputMethod } from "../../application/ChoiceInteractionMonitor";
 import type { MenuAction } from "../../application/ArenaMenuTypes";
 import type { SimulationConfig, WorldState } from "../../domain/types";
 import {
@@ -10,6 +11,7 @@ export type ArenaChoiceInput = {
   menuAction: MenuAction | null;
   upgradeChoice: number | null;
   contractChoice: number | null;
+  inputMethod: ChoiceInteractionInputMethod | null;
 };
 
 export class ArenaChoiceOverlay {
@@ -76,9 +78,10 @@ export class ArenaChoiceOverlay {
       back.type = "button";
       back.dataset.choiceAction = backAction;
       back.setAttribute("aria-keyshortcuts", "Escape");
-      back.addEventListener("click", () =>
-        this.applySelection({ kind: "menu", action: backAction }),
-      );
+      back.addEventListener("click", (event) => {
+        this.applySelection({ kind: "menu", action: backAction });
+        this.pendingInput.inputMethod = getChoiceInputMethod(event);
+      });
       shell.append(back);
     }
     this.root.append(shell);
@@ -164,7 +167,10 @@ export class ArenaChoiceOverlay {
       metric,
       action,
     );
-    button.addEventListener("click", () => this.applySelection(card.selection));
+    button.addEventListener("click", (event) => {
+      this.applySelection(card.selection);
+      this.pendingInput.inputMethod = getChoiceInputMethod(event);
+    });
     return button;
   }
 
@@ -224,7 +230,16 @@ export class ArenaChoiceOverlay {
 }
 
 function emptyInput(): ArenaChoiceInput {
-  return { menuAction: null, upgradeChoice: null, contractChoice: null };
+  return {
+    menuAction: null,
+    upgradeChoice: null,
+    contractChoice: null,
+    inputMethod: null,
+  };
+}
+
+function getChoiceInputMethod(event: MouseEvent): ChoiceInteractionInputMethod {
+  return event.detail === 0 ? "keyboard" : "pointer";
 }
 
 function element<K extends keyof HTMLElementTagNameMap>(

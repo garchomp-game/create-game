@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { ArenaSession } from "../../application/ArenaSession";
 import { AutoPilotController } from "../../application/AutoPilotController";
+import { createEmptyChoiceInteractionReport } from "../../application/ChoiceInteractionMonitor";
+import { createEmptyBossShadowReport } from "../../application/BossEncounterShadowMonitor";
 import { PerformanceMonitor } from "../../application/PerformanceMonitor";
 import { RunLifecycleController } from "../../application/RunLifecycleController";
 import { SIMULATION_CONFIG } from "../../config/gameConfig";
@@ -20,6 +22,7 @@ import {
   ArenaDebugController,
   type ArenaDebugControllerDependencies,
 } from "./ArenaDebugController";
+import { ARENA_CAPTURE_SCENARIOS } from "./ArenaCaptureScenarios";
 
 describe("ArenaDebugController", () => {
   it("owns debug mutation, soak protection, snapshot, and API state", () => {
@@ -74,6 +77,27 @@ describe("ArenaDebugController", () => {
     expect(dependencies.startAutoPilot).toHaveBeenCalledWith("spread");
   });
 
+  it("exports a factual run outcome after a terminal event", () => {
+    const { controller } = createFixture();
+    const api = controller.createApi();
+
+    api.forceDamage(SIMULATION_CONFIG.player.maxHp);
+
+    expect(api.getSnapshot().runOutcomeInsight).toMatchObject({
+      state: "available",
+      primaryCause: {
+        kind: "unknown",
+        damage: SIMULATION_CONFIG.player.maxHp,
+      },
+      progress: {
+        completionKind: "gameOver",
+      },
+    });
+    expect(api.getRunExport().runOutcomeInsight).toEqual(
+      api.getSnapshot().runOutcomeInsight,
+    );
+  });
+
   it("moves the Expedition run clock without inventing Act progress", () => {
     const { controller, session } = createFixture({
       modeId: "expedition",
@@ -97,6 +121,33 @@ describe("ArenaDebugController", () => {
       elapsed: 420,
       difficultyElapsed: 0,
     });
+  });
+
+  it("loads a shared capture scenario and exposes its observation ports", () => {
+    const { controller } = createFixture({
+      modeId: "expedition",
+      stageId: "final-expedition",
+    });
+    const api = controller.createApi();
+
+    expect(api.loadCaptureScenario("rc6-control")).toBe(true);
+    expect(api.getSnapshot()).toMatchObject({
+      captureScenario: {
+        id: "rc6-control",
+        layers: ARENA_CAPTURE_SCENARIOS["rc6-control"].expectedLayers,
+      },
+      audioRouting: {
+        requested: [],
+        played: [],
+        suppressed: [],
+      },
+    });
+
+    api.setElapsed(422);
+    expect(api.getSnapshot().captureScenario).toBeNull();
+    expect(api.loadCaptureScenario("rc6-control")).toBe(true);
+    controller.resetRun();
+    expect(api.getSnapshot().captureScenario).toBeNull();
   });
 });
 
@@ -144,12 +195,25 @@ function createFixture(run: { modeId?: string; stageId?: string } = {}) {
       screenFlashAlpha: 0,
     }),
     getAudioCues: () => [],
+    getAudioRoutingSnapshot: () => ({
+      requested: [],
+      played: [],
+      suppressed: [],
+    }),
     getMusicSnapshot: () => ({
       loaded: false,
       playing: false,
       track: null,
       volume: 0,
       muted: false,
+    }),
+    getChoiceInteractionReport: () => createEmptyChoiceInteractionReport(),
+    getBossShadowReport: () => createEmptyBossShadowReport(),
+    getEncounterReliefReport: () => ({
+      schemaVersion: 1,
+      windowSeconds: 5,
+      state: "not-reached",
+      reason: "recoveryNotObserved",
     }),
     clearTransientInput: vi.fn(),
     recordResult: (result) => {

@@ -11,6 +11,7 @@ import type { UpgradePreviewStat } from "../simulation/upgradePreview";
 export type MenuActionLabel =
   | "start"
   | "startExpedition"
+  | "startTraining"
   | "selectPulse"
   | "selectSpread"
   | "contractStandard"
@@ -43,6 +44,7 @@ export type UiText = {
   titleScreen: string;
   endlessMode: string;
   expeditionMode: string;
+  trainingMode: string;
   weaponSelectTitle: string;
   weaponSelectDescription: string;
   contractTitle: string;
@@ -57,6 +59,13 @@ export type UiText = {
   rankingEligible: string;
   rankingIneligible: (reasons: string) => string;
   paused: string;
+  trainingPaused: string;
+  trainingCompleteTitle: string;
+  trainingCompleteDescription: string;
+  trainingRetry: {
+    enemyProjectile: string;
+    damage: string;
+  };
   upgradeHeading: (level: number) => string;
   extraUpgradeHeading: (extraLevel: number, cycle: number) => string;
   rank: string;
@@ -69,6 +78,26 @@ export type UiText = {
     cause: (cause: string) => string;
   };
   menu: Record<MenuActionLabel, string>;
+  trainingSteps: Record<
+    | "move"
+    | "navigate"
+    | "contactDamage"
+    | "aimAndKill"
+    | "collectXp"
+    | "dodgeProjectile"
+    | "collectRepair"
+    | "chooseUpgrade"
+    | "transferDrill",
+    {
+      title: string;
+      instruction: string;
+      briefing: string;
+      actionLabel: string;
+      hint1: string;
+      hint2: string;
+      success: string;
+    }
+  >;
   damageSource: {
     enemyContact: (enemyName: string) => string;
     enemyProjectile: string;

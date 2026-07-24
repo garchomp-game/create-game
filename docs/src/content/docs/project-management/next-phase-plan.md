@@ -3,31 +3,35 @@ title: 直近フェーズ
 description: v0.7 RC6の安定化、v0.8の面白さ検証、Stage 1 / 5 / 10の3作戦検証へ進む現在の計画。
 ---
 
-最終整理日: 2026-07-19
+最終整理日: 2026-07-22
 
 ## 現在の判断
 
 v0.6.8 productionはcommit `ff686f992a65`、Cloudflare Version `e86f90b8-ea15-4d1d-b01b-59e4f9fea78e`のまま維持します。
 
-v0.7 RC5は、5 Act、構造化出現、HP 500のCommander、Charger、追跡ボス、制圧衝撃波、ボス中回復drop制限、勝利リザルトまで統合しました。3 fixed seed x 2武器の6勝、決定論、72件のE2E、Version Preview smokeも完了しています。
+v0.7 RC6は、Encounter Directorの時計、Commander期限、Expedition記録scope、難度時計、ボス終端を固定し、全自動ゲートと通常UI欠陥特化ランを完了しました。2400 HP有限回復候補は0/6勝利で棄却し、`repairBudget: null`のcontrolを採用します。
 
-ただし、RC5をそのままproductionへ昇格しません。外部レビューと現行設計の再確認から、次の3点をRC6で直してから採否する方針へ変更しました。
+通常UIではPulseが1敗1勝、Spreadが1勝し、両武器でboss phase 2と3攻撃種へ到達しました。勝利ランの回復相殺率は99.96%と98.21%でしたが、中央周回へ固定せず、範囲攻撃、外周退避、遮蔽、通常敵撃破、回復経路の判断変更が必要でした。RC6のゲームルール採否を完了し、PR #82をmerge commit `0e07347424a8`としてmainへ統合しました。
 
-1. HUD表示だけでなく、Encounter DirectorがAct遷移を所有する。
-2. Expeditionの総クリア時間、戦術点、総合PB、武器別PB、fixed seedを分離する。
-3. 中央周回と回復循環は、有限回復予算を独立候補として比較する。
+RC5は棄却して消すのではなく、技術回帰と欠陥分類の基準証跡として保持します。選択画面の改善はRC6と同じrulesetを使う別UI candidateとして扱い、ゲームルールPRへ混ぜません。
 
-RC5は棄却して消すのではなく、技術回帰と欠陥分類の基準証跡として保持します。
+v0.8の批判的再レビューを受領し、現行コアと未検証の拡張仮説を分離しました。次のgameplay runtime候補はCharger衝突妨害[#76](https://github.com/garchomp-game/create-game/issues/76)のままですが、現行Chargerが予告と突進まで生存するcontrol viabilityを通過するまで実装しません。先にTraining transfer、自由選択、選択時計、Boss / recovery shadow、結果事実の純粋集約を固定します。
 
 ## 実装基点
 
 - RC5 UI変更前の統合基点: `d16655a`
 - RC5 app / ruleset: `0.7.0` / `phaser-v0.7.0-final-expedition-rc5`
-- RC6予定ruleset: `phaser-v0.7.0-final-expedition-rc6`
+- RC6採用ruleset: `phaser-v0.7.0-final-expedition-rc6`
+- RC6 main基準: `0e07347424a8` / merged PR [#82](https://github.com/garchomp-game/create-game/pull/82)
+- RC6 UI candidate: `1fdaca2adcd4` / Draft PR [#84](https://github.com/garchomp-game/create-game/pull/84) / [UI統合Preview](https://v07-rc6-ui-playtest-arena-core.garchomp-game.workers.dev)
 - RC5 Preview: `https://v07-final-expedition-arena-core.garchomp-game.workers.dev`
 - production: v0.6.8 Versionを100%維持
 
-`d16655a`はUI境界、比較prototype、選択画面の変更前にあるRC5基点です。RC6のゲームルールはここから独立branchで進め、既存のUI branchを維持します。RC6採否前にproduction trafficを変更しません。
+`d16655a`はUI境界、比較prototype、選択画面の変更前にあるRC5基点です。RC6のゲームルールはここから独立branchで実装し、採否後にmainへ統合しました。既存UIの採用範囲はRC6基点のPR #84へ移し、production trafficは配布SHA固定まで変更しません。
+
+横断QAのGitHub ActionsはPR #87でmainへ追加し、PR #96でGitHub-hosted UbuntuのFirefox WebGL実行を安定化しました。[#86](https://github.com/garchomp-game/create-game/issues/86)は、PR #96とmain `8635ca0`の3 job greenを取得して完了しています。型、unit、配布build、Starlight、短いrelease smokeをPR statusにし、probe、全画像、実GPU耐久、人間採否は変更内容に応じた手動ゲートとして残します。
+
+RC6採用を止めなかった共通APIのLowリスクは[#88](https://github.com/garchomp-game/create-game/issues/88)で独立処理しました。debug相当の時刻ジャンプで期限切れspawnを出さず、fallback geometryが予告方向を増やさないことをfixture化し、Encounter数値と難度は変更していません。全unit、配布build、release smoke、normal probeとPR #89の3 job greenを取得し、mainへ統合して完了しています。
 
 ## RC6の実行順
 
@@ -52,7 +56,7 @@ Issue: [PH-V07-011 #74](https://github.com/garchomp-game/create-game/issues/74)
 - 敗北が勝利PBを上書きしないようにする。
 - `overall | weapon`の比較scopeを同じ履歴から導出する。
 - fixed seed実値とRC6 rulesetで記録を分ける。
-- 速攻成果は戦術点から外し、時間メダルへ移す。
+- 速攻成果は撃破点から外し、時間メダルへ移す。
 
 ### Wave 3: 有限回復候補
 
@@ -71,7 +75,7 @@ Issue: [PH-V07-012 #75](https://github.com/garchomp-game/create-game/issues/75)
 
 Issue: [PH-V07-008 #59](https://github.com/garchomp-game/create-game/issues/59)
 
-状態: 自動ゲート完了、通常UI採否待ちです。提出物再レビューの追補はcode commit `c908450a7101`で完了し、65 files・420 passed / 2 skipped、normal / repair各`1 passed / 1 skipped`、Playwright 73 passed / 1 skipped、production buildと配布検査を通過しました。最終Version PreviewとDraft PRのSHA付き証跡は[#59](https://github.com/garchomp-game/create-game/issues/59)へ集約します。
+状態: 自動ゲートと通常UI採否を完了し、RC6 controlを採用しました。提出物再レビューの追補はcode commit `c908450a7101`で完了し、65 files・420 passed / 2 skipped、normal / repair各`1 passed / 1 skipped`、Playwright 73 passed / 1 skipped、production buildと配布検査を通過しました。Pulse 2本・Spread 1本の手動結果と最終Version Preview、Draft PRのSHA付き証跡は[#59](https://github.com/garchomp-game/create-game/issues/59)へ集約します。
 
 - 全6のCommander撃破、Act 5、全攻撃種と、専用fixtureのboss phase 2を機構到達性としてassertする。
 - 自然runはPulse / Spread各1本以上のboss phase 2到達を要求する。
@@ -85,24 +89,33 @@ Issue: [PH-V07-008 #59](https://github.com/garchomp-game/create-game/issues/59)
 
 ## RC6後のv0.8
 
-v0.8はコンテンツ量を増やす前に、Arena Coreの面白さの核を縦切りで検証します。
+v0.8はコンテンツ量を増やす前に、Arena Coreの面白さの核を単独candidateで検証します。
 
-| 順序 | Issue | 検証するもの |
+| Wave | Issue | 検証するもの |
 | --- | --- | --- |
-| 0 | [#66](https://github.com/garchomp-game/create-game/issues/66) | 世界観、視覚言語、素材と音の境界 |
-| 1 | [#76](https://github.com/garchomp-game/create-game/issues/76) | 危険を敵へ返す危険反転event |
-| 2 | [#77](https://github.com/garchomp-game/create-game/issues/77) | 技能shadow ledgerと次ランの目標 |
-| 3 | [#81](https://github.com/garchomp-game/create-game/issues/81) | RC6と危険反転単独版のpaired playtest |
-| 4 | [#78](https://github.com/garchomp-game/create-game/issues/78) | 選択停止時間、頻度、再開硬直の計測 |
-| 5 | [#79](https://github.com/garchomp-game/create-game/issues/79) | Pulse / Spreadの武器教義branch |
-| 6 | [#80](https://github.com/garchomp-game/create-game/issues/80) | 最大密度の視覚fixtureと警告音分離 |
-| 7 | [#81](https://github.com/garchomp-game/create-game/issues/81) | v0.8統合候補の最終playtest |
+| 0A | [#83](https://github.com/garchomp-game/create-game/issues/83) | 採否済みの緊張・緩和、near-miss、難易度支援、公平性を正本文書へ同期 |
+| 0B | [#66](https://github.com/garchomp-game/create-game/issues/66) | 世界観、視覚言語、素材と音の境界 |
+| T1 | [#97](https://github.com/garchomp-game/create-game/issues/97) | 現行visualのTrainingで説明不足だけを切り分ける |
+| T2 | [#98](https://github.com/garchomp-game/create-game/issues/98) | T1後も誤認が残る場合だけ戦闘オブジェクト視覚を比較する |
+| 0C | [#77](https://github.com/garchomp-game/create-game/issues/77) | candidate非依存のsimulation facts、純粋ledger集計、Presenter境界 |
+| 0D | [#93](https://github.com/garchomp-game/create-game/issues/93) | ボス攻撃文法、回復窓、反撃窓の観測契約 |
+| 0E | [#94](https://github.com/garchomp-game/create-game/issues/94) | 主敗因、実測near-miss、同条件再挑戦の事実契約 |
+| 0F | [#95](https://github.com/garchomp-game/create-game/issues/95) | mode、modifier、record policy、PB分離、旧記録migration |
+| 0G | [#80](https://github.com/garchomp-game/create-game/issues/80) | candidate非依存の最大密度fixture骨格。色・音・意味は後続 |
+| 0H | [#78](https://github.com/garchomp-game/create-game/issues/78) | 選択wall-clockと再開事故。UI採否前に両UIで比較可能にする |
+| 0I | [#76](https://github.com/garchomp-game/create-game/issues/76) | 現行Chargerの予告前撃破、突進、妨害、回復をcontrolで分離 |
+| 1 | [#76](https://github.com/garchomp-game/create-game/issues/76) | control viability通過後だけCharger衝突妨害をpaired比較 |
+| 2以降 | [#81](https://github.com/garchomp-game/create-game/issues/81) | T0 / T1の90秒transfer、5分自由選択、各単独candidateの構造化playtest |
+| 3候補 | [#93](https://github.com/garchomp-game/create-game/issues/93) | #76採否後にボス攻撃文法のruntime候補を単独比較 |
+| 後続 | [#92](https://github.com/garchomp-game/create-game/issues/92) / [#79](https://github.com/garchomp-game/create-game/issues/79) | 通常強化の基礎保証と武器教義を別candidateとして検証 |
 
-[#77](https://github.com/garchomp-game/create-game/issues/77)は[#76](https://github.com/garchomp-game/create-game/issues/76)と既存eventだけからledgerを導出し、[#79](https://github.com/garchomp-game/create-game/issues/79)へ逆依存しません。[#81](https://github.com/garchomp-game/create-game/issues/81)はRC6 baseline、危険反転単独paired、v0.8統合後の3段階に分け、変更をまとめて一度に評価しません。
+[#77](https://github.com/garchomp-game/create-game/issues/77)は[#76](https://github.com/garchomp-game/create-game/issues/76)固有の意味や閾値を持たず、既存eventと将来candidateの事実を同じledgerへ入力できる共通基盤にします。[#80](https://github.com/garchomp-game/create-game/issues/80)はfixture骨格を先行し、candidate固有の色・音・判定は意味確定後に足します。[#81](https://github.com/garchomp-game/create-game/issues/81)は最終QAへ限定せず、RC6 baselineと各candidateを別セル・raw countで繰り返し評価します。T0 / T1は同じ初心者へ連続実施せず、事前教材なしで死亡または90秒まで観測します。
 
-UI境界[#68](https://github.com/garchomp-game/create-game/issues/68)、比較prototype[#67](https://github.com/garchomp-game/create-game/issues/67)、選択画面縦切り[#70](https://github.com/garchomp-game/create-game/issues/70)は既存branchに実装済みです。統合前のためIssueは開いたまま維持し、v0.8 Milestoneで追跡します。
+ゲームルールを同時に複数変更しません。#76を最初のruntime candidateとし、#93、#94、#95、#92、#79は責務と観測を先に固定しても、production挙動へは一括投入しません。
 
-体験仮説と採否順は[v0.8 面白さの核の検証](../../design/core-promise-validation/)を正本とします。
+UI境界[#68](https://github.com/garchomp-game/create-game/issues/68)、比較prototype[#67](https://github.com/garchomp-game/create-game/issues/67)、選択画面縦切り[#70](https://github.com/garchomp-game/create-game/issues/70)の採用範囲はRC6基点のDraft PR #84へ集約しました。旧RC5基点のPR #72はsupersededとして閉じ、外部可読性確認が終わるまでIssueを開いたまま維持します。
+
+体験仮説は[v0.8 面白さの核の検証](../../design/core-promise-validation/)、2026-07-22の採否と停止条件は[v0.8 批判的レビューの採用判断](../../design/v08-critical-review-adoption/)、作業と統合のゲートは[v0.8 実行計画](../v08-execution-plan/)、外部助言は[外部ゲームデザイン助言メモ](../../design/external-game-design-advice/)を正本とします。[v0.8 Work再レビュー依頼](../../playtest/v08-work-design-review-request/)は受領時点の提出スナップショットとして保持します。
 
 ## キャンペーン再スコープ
 
@@ -139,4 +152,4 @@ UI境界[#68](https://github.com/garchomp-game/create-game/issues/68)、比較pr
 - 不可視攻撃、予告なし即死、操作不能、データ損失、重大性能劣化がない。
 - 新しいVersion Previewの実URLsmokeと採否記録がある。
 
-RC6がこの条件を満たすまで、v0.8のゲームルール実装とStage 1 / 5の実装は開始しません。文書、UI branch、fixture設計は並行可能です。
+RC6はこの条件を満たしてmainへ統合済みです。#86の品質ゲート、#88のEncounter境界追補、PR #90 / #91の比較手順、#77 / #80の基盤、接触課題を含む9課題Trainingまでmain `565d401a92f6`へ統合しました。直近は#113のcontrol観測をこのmainへ修復統合し、その同一buildからEndless / Expeditionの事実を取得します。Training T1は#81の事前教材なし90秒transferで独立評価し、必要な場合だけ#98の視覚T2へ進みます。#78、#93 shadow、#76 control viability、#94 Phase Aはsimulation非介入で分け、#70のUI採否と#76のruntime candidateを同じ比較buildへ混ぜません。production trafficの切替は、採用するUIと配布SHAを固定してから別途行います。
