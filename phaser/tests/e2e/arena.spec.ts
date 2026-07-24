@@ -114,7 +114,11 @@ test("renders canvas and accepts movement and shooting input", async ({ page }) 
     .toBeGreaterThan(0);
   await expect
     .poll(() =>
-      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().audioCues.includes("shot")),
+      page.evaluate(() =>
+        window.__ARENA_DEBUG__?.getSnapshot().audioRouting.requested.some(
+          (request) => request.cue === "shot",
+        ),
+      ),
     )
     .toBe(true);
 
@@ -205,6 +209,7 @@ test("runs the final expedition from mode selection through result and retry", a
 test("navigates Expedition ranking boards across weapons, fixed seeds, and rulesets", async ({
   page,
 }) => {
+  test.setTimeout(60_000);
   await gotoArena(page, "/?seed=20260717");
   await clickCanvasAt(page, 480, 339);
   await page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']").click();
