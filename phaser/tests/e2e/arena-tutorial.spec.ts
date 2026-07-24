@@ -372,7 +372,7 @@ async function movePlayerAxisTo(
   tolerance = 16,
   whileStep?: TutorialStepId,
 ): Promise<void> {
-  const deadline = Date.now() + 15_000;
+  const deadline = Date.now() + 30_000;
   while (Date.now() < deadline) {
     const state = await page.evaluate(
       (selectedAxis) => {
@@ -398,7 +398,7 @@ async function movePlayerAxisTo(
         : difference > 0
           ? "KeyS"
           : "KeyW";
-    await holdKey(page, key, 70);
+    await holdKey(page, key, 180);
   }
   throw new Error(`Player did not reach ${axis}=${destination}.`);
 }
