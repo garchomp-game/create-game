@@ -1118,3 +1118,17 @@ PR #115をmain `59cffbf7cddf`へ統合し、Cloudflare Version
 `https://191dd49a-arena-core.garchomp-game.workers.dev`で通常配布smokeを
 完了し、版情報、通常run、保存、再挑戦、Pause、公開情報とerror 0件を確認した。
 production trafficは変更していない。
+
+## 2026-07-24: Trainingの短文化と段階hintを別candidateへ分ける
+
+決定: ownerのT1.1再確認で、表示が従来とほぼ同じであり、Work方針の
+「説明を読まない前提」「停滞した人だけkeyを強調」が未実装であることを
+確認した。T1.1は測定baselineとして変更せず、最初の説明量だけを変える
+T1.2-Cと、meaningful progressに応じて発火するH1 / H2を分離する。
+
+- T1.2-Cは9課題の順序、状態機械、成功guard、hint時刻を固定し、
+  `instruction`、`briefing`、開始button文言だけを短くする。
+- H1 / H2はT1.2-Cのcopyを固定して比較し、5秒no-progressのkey強調と
+  後続の具体案内だけを変更する。
+- 戦闘object visual、O1入口、課題座標、simulation、記録を混ぜない。
+- 長い説明を4章へ統合する案は、短文化だけで摩擦が残る場合の別candidateとする。

@@ -29,12 +29,12 @@ describe("ArenaTutorialPresenter", () => {
       presentation: "briefing",
       title: "移動",
       instruction: "WASD / 矢印キーで移動",
-      actionLabel: "移動練習を開始",
+      actionLabel: "移動を始める",
       success: null,
       target: null,
       progress: null,
     });
-    expect(view?.briefing).toContain("全9課題・約3分");
+    expect(view?.briefing).toContain("光の円まで移動します");
   });
 
   it("reveals staged hints and a guide only after their thresholds", () => {

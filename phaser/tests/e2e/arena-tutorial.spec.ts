@@ -16,7 +16,7 @@ test.describe("basic Training", () => {
     await clickCanvasLogical(page, 480, 393);
     await expectTrainingStep(page, "move");
     await expect(page.locator(".arena-tutorial-dialog--visible")).toContainText(
-      "全9課題・約3分",
+      "光の円まで移動します",
     );
     await expect
       .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().runContext))
@@ -107,7 +107,7 @@ test.describe("basic Training", () => {
     await moveToCurrentTutorialTarget(page);
     await expectTrainingStep(page, "transferDrill");
     await expect(page.locator(".arena-tutorial-dialog--visible")).toContainText(
-      "個別練習はここまでです",
+      "最後は案内なしの実戦です",
     );
     await continueTutorial(page, "transferDrill");
     expect(
