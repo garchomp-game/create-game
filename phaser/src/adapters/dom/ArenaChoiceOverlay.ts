@@ -1,21 +1,17 @@
-import type { MenuAction } from "../phaser/PhaserMenuLayout";
-import type {
-  ExtraUpgradeEffect,
-  ProgressionChoiceId,
-  SimulationConfig,
-  UpgradeId,
-  WeaponTypeId,
-  WorldState,
-} from "../../domain/types";
-import { TEXT } from "../../lang";
-import { getUpgradeRequirementProgress } from "../../simulation/buildComposer";
-import { isExtraUpgradeId } from "../../simulation/extraProgression";
-import { createUpgradePreview, formatUpgradePreview } from "../../simulation/upgradePreview";
+import type { ChoiceInteractionInputMethod } from "../../application/ChoiceInteractionMonitor";
+import type { MenuAction } from "../../application/ArenaMenuTypes";
+import type { SimulationConfig, WorldState } from "../../domain/types";
+import {
+  createArenaChoiceViewModel,
+  type ArenaChoiceCardViewModel,
+  type ArenaChoiceSelection,
+} from "../../presentation/ArenaChoicePresenter";
 
 export type ArenaChoiceInput = {
   menuAction: MenuAction | null;
   upgradeChoice: number | null;
   contractChoice: number | null;
+  inputMethod: ChoiceInteractionInputMethod | null;
 };
 
 export class ArenaChoiceOverlay {
@@ -33,6 +29,7 @@ export class ArenaChoiceOverlay {
 
     this.root = document.createElement("div");
     this.root.className = "arena-choice-overlay";
+    this.root.tabIndex = -1;
     this.root.setAttribute("aria-hidden", "true");
     this.root.addEventListener("keydown", (event) => this.handleKeyDown(event));
     parent.append(this.root);
@@ -40,27 +37,55 @@ export class ArenaChoiceOverlay {
 
   render(world: WorldState, enabled = true): void {
     this.syncBounds();
-    const visible =
-      enabled &&
-      (world.state.status === "weaponSelect" ||
-        world.state.status === "upgradeSelect" ||
-        world.state.status === "contractSelect");
-    this.root.classList.toggle("arena-choice-overlay--visible", visible);
-    this.root.setAttribute("aria-hidden", visible ? "false" : "true");
-    if (!visible) {
+    const model = createArenaChoiceViewModel(world, this.config, enabled);
+    const wasVisible = this.root.classList.contains("arena-choice-overlay--visible");
+    this.root.classList.toggle("arena-choice-overlay--visible", model.visible);
+    this.root.setAttribute("aria-hidden", model.visible ? "false" : "true");
+    if (!model.visible) {
+      delete this.root.dataset.choicePhase;
+      if (wasVisible) this.root.blur();
       this.signature = "";
       this.visibleChoiceCount = 0;
       return;
     }
+    if (model.phase === null) {
+      throw new Error("Visible choice model must provide a presentation phase.");
+    }
+    this.root.dataset.choicePhase = model.phase;
 
-    const signature = createSignature(world);
-    if (signature === this.signature) return;
-    this.signature = signature;
+    if (model.signature === this.signature) return;
+    this.signature = model.signature;
+    this.visibleChoiceCount = model.cards.length;
     this.root.replaceChildren();
 
-    if (world.state.status === "weaponSelect") this.renderWeaponChoices(world);
-    else if (world.state.status === "upgradeSelect") this.renderUpgradeChoices(world);
-    else this.renderContractChoices();
+    const shell = this.createShell(
+      model.phase,
+      model.eyebrow,
+      model.statusLabel,
+      model.title,
+      model.subtitle,
+    );
+    const grid = element(
+      "div",
+      `arena-choice-grid arena-choice-grid--${model.cards.length === 2 ? "two" : "three"}`,
+    );
+    model.cards.forEach((card) => grid.append(this.createChoiceButton(card)));
+    shell.append(grid);
+
+    const backAction = model.backAction;
+    if (backAction) {
+      const back = element("button", "arena-choice-back", "戻る");
+      back.type = "button";
+      back.dataset.choiceAction = backAction;
+      back.setAttribute("aria-keyshortcuts", "Escape");
+      back.addEventListener("click", (event) => {
+        this.applySelection({ kind: "menu", action: backAction });
+        this.pendingInput.inputMethod = getChoiceInputMethod(event);
+      });
+      shell.append(back);
+    }
+    this.root.append(shell);
+    this.root.focus({ preventScroll: true });
   }
 
   consumeInput(): ArenaChoiceInput {
@@ -77,92 +102,27 @@ export class ArenaChoiceOverlay {
     this.root.remove();
   }
 
-  private renderWeaponChoices(world: WorldState): void {
-    this.visibleChoiceCount = 2;
-    const expedition = Boolean(world.expedition);
-    const shell = this.createShell(
-      expedition ? `最終遠征 / ${TEXT.ui.weaponSelectTitle}` : TEXT.ui.weaponSelectTitle,
-      expedition
-        ? "5つのActを突破する開始ビルドを選択"
-        : "開始ビルドの戦い方を決めます",
-    );
-    const choices = element("div", "arena-choice-grid arena-choice-grid--two");
-    choices.append(
-      this.createWeaponButton(
-        0,
-        "pulse",
-        "単体集中",
-        "高速な単線射撃。狙い続けた敵への連続命中で火力を伸ばす。",
-        "固有: 集束共鳴 / 最終: 反響回路",
-        "selectPulse",
-      ),
-      this.createWeaponButton(
-        1,
-        "spread",
-        "範囲制圧",
-        "広角の複数弾。敵集団を同時に捉えて射撃テンポを上げる。",
-        "固有: 分裂射撃 / 最終: 掃射循環",
-        "selectSpread",
-      ),
-    );
-    shell.append(choices);
-
-    const back = element("button", "arena-choice-back", "戻る");
-    back.type = "button";
-    back.dataset.choiceAction = "back";
-    back.addEventListener("click", () => {
-      this.pendingInput.menuAction = "back";
-    });
-    shell.append(back);
-    this.root.append(shell);
-  }
-
-  private renderUpgradeChoices(world: WorldState): void {
-    const choices = world.progression.pendingUpgradeChoices;
-    this.visibleChoiceCount = choices.length;
-    const extra = world.progression.buildCompletedAt !== null;
-    const title = extra
-      ? `EXTRA LEVEL ${world.progression.extraLevel}`
-      : `レベル ${world.progression.level} 強化選択`;
-    const shell = this.createShell(title, this.createProgressText(world));
-    const grid = element(
-      "div",
-      `arena-choice-grid arena-choice-grid--${choices.length === 2 ? "two" : "three"}`,
-    );
-    choices.forEach((choiceId, index) => grid.append(this.createUpgradeButton(world, choiceId, index)));
-    shell.append(grid);
-    this.root.append(shell);
-  }
-
-  private renderContractChoices(): void {
-    this.visibleChoiceCount = 2;
-    const shell = this.createShell(TEXT.ui.contractTitle, "ラン後半のリスクと記録区分を選択");
-    const choices = element("div", "arena-choice-grid arena-choice-grid--two");
-    choices.append(
-      this.createContractButton(
-        0,
-        "標準維持",
-        "現在の難易度倍率を維持",
-        "ランキング対象を継続",
-        "standard",
-      ),
-      this.createContractButton(
-        1,
-        "過負荷",
-        "敵速度 +12% / スコア x1.3",
-        "ランキング対象外",
-        "overdrive",
-      ),
-    );
-    shell.append(choices);
-    this.root.append(shell);
-  }
-
-  private createShell(title: string, subtitle: string): HTMLElement {
+  private createShell(
+    phase: NonNullable<ReturnType<typeof createArenaChoiceViewModel>["phase"]>,
+    eyebrow: string,
+    statusLabel: string,
+    title: string,
+    subtitle: string,
+  ): HTMLElement {
     const shell = element("section", "arena-choice-shell");
     shell.setAttribute("aria-label", title);
+    shell.dataset.choicePhase = phase;
     const header = element("header", "arena-choice-header");
+    const commandLine = element("div", "arena-choice-command-line");
+    const signal = element("span", "arena-choice-signal");
+    signal.setAttribute("aria-hidden", "true");
+    commandLine.append(
+      signal,
+      element("span", "arena-choice-eyebrow", eyebrow),
+      element("span", "arena-choice-status", statusLabel),
+    );
     header.append(
+      commandLine,
       element("h1", "arena-choice-title", title),
       element("p", "arena-choice-subtitle", subtitle),
     );
@@ -170,131 +130,54 @@ export class ArenaChoiceOverlay {
     return shell;
   }
 
-  private createWeaponButton(
-    index: number,
-    weaponId: WeaponTypeId,
-    role: string,
-    description: string,
-    growth: string,
-    action: MenuAction,
-  ): HTMLButtonElement {
-    const button = element("button", `arena-choice-card arena-choice-card--${weaponId}`);
+  private createChoiceButton(card: ArenaChoiceCardViewModel): HTMLButtonElement {
+    const button = element("button", `arena-choice-card arena-choice-card--${card.tone}`);
     button.type = "button";
-    button.dataset.choiceKind = "weapon";
-    button.dataset.choiceIndex = String(index);
-    button.dataset.choiceId = weaponId;
-    button.dataset.choiceAction = action;
-    button.append(
-      element("span", "arena-choice-role", role),
-      element("strong", "arena-choice-card-title", TEXT.hud.weaponNames[weaponId]),
-      element("span", "arena-choice-card-description", description),
-      element("span", "arena-choice-card-metric", growth),
+    button.dataset.choiceKind = card.kind;
+    button.dataset.choiceIndex = String(card.index);
+    button.dataset.choiceId = card.id;
+    button.setAttribute("aria-keyshortcuts", String(card.index + 1));
+    if (card.selection.kind === "menu") {
+      button.dataset.choiceAction = card.selection.action;
+    }
+    const cardHeader = element("span", "arena-choice-card-header");
+    const marker = element("span", "arena-choice-card-marker");
+    marker.setAttribute("aria-hidden", "true");
+    cardHeader.append(
+      marker,
+      element("kbd", "arena-choice-index", card.indexLabel),
+      element("span", "arena-choice-role", card.role),
     );
-    button.addEventListener("click", () => {
-      this.pendingInput.menuAction = action;
-    });
-    return button;
-  }
+    if (card.rank) cardHeader.append(element("span", "arena-choice-rank", card.rank));
 
-  private createUpgradeButton(
-    world: WorldState,
-    choiceId: ProgressionChoiceId,
-    index: number,
-  ): HTMLButtonElement {
-    const button = element("button", "arena-choice-card arena-choice-card--upgrade");
-    button.type = "button";
-    button.dataset.choiceKind = "upgrade";
-    button.dataset.choiceIndex = String(index);
-    button.dataset.choiceId = choiceId;
-
-    if (isExtraUpgradeId(choiceId)) {
-      const definition = this.config.extraUpgrades[choiceId];
-      const display = TEXT.upgrades.extraDefinitions[choiceId];
-      const currentRank = world.progression.extraUpgradeRanks[choiceId];
-      const nextRank = currentRank + 1;
-      const rank = definition.maxRank === null ? `${nextRank}` : `${nextRank}/${definition.maxRank}`;
-      button.append(
-        element("span", "arena-choice-role", TEXT.upgrades.extraCategoryLabel),
-        element("strong", "arena-choice-card-title", display.title),
-        element("span", "arena-choice-rank", `${TEXT.ui.rank} ${rank}`),
-        element("span", "arena-choice-card-description", display.description),
-        element("span", "arena-choice-card-metric", formatExtraPreview(definition.effect, currentRank)),
-      );
-    } else {
-      const definition = this.config.upgrades[choiceId];
-      const display = TEXT.upgrades.definitions[choiceId];
-      const currentRank = world.progression.upgradeRanks[choiceId];
-      const preview = formatUpgradePreview(
-        createUpgradePreview(world, this.config, choiceId),
-        TEXT.upgrades.preview.labels,
-        TEXT.upgrades.preview,
-      );
-      button.append(
-        element(
-          "span",
-          "arena-choice-role",
-          TEXT.upgrades.categoryLabels[definition.category],
-        ),
-        element("strong", "arena-choice-card-title", display.title),
-        element(
-          "span",
-          "arena-choice-rank",
-          `${TEXT.ui.rank} ${currentRank + 1}/${definition.maxRank}`,
-        ),
-        element("span", "arena-choice-card-description", display.description),
-        element("span", "arena-choice-card-metric", preview),
-      );
-    }
-
-    button.addEventListener("click", () => {
-      this.pendingInput.upgradeChoice = index;
-    });
-    return button;
-  }
-
-  private createContractButton(
-    index: number,
-    title: string,
-    description: string,
-    consequence: string,
-    id: string,
-  ): HTMLButtonElement {
-    const button = element("button", `arena-choice-card arena-choice-card--contract-${id}`);
-    button.type = "button";
-    button.dataset.choiceKind = "contract";
-    button.dataset.choiceIndex = String(index);
-    button.dataset.choiceId = id;
-    button.append(
-      element("span", "arena-choice-role", index === 0 ? "安定" : "高リスク"),
-      element("strong", "arena-choice-card-title", title),
-      element("span", "arena-choice-card-description", description),
-      element("span", "arena-choice-card-metric", consequence),
+    const metric = element("span", "arena-choice-card-metric");
+    metric.append(
+      element("span", "arena-choice-card-metric-label", card.metricLabel),
+      element("strong", "arena-choice-card-metric-value", card.metric),
     );
-    button.addEventListener("click", () => {
-      this.pendingInput.contractChoice = index;
+    const action = element("span", "arena-choice-card-action", card.actionLabel);
+    const actionMarker = element("span", "arena-choice-action-marker");
+    actionMarker.setAttribute("aria-hidden", "true");
+    action.append(actionMarker);
+
+    button.append(
+      cardHeader,
+      element("strong", "arena-choice-card-title", card.title),
+      element("span", "arena-choice-card-description", card.description),
+      metric,
+      action,
+    );
+    button.addEventListener("click", (event) => {
+      this.applySelection(card.selection);
+      this.pendingInput.inputMethod = getChoiceInputMethod(event);
     });
     return button;
   }
 
-  private createProgressText(world: WorldState): string {
-    if (world.progression.buildCompletedAt !== null) {
-      return `通常ビルド完成 / EXサイクル C${world.progression.extraCycle} / 未取得 ${world.progression.extraCycleRemaining.length}`;
-    }
-
-    const capstoneId = getCapstoneId(world.state.weaponType);
-    if (!capstoneId) return "通常強化を選択";
-    const display = TEXT.upgrades.definitions[capstoneId];
-    if (world.progression.upgradeRanks[capstoneId] > 0) {
-      return TEXT.upgrades.capstoneAcquired(display.title);
-    }
-    const progress = getUpgradeRequirementProgress(
-      this.config,
-      capstoneId,
-      world.progression.upgradeRanks,
-    )[0];
-    return progress
-      ? `${display.title} 解放まで 武器強化 ${progress.current}/${progress.required}`
-      : `${display.title}: 解放条件なし`;
+  private applySelection(selection: ArenaChoiceSelection): void {
+    if (selection.kind === "menu") this.pendingInput.menuAction = selection.action;
+    else if (selection.kind === "upgrade") this.pendingInput.upgradeChoice = selection.index;
+    else this.pendingInput.contractChoice = selection.index;
   }
 
   private handleKeyDown(event: KeyboardEvent): void {
@@ -346,44 +229,17 @@ export class ArenaChoiceOverlay {
   }
 }
 
-function getCapstoneId(weaponId: WeaponTypeId): UpgradeId | null {
-  if (weaponId === "pulse") return "pulseRicochet";
-  if (weaponId === "spread") return "spreadSweep";
-  return null;
-}
-
-function createSignature(world: WorldState): string {
-  return [
-    world.state.status,
-    world.state.weaponType,
-    world.progression.level,
-    world.progression.extraLevel,
-    world.progression.extraCycle,
-    world.progression.buildCompletedAt,
-    world.progression.pendingUpgradeChoices.join(","),
-    Object.values(world.progression.upgradeRanks).join(","),
-    Object.values(world.progression.extraUpgradeRanks).join(","),
-  ].join(":");
-}
-
-function formatExtraPreview(effect: ExtraUpgradeEffect, currentRank: number): string {
-  const nextRank = currentRank + 1;
-  if (effect.type === "projectileDamage") {
-    return `弾ダメージ x${(1 + effect.amountPerRank * currentRank).toFixed(2)} -> x${(
-      1 + effect.amountPerRank * nextRank
-    ).toFixed(2)}`;
-  }
-  if (effect.type === "fireRate" || effect.type === "moveSpeed") {
-    const current = Math.min(effect.maximumBonus, effect.amountPerRank * currentRank);
-    const next = Math.min(effect.maximumBonus, effect.amountPerRank * nextRank);
-    const label = effect.type === "fireRate" ? "追加連射" : "追加移動速度";
-    return `${label} +${Math.round(current * 100)}% -> +${Math.round(next * 100)}%`;
-  }
-  return `追加HP +${effect.amountPerRank * currentRank} -> +${effect.amountPerRank * nextRank}`;
-}
-
 function emptyInput(): ArenaChoiceInput {
-  return { menuAction: null, upgradeChoice: null, contractChoice: null };
+  return {
+    menuAction: null,
+    upgradeChoice: null,
+    contractChoice: null,
+    inputMethod: null,
+  };
+}
+
+function getChoiceInputMethod(event: MouseEvent): ChoiceInteractionInputMethod {
+  return event.detail === 0 ? "keyboard" : "pointer";
 }
 
 function element<K extends keyof HTMLElementTagNameMap>(

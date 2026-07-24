@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { ArenaSession } from "../../application/ArenaSession";
 import { AutoPilotController } from "../../application/AutoPilotController";
+import { createEmptyChoiceInteractionReport } from "../../application/ChoiceInteractionMonitor";
+import { createEmptyBossShadowReport } from "../../application/BossEncounterShadowMonitor";
 import { PerformanceMonitor } from "../../application/PerformanceMonitor";
 import { RunLifecycleController } from "../../application/RunLifecycleController";
 import { SIMULATION_CONFIG } from "../../config/gameConfig";
@@ -73,6 +75,27 @@ describe("ArenaDebugController", () => {
     api.startAutoPilot("spread");
     expect(dependencies.resetGame).toHaveBeenCalledWith("playing", "test");
     expect(dependencies.startAutoPilot).toHaveBeenCalledWith("spread");
+  });
+
+  it("exports a factual run outcome after a terminal event", () => {
+    const { controller } = createFixture();
+    const api = controller.createApi();
+
+    api.forceDamage(SIMULATION_CONFIG.player.maxHp);
+
+    expect(api.getSnapshot().runOutcomeInsight).toMatchObject({
+      state: "available",
+      primaryCause: {
+        kind: "unknown",
+        damage: SIMULATION_CONFIG.player.maxHp,
+      },
+      progress: {
+        completionKind: "gameOver",
+      },
+    });
+    expect(api.getRunExport().runOutcomeInsight).toEqual(
+      api.getSnapshot().runOutcomeInsight,
+    );
   });
 
   it("moves the Expedition run clock without inventing Act progress", () => {
@@ -183,6 +206,14 @@ function createFixture(run: { modeId?: string; stageId?: string } = {}) {
       track: null,
       volume: 0,
       muted: false,
+    }),
+    getChoiceInteractionReport: () => createEmptyChoiceInteractionReport(),
+    getBossShadowReport: () => createEmptyBossShadowReport(),
+    getEncounterReliefReport: () => ({
+      schemaVersion: 1,
+      windowSeconds: 5,
+      state: "not-reached",
+      reason: "recoveryNotObserved",
     }),
     clearTransientInput: vi.fn(),
     recordResult: (result) => {

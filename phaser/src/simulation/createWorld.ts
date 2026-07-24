@@ -160,6 +160,7 @@ export function createWorld(config: SimulationConfig): WorldState {
           spawned: 0,
           telegraphs: 0,
           charges: 0,
+          killedBeforeTelegraph: 0,
           playerHits: 0,
           avoided: 0,
           obstacleInterruptions: 0,
