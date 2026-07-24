@@ -10,6 +10,8 @@ const chromiumExecutablePath =
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  // Keep public-input WebGL scenarios from losing Phaser frames under CPU contention.
+  workers: 2,
   timeout: 30_000,
   expect: {
     timeout: 5_000,

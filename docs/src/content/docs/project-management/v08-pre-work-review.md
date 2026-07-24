@@ -5,6 +5,8 @@ description: Training、視覚意味、敗因説明、危険反転、UI、RC6公
 
 最終整理日: 2026-07-23
 
+> 2026-07-24追記: このページの着手前snapshotは、[v0.8 Issue・PR readiness](../v08-issue-pr-readiness-20260724/)で再取得した`main`、Open Issue / PR、#113修復、EX C2 / UI source lineageにより更新されています。以下の旧SHAとPR状態は当時の判断履歴として読みます。
+
 ## このページの役割
 
 このページは、Arena Core v0.8の各作業を開始する直前に読む実行正本です。個別Issueの詳細仕様を置き換えるのではなく、次を横断して固定します。

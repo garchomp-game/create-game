@@ -3,7 +3,7 @@ title: 危険反転の実装前比較
 description: 既存eventと戦闘境界から、最初の危険反転candidateと副作用を実装前に整理する。
 ---
 
-最終更新日: 2026-07-20
+最終更新日: 2026-07-22
 
 ## 目的
 
@@ -35,6 +35,31 @@ Chargerは既に次の決定論的境界を持ちます。
 - プレイヤー被弾、回避、障害物停止、外周停止、回復、武器別撃破を集約する。
 
 プレイヤーは既に「進路を外す」という基本成功を学べます。ここへ「衝突地点へ敵を寄せる」という熟練成功を足せるため、新しい危険物をゼロから教える必要がありません。
+
+ただし、現行Chargerが予告前に倒されず、自然なrunで突進まで到達するかは未確認です。既存の集計には予告前撃破がなく、`spawned`と`charges`の差だけでは未到達、早期撃破、経路不成立を分けられません。このため反転candidateより先にcontrol viabilityを確認します。
+
+### Phase 0: control viability
+
+`aggregateChargerControl()`は既存`enemy.charger.*` eventだけから、個体ごとに次を純粋集約します。simulation、RunRecord、保存schema、rulesetは変更しません。
+
+- spawnと最初のtelegraph時刻。
+- 予告前撃破と撃破時phase。
+- telegraph、charge、charge end、recovery。
+- `timeout / obstacle / arenaBoundary`別の終了。
+- player hitと武器別撃破。
+- Chargerが出なかったrunの`not-reached`。
+
+入力sequence、elapsed、spawn前event、kill後event、charge前の終了が不正な場合は、部分集計を採用せず`invalid`にします。入力順に依存せず、elapsed、sequence、enemy IDで安定化します。
+
+`evaluateChargerControlGate()`は参加者順を明示したcontrol sampleだけを受け取り、次を返します。
+
+- 最初の経験者3名が揃うまで`insufficient-data`。
+- 3名中2名以上に予告前撃破があれば`stop`。
+- Chargerへ到達した熟練runが3本揃うまで`insufficient-data`。
+- 到達した熟練runの過半数でcharge 0なら`stop`。
+- 上記を満たして停止条件へ触れない場合だけ`pass`。
+
+Charger未出現runを「chargeできなかったrun」へ数えません。自動集約の`pass`はruntime candidateの採用ではなく、反転candidateを事前登録してよい開始条件です。
 
 ### ボスと崩壊
 
@@ -169,4 +194,4 @@ type HazardReversalResolved = {
 - 観戦AIをcandidate成功条件へ最適化すること。
 - production trafficとRC6記録の上書き。
 
-runtime実装は、PR #89の境界修正がmainへ統合されてCIがgreen、#77の最小schema、#80のwarning / impact最低fixture、#81のbaseline手順が利用可能になった後に進めます。
+runtime実装は、PR #89の境界修正がmainへ統合されてCIがgreen、#77の最小schema、#80のwarning / impact最低fixture、#81のbaseline手順が利用可能で、Phase 0 control viabilityが`pass`した後に進めます。

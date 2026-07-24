@@ -168,6 +168,22 @@ GitHub Actionsから直接デプロイする方式へ変更する場合だけ、
 
 `/__arena/run-export`はVite開発サーバー専用です。本番Workerはローカルファイルへ書き込まず、詳細JSONも自動送信しません。
 
+control観測のVersion Previewだけは、手動runのJSONを人間が取得できるように次で専用buildを作ります。
+
+```bash
+cd phaser
+npm run build:observation
+npx wrangler versions upload
+```
+
+このbuildは固定seedや`runOrigin: test`を強制しませんが、`window.__ARENA_DEBUG__`を含むためproductionへ配分しません。run終了後、ブラウザconsoleで次を実行するとJSONをダウンロードできます。
+
+```js
+window.__ARENA_DEBUG__.downloadRunExport()
+```
+
+通常の`npm run build:deploy`と`verify:deploy`はdebug hookを除外し、公開版へ混入した場合は失敗します。観測PreviewのURL、Version ID、source SHA、build markerは人間gateの証拠へ一緒に残します。
+
 公開ベータでサーバー集計を始める場合は、次を別チケットで実装します。
 
 - D1: 正規化したラン要約、プロフィール、ルール版別ランキング。
