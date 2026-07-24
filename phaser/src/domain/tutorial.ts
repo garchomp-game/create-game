@@ -39,6 +39,7 @@ export type TutorialSnapshot = {
   stepCount: number;
   stepActiveSeconds: number;
   totalActiveSeconds: number;
+  noProgressSeconds: number;
   hintLevel: 0 | 1 | 2;
   progress: TutorialProgress;
   target: TutorialTarget | null;

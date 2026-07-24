@@ -20,6 +20,8 @@ export type ArenaTutorialViewModel = {
   progress: string | null;
   notice: string | null;
   target: TutorialTarget | null;
+  cueKind: "aim" | "move" | null;
+  cueLevel: 0 | 1 | 2;
   showGuideLine: boolean;
   panelKind: "standard" | "checklist";
 };
@@ -50,6 +52,8 @@ export function createArenaTutorialViewModel(
       progress: null,
       notice: null,
       target: null,
+      cueKind: null,
+      cueLevel: 0,
       showGuideLine: false,
       panelKind: "standard",
     };
@@ -57,13 +61,9 @@ export function createArenaTutorialViewModel(
 
   if (status !== "playing") return hiddenViewModel(snapshot);
   const hint =
-    snapshot.stepId === "transferDrill"
-      ? null
-      : snapshot.hintLevel === 2
-        ? text.hint2
-        : snapshot.hintLevel === 1
-          ? text.hint1
-          : null;
+    snapshot.stepId !== "transferDrill" && snapshot.hintLevel === 2
+      ? text.hint2
+      : null;
   return {
     stepId: snapshot.stepId,
     visible: true,
@@ -78,6 +78,8 @@ export function createArenaTutorialViewModel(
     progress: formatProgress(snapshot),
     notice: formatRetryNotice(snapshot),
     target: snapshot.target ? structuredClone(snapshot.target) : null,
+    cueKind: getCueKind(snapshot.stepId),
+    cueLevel: snapshot.hintLevel,
     showGuideLine: snapshot.hintLevel === 2 && snapshot.target !== null,
     panelKind: snapshot.stepId === "transferDrill" ? "checklist" : "standard",
   };
@@ -98,9 +100,25 @@ function hiddenViewModel(snapshot: TutorialSnapshot): ArenaTutorialViewModel {
     progress: null,
     notice: null,
     target: null,
+    cueKind: null,
+    cueLevel: 0,
     showGuideLine: false,
     panelKind: "standard",
   };
+}
+
+function getCueKind(stepId: TutorialStepId): "aim" | "move" | null {
+  if (stepId === "aimAndKill") return "aim";
+  if (
+    stepId === "move" ||
+    stepId === "navigate" ||
+    stepId === "collectXp" ||
+    stepId === "dodgeProjectile" ||
+    stepId === "collectRepair"
+  ) {
+    return "move";
+  }
+  return null;
 }
 
 function formatProgress(snapshot: TutorialSnapshot): string | null {
