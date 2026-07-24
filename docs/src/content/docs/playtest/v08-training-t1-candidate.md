@@ -113,6 +113,21 @@ ownerが接触観察から射撃開始までを再確認し、敵が中央レー
 
 この合格は実装と配布可能性の判断です。初心者の介助なし完了、敵本体・敵弾・XP・REPAIRの分類、強化効果の説明、Endless 30秒への転移は引き続き#81が所有します。
 
+## 2026-07-24 T1.1測定基準
+
+旧固定Previewには総合演習の`8/8`表示と、checklistが初期Rangedを
+覆う測定ノイズがある。PR #115でこの二点だけを修正し、main
+`59cffbf7cddf`から新しいVersion Previewを固定した。
+
+- Preview: `https://191dd49a-arena-core.garchomp-game.workers.dev`
+- Cloudflare Version: `191dd49a-5b08-4edc-bfa1-0b7cc0cf0260`
+- app / ruleset: `0.7.0` / `phaser-v0.7.0-final-expedition-rc6`
+- record policy: `none`
+- production traffic: 変更なし
+
+新しい初心者T1の母数にはこのPreviewだけを使う。旧Previewは
+9課題実装の履歴証拠として残すが、新旧を同じ分母へ混ぜない。
+
 ## 自動証拠
 
 | 検査 | 結果 |
