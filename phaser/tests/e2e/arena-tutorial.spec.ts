@@ -110,6 +110,14 @@ test.describe("basic Training", () => {
       "個別練習はここまでです",
     );
     await continueTutorial(page, "transferDrill");
+    expect(
+      await page.evaluate(() => {
+        const tutorial = window.__ARENA_DEBUG__?.getSnapshot().tutorial;
+        return tutorial
+          ? { stepNumber: tutorial.stepNumber, stepCount: tutorial.stepCount }
+          : null;
+      }),
+    ).toEqual({ stepNumber: 9, stepCount: 9 });
     const transferRepairPosition = await page.evaluate(
       () =>
         window.__ARENA_DEBUG__?.getSnapshot().tutorial?.transfer.repairPosition ??

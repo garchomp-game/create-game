@@ -315,7 +315,11 @@ describe("TutorialController", () => {
         }),
       ),
     ]);
-    expect(controller.getSnapshot().stepId).toBe("complete");
+    expect(controller.getSnapshot()).toMatchObject({
+      stepId: "complete",
+      stepNumber: 9,
+      stepCount: 9,
+    });
     expect(world.state.status).toBe("trainingComplete");
   });
 

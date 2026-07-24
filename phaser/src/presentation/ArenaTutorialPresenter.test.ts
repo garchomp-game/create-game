@@ -90,6 +90,7 @@ describe("ArenaTutorialPresenter", () => {
       ),
     ).toMatchObject({
       visible: true,
+      eyebrow: "BASIC TRAINING  9/9",
       title: "総合演習",
       progress: "敵 残り2体   取得物 残り2個",
       target: null,

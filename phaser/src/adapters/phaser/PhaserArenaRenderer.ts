@@ -14,6 +14,7 @@ import { PhaserTacticalBackground } from "./PhaserTacticalBackground";
 import type { PhaserUiState } from "./PhaserUiState";
 import type { TutorialSnapshot } from "../../domain/tutorial";
 import { createArenaTutorialViewModel } from "../../presentation/ArenaTutorialPresenter";
+import { ARENA_DYNAMIC_WORLD_DEPTH } from "./PhaserArenaDepths";
 import { PhaserTutorialLayer } from "./PhaserTutorialLayer";
 
 export class PhaserArenaRenderer {
@@ -41,7 +42,7 @@ export class PhaserArenaRenderer {
       simulationConfig,
       viewConfig,
     );
-    this.graphics = scene.add.graphics().setDepth(0);
+    this.graphics = scene.add.graphics().setDepth(ARENA_DYNAMIC_WORLD_DEPTH);
     this.worldView = new PhaserArenaWorldView(simulationConfig, viewConfig);
     this.hud = new PhaserHud(scene, simulationConfig);
     this.tutorialLayer = new PhaserTutorialLayer(scene, simulationConfig);
