@@ -243,21 +243,20 @@ RC5は基準証跡として保持し、productionへ直接昇格しません。U
 
 ## v0.8 EX Protocol C2統合候補
 
-[#126](https://github.com/garchomp-game/create-game/issues/126)では、C2の6 Protocol、24 route、Mastery、EX Lv3以降のLimit Break、RunRecord v3非破壊移行を最新mainへ再統合しています。旧C2専用DOMは戻さず、採用済み`ArenaChoicePresenter`へProtocol / Evolution / Limit Breakを接続しました。Training中はEXを無効化し、過負荷契約はC2で廃止したままです。
+[#126](https://github.com/garchomp-game/create-game/issues/126)では、C2の6 Protocol、24 route、Mastery、EX Lv3以降のLimit Break、RunRecord v3非破壊移行を最新mainへ再統合しました。旧C2専用DOMは戻さず、採用済み`ArenaChoicePresenter`へProtocol / Evolution / Limit Breakを接続しました。Training中はEXを無効化し、過負荷契約はC2で廃止したままです。
 
 短い自動ゲートでは全unit、決定論、24 route、migration、probe、soak、Final Expedition露出、通常 / 候補build、EX browser 13件、共通選択UI、9課題Training、3ブラウザrelease smokeを通過しています。通常buildはEX OFF、候補buildだけ`0.8.0-candidate.2`とC2 rulesetを使います。production trafficは変更していません。
 
-commit `dca3cec1127b`は[Draft PR #127](https://github.com/garchomp-game/create-game/pull/127)と[固定Version Preview](https://v08-ex-c2-integration-dca3cec-arena-core.garchomp-game.workers.dev/)へ出し、実URLsmokeを完了しました。残るのはGitHub Actions、Pulse / Spread各3体系の人間操作、Aegis / Tidalの実GPU高密度確認です。詳細は[EX Protocol C2 最新main統合レポート](../../playtest/v08-ex-c2-main-integration-report/)を参照してください。
+runtime commit `dca3cec1127b`は[Draft PR #127](https://github.com/garchomp-game/create-game/pull/127)と[固定Version Preview](https://v08-ex-c2-integration-dca3cec-arena-core.garchomp-game.workers.dev/)へ出し、実URLsmokeを完了しました。PR HEAD `163670b5bd11`では4件のGitHub Actionsもすべてgreenです。残るのはPulse / Spread各3体系の人間操作、Aegis / Tidalの実GPU高密度確認です。詳細は[EX Protocol C2 最新main統合レポート](../../playtest/v08-ex-c2-main-integration-report/)を参照してください。
 
 ## 次の優先順
 
 公開ベータ基準、RC6、control観測、採用済み選択UI、9課題Training、desktop gate、WebGL fallback、Phase A fixture、StudyLog契約はmainへ統合済みです。
 
-1. PR #127のGitHub Actionsを完了し、#126の自動証拠を`dca3cec1127b`へ固定する。
-2. 固定PreviewでPulse / Spread各3 Protocolの人間操作と、Aegis / Tidalの実GPU高密度確認を行う。
-3. #81でT1.1 control、T1.2短文候補、H1/H2無操作ヒント候補を別cellとして比較する。
-4. 採用したTraining文言とヒントだけをmainへ統合し、O1共通導線を1候補で確認する。
-5. EX C2、Training、O1の採否後にv0.8統合buildを固定し、Endless / Final Expedition / Trainingの最終回帰を行う。
-6. #98 Phase B、Charger、Boss、イベント緩和は、観測事実と事前登録した合格条件がある場合だけ別candidateで進める。
+1. 固定PreviewでPulse / Spread各3 Protocolの人間操作と、Aegis / Tidalの実GPU高密度確認を行う。
+2. #81でT1.1 control、T1.2短文候補、H1/H2無操作ヒント候補を別cellとして比較する。
+3. 採用したTraining文言とヒントだけをmainへ統合し、O1共通導線を1候補で確認する。
+4. EX C2、Training、O1の採否後にv0.8統合buildを固定し、Endless / Final Expedition / Trainingの最終回帰を行う。
+5. #98 Phase B、Charger、Boss、イベント緩和は、観測事実と事前登録した合格条件がある場合だけ別candidateで進める。
 
 採否の理由は[v0.8 批判的レビューの採用判断](../../design/v08-critical-review-adoption/)、直近の詳細は[直近フェーズ](../../project-management/next-phase-plan/)と[v0.8 実行計画](../../project-management/v08-execution-plan/)、技術契約は[RC6の時計と記録規則](../../engineering/expedition-rc6-clock-and-ranking-adr/)、3作戦系列は[エクスペディション3作戦検証](../../design/expedition-campaign/)、表示改善は[UI・グラフィック再設計計画](../../project-management/ui-visual-redesign-plan/)を参照してください。

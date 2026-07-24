@@ -24,10 +24,12 @@ EX Protocol C2を、`origin/main`の`60ae8889390c`を基点として再統合し
 
 | 項目 | 値 |
 | --- | --- |
-| branch / commit | `agent/v08-ex-c2-integration` / `dca3cec1127b` |
+| branch / runtime commit | `agent/v08-ex-c2-integration` / `dca3cec1127b` |
+| PR HEAD | `163670b5bd11` |
 | Draft PR | [#127](https://github.com/garchomp-game/create-game/pull/127) |
 | Cloudflare Version | `b6f88819-46c5-4820-8923-a2ff0c55e92c` |
 | 固定Preview | [v08-ex-c2-integration-dca3cec](https://v08-ex-c2-integration-dca3cec-arena-core.garchomp-game.workers.dev/) |
+| GitHub Actions | run `30082168996`、4 job green |
 | production traffic | 変更なし |
 
 C2からは6 Protocol、各2 x 2の進化経路、Mastery、EX Lv3以降の
@@ -68,6 +70,7 @@ Limit Break、右クリック / `E`入力、RunRecord v3非破壊移行、専用
 | Training | 公開入力で9課題完走、記録非介入PASS |
 | release smoke | Chrome横、Chrome縦、Firefoxの9 passed |
 | Version Preview smoke | 版、ruleset、commit、canvas描画、Endless開始、公開情報、error 0件 |
+| PR Quality | Phaser、Starlight、browser smoke、EX candidateの4 job PASS |
 
 通常buildの版と既存PBをC2へ混ぜません。候補buildは
 `0.8.0-candidate.2`、Endlessは`phaser-v0.8-ex-protocols-c2`、
@@ -78,12 +81,11 @@ Final Expeditionは`phaser-v0.8-final-expedition-ex-protocols-c2`です。
 自動試験は成立性、決定論、保存互換、画面崩れを保証しますが、
 Protocolが実際に面白い判断を作るかは保証しません。
 
-1. PR #127のGitHub Actionsをexact SHAへ結び付ける。
-2. Pulse 3体系、Spread 3体系を人間操作で各1回確認する。
-3. 選択後に照準、位置取り、標的優先、special timingのどれが変わったか記録する。
-4. E1 / E2の選択理由、代償、発動条件を説明できるか確認する。
-5. Aegis / Tidalを高密度の非SwiftShader実GPUで確認する。
-6. scalar変更が必要なら、再現routeと停止条件を別candidateへ事前登録する。
+1. Pulse 3体系、Spread 3体系を人間操作で各1回確認する。
+2. 選択後に照準、位置取り、標的優先、special timingのどれが変わったか記録する。
+3. E1 / E2の選択理由、代償、発動条件を説明できるか確認する。
+4. Aegis / Tidalを高密度の非SwiftShader実GPUで確認する。
+5. scalar変更が必要なら、再現routeと停止条件を別candidateへ事前登録する。
 
 これらが終わるまで#126とDraft PRを開いたままにし、production trafficを
 v0.6.8から変更しません。
