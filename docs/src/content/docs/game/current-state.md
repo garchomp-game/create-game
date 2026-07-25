@@ -247,6 +247,8 @@ RC5は基準証跡として保持し、productionへ直接昇格しません。U
 
 同じrun exportから、現行Chargerの成立性、強化選択のwall-clockと復帰1秒、危険イベント終了後5秒、Boss攻撃別の被弾・回復・反撃窓を取得できます。修復候補では連続choiceの復帰episodeをqueueで保持し、敗因、進捗、比較差分の純粋ViewModelを`runOutcomeInsight`としてdebug exportへ接続しました。Workers観測PreviewからはブラウザdownloadでJSONを取得できます。ゲーム数値、RNG、`RunRecord`、ランキング契約、production trafficは変更していません。
 
+2026-07-25にCharger controlを6 seed x 2武器で機械screeningした結果、12本すべてで出現した一方、chargeありは1本、Pulseは予告前撃破5 / 6・charge 0 / 6でした。[#76](https://github.com/garchomp-game/create-game/issues/76)の衝突妨害runtimeは開始せず、`revise-before-candidate`として人間controlまたは再設計へ戻しています。詳細は[Charger control機械screening](../../playtest/v08-charger-control-machine-report/)を参照してください。
+
 旧結合commit `4bd771e`の477 unit、77 E2E、production buildは履歴証拠として保持しますが、修復候補の合格証拠へ流用しません。修復後の自動証拠、Cloudflare Version Preview、GitHub Actionsは完了し、その後に採用済み選択UI、desktop gate、WebGL fallback、戦闘オブジェクトPhase A fixture、StudyLog契約をmain `60ae8889390c`まで積み上げました。詳細は[v0.8 control観測build サマリ](../v08-observation-control-summary/)と[実施手順](../../playtest/v08-observation-control-runbook/)を参照してください。
 
 ## v0.8 EX Protocol C2統合候補

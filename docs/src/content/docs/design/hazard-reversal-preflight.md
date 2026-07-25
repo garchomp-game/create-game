@@ -3,7 +3,7 @@ title: 危険反転の実装前比較
 description: 既存eventと戦闘境界から、最初の危険反転candidateと副作用を実装前に整理する。
 ---
 
-最終更新日: 2026-07-22
+最終更新日: 2026-07-25
 
 ## 目的
 
@@ -60,6 +60,28 @@ Chargerは既に次の決定論的境界を持ちます。
 - 上記を満たして停止条件へ触れない場合だけ`pass`。
 
 Charger未出現runを「chargeできなかったrun」へ数えません。自動集約の`pass`はruntime candidateの採用ではなく、反転candidateを事前登録してよい開始条件です。
+
+### 機械screeningの事前登録
+
+人間sampleを集める前に、既存の最終遠征CPUランでChargerが予告・突進へ到達できるかを補助確認します。これは人間の理解、意図的誘導、武器別の操作成立を証明しないため、上記のcontrol gateへ参加者として入力しません。
+
+- baseline: `main` `5e1950f`
+- seed: `20260717`から`20260722`までの6件
+- 武器: Pulse / Spread
+- 入力: `ceiling` observer、`visit-history-v1`
+- runtime、Charger数値、乱数、rulesetは変更しない
+- 各武器でCharger到達runが3件未満なら`insufficient-data`
+- 到達runの過半数でcharge 0なら`warning`
+- 到達runの50%以上で予告前撃破があれば`warning`
+- 上記へ触れない場合だけ`clear`
+
+`clear`は人間sampleへ進めるという補助判断です。runtime candidateの実装開始には、引き続き最初の経験者3名とCharger到達熟練run 3件のcontrol gateを必要とします。`warning`の場合はCharger HP、出現頻度、初回待機を同時に変更せず、現行遭遇の再設計またはcandidate停止を先に判断します。
+
+### 機械screening結果
+
+2026-07-25の12本は`warning`でした。Chargerは12本すべてに出現しましたが、chargeありは1本、予告前撃破ありは7本です。Pulseはcharge 0 / 6、予告前撃破5 / 6でした。
+
+このため衝突妨害runtime、半径、持続、対象上限の登録は保留します。詳細とseed別の値は[Charger control機械screening](../../playtest/v08-charger-control-machine-report/)を正本とします。
 
 ### ボスと崩壊
 

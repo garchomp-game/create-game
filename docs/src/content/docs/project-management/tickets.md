@@ -161,7 +161,7 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-V08-011` | [#68](https://github.com/garchomp-game/create-game/issues/68) | UIプレゼンテーション境界とデザイントークン | P0 | branch実装済み、統合待ち |
 | `PH-V08-012` | [#67](https://github.com/garchomp-game/create-game/issues/67) | 比較可能なUI草案とライブラリ採否 | P1 | branch実装済み、統合待ち |
 | `PH-V08-013` | [#70](https://github.com/garchomp-game/create-game/issues/70) | 採用UI縦切り: 選択画面 | P1 | Draft PR #84。同一RC6比較手順はmain統合済み、外部可読性確認と採否待ち |
-| `PH-V08-014` | [#76](https://github.com/garchomp-game/create-game/issues/76) | Charger control viabilityと衝突妨害candidate | P0 | 先に予告前撃破、突進、妨害、回復をcontrolで分離。viability通過後だけWave 1 |
+| `PH-V08-014` | [#76](https://github.com/garchomp-game/create-game/issues/76) | Charger control viabilityと衝突妨害candidate | P0 | 機械screeningはwarning。Pulse charge 0/6、予告前撃破5/6のためruntimeを保留し、人間controlまたは再設計へ戻す |
 | `PH-V08-015` | [#77](https://github.com/garchomp-game/create-game/issues/77) | 技能shadow ledgerと成果フィードバック | P1 | PR #102をmainへ統合しPhase 0完了。Presenter、容量上限付きsummary、固有fact接続は後続 |
 | `PH-V08-016` | [#78](https://github.com/garchomp-game/create-game/issues/78) | 強化選択の停止時間と頻度を計測する | P1 | 二時計と責務を監査済み。文書境界はWave 0H、runtimeは#70採否後 |
 | `PH-V08-017` | [#79](https://github.com/garchomp-game/create-game/issues/79) | Pulse / Spreadの武器教義ブランチ | P1 | Todo。Wave 3 |
