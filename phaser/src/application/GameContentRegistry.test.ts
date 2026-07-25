@@ -169,6 +169,17 @@ describe("GameContentRegistry", () => {
       "extra XP max must be greater than or equal to base XP",
     );
   });
+
+  it("rejects a normal XP cap below its stage base requirement", () => {
+    const invalidProgression = cloneDefinitions();
+    invalidProgression.stages[0]!.progression = {
+      normalXpCurve: { baseXp: 30, growth: 1.04, maxXp: 29 },
+    };
+
+    expect(() => new GameContentRegistry(invalidProgression)).toThrow(
+      "normal XP max must be greater than or equal to base XP",
+    );
+  });
 });
 
 function cloneDefinitions(): GameContentDefinitions {

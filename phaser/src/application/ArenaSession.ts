@@ -340,6 +340,25 @@ function applyStageToConfig(
                 enemy.hp *
                   (difficulty.enemyHpMultipliers?.[typeId as EnemyTypeId] ?? 1),
               ),
+              damage: Math.ceil(
+                enemy.damage *
+                  (difficulty.enemyDamageMultipliers?.[
+                    typeId as EnemyTypeId
+                  ] ?? 1),
+              ),
+              ...(enemy.ranged
+                ? {
+                    ranged: {
+                      ...enemy.ranged,
+                      projectileDamage: Math.ceil(
+                        enemy.ranged.projectileDamage *
+                          (difficulty.enemyDamageMultipliers?.[
+                            typeId as EnemyTypeId
+                          ] ?? 1),
+                      ),
+                    },
+                  }
+                : {}),
               xpValue: Math.ceil(
                 enemy.xpValue * difficulty.rewardScaling.enemyXpMultiplier,
               ),
@@ -383,12 +402,23 @@ function applyStageToConfig(
           ...difficulty.threat,
         }
       : baseConfig.threat,
+    encounter: difficulty?.encounterTiming
+      ? {
+          ...baseConfig.encounter,
+          director: {
+            ...baseConfig.encounter.director,
+            ...difficulty.encounterTiming,
+          },
+        }
+      : baseConfig.encounter,
     leveling: stage.progression
       ? {
           ...baseConfig.leveling,
+          ...(stage.progression.normalXpCurve ?? {}),
+          ...(stage.progression.normalUpgradeCadence ?? {}),
           extra: {
             ...baseConfig.leveling.extra,
-            ...stage.progression.extraXpCurve,
+            ...(stage.progression.extraXpCurve ?? {}),
           },
         }
       : baseConfig.leveling,

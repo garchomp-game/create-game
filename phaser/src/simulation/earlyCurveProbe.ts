@@ -14,6 +14,7 @@ import type {
   AutoPilotProfileId,
 } from "./autoPilotContracts";
 import { getPlayerEffectiveMaxHp } from "./systems/playerHealthSystem";
+import { getThreatTier } from "./threatDirector";
 
 export const EARLY_CURVE_PROBE_SEEDS = Array.from(
   { length: 12 },
@@ -90,6 +91,13 @@ export type EarlyCurveProbeRun = {
   selectedProtocolId: string | null;
   choiceCount: number;
   selectionPauseSeconds: number;
+  extraLevel: number;
+  extraCycle: number;
+  threatTier: number;
+  collapseStage: number;
+  damageTaken: number;
+  damageTakenBySource: WorldState["stats"]["damageTakenBySource"];
+  lastDamageSource: WorldState["stats"]["lastDamageSource"];
   milestones: EarlyCurveMilestones;
   pressureBins: EarlyCurvePressureBin[];
   worldHash: string;
@@ -409,6 +417,20 @@ function runEarlyCurveProbeOnce(options: {
         : null,
     choiceCount,
     selectionPauseSeconds: roundMetric(selectionPauseSeconds),
+    extraLevel: session.world.progression.extraLevel,
+    extraCycle: session.world.progression.extraCycle,
+    threatTier: getThreatTier(
+      session.config,
+      session.world.state.elapsed,
+    ),
+    collapseStage: session.world.encounter.collapse.stage,
+    damageTaken: session.world.stats.damageTaken,
+    damageTakenBySource: {
+      ...session.world.stats.damageTakenBySource,
+    },
+    lastDamageSource: session.world.stats.lastDamageSource
+      ? { ...session.world.stats.lastDamageSource }
+      : null,
     milestones,
     pressureBins: pressureBins.map(finalizePressureBin),
     worldHash: stableHash(JSON.stringify(session.world)),

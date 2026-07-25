@@ -89,12 +89,40 @@ const stageDifficultySchema = z
     enemyHpMultipliers: z
       .partialRecord(z.enum(ENEMY_TYPE_IDS), positiveNumber)
       .optional(),
+    enemyDamageMultipliers: z
+      .partialRecord(z.enum(ENEMY_TYPE_IDS), positiveNumber)
+      .optional(),
     threat: z
       .object({
         pressureStartAt: coordinate,
         statStartAt: coordinate,
+        statStepSeconds: positiveNumber.optional(),
+        enemyHpGrowth: z.number().min(1).optional(),
+        enemyHpGrowthByType: z
+          .object({
+            chaser: z.number().min(1),
+            brute: z.number().min(1),
+            fast: z.number().min(1),
+            ranged: z.number().min(1),
+          })
+          .strict()
+          .optional(),
+        enemyDamageGrowth: z.number().min(1).optional(),
+        enemyScoreGrowth: z.number().min(1).optional(),
+        rangedProjectileSpeedGrowth: z.number().min(1).optional(),
+        rangedAttackSpeedGrowth: z.number().min(1).optional(),
+        healDropDecay: positiveNumber.max(1).optional(),
       })
       .strict(),
+    encounterTiming: z
+      .object({
+        minStart: coordinate,
+        maxStart: coordinate,
+        minInterval: positiveNumber,
+        maxInterval: positiveNumber,
+      })
+      .strict()
+      .optional(),
     rewardScaling: z
       .object({
         enemyXpMultiplier: positiveNumber,
@@ -121,25 +149,84 @@ const stageDifficultySchema = z
         });
       }
     }
+    if (
+      value.encounterTiming &&
+      value.encounterTiming.maxStart < value.encounterTiming.minStart
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "stage encounter maxStart must be at least minStart",
+        path: ["encounterTiming", "maxStart"],
+      });
+    }
+    if (
+      value.encounterTiming &&
+      value.encounterTiming.maxInterval < value.encounterTiming.minInterval
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "stage encounter maxInterval must be at least minInterval",
+        path: ["encounterTiming", "maxInterval"],
+      });
+    }
   });
 
 const stageProgressionSchema = z
   .object({
+    normalXpCurve: z
+      .object({
+        baseXp: z.number().int().positive(),
+        growth: z.number().finite().min(1),
+        maxXp: z.number().int().positive(),
+      })
+      .strict()
+      .optional(),
+    normalUpgradeCadence: z
+      .object({
+        firstUpgradeNotBeforeSeconds: coordinate,
+        minimumUpgradeIntervalSeconds: coordinate,
+      })
+      .strict()
+      .optional(),
     extraXpCurve: z
       .object({
         baseXp: z.number().int().positive(),
         growth: z.number().finite().min(1),
         maxXp: z.number().int().positive(),
       })
-      .strict(),
+      .strict()
+      .optional(),
   })
   .strict()
   .superRefine((value, context) => {
-    if (value.extraXpCurve.maxXp < value.extraXpCurve.baseXp) {
+    if (
+      value.normalXpCurve &&
+      value.normalXpCurve.maxXp < value.normalXpCurve.baseXp
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "normal XP max must be greater than or equal to base XP",
+        path: ["normalXpCurve", "maxXp"],
+      });
+    }
+    if (
+      value.extraXpCurve &&
+      value.extraXpCurve.maxXp < value.extraXpCurve.baseXp
+    ) {
       context.addIssue({
         code: "custom",
         message: "extra XP max must be greater than or equal to base XP",
         path: ["extraXpCurve", "maxXp"],
+      });
+    }
+    if (
+      !value.normalXpCurve &&
+      !value.normalUpgradeCadence &&
+      !value.extraXpCurve
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "stage progression must override at least one progression setting",
       });
     }
   });

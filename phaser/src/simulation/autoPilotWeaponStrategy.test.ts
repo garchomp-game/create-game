@@ -31,14 +31,23 @@ describe("getAutoPilotWeaponStrategy", () => {
     expect(strategies[0]!.preferredRange).not.toBe(strategies[1]!.preferredRange);
   });
 
-  it("retains weapon-specific survival behavior for the ceiling profile", () => {
+  it("does not make ceiling Spread less safe than the fair baseline", () => {
     const pulse = getStrategy("pulse", "ceiling");
     const spread = getStrategy("spread", "ceiling");
+    const fairSpread = getStrategy("spread", "fair");
 
     expect(pulse.projectileRiskMultiplier).toBeGreaterThan(
       spread.projectileRiskMultiplier,
     );
     expect(pulse.healPriorityHpRatio).toBeGreaterThan(spread.healPriorityHpRatio);
+    expect(spread).toMatchObject({
+      openSpaceWeight: fairSpread.openSpaceWeight,
+      healPriorityHpRatio: fairSpread.healPriorityHpRatio,
+      criticalHpRatio: fairSpread.criticalHpRatio,
+      projectileRiskMultiplier: fairSpread.projectileRiskMultiplier,
+      enemyRiskMultiplier: fairSpread.enemyRiskMultiplier,
+      rangedExposureMultiplier: fairSpread.rangedExposureMultiplier,
+    });
   });
 
   it("counts only entered, in-range, unobstructed enemies in a firing lane", () => {

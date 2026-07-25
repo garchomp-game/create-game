@@ -9,6 +9,7 @@ import {
 import { createWorld } from "../simulation/createWorld";
 import { projectLegacyWorldForDigest } from "../simulation/legacyWorldProjection";
 import { stepWorld } from "../simulation/stepWorld";
+import { getXpToNextLevel } from "../simulation/systems/levelSystem";
 import { ArenaSession } from "./ArenaSession";
 
 const input: InputSnapshot = {
@@ -27,12 +28,12 @@ const input: InputSnapshot = {
 describe("ArenaSession", () => {
   it("preserves the direct simulation result for the same seed and input sequence", () => {
     const seed = 424242;
-    const config = { ...SIMULATION_CONFIG, seed };
+    const session = new ArenaSession(SIMULATION_CONFIG);
+    session.start({ seed, weaponType: "spread" });
+    const config = session.config;
     const directWorld = createWorld(config);
     directWorld.state.weaponType = "spread";
     const directRandom = createRandomStreams(seed);
-    const session = new ArenaSession(SIMULATION_CONFIG);
-    session.start({ seed, weaponType: "spread" });
     const eventDigest: string[] = [];
 
     for (let index = 0; index < 180; index += 1) {
@@ -46,12 +47,12 @@ describe("ArenaSession", () => {
     expect(session.randomStreams.seeds).toEqual(directRandom.seeds);
     expect(session.modeId).toBe("endless");
     expect(session.stageId).toBe("arena-default");
-    expect(stableHash(JSON.stringify(eventDigest))).toBe("0e5c664a");
+    expect(stableHash(JSON.stringify(eventDigest))).toBe("ba39e1ca");
     expect(
       stableHash(
         JSON.stringify(projectLegacyWorldForDigest(session.world)),
       ),
-    ).toBe("be3ffd72");
+    ).toBe("45d6c80a");
   });
 
   it("owns the active seed, config, weapon, and status without mirror state", () => {
@@ -70,6 +71,66 @@ describe("ArenaSession", () => {
       baseXp: 180,
       growth: 1.04,
       maxXp: 360,
+    });
+    expect(session.config.leveling).toMatchObject({
+      baseXp: 30,
+      growth: 1.03,
+      maxXp: 60,
+      firstUpgradeNotBeforeSeconds: 0,
+      minimumUpgradeIntervalSeconds: 0,
+    });
+    const normalXpThresholds = Array.from(
+      { length: 25 },
+      (_, index) => getXpToNextLevel(index + 1, session.config),
+    );
+    expect(normalXpThresholds[0]).toBe(30);
+    expect(normalXpThresholds.at(-1)).toBe(60);
+    expect(normalXpThresholds.reduce((total, value) => total + value, 0)).toBe(
+      1_081,
+    );
+    for (let index = 1; index < normalXpThresholds.length; index += 1) {
+      expect(normalXpThresholds[index]! / normalXpThresholds[index - 1]!).toBeLessThanOrEqual(
+        1.1,
+      );
+    }
+    expect(session.config.waves).toHaveLength(8);
+    expect(session.config.waves.map(({ start }) => start)).toEqual([
+      0, 30, 60, 90, 120, 180, 300, 420,
+    ]);
+    expect(session.config.waves[4]?.enemyWeights).toMatchObject({
+      fast: 0.2,
+    });
+    expect(session.config.waves[4]?.enemyWeights.ranged).toBeUndefined();
+    expect(session.config.waves[6]?.enemyWeights).toMatchObject({
+      fast: 0.7,
+      ranged: 0.04,
+    });
+    expect(session.config.enemies).toMatchObject({
+      chaser: { damage: 9 },
+      brute: { damage: 13 },
+      fast: { damage: 3 },
+      ranged: {
+        damage: 3,
+        ranged: { projectileDamage: 2 },
+      },
+    });
+    expect(session.config.threat).toMatchObject({
+      pressureStartAt: 420,
+      statStartAt: 600,
+      statStepSeconds: 60,
+      enemyDamageGrowth: 1.07,
+      enemyHpGrowthByType: {
+        chaser: 1.08,
+        brute: 1.1,
+        fast: 1.07,
+        ranged: 1.09,
+      },
+    });
+    expect(session.config.encounter.director).toMatchObject({
+      minStart: 900,
+      maxStart: 930,
+      minInterval: 75,
+      maxInterval: 95,
     });
   });
 
@@ -154,9 +215,19 @@ describe("ArenaSession", () => {
       growth: 1.12,
       maxXp: 900,
     });
+    expect(session.config.leveling).toMatchObject({
+      baseXp: SIMULATION_CONFIG.leveling.baseXp,
+      growth: SIMULATION_CONFIG.leveling.growth,
+      maxXp: SIMULATION_CONFIG.leveling.maxXp,
+      firstUpgradeNotBeforeSeconds:
+        SIMULATION_CONFIG.leveling.firstUpgradeNotBeforeSeconds,
+      minimumUpgradeIntervalSeconds:
+        SIMULATION_CONFIG.leveling.minimumUpgradeIntervalSeconds,
+    });
     expect(session.config.enemies).toMatchObject({
-      chaser: { xpValue: 2, score: 15 },
-      brute: { hp: 8, xpValue: 6, score: 45 },
+      chaser: { damage: 12, xpValue: 2, score: 15 },
+      brute: { hp: 8, damage: 18, xpValue: 6, score: 45 },
+      ranged: { ranged: { projectileDamage: 8 } },
     });
     expect(session.config.pickup.healDropChance).toBeCloseTo(0.108);
     expect(session.world.expedition).toMatchObject({

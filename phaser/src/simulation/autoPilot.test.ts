@@ -72,6 +72,27 @@ describe("createAutoPilotInput", () => {
     expect(decision.aimTargetId).toBe(chaser.id);
   });
 
+  it("gives Spread the same reaction window for an approaching fast enemy", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.state.weaponType = "spread";
+    const player = world.player.position;
+    const fast = createEnemy(
+      "fast",
+      { x: player.x + 180, y: player.y },
+      "fast",
+    );
+    const ranged = createEnemy(
+      "ranged",
+      { x: player.x - 100, y: player.y },
+      "ranged",
+    );
+    world.enemies.push(ranged, fast);
+
+    const decision = createAutoPilotDecision(world, SIMULATION_CONFIG);
+
+    expect(decision.aimTargetId).toBe(fast.id);
+  });
+
   it("leaves the command pulse radius before impact", () => {
     const world = createWorld(SIMULATION_CONFIG);
     const random = createRandomStreams(404);

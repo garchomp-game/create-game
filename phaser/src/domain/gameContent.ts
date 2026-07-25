@@ -1,4 +1,10 @@
-import type { EnemyTypeId, Obstacle, Vec2, WaveBand } from "./types";
+import type {
+  EnemyTypeId,
+  Obstacle,
+  ThreatSimulationConfig,
+  Vec2,
+  WaveBand,
+} from "./types";
 
 export type ModeDefinition = {
   id: string;
@@ -26,9 +32,29 @@ export type ClearConditionDefinition =
 export type StageDifficultyDefinition = {
   waves: WaveBand[];
   enemyHpMultipliers?: Partial<Record<EnemyTypeId, number>>;
-  threat: {
-    pressureStartAt: number;
-    statStartAt: number;
+  enemyDamageMultipliers?: Partial<Record<EnemyTypeId, number>>;
+  threat: Pick<
+    ThreatSimulationConfig,
+    "pressureStartAt" | "statStartAt"
+  > &
+    Partial<
+      Pick<
+        ThreatSimulationConfig,
+        | "statStepSeconds"
+        | "enemyHpGrowth"
+        | "enemyHpGrowthByType"
+        | "enemyDamageGrowth"
+        | "enemyScoreGrowth"
+        | "rangedProjectileSpeedGrowth"
+        | "rangedAttackSpeedGrowth"
+        | "healDropDecay"
+      >
+    >;
+  encounterTiming?: {
+    minStart: number;
+    maxStart: number;
+    minInterval: number;
+    maxInterval: number;
   };
   rewardScaling: {
     enemyXpMultiplier: number;
@@ -43,7 +69,16 @@ export type StageCampaignDefinition = {
 };
 
 export type StageProgressionDefinition = {
-  extraXpCurve: {
+  normalXpCurve?: {
+    baseXp: number;
+    growth: number;
+    maxXp: number;
+  };
+  normalUpgradeCadence?: {
+    firstUpgradeNotBeforeSeconds: number;
+    minimumUpgradeIntervalSeconds: number;
+  };
+  extraXpCurve?: {
     baseXp: number;
     growth: number;
     maxXp: number;

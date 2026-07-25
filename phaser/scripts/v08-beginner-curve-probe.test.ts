@@ -11,6 +11,7 @@ const seeds = fullProbe
   ? EARLY_CURVE_PROBE_SEEDS
   : EARLY_CURVE_PROBE_SEEDS.slice(0, 2);
 const pressureDurationSeconds = fullProbe ? 150 : 90;
+const pressureWindowSeconds = fullProbe ? 125 : 60;
 
 describe("v0.8 beginner curve baseline probe", () => {
   it(
@@ -22,7 +23,7 @@ describe("v0.8 beginner curve baseline probe", () => {
         seeds,
         durationSeconds: pressureDurationSeconds,
         frameRate: 20,
-        pressureWindowSeconds: 60,
+        pressureWindowSeconds,
         pressureBinSeconds: 5,
         choiceDwellSeconds: 1.5,
         profile: "fair",
@@ -93,7 +94,9 @@ describe("v0.8 beginner curve baseline probe", () => {
       expect(progressionReport.violations).toEqual([]);
       expect(pressureReport.runs).toHaveLength(seeds.length * 2);
       for (const run of pressureReport.runs) {
-        expect(run.pressureBins).toHaveLength(12);
+        expect(run.pressureBins).toHaveLength(
+          Math.ceil(pressureWindowSeconds / 5),
+        );
         expect(run.milestones.level2).not.toBeNull();
         expect(run.milestones.firstUpgrade).not.toBeNull();
         expect(run.milestones.firstUpgrade!.gameplayElapsed).toBe(
@@ -105,10 +108,10 @@ describe("v0.8 beginner curve baseline probe", () => {
         expect(summary.runs).toBe(
           seeds.length,
         );
-        expect(
-          summary.milestones.level5.reached,
-        ).toBeGreaterThan(0);
         if (fullProbe) {
+          expect(
+            summary.milestones.level5.reached,
+          ).toBeGreaterThan(0);
           const beforeBoundary = summary.pressureBins.find(
             (bin) => bin.start === 25,
           )!;
@@ -116,18 +119,26 @@ describe("v0.8 beginner curve baseline probe", () => {
             (bin) => bin.start === 30,
           )!;
           const bruteIntroduction = summary.pressureBins.find(
-            (bin) => bin.start === 45,
+            (bin) => bin.start === 60,
           )!;
-          expect(afterBoundary.spawned.p50).toBeGreaterThanOrEqual(7);
-          expect(afterBoundary.spawned.p50).toBeLessThanOrEqual(9);
+          const fastIntroduction = summary.pressureBins.find(
+            (bin) => bin.start === 120,
+          )!;
+          expect(afterBoundary.spawned.p50).toBeGreaterThanOrEqual(4);
+          expect(afterBoundary.spawned.p50).toBeLessThanOrEqual(6);
+          expect(afterBoundary.spawned.p50).toBeLessThanOrEqual(
+            beforeBoundary.spawned.p50 * 1.5,
+          );
           expect(afterBoundary.averageOnScreenEnemies.p50).toBeLessThanOrEqual(
-            beforeBoundary.averageOnScreenEnemies.p50 * 2,
+            beforeBoundary.averageOnScreenEnemies.p50 * 1.5,
           );
           expect(afterBoundary.spawnedByTypeP50.fast).toBe(0);
           expect(afterBoundary.spawnedByTypeP50.ranged).toBe(0);
           expect(bruteIntroduction.spawnedByTypeP50.brute).toBeGreaterThan(0);
           expect(bruteIntroduction.spawnedByTypeP50.fast).toBe(0);
           expect(bruteIntroduction.spawnedByTypeP50.ranged).toBe(0);
+          expect(fastIntroduction.spawnedByTypeP50.fast).toBeGreaterThan(0);
+          expect(fastIntroduction.spawnedByTypeP50.ranged).toBe(0);
         }
       }
     },

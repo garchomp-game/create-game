@@ -300,11 +300,9 @@ export function selectAimTarget(
   const effectiveRange = getEffectiveWeaponRange(frame);
   const emergencyWindow = world.expedition?.boss?.status === "active"
     ? 0.3
-    : world.state.weaponType === "pulse"
-      ? 1.4
-      : world.state.weaponType === "pierce"
-        ? 1.1
-        : 0.75;
+    : world.state.weaponType === "pierce"
+      ? 1.1
+      : 1.4;
 
   for (const enemy of world.enemies) {
     const distance = distanceBetween(world.player.position, enemy.position);
