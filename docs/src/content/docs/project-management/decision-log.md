@@ -1252,3 +1252,15 @@ Training、Endless、Assistから分離する。既定はHP無敵、出現量少
 - Story進捗保存、中間章、Endless序盤成長の再設計は別Issueへ送る。
 
 詳細は[タイトル導線とストーリー初期作戦](../../engineering/story-onboarding-adr/)を正本とする。
+
+## 2026-07-25: Charger衝突妨害は機械screening warningで保留する
+
+決定: [#76](https://github.com/garchomp-game/create-game/issues/76)のruntime candidateを実装する前に、`main` `5e1950f`を6 seed x Pulse / Spreadで固定CPU実行した。12本すべてにChargerが出現したが、chargeありは1本、予告前撃破ありは7本だった。Pulseはcharge 0 / 6、予告前撃破5 / 6である。
+
+- 現行の熟練入力と「Chargerを倒さず壁へ誘導する」成功条件が競合している。
+- 妨害半径、持続、対象上限は登録せず、runtime実装を開始しない。
+- 機械screeningを最初の経験者3名による人間control gateの代用にはしない。
+- 人間controlでも停止条件へ触れる場合は、現candidateを棄却する。
+- 予告中の迎撃を別の熟練成功にする案は、Pulse有利などを再評価する別candidateとして扱う。
+
+固定条件、raw count、seed別結果は[Charger control機械screening](../../playtest/v08-charger-control-machine-report/)を正本とする。

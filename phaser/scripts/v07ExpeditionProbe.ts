@@ -90,6 +90,13 @@ export type ProbeResult = {
   bossPlayerCoverEntries: number;
   bossPlayerTravelDistance: number;
   bossRegularEnemiesKilled: number;
+  chargerSpawned: number;
+  chargerTelegraphs: number;
+  chargerCharges: number;
+  chargerKilledBeforeTelegraph: number;
+  chargerObstacleInterruptions: number;
+  chargerBoundaryInterruptions: number;
+  chargerPlayerHits: number;
   commanderSpawned: number;
   commanderKilled: number;
   commanderActId: string | null;
@@ -454,6 +461,7 @@ export function executeExpedition(
 
   const expedition = session.world.stats.encounterMetrics.expedition;
   const boss = session.world.stats.encounterMetrics.boss;
+  const charger = session.world.stats.encounterMetrics.charger;
   const commander = session.world.stats.encounterMetrics.commander;
   const commanderHistory = session.world.expedition?.director.history.find(
     (entry) => entry.cardId === "commander-counterattack",
@@ -520,6 +528,13 @@ export function executeExpedition(
     bossPlayerCoverEntries,
     bossPlayerTravelDistance,
     bossRegularEnemiesKilled,
+    chargerSpawned: charger?.spawned ?? 0,
+    chargerTelegraphs: charger?.telegraphs ?? 0,
+    chargerCharges: charger?.charges ?? 0,
+    chargerKilledBeforeTelegraph: charger?.killedBeforeTelegraph ?? 0,
+    chargerObstacleInterruptions: charger?.obstacleInterruptions ?? 0,
+    chargerBoundaryInterruptions: charger?.boundaryInterruptions ?? 0,
+    chargerPlayerHits: charger?.playerHits ?? 0,
     commanderSpawned: commander?.spawned ?? 0,
     commanderKilled: commander?.killed ?? 0,
     commanderActId: commanderHistory?.actId ?? null,
