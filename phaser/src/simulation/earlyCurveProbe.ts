@@ -8,6 +8,7 @@ import type {
   WeaponTypeId,
   WorldState,
 } from "../domain/types";
+import type { RulesetProfileId } from "../domain/ruleset";
 import { createAutoPilotAgent } from "./autoPilot";
 import type {
   AutoPilotPatrolStrategy,
@@ -39,6 +40,7 @@ export type EarlyCurveProbeOptions = {
   collectionControl?: "none" | "vacuum-xp";
   patrolStrategy?: AutoPilotPatrolStrategy;
   stopWhenExStarts?: boolean;
+  rulesetProfileId?: RulesetProfileId;
 };
 
 export type EarlyCurveMilestone = {
@@ -195,6 +197,8 @@ export function runEarlyCurveProbe(
   const collectionControl = options.collectionControl ?? "none";
   const patrolStrategy = options.patrolStrategy ?? "periodic-v3";
   const stopWhenExStarts = options.stopWhenExStarts ?? false;
+  const rulesetProfileId =
+    options.rulesetProfileId ?? "candidate-ex-endless-c2";
   const weaponTypes = options.weaponTypes ?? ["pulse", "spread"];
   const runs: EarlyCurveProbeRun[] = [];
 
@@ -215,6 +219,7 @@ export function runEarlyCurveProbe(
           collectionControl,
           patrolStrategy,
           stopWhenExStarts,
+          rulesetProfileId,
         }),
       );
     }
@@ -263,12 +268,13 @@ function runEarlyCurveProbeOnce(options: {
   collectionControl: "none" | "vacuum-xp";
   patrolStrategy: AutoPilotPatrolStrategy;
   stopWhenExStarts: boolean;
+  rulesetProfileId: RulesetProfileId;
 }): EarlyCurveProbeRun {
   const session = new ArenaSession(options.config);
   session.start({
     seed: options.seed,
     weaponType: options.weaponType,
-    rulesetProfileId: "candidate-ex-endless-c2",
+    rulesetProfileId: options.rulesetProfileId,
   });
   const agent = createAutoPilotAgent(undefined, {
     profile: options.profile,

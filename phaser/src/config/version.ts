@@ -1,6 +1,8 @@
 export const APP_VERSION = "0.7.0";
 export const EX_PROTOCOL_C1_APP_VERSION = "0.8.0-candidate.1";
 export const EX_PROTOCOL_CANDIDATE_APP_VERSION = "0.8.0-candidate.2";
+export const UPGRADE_CATEGORY_FLOOR_CANDIDATE_APP_VERSION =
+  "0.8.0-candidate.3";
 export const RULESET_VERSION = "phaser-v0.7.0-final-expedition-rc6";
 export const ENDLESS_RULESET_VERSION = "phaser-v0.6.8-pulse-boundary-ricochet";
 export const EX_PROTOCOL_C1_ENDLESS_RULESET_VERSION =
@@ -11,6 +13,10 @@ export const EX_PROTOCOL_ENDLESS_RULESET_VERSION =
   "phaser-v0.8-ex-protocols-c2";
 export const EX_PROTOCOL_FINAL_RULESET_VERSION =
   "phaser-v0.8-final-expedition-ex-protocols-c2";
+export const UPGRADE_CATEGORY_FLOOR_ENDLESS_RULESET_VERSION =
+  "phaser-v0.8-upgrade-category-floor-c1";
+export const UPGRADE_CATEGORY_FLOOR_FINAL_RULESET_VERSION =
+  "phaser-v0.8-final-expedition-upgrade-category-floor-c1";
 export const PRACTICE_RULESET_VERSION =
   "phaser-v0.8-practice-sandbox-v1";
 export const RELEASE_CHANNEL_LABEL = "技術プレビュー";
@@ -38,7 +44,14 @@ export type BuildReleaseIdentity = {
 
 export function resolveBuildReleaseIdentity(
   exProtocolCandidateEnabled: boolean,
+  upgradeCategoryFloorCandidateEnabled = false,
 ): BuildReleaseIdentity {
+  if (upgradeCategoryFloorCandidateEnabled) {
+    return {
+      appVersion: UPGRADE_CATEGORY_FLOOR_CANDIDATE_APP_VERSION,
+      rulesetVersion: UPGRADE_CATEGORY_FLOOR_ENDLESS_RULESET_VERSION,
+    };
+  }
   return exProtocolCandidateEnabled
     ? {
         appVersion: EX_PROTOCOL_CANDIDATE_APP_VERSION,

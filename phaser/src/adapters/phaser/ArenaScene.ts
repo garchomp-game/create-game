@@ -21,6 +21,7 @@ import { ArenaSession } from "../../application/ArenaSession";
 import {
   parseRulesetProfileId,
   resolveExProtocolCandidateProfileId,
+  resolveUpgradeCategoryFloorCandidateProfileId,
 } from "../../application/RulesetProfileRegistry";
 import { AutoPilotController } from "../../application/AutoPilotController";
 import { PerformanceMonitor } from "../../application/PerformanceMonitor";
@@ -176,7 +177,8 @@ export class ArenaScene extends Phaser.Scene {
     this.encounterReliefMonitor = new EncounterReliefMonitor();
     this.session = new ArenaSession(this.simulationConfig);
     this.runRecordStore =
-      import.meta.env.VITE_ARENA_EX_PROTOCOL_CANDIDATE === "1"
+      import.meta.env.VITE_ARENA_EX_PROTOCOL_CANDIDATE === "1" ||
+      import.meta.env.VITE_ARENA_UPGRADE_CATEGORY_FLOOR_CANDIDATE === "1"
         ? new LocalRunRecordStoreV3(storage)
         : new LocalRunRecordStore(storage);
     this.runLifecycle = new RunLifecycleController(this.runRecordStore);
@@ -402,9 +404,15 @@ export class ArenaScene extends Phaser.Scene {
     if (typeof injected === "string" && injected.length > 0) {
       return parseRulesetProfileId(injected);
     }
-    if (import.meta.env.VITE_ARENA_EX_PROTOCOL_CANDIDATE !== "1") {
-      return undefined;
+    if (
+      import.meta.env.VITE_ARENA_UPGRADE_CATEGORY_FLOOR_CANDIDATE === "1"
+    ) {
+      return resolveUpgradeCategoryFloorCandidateProfileId(
+        this.selectedModeId,
+        this.selectedStageId,
+      );
     }
+    if (import.meta.env.VITE_ARENA_EX_PROTOCOL_CANDIDATE !== "1") return undefined;
     return resolveExProtocolCandidateProfileId(
       this.selectedModeId,
       this.selectedStageId,

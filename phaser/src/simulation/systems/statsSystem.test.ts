@@ -64,6 +64,13 @@ describe("updateRunStats comparison metrics", () => {
         availableUpgradeIds,
         lockedUpgradeIds: [],
         maxedUpgradeIds: ["rapidFire"],
+        fairnessIntervention: {
+          kind: "category-floor",
+          category: "survival",
+          replacedUpgradeId: "piercingRounds",
+          guaranteedUpgradeId: "vitalCore",
+          eligibleMissGap: 4,
+        },
       },
       {
         type: "upgrade.selected",
@@ -86,6 +93,13 @@ describe("updateRunStats comparison metrics", () => {
           availableUpgradeIds,
           lockedUpgradeIds: [],
           maxedUpgradeIds: ["rapidFire"],
+          fairnessIntervention: {
+            kind: "category-floor",
+            category: "survival",
+            replacedUpgradeId: "piercingRounds",
+            guaranteedUpgradeId: "vitalCore",
+            eligibleMissGap: 4,
+          },
         },
       ],
       selections: [{ elapsed: 7, upgradeId: "splitShot", rank: 1 }],

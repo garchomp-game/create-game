@@ -310,6 +310,8 @@ function applyStageToConfig(
         ? {
             ...baseConfig.features,
             exProtocols: rulesetProfile.features.exProtocols,
+            upgradeCategoryFloor:
+              rulesetProfile.features.upgradeCategoryFloor ?? false,
             encounterDeck: false,
             endlessContract: rulesetProfile.features.endlessContract,
             arenaCollapse: false,
@@ -317,6 +319,8 @@ function applyStageToConfig(
         : {
             ...baseConfig.features,
             exProtocols: rulesetProfile.features.exProtocols,
+            upgradeCategoryFloor:
+              rulesetProfile.features.upgradeCategoryFloor ?? false,
             endlessContract: rulesetProfile.features.endlessContract,
           },
     arena: {

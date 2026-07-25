@@ -331,6 +331,7 @@ export const simulationConfigSchema: z.ZodType<SimulationConfig> = z
     features: z
       .object({
         exProtocols: z.boolean(),
+        upgradeCategoryFloor: z.boolean(),
         pulseRicochet: z.boolean(),
         pulseBoundaryRicochet: z.boolean(),
         pulseFocus: z.boolean(),

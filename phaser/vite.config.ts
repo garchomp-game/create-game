@@ -16,6 +16,7 @@ const MAX_RUN_EXPORT_FILES = { manual: 200, debug: 100, test: 20 } as const;
 const BUILD_COMMIT = readBuildCommit();
 const BUILD_RELEASE_IDENTITY = resolveBuildReleaseIdentity(
   process.env.VITE_ARENA_EX_PROTOCOL_CANDIDATE === "1",
+  process.env.VITE_ARENA_UPGRADE_CATEGORY_FLOOR_CANDIDATE === "1",
 );
 const PROJECT_ROOT = path.dirname(fileURLToPath(import.meta.url));
 

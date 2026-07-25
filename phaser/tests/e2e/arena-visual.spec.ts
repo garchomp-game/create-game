@@ -3,6 +3,7 @@ import { SIMULATION_CONFIG } from "../../src/config/gameConfig";
 import type { BossAttackId } from "../../src/domain/types";
 import type { TutorialStepId } from "../../src/domain/tutorial";
 import { probeWebglCanvas } from "./webglCanvasProbe";
+import { EX_PROTOCOLS_ENABLED } from "./releaseTestProfile";
 
 const TRAINING_VISUAL_FIXTURES = [
   { stepId: "move", snapshotName: "move" },
@@ -1143,6 +1144,10 @@ test("matches the encounter warning frame", async ({ page }) => {
 });
 
 test("matches the endless contract selection frame", async ({ page }) => {
+  test.skip(
+    EX_PROTOCOLS_ENABLED,
+    "EX Protocol candidates intentionally retire the Endless contract.",
+  );
   await gotoArena(page);
   const game = page.locator("#game");
   await page.evaluate(() => {

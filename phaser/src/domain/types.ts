@@ -98,6 +98,7 @@ export type UpgradeCategory = (typeof UPGRADE_CATEGORIES)[number];
 
 export type SimulationFeatures = {
   exProtocols: boolean;
+  upgradeCategoryFloor: boolean;
   pulseRicochet: boolean;
   pulseBoundaryRicochet: boolean;
   pulseFocus: boolean;
@@ -700,6 +701,15 @@ export type UpgradeOfferRunStat = {
   availableUpgradeIds: UpgradeId[];
   lockedUpgradeIds: UpgradeId[];
   maxedUpgradeIds: UpgradeId[];
+  fairnessIntervention?: UpgradeOfferFairnessIntervention;
+};
+
+export type UpgradeOfferFairnessIntervention = {
+  kind: "category-floor";
+  category: Exclude<UpgradeCategory, "capstone">;
+  replacedUpgradeId: UpgradeId;
+  guaranteedUpgradeId: UpgradeId;
+  eligibleMissGap: number;
 };
 
 export type UpgradeSelectionRunStat = {
@@ -1298,6 +1308,7 @@ export type GameEvent =
       availableUpgradeIds: UpgradeId[];
       lockedUpgradeIds: UpgradeId[];
       maxedUpgradeIds: UpgradeId[];
+      fairnessIntervention?: UpgradeOfferFairnessIntervention;
     }
   | { type: "upgrade.selected"; upgradeId: UpgradeId; rank: number; level: number; effect: UpgradeEffect }
   | { type: "build.completed"; level: number; elapsed: number }

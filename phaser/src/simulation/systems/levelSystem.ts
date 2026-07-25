@@ -4,6 +4,7 @@ import type {
   RandomSource,
   SimulationConfig,
   UpgradeId,
+  UpgradeOfferRunStat,
   WorldState,
 } from "../../domain/types";
 import {
@@ -25,6 +26,10 @@ import {
   setLimitBreakChoices,
   setUpgradeChoices,
 } from "../progressionChoices";
+import {
+  applyUpgradeCategoryFloor,
+  type UpgradeOfferFairnessResult,
+} from "../upgradeOfferFairness";
 
 export function updateLevelProgression(
   world: WorldState,
@@ -58,12 +63,14 @@ export function updateLevelProgression(
     world.progression.upgradeRanks,
     world.state.weaponType,
   );
-  const choices = selectUpgradeChoices(
+  const offer = selectUpgradeOffer(
     config,
     random,
     world.progression.upgradeRanks,
     world.state.weaponType,
+    world.stats.progressionMetrics.offers,
   );
+  const { choices } = offer;
   setUpgradeChoices(world, choices, config);
   events.push({
     type: "player.level_up",
@@ -91,6 +98,9 @@ export function updateLevelProgression(
       world.progression.upgradeRanks,
       world.state.weaponType,
     ),
+    ...(offer.intervention
+      ? { fairnessIntervention: offer.intervention }
+      : {}),
   });
 }
 
@@ -107,7 +117,23 @@ export function selectUpgradeChoices(
   upgradeRanks: Record<UpgradeId, number>,
   weaponType = config.defaultWeapon,
 ): UpgradeId[] {
+  return selectUpgradeOffer(
+    config,
+    random,
+    upgradeRanks,
+    weaponType,
+  ).choices;
+}
+
+export function selectUpgradeOffer(
+  config: SimulationConfig,
+  random: RandomSource,
+  upgradeRanks: Record<UpgradeId, number>,
+  weaponType = config.defaultWeapon,
+  offerHistory: readonly UpgradeOfferRunStat[] = [],
+): UpgradeOfferFairnessResult {
   const available = getAvailableUpgradeIds(config, upgradeRanks, weaponType);
+  const eligible = [...available];
   const capstones = available.filter((id) => config.upgrades[id].category === "capstone");
   const choices: UpgradeId[] = capstones.slice(0, config.leveling.upgradeChoiceCount);
   for (const capstone of choices) {
@@ -131,7 +157,13 @@ export function selectUpgradeChoices(
     const [choice] = available.splice(index, 1);
     choices.push(choice!);
   }
-  return choices;
+  return applyUpgradeCategoryFloor(
+    config,
+    random,
+    eligible,
+    choices,
+    offerHistory,
+  );
 }
 
 export function getAvailableUpgradeIds(

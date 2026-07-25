@@ -23,6 +23,9 @@ import {
   STORY_MODE_ID,
   STORY_RULESET_VERSION,
   TRAINING_MODE_ID,
+  UPGRADE_CATEGORY_FLOOR_CANDIDATE_APP_VERSION,
+  UPGRADE_CATEGORY_FLOOR_ENDLESS_RULESET_VERSION,
+  UPGRADE_CATEGORY_FLOOR_FINAL_RULESET_VERSION,
 } from "../config/version";
 import {
   RULESET_PROFILE_IDS,
@@ -145,6 +148,36 @@ const RULESET_PROFILES = [
     rankPolicy: "non-standard",
     features: { exProtocols: true, endlessContract: false },
   },
+  {
+    id: "candidate-upgrade-floor-endless-v08",
+    modeId: DEFAULT_MODE_ID,
+    stageId: DEFAULT_STAGE_ID,
+    appVersion: UPGRADE_CATEGORY_FLOOR_CANDIDATE_APP_VERSION,
+    rulesetVersion: UPGRADE_CATEGORY_FLOOR_ENDLESS_RULESET_VERSION,
+    randomStreamVersion: RANDOM_STREAM_VERSION_V2,
+    runRecordSchemaVersion: 3,
+    rankPolicy: "non-standard",
+    features: {
+      exProtocols: true,
+      endlessContract: false,
+      upgradeCategoryFloor: true,
+    },
+  },
+  {
+    id: "candidate-upgrade-floor-final-expedition-v08",
+    modeId: EXPEDITION_MODE_ID,
+    stageId: FINAL_EXPEDITION_STAGE_ID,
+    appVersion: UPGRADE_CATEGORY_FLOOR_CANDIDATE_APP_VERSION,
+    rulesetVersion: UPGRADE_CATEGORY_FLOOR_FINAL_RULESET_VERSION,
+    randomStreamVersion: RANDOM_STREAM_VERSION_V2,
+    runRecordSchemaVersion: 3,
+    rankPolicy: "non-standard",
+    features: {
+      exProtocols: true,
+      endlessContract: false,
+      upgradeCategoryFloor: true,
+    },
+  },
 ] as const satisfies readonly RulesetProfile[];
 
 const PROFILE_BY_ID = new Map<RulesetProfileId, RulesetProfile>(
@@ -210,6 +243,22 @@ export function resolveExProtocolCandidateProfileId(
     stageId === FINAL_EXPEDITION_STAGE_ID
   ) {
     return "candidate-ex-final-expedition-c2";
+  }
+  return undefined;
+}
+
+export function resolveUpgradeCategoryFloorCandidateProfileId(
+  modeId: string,
+  stageId: string,
+): RulesetProfileId | undefined {
+  if (modeId === DEFAULT_MODE_ID && stageId === DEFAULT_STAGE_ID) {
+    return "candidate-upgrade-floor-endless-v08";
+  }
+  if (
+    modeId === EXPEDITION_MODE_ID &&
+    stageId === FINAL_EXPEDITION_STAGE_ID
+  ) {
+    return "candidate-upgrade-floor-final-expedition-v08";
   }
   return undefined;
 }
