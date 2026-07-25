@@ -1314,6 +1314,19 @@ wave開始4秒前の予告は設定の開始時刻と敵種差分から表示層
 45〜50秒を「再編時間」として明示する。simulation状態、RNG、RunRecordへ
 予告専用の状態や時刻を追加しない。
 
+## 2026-07-25: 通常強化のcategory floor C1を比較候補として固定する
+
+決定: [#92](https://github.com/garchomp-game/create-game/issues/92)の64 seed controlを取得し、通常bagではなく`category-floor-c1`を単独候補として比較する。
+
+- controlは`b5cdaaff97a6106335e1ac48e47fd782d6e9bd17`。Pulse / Spread、observer優先順 / 常に先頭の256組でoffer列の決定論を確認した。
+- 基礎カテゴリの初回提示は最大level 8、カテゴリ最大未提示gapは最大10、単一強化では最大12だった。
+- 候補は直前4回のeligible offerで提示されなかった基礎カテゴリが、通常抽選でも今回提示されない場合だけ、最後の非capstone枠を1件置換する。
+- 介入は1 offerにつき1件、1 runにつき最大4回。対象カテゴリ内は既存weightで抽選し、capstone、最大済み除外、通常25ランクを維持する。
+- `rapidFire`だけは保証しない。連射が必須なら、候補運ではなく強化倍率または圧力設計の別Issueとして扱う。
+- 通常bagは序盤2回程度で候補を一巡させ、取得順によるラン内変化を弱めるため、最初の候補には採用しない。
+
+採否ゲートとcontrol表は[通常強化の提示公平性](../../design/v08-upgrade-offer-fairness/)を正本とする。候補無効時のoffer列、event、world hash一致を確認してからproduction採用を判断する。
+
 ## 2026-07-25: 固有スキルの条件を行動文と専用アイコンで示す
 
 決定: 固有スキル選択で新たに現れる一般英語を日本語へ置き換え、カードの説明を
