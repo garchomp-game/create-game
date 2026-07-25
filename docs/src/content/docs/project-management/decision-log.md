@@ -1264,3 +1264,28 @@ Training、Endless、Assistから分離する。既定はHP無敵、出現量少
 - 予告中の迎撃を別の熟練成功にする案は、Pulse有利などを再評価する別candidateとして扱う。
 
 固定条件、raw count、seed別結果は[Charger control機械screening](../../playtest/v08-charger-control-machine-report/)を正本とする。
+
+## 2026-07-25: Standard / Assist / Practiceを別軸の記録契約として固定する
+
+決定: [#95](https://github.com/garchomp-game/create-game/issues/95)の
+Milestone 6を、永続`division`追加ではなく、保存方針、比較方針、
+version付きmodifier、旧記録互換判定のpure contractとして実装する。
+
+- Standard、Assist、Practiceを強さ順の単一値へしない。
+- 新規modifierは`<id>@v<正整数>`へ正規化し、simulation modifierだけを
+  Assistの同条件partitionへ含める。
+- Standard要求へsimulation modifierが入った場合と、Assist同条件要求に
+  simulation modifierがない場合は比較対象外へfail-closedする。
+- simulation-neutralなaccessibility設定はStandard PB eligibilityを維持する。
+- 既存`auto-fire:on / off`と`contract:standard`は公開済みStandardの
+  legacy互換allowlistとしてだけ扱う。
+- 既知のmanual・rank eligibleなv2 / v3 StandardだけをStandardと解釈し、
+  未知ruleset、非Standard ruleset、未知legacy modifierは履歴を消さず隔離する。
+- RunRecord schema、LocalStorage bytes、現行`RunComparisonQuery`、
+  ranking経路、gameplay、production trafficは変更しない。
+
+事前登録はcommit `3a6889a`、pure実装は`031950d`。
+targeted 10件、全unit 670件、既存migration 19件、TypeScript、
+deploy build、Starlight 125ページを確認した。Assist runtime、schema、
+開始・結果・履歴UIは別Issue・別rulesetで事前登録してから接続する。
+詳細は[記録軸と比較条件の契約](../../engineering/run-record-axis-contract-adr/)を正本とする。

@@ -7,8 +7,9 @@ description: Standard、Assist、Practiceを序列化せず、mode、modifier、
 
 ## 状態
 
-`PH-V08-024` Milestone 6の設計決定。pure contractとfixtureを先行し、
-Assist gameplay、永続schema変更、結果画面への接続は後続Issueへ送ります。
+`PH-V08-024` Milestone 6の設計決定。pure contractとfixtureを
+code commit `031950d`で実装しました。Assist gameplay、永続schema変更、
+結果画面への接続は後続Issueへ送ります。
 
 ## 文脈
 
@@ -154,4 +155,3 @@ runtime挙動へmigration rollbackは発生しません。
 最初のAssist runtime候補は別Issue・別rulesetで1件だけ事前登録します。
 そのIssueでschema、保存partition、開始・結果表示、同条件再挑戦を接続し、
 Standardへ戻す導線とcandidate-off回帰を改めて検証します。
-

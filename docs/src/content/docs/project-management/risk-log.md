@@ -306,18 +306,21 @@ RC6手動実績: Pulse 2本とSpread 1本を通常UIで確認し、勝利ラン�
 
 停止条件: 同じrulesetまたは比較セルで2件以上のゲームルールを変更する、candidate offでRC6のevent列・score・XP・drop・killが変わる、採否理由を単独candidateへ帰属できない場合は統合しません。
 
-### near-miss誤表示とdivision記録混在
+### near-miss誤表示と記録条件の混在
 
-状態: [#94](https://github.com/garchomp-game/create-game/issues/94) / [#95](https://github.com/garchomp-game/create-game/issues/95)で契約固定待ち。
+状態: [#94](https://github.com/garchomp-game/create-game/issues/94)のStandard表示候補と、
+[#95](https://github.com/garchomp-game/create-game/issues/95)のpure記録契約候補まで実装済み。
+Assist runtimeと永続partitionの接続前ゲートとして継続。
 
 実測根拠のない「あと少し」は敗北を誤説明し、AssistやPracticeの記録がStandard PBへ入ると競技公平性を壊します。逆に支援を隠れた難度補正として実装すると、成功を自分の判断として振り返れません。
 
 対応:
 
 - near-missはボス残HP、未達objective、残り時間など保存済み事実からのみ導出し、条件不成立時は表示しない。
-- 主敗因と再挑戦条件をRunRecordから再構築できる形にし、同条件再挑戦はseed、武器、ruleset、division、modifierを維持する。
-- `Standard | Assist | Practice`を明示し、divisionとmodifierを比較scopeへ含める。
-- Assist / PracticeをStandard PBへ混在させず、旧Overload記録の互換読み取り、旧記録migration、不明値の扱いを実装前にfixture化する。
+- 主敗因と再挑戦条件をRunRecordから再構築できる形にし、同条件再挑戦はseed、武器、ruleset、記録policy、modifierを維持する。
+- mode、simulation modifier、保存方針、比較eligibilityを別軸にし、`Standard | Assist | Practice`は表示名として導出する。
+- Assist / PracticeをStandard PBへ混在させず、旧Overload記録の互換読み取りと不明値のfail-closed解釈をfixture化する。
+- RunRecord v2 / v3と現行Standard比較は変更せず、Assistの永続partitionは別Issue・別rulesetで接続する。
 - 履歴に応じて標準難度を隠れて変更するDDAは導入しない。
 
 停止条件: 事実のないnear-miss、敗因と実イベントの不一致、再挑戦時の条件変化、非Standard記録によるStandard PB更新を1件でも確認した場合は採用しません。
