@@ -29,6 +29,7 @@
     "preview:e2e": "vite preview --host 0.0.0.0",
     "probe:v07": "vitest run scripts/v07-expedition-probe.test.ts --reporter=verbose",
     "probe:v07:repair": "ARENA_PROBE_KIND=repair-budget vitest run scripts/v07-expedition-probe.test.ts --reporter=verbose",
+    "probe:v08:charger-control": "vitest run scripts/charger-control-machine-probe.test.ts --maxWorkers=1 --reporter=verbose",
     "test:ex-protocols:paths": "vitest run scripts/ex-protocol-paths.test.ts --maxWorkers=1 --reporter=verbose",
     "test:ex-protocols:determinism": "vitest run scripts/ex-protocol-replay-tape.test.ts scripts/ex-protocol-determinism.test.ts --maxWorkers=1 --reporter=verbose",
     "test:ex-protocols:record-migration": "vitest run src/adapters/storage/legacyRunRecordDecoder.test.ts src/adapters/storage/runRecordV3Codec.test.ts src/adapters/storage/LocalRunRecordStoreV3.test.ts --maxWorkers=1 --reporter=verbose",
