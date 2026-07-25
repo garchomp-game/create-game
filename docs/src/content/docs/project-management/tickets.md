@@ -177,6 +177,9 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-V08-027` | [#110](https://github.com/garchomp-game/create-game/issues/110) | 危険イベント終了後5秒の立て直しshadow計測 | P1 | ゲーム数値を変えず、5秒窓と次警告時盤面をdev exportへ出す |
 | `PH-V08-028` | [#112](https://github.com/garchomp-game/create-game/issues/112) | 批判レビューcontrol観測の結合build | P1 | gameplay candidateを含めず、独立shadowを1回の手動runで取得可能にする |
 | `PH-V08-033` | [#126](https://github.com/garchomp-game/create-game/issues/126) | EX Protocol C2を最新mainへ統合 | P0 | Draft PR #127、固定Preview、全CI green。人間6体系・実GPU・production採否は未完了 |
+| `PH-V08-034` | [#128](https://github.com/garchomp-game/create-game/issues/128) | 初回プレイの成長・Endless難度カーブと固有スキル可読性 | P0 | Draft PR #129で自動ゲート完了。初心者・経験者の人間採否とmain競合解消待ち |
+| `PH-V08-035` | [#134](https://github.com/garchomp-game/create-game/issues/134) | 開発専用UI状態カタログと画面遷移図 | P1 | In Progress。型付きmanifestとproduction非混入の軽量entryを先行 |
+| `PH-V08-036` | [#135](https://github.com/garchomp-game/create-game/issues/135) | UI視覚刷新とKenney素材の比較採用 | P1 | Todo。#134、#66、#98の比較結果後に縦切り |
 
 ## 横断QA
 

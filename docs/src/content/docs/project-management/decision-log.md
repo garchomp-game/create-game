@@ -1407,3 +1407,23 @@ targeted 10件、全unit 670件、既存migration 19件、TypeScript、
 deploy build、Starlight 125ページを確認した。Assist runtime、schema、
 開始・結果・履歴UIは別Issue・別rulesetで事前登録してから接続する。
 詳細は[記録軸と比較条件の契約](../../engineering/run-record-axis-contract-adr/)を正本とする。
+
+## 2026-07-25: UI比較は開発専用catalogへ集約し、外部assetは縦切り採用する
+
+決定: 通常プレイで全画面状態を再現する手間を減らすため、
+[PH-V08-035 #134](https://github.com/garchomp-game/create-game/issues/134)で
+Storybook相当の開発専用UI状態catalogと型付き画面遷移manifestを作る。
+現行はReact等のcomponent frameworkを使っていないため、Storybook本体を
+先行導入せず、既存Presenter / ViewModelと静的fixtureを使う軽量entryから始める。
+
+- title、choice、HUD、resultを最初の4縦切りにする。
+- catalog、debug hook、fixture dataはproduction artifactへ含めない。
+- 画面遷移図とcatalogは同じscreen IDを使い、手書き図だけを正本にしない。
+- 各編集では型検査、対象unit、対象画面smokeを行い、全E2Eと全画像は採用時へ集約する。
+
+視覚刷新は[PH-V08-036 #135](https://github.com/garchomp-game/create-game/issues/135)へ分ける。
+背景は宇宙の軌道回収プラットフォーム、空の高高度防衛プラットフォーム、
+地上の惑星調査・回収区画を同じ戦闘fixtureで比較し、第一候補を宇宙案とする。
+Kenney素材はCC0確認済みの公式packを候補にするが、一括導入せず、
+Input Promptsなど意味が明確なファイルから比較する。採用時は出典、version、
+取得日、加工、使用箇所を台帳へ残す。

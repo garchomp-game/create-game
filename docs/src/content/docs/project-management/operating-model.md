@@ -39,6 +39,24 @@ description: 要件整理、チケット分割、実装、検証、記録の進�
 Ultraを使う長時間の自律作業では、ゴールの粒度、反復上限、QAの昇格条件、
 計装と文書同期の扱いを[Ultra自律開発運用](../ultra-workflow/)に従って決めます。
 
+## 実装中の検証 cadence
+
+各小変更で同じ重い証拠を取り直しません。検証は次の3段階へ分けます。
+
+| 段階 | 実行するもの | 実行時点 |
+| --- | --- | --- |
+| Checkpoint | 型検査、変更箇所のunit、短いCPU fixture、対象画面smoke | 小さなcommitごと |
+| Slice | 全unitまたは関連E2E、対象画像、production artifact非混入 | 関心事単位の縦切り完了時 |
+| Adoption | 全E2E、seed matrix、長時間probe、配布build、必要な実GPU・人間確認 | 候補SHAと設定を固定した最後 |
+
+保存migration、RNG、共有simulation、入力境界、ruleset、配布identityへ触れた場合は、
+影響する統合gateをAdoptionまで待たずに実行します。失敗や想定外の差分がなければ、
+全ブラウザ、全画像、soakをcommitごとに繰り返しません。
+
+外部サービスが不安定な場合も、ローカル変更の粒度は変えません。commitとpushを小さくし、
+GitHubのIssue URL、remote SHA、CI statusを読み直してから次の書き込みへ進みます。
+APIのtimeout後は作成済みかを確認し、同じIssueやコメントを即時再送しません。
+
 ## ドキュメント更新
 
 - 実装済みの事実は [現在地](../../game/current-state/) へ記録する。
