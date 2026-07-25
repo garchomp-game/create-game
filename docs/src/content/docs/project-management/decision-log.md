@@ -1284,3 +1284,23 @@ Storybook相当の開発専用UI状態catalogと型付き画面遷移manifestを
 Kenney素材はCC0確認済みの公式packを候補にするが、一括導入せず、
 Input Promptsなど意味が明確なファイルから比較する。採用時は出典、version、
 取得日、加工、使用箇所を台帳へ残す。
+
+## 2026-07-25: 背景3案は同じ最大密度fixtureで比較し、Aを第一候補のまま保留する
+
+決定: [PH-V08-036 #135](https://github.com/garchomp-game/create-game/issues/135)の
+背景比較では、現行control、軌道回収、高高度防衛、惑星調査を
+`gameplay-standard`の同一`WorldState`へ適用する。候補ごとに敵配置やHUDを
+変えず、背景だけを評価する。fixtureには
+`background-baseline`、`background-orbital`、`background-altitude`、
+`background-surface`の安定したcapture IDを付ける。
+
+- A 軌道回収は、外周軌道と中央の回収床により、四方侵入と拠点防衛を最も説明しやすい。
+- B 高高度防衛は、誘導路が移動可能領域や攻撃予告に見える可能性がある。
+- C 惑星調査は、床板や調査枠が実際の障害物に見える可能性がある。
+- Aを第一候補として維持するが、production themeにはまだ採用しない。
+- 次は実障害物を重ね、背景形状との誤認がないことを最大密度で確認する。
+- 比較entry、fixture、候補CSSはproduction artifactへ含めない。
+
+理由: 世界観の好みだけで先に採用すると、敵弾、XP、回復、障害物の意味を
+背景が壊す可能性がある。同じ戦闘状態で空間説明と誤認リスクを比較すれば、
+ゲームルールや乱数を変えずに候補を絞れる。

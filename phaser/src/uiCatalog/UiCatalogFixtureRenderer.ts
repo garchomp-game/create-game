@@ -8,6 +8,7 @@ import type {
   UiCatalogFixture,
   UiCatalogHudViewModel,
 } from "./UiCatalogFixtures";
+import type { UiCatalogBackgroundCandidateId } from "./UiCatalogBackgroundCandidates";
 
 export function renderUiCatalogFixture(fixture: UiCatalogFixture): string {
   switch (fixture.kind) {
@@ -16,7 +17,7 @@ export function renderUiCatalogFixture(fixture: UiCatalogFixture): string {
     case "choice":
       return renderChoice(fixture.model);
     case "hud":
-      return renderHud(fixture.model);
+      return renderUiCatalogHud(fixture.model);
     case "result":
       return renderResult(fixture.model);
   }
@@ -99,9 +100,15 @@ function renderChoiceCard(card: ArenaChoiceCardViewModel): string {
   `;
 }
 
-function renderHud(model: UiCatalogHudViewModel): string {
+export function renderUiCatalogHud(
+  model: UiCatalogHudViewModel,
+  background: UiCatalogBackgroundCandidateId = "baseline",
+): string {
   return `
-    <div class="fixture-screen fixture-hud">
+    <div
+      class="fixture-screen fixture-hud fixture-hud--${background}"
+      data-background-candidate="${background}"
+    >
       <div class="fixture-hud__grid" aria-hidden="true"></div>
       <section class="fixture-hud__panel fixture-hud__panel--left">
         ${renderHudBar(model.hp, "hp")}
