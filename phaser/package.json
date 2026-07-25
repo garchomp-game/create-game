@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
+    "dev:ui-catalog": "vite --host 0.0.0.0 --open /ui-catalog.html",
     "build": "tsc --noEmit && vite build",
     "build:deploy": "npm run build && npm run verify:deploy",
     "build:observation": "tsc --noEmit && VITE_ARENA_ENABLE_TEST_HOOKS=1 vite build",
