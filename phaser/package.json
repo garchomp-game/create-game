@@ -10,6 +10,7 @@
     "build:observation": "tsc --noEmit && VITE_ARENA_ENABLE_TEST_HOOKS=1 vite build",
     "build:deploy:ex-protocols": "VITE_ARENA_EX_PROTOCOL_CANDIDATE=1 npm run build:deploy",
     "build:deploy:upgrade-floor": "VITE_ARENA_UPGRADE_CATEGORY_FLOOR_CANDIDATE=1 npm run build:deploy",
+    "build:deploy:outcome-feedback": "VITE_ARENA_OUTCOME_FEEDBACK_CANDIDATE=1 npm run build:deploy",
     "build:e2e": "tsc --noEmit && VITE_ARENA_FIXED_SEED=1 VITE_ARENA_RUN_ORIGIN=test VITE_ARENA_ENABLE_TEST_HOOKS=1 VITE_PHASER_PRESERVE_DRAWING_BUFFER=1 vite build",
     "audio:generate": "node scripts/generate-audio.mjs",
     "deploy:cloudflare": "npm run build:deploy && wrangler deploy",
@@ -47,7 +48,8 @@
     "test:ex-protocols:soak:release": "ARENA_EX_PROTOCOL_FULL_SOAK=1 vitest run scripts/ex-protocol-soak.test.ts --maxWorkers=1 --reporter=verbose",
     "test:ex-protocols:final-exposure": "vitest run scripts/ex-protocol-final-exposure.test.ts --maxWorkers=1 --reporter=verbose",
     "test:ex-protocols:final-exposure:release": "ARENA_EX_PROTOCOL_FINAL_EXPOSURE_FULL=1 vitest run scripts/ex-protocol-final-exposure.test.ts --maxWorkers=1 --reporter=verbose",
-    "test:e2e:ex-protocols": "VITE_ARENA_EX_PROTOCOL_CANDIDATE=1 playwright test tests/e2e/arena-ex-protocol-ui.spec.ts --project=chrome --workers=1"
+    "test:e2e:ex-protocols": "VITE_ARENA_EX_PROTOCOL_CANDIDATE=1 playwright test tests/e2e/arena-ex-protocol-ui.spec.ts --project=chrome --workers=1",
+    "test:e2e:outcome-feedback": "VITE_ARENA_OUTCOME_FEEDBACK_CANDIDATE=1 ARENA_E2E_RANDOM_SEED=1 playwright test tests/e2e/arena-outcome-feedback.spec.ts --project=chrome --workers=1"
   },
   "dependencies": {
     "@vitejs/plugin-basic-ssl": "^2.1.0",

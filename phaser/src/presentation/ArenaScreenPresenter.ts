@@ -10,6 +10,7 @@ import {
 } from "../application/runRecords";
 import { toRunCentiseconds } from "../domain/runRecords";
 import type { RankIneligibilityReason, RunRecord } from "../domain/runRecords";
+import type { RunOutcomeInsightViewModel } from "../domain/runOutcomeInsights";
 import type {
   EnemyTypeId,
   GameStatus,
@@ -54,9 +55,18 @@ export type ArenaScreenViewModel = {
   helpPage: HelpPage;
   statusText: string | null;
   detailText: string | null;
+  outcomeFeedback: OutcomeFeedbackScreenViewModel | null;
   practiceSettings: PracticeSettingsScreenViewModel | null;
   menuLabels: Partial<Record<MenuAction, string>>;
   focusedMenuAction: MenuAction | null;
+};
+
+export type OutcomeFeedbackScreenViewModel = {
+  heading: string;
+  causeTitle: string;
+  evidence: string;
+  nextAction: string;
+  progress: string | null;
 };
 
 export type PracticeSettingsScreenViewModel = {
@@ -90,6 +100,7 @@ export function createArenaScreenViewModel(
     status: world.state.status,
     secondaryMenu,
     helpPage: uiState?.helpPage ?? "controls",
+    outcomeFeedback: null,
     practiceSettings: null,
     menuLabels: createMenuLabels(uiState),
     focusedMenuAction: uiState?.focusedMenuAction ?? null,
@@ -210,13 +221,24 @@ export function createArenaScreenViewModel(
   }
 
   switch (world.state.status) {
-    case "gameOver":
+    case "gameOver": {
+      const outcomeFeedback = world.practice
+        ? null
+        : createOutcomeFeedback(uiState?.runOutcomeInsight ?? null);
       return {
         ...base,
         kind: "gameOver",
-        statusText: formatGameOverText(world, uiState),
-        detailText: formatGameOverDetails(world, uiState),
+        statusText: formatGameOverText(world, uiState, outcomeFeedback),
+        detailText: formatGameOverDetails(world, uiState, outcomeFeedback),
+        outcomeFeedback,
+        menuLabels: outcomeFeedback
+          ? {
+              ...base.menuLabels,
+              restart: "同じシードで再挑戦",
+            }
+          : base.menuLabels,
       };
+    }
     case "upgradeSelect":
       return { ...base, kind: "upgradeSelect", statusText: null, detailText: null };
     case "protocolSelect":
@@ -289,7 +311,11 @@ export function createArenaScreenViewModel(
   }
 }
 
-function formatGameOverText(world: WorldState, uiState?: ArenaUiState): string {
+function formatGameOverText(
+  world: WorldState,
+  uiState?: ArenaUiState,
+  outcomeFeedback: OutcomeFeedbackScreenViewModel | null = null,
+): string {
   const summary = createRunResultSummary(world);
   if (world.practice) {
     return [
@@ -334,7 +360,11 @@ function formatGameOverText(world: WorldState, uiState?: ArenaUiState): string {
 
   const isFatalDefeat =
     summary.hp <= 0 && expeditionOutcome !== "victory";
-  if (isFatalDefeat && summary.lastDamageSource) {
+  if (
+    isFatalDefeat &&
+    summary.lastDamageSource &&
+    outcomeFeedback === null
+  ) {
     lines.push(
       TEXT.ui.result.defeatCause(
         formatFatalDamageSource(summary.lastDamageSource),
@@ -348,6 +378,7 @@ function formatGameOverText(world: WorldState, uiState?: ArenaUiState): string {
 function formatGameOverDetails(
   world: WorldState,
   uiState?: ArenaUiState,
+  outcomeFeedback: OutcomeFeedbackScreenViewModel | null = null,
 ): string {
   if (world.practice) {
     const options = world.practice.options;
@@ -381,11 +412,39 @@ function formatGameOverDetails(
     formatBuildLine(record),
     formatRecordSelections(record),
     `シード: ${record.seed} / ${record.seedCategory === "fixed" ? "固定" : "ランダム"}`,
+    outcomeFeedback
+      ? "再挑戦: 同じシード / 固定シード記録"
+      : "",
     eligibility,
     `版: ${record.appVersion} / ${record.buildCommit.slice(0, 8)}`,
     `ルール: ${record.rulesetVersion}`,
     uiState.notice ?? "",
   ].filter(Boolean).join("\n");
+}
+
+function createOutcomeFeedback(
+  insight: RunOutcomeInsightViewModel | null,
+): OutcomeFeedbackScreenViewModel | null {
+  if (
+    insight?.state !== "available" ||
+    insight.progress.completionKind === "expeditionCompleted"
+  ) {
+    return null;
+  }
+
+  const cause = insight.primaryCause;
+  const boss = insight.progress.boss;
+  return {
+    heading: "振り返り",
+    causeTitle: cause?.title ?? "主因を特定できません",
+    evidence:
+      cause?.evidence ?? "終了前5秒に被ダメージ記録がありません",
+    nextAction:
+      insight.nextAction?.title ?? "終了前5秒の位置と優先標的を見直す",
+    progress: boss
+      ? `指揮艦 Phase ${boss.phaseReached} / 残HP ${boss.remainingHp.toLocaleString()} / ${boss.maximumHp.toLocaleString()}`
+      : null,
+  };
 }
 
 function formatPracticeEnemyName(typeId: string): string {

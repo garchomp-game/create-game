@@ -1,5 +1,6 @@
 import type { RunContext, RunRecord } from "../domain/runRecords";
 import type { ObservedGameEvent } from "../domain/runFacts";
+import type { RunOutcomeInsightViewModel } from "../domain/runOutcomeInsights";
 import type {
   GameEvent,
   SimulationConfig,
@@ -20,6 +21,11 @@ import {
   isRankableRun,
   selectPersonalBest,
 } from "./runRecords";
+import {
+  aggregateRunFacts,
+  createRunFactScope,
+} from "./runFactKernel";
+import { createRunOutcomeInsight } from "./runOutcomeInsights";
 
 export type RunLifecycleFinalizeOutcome = {
   result: FinalizeRunResult;
@@ -199,6 +205,16 @@ export class RunLifecycleController {
 
   getRunFactEvents(): ObservedGameEvent[] {
     return this.runFactEvents.map((entry) => structuredClone(entry));
+  }
+
+  getRunOutcomeInsight(): RunOutcomeInsightViewModel | null {
+    const context = this.getContext();
+    if (!context) return null;
+    const events = this.getRunFactEvents();
+    return createRunOutcomeInsight(
+      aggregateRunFacts(createRunFactScope(context), events),
+      events,
+    );
   }
 
   private appendRunFactEvent(event: GameEvent, elapsed: number): void {

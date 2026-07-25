@@ -205,6 +205,20 @@ describe("RunLifecycleController", () => {
     ]);
     expect(facts.map((entry) => entry.sequence)).toEqual([0, 1, 2, 3, 4]);
     expect(facts[3]?.elapsed).toBe(99);
+    expect(controller.getRunOutcomeInsight()).toMatchObject({
+      state: "available",
+      primaryCause: {
+        causeId: "contact:fast",
+        damage: 12,
+      },
+      progress: {
+        completionKind: "expeditionFailed",
+        boss: {
+          maximumHp: 3400,
+          remainingHp: 3200,
+        },
+      },
+    });
   });
 });
 

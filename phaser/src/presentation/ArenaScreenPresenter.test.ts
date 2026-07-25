@@ -4,6 +4,7 @@ import { SIMULATION_CONFIG } from "../config/gameConfig";
 import { createDefaultPracticeRunOptions } from "../domain/practice";
 import { createDefaultProfileSettings } from "../domain/profile";
 import type { RunRecord } from "../domain/runRecords";
+import type { RunOutcomeInsightViewModel } from "../domain/runOutcomeInsights";
 import type { WorldState } from "../domain/types";
 import { TEXT } from "../lang";
 import { createWorld } from "../simulation/createWorld";
@@ -377,7 +378,7 @@ describe("createArenaScreenViewModel", () => {
     const viewModel = createArenaScreenViewModel(
       world,
       SIMULATION_CONFIG,
-      createUiState(),
+      createUiState({ runOutcomeInsight: createOutcomeInsight() }),
     );
 
     expect(viewModel.statusText).toContain("PRACTICE 終了");
@@ -385,6 +386,8 @@ describe("createArenaScreenViewModel", () => {
     expect(viewModel.detailText).toContain("無敵 オフ");
     expect(viewModel.detailText).toContain("重装体 / 高速体");
     expect(viewModel.detailText).not.toContain("保存できません");
+    expect(viewModel.outcomeFeedback).toBeNull();
+    expect(viewModel.menuLabels.restart).not.toBe("同じシードで再挑戦");
   });
 
   it("shows the saved EX Protocol route in candidate results", () => {
@@ -478,7 +481,11 @@ describe("createArenaScreenViewModel", () => {
     const viewModel = createArenaScreenViewModel(
       world,
       SIMULATION_CONFIG,
-      createUiState(),
+      createUiState({
+        runOutcomeInsight: createOutcomeInsight({
+          completionKind: "expeditionCompleted",
+        }),
+      }),
     );
 
     expect(viewModel.statusText?.split("\n")).toEqual(
@@ -489,6 +496,7 @@ describe("createArenaScreenViewModel", () => {
       ]),
     );
     expect(viewModel.statusText).not.toContain("撃墜原因");
+    expect(viewModel.outcomeFeedback).toBeNull();
   });
 
   it("formats Expedition PB deltas from integer centiseconds", () => {
@@ -571,6 +579,44 @@ describe("createArenaScreenViewModel", () => {
     ).toContain(
       "撃墜原因: 安全領域外で崩壊ダメージを受け、HPが0になりました（第2段階）",
     );
+  });
+
+  it("presents one factual primary cause and an exact-retry action for a defeat", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.state.status = "gameOver";
+    world.state.hp = 0;
+    world.state.elapsed = 430;
+    world.stats.lastDamageSource = {
+      kind: "projectile",
+      projectileId: "final-projectile",
+    };
+    world.stats.encounterMetrics.expedition = createExpeditionMetrics(
+      "defeat",
+      430,
+    );
+    const record = createRecord(world, "expedition", "final-expedition");
+    const viewModel = createArenaScreenViewModel(
+      world,
+      SIMULATION_CONFIG,
+      createUiState({
+        latestRunRecord: record,
+        runOutcomeInsight: createOutcomeInsight(),
+      }),
+    );
+
+    expect(viewModel.outcomeFeedback).toEqual({
+      heading: "振り返り",
+      causeTitle: "高速敵との接触",
+      evidence: "終了前5秒に28ダメージ（3回）",
+      nextAction: "敵群へ入る前に退路を一方向残す",
+      progress: "指揮艦 Phase 2 / 残HP 620 / 3,400",
+    });
+    expect(viewModel.statusText).not.toContain("撃墜原因");
+    expect(viewModel.menuLabels.restart).toBe("同じシードで再挑戦");
+    expect(viewModel.detailText).toContain(
+      "再挑戦: 同じシード / 固定シード記録",
+    );
+    expect(JSON.stringify(viewModel)).not.toContain("惜し");
   });
 
   it("names the boss attack that ended an Expedition", () => {
@@ -750,6 +796,7 @@ function createUiState(
     },
     settings: createDefaultProfileSettings(),
     latestRunRecord: null,
+    runOutcomeInsight: null,
     previousBest: null,
     previousWeaponBest: null,
     historyClearPending: false,
@@ -767,5 +814,105 @@ function createUiState(
     helpPage: overrides.helpPage ?? "controls",
     practiceOptions:
       overrides.practiceOptions ?? createDefaultPracticeRunOptions(),
+  };
+}
+
+type AvailableOutcomeInsight = Extract<
+  RunOutcomeInsightViewModel,
+  { state: "available" }
+>;
+
+function createOutcomeInsight(
+  options: {
+    completionKind?: AvailableOutcomeInsight["progress"]["completionKind"];
+  } = {},
+): AvailableOutcomeInsight {
+  const completionKind = options.completionKind ?? "expeditionFailed";
+  const completed = completionKind === "expeditionCompleted";
+  return {
+    schemaVersion: 1,
+    state: "available",
+    retryContext: {
+      profileId: "00000000-0000-4000-8000-000000000001",
+      modeId: "expedition",
+      stageId: "final-expedition",
+      difficultyId: "standard",
+      weaponId: "pulse",
+      rulesetVersion: "rules-rc6",
+      seed: 77,
+      seedCategory: "random",
+      modifierIds: [],
+    },
+    primaryCause: completed
+      ? null
+      : {
+          causeId: "contact:fast",
+          kind: "contact",
+          title: "高速敵との接触",
+          evidence: "終了前5秒に28ダメージ（3回）",
+          damage: 28,
+          hits: 3,
+          lastElapsed: 430,
+          isFinalHit: false,
+          bossAttackId: null,
+          enemyType: "fast",
+        },
+    nextAction: completed
+      ? null
+      : {
+          id: "preserve-escape-route",
+          title: "敵群へ入る前に退路を一方向残す",
+        },
+    progress: {
+      completionKind,
+      elapsed: 430,
+      score: 20_000,
+      tacticalScore: 20_000,
+      actId: "command-ship",
+      boss: {
+        bossId: "first-command-ship",
+        enemyId: "boss-enemy",
+        phaseReached: 2,
+        maximumHp: 3400,
+        remainingHp: completed ? 0 : 620,
+        remainingHpRatio: completed ? 0 : 620 / 3400,
+        defeated: completed,
+      },
+      pressure: {
+        activeCommanderCount: 0,
+        activeEscortCount: 0,
+        bossActive: !completed,
+        collapseStage: 0,
+        lastBossAttackId: "targeted-salvo",
+      },
+    },
+    nearMiss: completed
+      ? { state: "not-applicable", reason: "runCompleted" }
+      : {
+          state: "evidence-only",
+          reason: "thresholdNotRegistered",
+          bossRemainingHp: 620,
+          bossMaximumHp: 3400,
+          bossRemainingHpRatio: 620 / 3400,
+          bossPhaseReached: 2,
+        },
+    previousDifference: { state: "not-reached", reason: "noPreviousRun" },
+    snapshot: {
+      comparisonKey: "fixture",
+      completionKind,
+      elapsed: 430,
+      score: 20_000,
+      primaryCauseId: completed ? null : "contact:fast",
+      totalDamage: completed ? 0 : 28,
+      boss: {
+        bossId: "first-command-ship",
+        enemyId: "boss-enemy",
+        phaseReached: 2,
+        maximumHp: 3400,
+        remainingHp: completed ? 0 : 620,
+        remainingHpRatio: completed ? 0 : 620 / 3400,
+        defeated: completed,
+      },
+    },
   };
 }

@@ -249,6 +249,8 @@ RC5は基準証跡として保持し、productionへ直接昇格しません。U
 
 2026-07-25にCharger controlを6 seed x 2武器で機械screeningした結果、12本すべてで出現した一方、chargeありは1本、Pulseは予告前撃破5 / 6・charge 0 / 6でした。[#76](https://github.com/garchomp-game/create-game/issues/76)の衝突妨害runtimeは開始せず、`revise-before-candidate`として人間controlまたは再設計へ戻しています。詳細は[Charger control機械screening](../../playtest/v08-charger-control-machine-report/)を参照してください。
 
+[#94](https://github.com/garchomp-game/create-game/issues/94)はPhase Aの非介入ViewModelを基に、Standard敗北だけへ主敗因、根拠、次の一手、同一seed再挑戦を出すB1候補まで実装しました。random runの再挑戦はfixed boardへ分離し、near-missは事実だけを表示して「惜しかった」と解釈しません。候補フラグOFFの全E2Eは`108 passed / 15 skipped`で、production挙動は不変です。採用には[#81](https://github.com/garchomp-game/create-game/issues/81)の表示前自由回答と表示後の次行動確認が残ります。詳細は[敗因フィードバック Phase B候補](../../design/run-outcome-insights-phase-b/)を参照してください。
+
 旧結合commit `4bd771e`の477 unit、77 E2E、production buildは履歴証拠として保持しますが、修復候補の合格証拠へ流用しません。修復後の自動証拠、Cloudflare Version Preview、GitHub Actionsは完了し、その後に採用済み選択UI、desktop gate、WebGL fallback、戦闘オブジェクトPhase A fixture、StudyLog契約をmain `60ae8889390c`まで積み上げました。詳細は[v0.8 control観測build サマリ](../v08-observation-control-summary/)と[実施手順](../../playtest/v08-observation-control-runbook/)を参照してください。
 
 ## v0.8 EX Protocol C2統合候補
@@ -263,10 +265,10 @@ runtime commit `dca3cec1127b`は[Draft PR #127](https://github.com/garchomp-game
 
 公開ベータ基準、RC6、control観測、採用済み選択UI、9課題Training、desktop gate、WebGL fallback、Phase A fixture、StudyLog契約はmainへ統合済みです。
 
-1. 固定PreviewでPulse / Spread各3 Protocolの人間操作と、Aegis / Tidalの実GPU高密度確認を行う。
-2. #81でT1.1 control、T1.2短文候補、H1/H2無操作ヒント候補を別cellとして比較する。
-3. 採用したTraining文言とヒントだけをmainへ統合し、O1共通導線を1候補で確認する。
-4. EX C2、Training、O1の採否後にv0.8統合buildを固定し、Endless / Final Expedition / Trainingの最終回帰を行う。
+1. #92の通常強化候補と#94の敗因B1候補を別Previewで人間確認し、採用・修正・棄却を分ける。
+2. 固定PreviewでPulse / Spread各3 Protocolの人間操作と、Aegis / Tidalの実GPU高密度確認を行う。
+3. #81でTrainingと敗因B1を別cellとして測り、表示前の回答を候補表示で汚染しない。
+4. 採用した候補だけをmainへ統合し、v0.8統合buildでEndless / Final Expedition / Storyの最終回帰を行う。
 5. #98 Phase B、Charger、Boss、イベント緩和は、観測事実と事前登録した合格条件がある場合だけ別candidateで進める。
 
 採否の理由は[v0.8 批判的レビューの採用判断](../../design/v08-critical-review-adoption/)、直近の詳細は[直近フェーズ](../../project-management/next-phase-plan/)と[v0.8 実行計画](../../project-management/v08-execution-plan/)、技術契約は[RC6の時計と記録規則](../../engineering/expedition-rc6-clock-and-ranking-adr/)、3作戦系列は[エクスペディション3作戦検証](../../design/expedition-campaign/)、表示改善は[UI・グラフィック再設計計画](../../project-management/ui-visual-redesign-plan/)を参照してください。

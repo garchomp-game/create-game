@@ -19,6 +19,7 @@ import type {
   RunContext,
   RunRecord,
 } from "../domain/runRecords";
+import type { RunOutcomeInsightViewModel } from "../domain/runOutcomeInsights";
 
 export type { HistoryWeaponFilter } from "../application/ArenaMenuTypes";
 
@@ -40,6 +41,7 @@ export type ArenaUiState = {
   settings: ProfileSettings;
   practiceOptions: PracticeRunOptions;
   latestRunRecord: RunRecord | null;
+  runOutcomeInsight: RunOutcomeInsightViewModel | null;
   previousBest: RunRecord | null;
   previousWeaponBest: RunRecord | null;
   historyClearPending: boolean;
@@ -62,6 +64,7 @@ export type CreateArenaUiStateInput = {
   settings: ProfileSettings;
   practiceOptions?: PracticeRunOptions;
   latestRunRecord: RunRecord | null;
+  runOutcomeInsight?: RunOutcomeInsightViewModel | null;
   previousBest: RunRecord | null;
   previousWeaponBest: RunRecord | null;
   historyClearPending: boolean;
@@ -108,6 +111,9 @@ export function createArenaUiState(input: CreateArenaUiStateInput): ArenaUiState
       input.practiceOptions ?? createDefaultPracticeRunOptions(),
     ),
     latestRunRecord: input.latestRunRecord ? { ...input.latestRunRecord } : null,
+    runOutcomeInsight: input.runOutcomeInsight
+      ? structuredClone(input.runOutcomeInsight)
+      : null,
     previousBest: input.previousBest ? { ...input.previousBest } : null,
     previousWeaponBest: input.previousWeaponBest
       ? { ...input.previousWeaponBest }

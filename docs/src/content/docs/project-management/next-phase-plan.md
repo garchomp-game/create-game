@@ -115,7 +115,7 @@ v0.8はコンテンツ量を増やす前に、Arena Coreの面白さの核を単
 | T2 | [#98](https://github.com/garchomp-game/create-game/issues/98) | T1後も誤認が残る場合だけ戦闘オブジェクト視覚を比較する |
 | 0C | [#77](https://github.com/garchomp-game/create-game/issues/77) | candidate非依存のsimulation facts、純粋ledger集計、Presenter境界 |
 | 0D | [#93](https://github.com/garchomp-game/create-game/issues/93) | ボス攻撃文法、回復窓、反撃窓の観測契約 |
-| 0E | [#94](https://github.com/garchomp-game/create-game/issues/94) | 主敗因、実測near-miss、同条件再挑戦の事実契約 |
+| 0E | [#94](https://github.com/garchomp-game/create-game/issues/94) | Phase Aはmain統合済み。Standard結果と同一seed再挑戦のB1候補を実装し、人間採否待ち |
 | 0F | [#95](https://github.com/garchomp-game/create-game/issues/95) | mode、modifier、record policy、PB分離、旧記録migration |
 | 0G | [#80](https://github.com/garchomp-game/create-game/issues/80) | candidate非依存の最大密度fixture骨格。色・音・意味は後続 |
 | 0H | [#78](https://github.com/garchomp-game/create-game/issues/78) | 選択wall-clockと再開事故。UI採否前に両UIで比較可能にする |
@@ -127,7 +127,7 @@ v0.8はコンテンツ量を増やす前に、Arena Coreの面白さの核を単
 
 [#77](https://github.com/garchomp-game/create-game/issues/77)は[#76](https://github.com/garchomp-game/create-game/issues/76)固有の意味や閾値を持たず、既存eventと将来candidateの事実を同じledgerへ入力できる共通基盤にします。[#80](https://github.com/garchomp-game/create-game/issues/80)はfixture骨格を先行し、candidate固有の色・音・判定は意味確定後に足します。[#81](https://github.com/garchomp-game/create-game/issues/81)は最終QAへ限定せず、RC6 baselineと各candidateを別セル・raw countで繰り返し評価します。T0 / T1は同じ初心者へ連続実施せず、事前教材なしで死亡または90秒まで観測します。
 
-ゲームルールを同時に複数変更しません。#76を最初のruntime candidateとし、#93、#94、#95、#92、#79は責務と観測を先に固定しても、production挙動へは一括投入しません。
+ゲームルールを同時に複数変更しません。#76はcontrol screening warningによりruntimeを保留しました。次はゲーム数値を変えない#92と#94のUI / offer候補を別buildで評価し、#93、#95、#79をproduction挙動へ一括投入しません。
 
 UI境界[#68](https://github.com/garchomp-game/create-game/issues/68)、比較prototype[#67](https://github.com/garchomp-game/create-game/issues/67)、選択画面縦切り[#70](https://github.com/garchomp-game/create-game/issues/70)の採用範囲はRC6基点のDraft PR #84へ集約しました。旧RC5基点のPR #72はsupersededとして閉じ、外部可読性確認が終わるまでIssueを開いたまま維持します。
 
