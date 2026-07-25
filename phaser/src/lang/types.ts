@@ -137,6 +137,7 @@ export type HudText = {
   levelLabel: (level: number) => string;
   extraLevelLabel: (extraLevel: number, cycle: number) => string;
   experienceValue: (xp: number, next: number) => string;
+  experienceWaiting: (xp: number, next: number, seconds: number) => string;
   hp: (current: number, max: number) => string;
   xp: (level: number, xp: number, next: number) => string;
   buildComplete: (level: number) => string;

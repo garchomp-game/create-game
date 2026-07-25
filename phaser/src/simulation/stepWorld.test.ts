@@ -1034,6 +1034,42 @@ describe("stepWorld", () => {
     expect(result.events).toContainEqual(expect.objectContaining({ type: "upgrade.offered", level: 2 }));
   });
 
+  it("offers the first upgrade after the cadence without requiring a fourth XP pickup", () => {
+    const world = createWorld(GAME_CONFIG);
+    world.progression.xp = world.progression.xpToNext - 1;
+    world.pickups.push(createTestXpPickup({
+      position: { ...world.player.position },
+    }));
+
+    stepWorld(
+      world,
+      neutralInput,
+      1 / 60,
+      createFixedRandomStreams(0),
+      GAME_CONFIG,
+    );
+
+    expect(world.state.status).toBe("playing");
+    expect(world.progression.xp).toBe(world.progression.xpToNext);
+    expect(world.stats.pickupsCollected).toBe(1);
+
+    world.state.elapsed = GAME_CONFIG.leveling.firstUpgradeNotBeforeSeconds;
+    const result = stepWorld(
+      world,
+      neutralInput,
+      0,
+      createFixedRandomStreams(0),
+      GAME_CONFIG,
+    );
+
+    expect(world.state.status).toBe("upgradeSelect");
+    expect(world.progression.level).toBe(2);
+    expect(world.stats.pickupsCollected).toBe(1);
+    expect(result.events).toContainEqual(
+      expect.objectContaining({ type: "player.level_up", level: 2 }),
+    );
+  });
+
   it("freezes world updates while selecting an upgrade and applies the selected upgrade", () => {
     const world = createWorld(GAME_CONFIG);
     world.state.status = "upgradeSelect";

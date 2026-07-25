@@ -16,6 +16,7 @@ import {
   formatExProtocolEventNotice,
 } from "../../presentation/ExProtocolPresenter";
 import { createEndlessWaveCueViewModel } from "../../presentation/EndlessWaveCuePresenter";
+import { createProgressionHudViewModel } from "../../presentation/ProgressionHudPresenter";
 import { getPlayerEffectiveMaxHp } from "../../simulation/systems/playerHealthSystem";
 import { HUD_LEFT_PANEL_BOUNDS } from "./PhaserHudLayout";
 import { getHelpHudButtonBounds } from "./PhaserHelpLayout";
@@ -142,11 +143,7 @@ export class PhaserHud {
     };
     const maxHp = getPlayerEffectiveMaxHp(world, this.runConfig);
     const hpRatio = maxHp > 0 ? world.state.hp / maxHp : 0;
-    const buildComplete = world.progression.buildCompletedAt !== null;
-    const xpRatio =
-      world.progression.xpToNext > 0
-        ? world.progression.xp / world.progression.xpToNext
-        : 0;
+    const progressionHud = createProgressionHudViewModel(world);
     const difficultyElapsed = getDifficultyElapsed(world);
     const wave = getWaveBand(this.runConfig, difficultyElapsed);
     const threatTier = getThreatTier(this.runConfig, difficultyElapsed);
@@ -289,21 +286,19 @@ export class PhaserHud {
     }
 
     this.drawBar(28, 40, 324, 8, hpRatio, getHpBarColor(hpRatio));
-    this.drawBar(28, 73, 324, 8, xpRatio, 0x38bdf8);
+    this.drawBar(
+      28,
+      73,
+      324,
+      8,
+      progressionHud.experienceRatio,
+      0x38bdf8,
+    );
 
     this.hpText.setText(TEXT.hud.hpLabel);
     this.hpValueText.setText(TEXT.hud.hpValue(Math.ceil(world.state.hp), maxHp));
-    this.xpText.setText(
-      buildComplete
-        ? TEXT.hud.extraLevelLabel(
-            world.progression.extraLevel,
-            world.progression.extraCycle,
-          )
-        : TEXT.hud.levelLabel(world.progression.level),
-    );
-    this.xpValueText.setText(
-      TEXT.hud.experienceValue(world.progression.xp, world.progression.xpToNext),
-    );
+    this.xpText.setText(progressionHud.levelLabel);
+    this.xpValueText.setText(progressionHud.experienceLabel);
     this.metaText.setText(
       TEXT.hud.meta(formatTime(world.state.elapsed), world.state.score),
     );

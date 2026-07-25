@@ -6,6 +6,8 @@ export const hudText: HudText = {
   levelLabel: (level) => `Lv ${level}`,
   extraLevelLabel: (extraLevel, cycle) => `EX Lv ${extraLevel} / C${cycle}`,
   experienceValue: (xp, next) => `経験値 ${xp} / ${next}`,
+  experienceWaiting: (xp, next, seconds) =>
+    `経験値 ${xp} / ${next}　強化まで${seconds}秒`,
   hp: (current, max) => `HP ${current}/${max}`,
   xp: (level, xp, next) => `Lv ${level}  経験値 ${xp}/${next}`,
   buildComplete: (level) => `Lv ${level}  ビルド完成`,
