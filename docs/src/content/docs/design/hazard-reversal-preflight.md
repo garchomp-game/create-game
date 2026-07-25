@@ -77,6 +77,12 @@ Charger未出現runを「chargeできなかったrun」へ数えません。自�
 
 `clear`は人間sampleへ進めるという補助判断です。runtime candidateの実装開始には、引き続き最初の経験者3名とCharger到達熟練run 3件のcontrol gateを必要とします。`warning`の場合はCharger HP、出現頻度、初回待機を同時に変更せず、現行遭遇の再設計またはcandidate停止を先に判断します。
 
+### 機械screening結果
+
+2026-07-25の12本は`warning`でした。Chargerは12本すべてに出現しましたが、chargeありは1本、予告前撃破ありは7本です。Pulseはcharge 0 / 6、予告前撃破5 / 6でした。
+
+このため衝突妨害runtime、半径、持続、対象上限の登録は保留します。詳細とseed別の値は[Charger control機械screening](../../playtest/v08-charger-control-machine-report/)を正本とします。
+
 ### ボスと崩壊
 
 - `command-pulse`は半径、予告、遮蔽、範囲外、被弾結果を持つが、Stage 10終盤だけです。
