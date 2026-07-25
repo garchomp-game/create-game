@@ -57,7 +57,7 @@ description: Standard結果へ主敗因、次の一手、同一seed再挑戦を�
 
 ## 実装状況
 
-2026-07-25に`agent/v08-outcome-feedback-phase-b`でB1を実装しました。
+2026-07-25に`agent/v08-outcome-feedback-phase-b`、code commit `7f0abf04def1`でB1を実装しました。
 
 - `RunLifecycleController`が保持する同一runのfactから、結果表示と再挑戦planを生成する。
 - 結果画面を左の成績、中央の振り返り、右の記録契約の3列にした。
@@ -66,6 +66,8 @@ description: Standard結果へ主敗因、次の一手、同一seed再挑戦を�
 - 勝利、Practice、Training、flag OFFでは候補表示とexact retryを出さない。
 
 自動証拠はunit `105 files / 663 passed / 2 skipped`、候補E2E `1 passed`、flag OFF全E2E `108 passed / 15 skipped`です。960 x 540 fixtureでは3列と4ボタンの非重複を目視確認しました。これは候補完成の証拠であり、採用判断ではありません。
+
+Cloudflare Version `b148a6ca-1826-40df-8d2c-cc94f895e4fc`を[固定Preview](https://v08-outcome-feedback-b1-arena-core.garchomp-game.workers.dev/)へ公開しました。通常UIだけの実URLsmokeでは5.83秒で自然敗北し、主敗因`追跡敵との接触`、根拠`100ダメージ（9回）`、次の一手`退路を一方向残す`を表示しました。履歴、同一seed再挑戦、最終遠征開始まで通過し、console error、page error、失敗request、HTTP 4xx / 5xxは0件です。production trafficは変更していません。
 
 ## 自動受け入れ
 
