@@ -39,6 +39,7 @@ export default defineConfig({
             { label: "エクスペディション展開", slug: "design/expedition-campaign" },
             { label: "世界観と試合内ドラマ", slug: "design/narrative-and-match-drama" },
             { label: "UI/UXとフィードバック", slug: "design/ui-ux" },
+            { label: "UI素材台帳", slug: "design/ui-asset-ledger" },
             { label: "障害物・敵経路・弾", slug: "design/obstacles-and-projectiles" },
             { label: "回復ピックアップ", slug: "design/healing-pickups" },
             { label: "アイテム", slug: "design/item-system" },
