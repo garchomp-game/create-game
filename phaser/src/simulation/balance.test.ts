@@ -25,7 +25,7 @@ const balanceBaseline = {
   kiteCollectSurvivalP50: 179.37,
   kiteCollectKillsPerMinuteP50: 196.8,
   kiteCollectScorePerMinuteP50: 3034.94,
-  kiteCollectFirstDamageP50: 84.87,
+  kiteCollectFirstDamageP50: 103.1,
   kiteCollectFirstUpgradeP50: 7.07,
   kiteCollectWaveReachedP50: 90,
   kiteCollectMaxEnemiesMax: SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 45 : 46,
@@ -33,7 +33,7 @@ const balanceBaseline = {
   kiteCollectHpRecoveredP50: SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 82 : 106,
   kiteCollectHealPickupsCollectedP50: 39,
   kiteCollectEffectiveHealPickupsCollectedP50:
-    SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 9 : 11,
+    SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 7 : 11,
 };
 
 describe("balance simulation", () => {

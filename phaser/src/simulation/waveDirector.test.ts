@@ -10,13 +10,23 @@ describe("waveDirector", () => {
       maxEnemies: 30,
     });
     expect(getWaveDifficulty(SIMULATION_CONFIG, 30)).toEqual({
-      spawnInterval: 0.78,
-      speedMultiplier: 1.14,
-      maxEnemies: 42,
+      spawnInterval: 0.75,
+      speedMultiplier: 1.02,
+      maxEnemies: 32,
+    });
+    expect(getWaveDifficulty(SIMULATION_CONFIG, 45)).toEqual({
+      spawnInterval: 1.3,
+      speedMultiplier: 1.04,
+      maxEnemies: 36,
     });
     expect(getWaveDifficulty(SIMULATION_CONFIG, 60)).toEqual({
-      spawnInterval: 0.68,
-      speedMultiplier: 1.22,
+      spawnInterval: 0.95,
+      speedMultiplier: 1.1,
+      maxEnemies: 42,
+    });
+    expect(getWaveDifficulty(SIMULATION_CONFIG, 75)).toEqual({
+      spawnInterval: 0.78,
+      speedMultiplier: 1.18,
       maxEnemies: 50,
     });
     expect(getWaveDifficulty(SIMULATION_CONFIG, 90)).toEqual({
@@ -50,14 +60,46 @@ describe("waveDirector", () => {
 
   it("uses wave weights and spawn budget when choosing enemy types", () => {
     const early = getWaveBand(SIMULATION_CONFIG, 0);
-    const middle = getWaveBand(SIMULATION_CONFIG, 35);
-    const late = getWaveBand(SIMULATION_CONFIG, 70);
+    const densityIntroduction = getWaveBand(SIMULATION_CONFIG, 35);
+    const bruteIntroduction = getWaveBand(SIMULATION_CONFIG, 50);
+    const fastIntroduction = getWaveBand(SIMULATION_CONFIG, 65);
+    const rangedIntroduction = getWaveBand(SIMULATION_CONFIG, 80);
 
     expect(selectEnemyTypeForWave(SIMULATION_CONFIG, early, 1, () => 0.99)).toBe("chaser");
-    expect(selectEnemyTypeForWave(SIMULATION_CONFIG, middle, middle.spawnBudget, () => 0.5)).toBe(
-      "brute",
-    );
-    expect(selectEnemyTypeForWave(SIMULATION_CONFIG, middle, 1, () => 0.99)).toBe("fast");
-    expect(selectEnemyTypeForWave(SIMULATION_CONFIG, late, 2, () => 0.99)).toBe("ranged");
+    expect(
+      selectEnemyTypeForWave(
+        SIMULATION_CONFIG,
+        densityIntroduction,
+        densityIntroduction.spawnBudget,
+        () => 0.99,
+      ),
+    ).toBe("chaser");
+    expect(densityIntroduction.enemyWeights.brute).toBeUndefined();
+    expect(
+      selectEnemyTypeForWave(
+        SIMULATION_CONFIG,
+        bruteIntroduction,
+        bruteIntroduction.spawnBudget,
+        () => 0.99,
+      ),
+    ).toBe("brute");
+    expect(bruteIntroduction.enemyWeights.fast).toBeUndefined();
+    expect(
+      selectEnemyTypeForWave(
+        SIMULATION_CONFIG,
+        fastIntroduction,
+        fastIntroduction.spawnBudget,
+        () => 0.99,
+      ),
+    ).toBe("fast");
+    expect(fastIntroduction.enemyWeights.ranged).toBeUndefined();
+    expect(
+      selectEnemyTypeForWave(
+        SIMULATION_CONFIG,
+        rangedIntroduction,
+        rangedIntroduction.spawnBudget,
+        () => 0.99,
+      ),
+    ).toBe("ranged");
   });
 });

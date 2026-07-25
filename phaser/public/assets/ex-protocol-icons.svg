@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <symbol id="pulse-resonance-relay-a" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+        <circle cx="5" cy="17" r="2"/>
+        <circle cx="19" cy="7" r="2"/>
+        <path d="M7 16 17 8M9 7h4M11 5v4"/>
+      </g>
+    </symbol>
+    <symbol id="pulse-resonance-relay-b" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+        <circle cx="5" cy="12" r="2"/>
+        <circle cx="19" cy="12" r="2"/>
+        <path d="M7 12h3l2-4 2 8 2-4h1"/>
+      </g>
+    </symbol>
+
+    <symbol id="pulse-rebound-overdrive-a" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+        <path d="M4 5v14h16M7 15l5-5 4 4"/>
+        <path d="m13 14 3 0 0-3"/>
+      </g>
+    </symbol>
+    <symbol id="pulse-rebound-overdrive-b" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+        <path d="m5 7 7 5-7 5M19 7l-7 5 7 5"/>
+        <path d="M12 4v4M12 16v4"/>
+      </g>
+    </symbol>
+
+    <symbol id="pulse-redline-core-a" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+        <path d="M12 3 5 7v10l7 4 7-4V7z"/>
+        <path d="m13 6-4 7h4l-2 5 5-8h-4z"/>
+      </g>
+    </symbol>
+    <symbol id="pulse-redline-core-b" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+        <circle cx="12" cy="12" r="7"/>
+        <path d="M12 5v5l4 2M7 17l3-3"/>
+      </g>
+    </symbol>
+
+    <symbol id="spread-full-span-tidal-sweep-a" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+        <path d="M3 17c4-7 14-7 18 0M6 18c3-4 9-4 12 0"/>
+        <path d="M12 5v6M9 8l3 3 3-3"/>
+      </g>
+    </symbol>
+    <symbol id="spread-full-span-tidal-sweep-b" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+        <path d="M4 7c4 1 5 4 8 5 3-1 4-4 8-5M3 13c4 0 6 4 9 4s5-4 9-4"/>
+      </g>
+    </symbol>
+
+    <symbol id="spread-breakwater-fan-a" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+        <path d="M4 19V5M4 12h16"/>
+        <path d="m16 8 4 4-4 4M8 7l4 5-4 5"/>
+      </g>
+    </symbol>
+    <symbol id="spread-breakwater-fan-b" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+        <path d="M4 12 20 5v14z"/>
+        <path d="M8 10v4M12 8v8"/>
+      </g>
+    </symbol>
+
+    <symbol id="spread-aegis-fan-a" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+        <path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6z"/>
+        <path d="M8 13c2-3 6-3 8 0"/>
+      </g>
+    </symbol>
+    <symbol id="spread-aegis-fan-b" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+        <path d="M4 18c2-8 14-8 16 0M7 18c1-5 9-5 10 0"/>
+        <path d="M6 7h12M9 4v6M15 4v6"/>
+      </g>
+    </symbol>
+  </defs>
+</svg>

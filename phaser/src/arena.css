@@ -826,6 +826,19 @@
   line-height: 1;
 }
 
+.arena-choice-skill-icon {
+  width: calc(22px * var(--arena-scale));
+  height: calc(22px * var(--arena-scale));
+  flex: 0 0 calc(22px * var(--arena-scale));
+  overflow: visible;
+  color: var(--choice-accent);
+  filter: drop-shadow(0 0 calc(3px * var(--arena-scale)) rgb(34 184 207 / 28%));
+}
+
+.arena-choice-card--spread .arena-choice-skill-icon {
+  filter: drop-shadow(0 0 calc(3px * var(--arena-scale)) rgb(251 191 36 / 28%));
+}
+
 .arena-choice-card[data-choice-kind="upgrade"] .arena-choice-card-header,
 .arena-choice-card[data-choice-kind="protocol"] .arena-choice-card-header,
 .arena-choice-card[data-choice-kind="evolution"] .arena-choice-card-header {

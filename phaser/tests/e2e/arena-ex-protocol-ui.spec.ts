@@ -46,7 +46,18 @@ test("selects Protocol, Evolution I/II, and enters Limit Break", async ({
     "data-choice-id",
     /pulse\./,
   );
-  await expect(protocolCards.nth(1)).toContainText("RMB / E");
+  await expect(
+    protocolCards.locator(".arena-choice-skill-icon"),
+  ).toHaveCount(3);
+  await expect(
+    protocolCards
+      .first()
+      .locator(".arena-choice-skill-icon use"),
+  ).toHaveAttribute(
+    "href",
+    "/assets/ex-protocol-icons.svg#pulse-resonance-relay-a",
+  );
+  await expect(protocolCards.nth(1)).toContainText("右クリック / E");
   await expect(page.locator("#game")).toHaveScreenshot(
     "arena-ex-protocol-select.png",
     { maxDiffPixelRatio: 0.01 },
@@ -59,7 +70,7 @@ test("selects Protocol, Evolution I/II, and enters Limit Break", async ({
   );
   const evolutionOne = overlay.locator("[data-choice-kind='evolution']");
   await expect(evolutionOne).toHaveCount(2);
-  await expect(overlay).toContainText("EVOLUTION I");
+  await expect(overlay).toContainText("強化 1");
   await expect(evolutionOne.nth(0)).toContainText("1.5秒 → 2.25秒");
   const evolutionKeys = overlay
     .locator(".arena-choice-keyboard-hint")
@@ -73,9 +84,9 @@ test("selects Protocol, Evolution I/II, and enters Limit Break", async ({
   await page.evaluate(() =>
     window.__ARENA_DEBUG__?.forceExEvolutionSelect(2),
   );
-  await expect(overlay).toContainText("EVOLUTION II");
+  await expect(overlay).toContainText("強化 2");
   await expect(overlay).toContainText(
-    "MASTERY 自動解禁: 交差結合 / Crosslink",
+    "完成能力を解禁: 交差結合",
   );
   await expect(page.locator("#game")).toHaveScreenshot(
     "arena-ex-evolution-two.png",
@@ -92,7 +103,7 @@ test("selects Protocol, Evolution I/II, and enters Limit Break", async ({
     debug.grantXp(debug.getSnapshot().xpToNext);
   });
   await expectStatus(page, "upgradeSelect");
-  await expect(overlay).toContainText("LIMIT BREAK / BUILD");
+  await expect(overlay).toContainText("EX / 限界強化");
   await expect(overlay).not.toContainText("EXTRA LEVEL");
 });
 

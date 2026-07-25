@@ -219,7 +219,16 @@ export class ArenaChoiceOverlay {
     }
     const cardHeader = element("span", "arena-choice-card-header");
     const index = element("kbd", "arena-choice-index", card.indexLabel);
-    if (card.categoryIcon) {
+    if (card.skillIconId) {
+      cardHeader.append(
+        createSkillIcon(card.skillIconId),
+        element(
+          "span",
+          "arena-choice-role arena-choice-role--category",
+          card.role,
+        ),
+      );
+    } else if (card.categoryIcon) {
       const category = element(
         "span",
         `arena-choice-category-badge arena-choice-category-badge--${card.categoryIcon}`,
@@ -467,6 +476,18 @@ const CATEGORY_ICON_GLYPHS: Record<
   extra: "∞",
   signature: "S",
 };
+
+function createSkillIcon(protocolId: string): SVGSVGElement {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.classList.add("arena-choice-skill-icon");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+  const symbolId = `${protocolId.replaceAll(".", "-")}-a`;
+  use.setAttribute("href", `/assets/ex-protocol-icons.svg#${symbolId}`);
+  svg.append(use);
+  return svg;
+}
 
 function emptyInput(): ArenaChoiceInput {
   return {

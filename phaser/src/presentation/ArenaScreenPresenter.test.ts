@@ -434,10 +434,10 @@ describe("createArenaScreenViewModel", () => {
     );
 
     expect(viewModel.detailText).toContain(
-      "PROTOCOL: 交差導線 / Resonance Relay",
+      "固有スキル: 交差導線",
     );
     expect(viewModel.detailText).toContain(
-      "E1 延長結合 / E2 終点予充電 / MASTERY 交差結合",
+      "強化1 延長結合 / 強化2 終点予充電 / 完成能力 交差結合",
     );
   });
 

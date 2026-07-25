@@ -15,6 +15,7 @@ import {
   createExProtocolHudViewModel,
   formatExProtocolEventNotice,
 } from "../../presentation/ExProtocolPresenter";
+import { createEndlessWaveCueViewModel } from "../../presentation/EndlessWaveCuePresenter";
 import { getPlayerEffectiveMaxHp } from "../../simulation/systems/playerHealthSystem";
 import { HUD_LEFT_PANEL_BOUNDS } from "./PhaserHudLayout";
 import { getHelpHudButtonBounds } from "./PhaserHelpLayout";
@@ -493,6 +494,13 @@ export class PhaserHud {
       } else if (world.encounter.collapse.stage > 0) {
         labels.push(TEXT.hud.collapseActive(world.encounter.collapse.stage));
       }
+    }
+    if (labels.length === 0 && !world.practice) {
+      const cue = createEndlessWaveCueViewModel(
+        this.runConfig,
+        getDifficultyElapsed(world),
+      );
+      if (cue) labels.push(cue.text);
     }
     if (world.encounter.contract.choice === "overdrive") labels.push(TEXT.hud.overdriveContract);
     return labels.join(" / ");

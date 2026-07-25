@@ -8,6 +8,7 @@ import type {
   WeaponTypeId,
   WorldState,
 } from "../domain/types";
+import type { ExProtocolId } from "../domain/exProtocols";
 import { TEXT } from "../lang";
 import { getUpgradeRequirementProgress } from "../simulation/buildComposer";
 import { isExtraUpgradeId } from "../simulation/extraProgression";
@@ -63,6 +64,7 @@ export type ArenaChoiceCardViewModel = {
   rank: string | null;
   rankProgress: ArenaChoiceRankProgress | null;
   categoryIcon: ArenaChoiceCategoryIcon | null;
+  skillIconId?: ExProtocolId | null;
   description: string;
   metricLabel: string;
   metric: string;
@@ -212,20 +214,20 @@ function createUpgradeChoices(
     kind: "upgrade",
     phase: extra ? "extra" : "upgrade",
     eyebrow: limitBreak
-      ? "LIMIT BREAK / BUILD"
+      ? "EX / 限界強化"
       : extra
-        ? "EXTRA CYCLE / BUILD"
+        ? "EX / 周回強化"
         : "LEVEL UP / BUILD",
     statusLabel: limitBreak
       ? `EX Lv ${world.progression.extraLevel}`
       : extra
-        ? `EX強化 C${world.progression.extraCycle}`
+        ? `EX強化 ${world.progression.extraCycle}周目`
         : "通常強化",
     title: limitBreak
-      ? `限界強化 — EX Level ${world.progression.extraLevel} / Cycle ${world.progression.extraCycle}`
+      ? `限界強化 — EX Lv ${world.progression.extraLevel} / 周回 ${world.progression.extraCycle}`
       : extra
-        ? `EX強化選択 — Level ${world.progression.extraLevel} / Cycle ${world.progression.extraCycle}`
-        : `強化選択 — Level ${world.progression.level}`,
+        ? `EX強化選択 — Lv ${world.progression.extraLevel} / 周回 ${world.progression.extraCycle}`
+        : `強化選択 — Lv ${world.progression.level}`,
     subtitle: limitBreak
       ? `${formatSelectedExProtocolRoute(world)} / 未取得 ${world.progression.extraCycleRemaining.length}`
       : progressPresentation.text,
@@ -257,14 +259,14 @@ function createExProtocolChoices(world: WorldState): ArenaChoiceViewModel {
     phase: model.kind,
     eyebrow:
       model.kind === "protocol"
-        ? "SIGNATURE SKILL / SELECT"
-        : "EX PROTOCOL / EVOLUTION",
+        ? "BUILD COMPLETE / 固有スキル"
+        : "固有スキル / 強化",
     statusLabel:
       model.kind === "protocol"
         ? "固有スキル"
         : `EX Lv ${world.progression.extraLevel}`,
     title: isEvolution
-      ? `固有スキル強化 — EX Level ${world.progression.extraLevel}`
+      ? `固有スキル強化 — EX Lv ${world.progression.extraLevel}`
       : "固有スキル選択",
     subtitle: isEvolution
       ? `${model.title} / ${model.subtitle}`
@@ -287,6 +289,7 @@ function createExProtocolChoices(world: WorldState): ArenaChoiceViewModel {
         ? { current: evolutionTier, max: 2 }
         : null,
       categoryIcon: isEvolution ? "extra" : "signature",
+      skillIconId: card.protocolId,
       description: card.summary,
       metricLabel: card.facts[0]?.label ?? "効果",
       metric: card.facts[0]?.text ?? card.summary,
@@ -435,7 +438,7 @@ function createProgressPresentation(
 } {
   if (world.progression.buildCompletedAt !== null) {
     return {
-      text: `通常ビルド完成 / EXサイクル C${world.progression.extraCycle} / 未取得 ${world.progression.extraCycleRemaining.length}`,
+      text: `通常ビルド完成 / EX ${world.progression.extraCycle}周目 / 未取得 ${world.progression.extraCycleRemaining.length}`,
       progress: null,
     };
   }

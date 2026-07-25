@@ -33,6 +33,7 @@ export default defineConfig({
             { label: "自由練習モード", slug: "design/practice-sandbox" },
             { label: "ビルドと成長", slug: "design/build-and-progression" },
             { label: "武器アイデンティティ", slug: "design/weapon-identities" },
+            { label: "固有スキルの用語とアイコン", slug: "design/v08-ex-protocol-terminology-icons" },
             { label: "エンドレス後半", slug: "design/endless-escalation" },
             { label: "モードと戦闘展開", slug: "design/encounters-and-modes" },
             { label: "v0.7 最初のエクスペディション", slug: "design/v07-first-expedition" },

@@ -132,8 +132,29 @@ const rawSimulationConfig = {
     },
     {
       start: 30,
-      spawnInterval: 0.78,
-      speedMultiplier: 1.14,
+      spawnInterval: 0.75,
+      speedMultiplier: 1.02,
+      maxEnemies: 32,
+      spawnBudget: 1,
+      enemyWeights: {
+        chaser: 1,
+      },
+    },
+    {
+      start: 45,
+      spawnInterval: 1.3,
+      speedMultiplier: 1.04,
+      maxEnemies: 36,
+      spawnBudget: 3,
+      enemyWeights: {
+        chaser: 1,
+        brute: 0.5,
+      },
+    },
+    {
+      start: 60,
+      spawnInterval: 0.95,
+      speedMultiplier: 1.1,
       maxEnemies: 42,
       spawnBudget: 3,
       enemyWeights: {
@@ -143,9 +164,9 @@ const rawSimulationConfig = {
       },
     },
     {
-      start: 60,
-      spawnInterval: 0.68,
-      speedMultiplier: 1.22,
+      start: 75,
+      spawnInterval: 0.78,
+      speedMultiplier: 1.18,
       maxEnemies: 50,
       spawnBudget: 3,
       enemyWeights: {

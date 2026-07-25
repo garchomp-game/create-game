@@ -795,6 +795,39 @@ test("matches the fixed wave two HUD frame", async ({ page }) => {
   });
 });
 
+test("warns before the first Endless pressure step", async ({ page }) => {
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.restart();
+    window.__ARENA_DEBUG__?.setElapsed(27);
+    window.__ARENA_DEBUG__?.setPaused(true);
+  });
+
+  await expect(canvas).toHaveScreenshot("arena-wave-warning.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test("shows the lower-density recovery window after the pressure step", async ({
+  page,
+}) => {
+  await gotoArena(page);
+  const canvas = page.locator("canvas");
+
+  await page.evaluate(() => {
+    window.__ARENA_DEBUG__?.restart();
+    window.__ARENA_DEBUG__?.setElapsed(46);
+    window.__ARENA_DEBUG__?.setEnemyVisualFixture("wave2");
+    window.__ARENA_DEBUG__?.setPaused(true);
+  });
+
+  await expect(canvas).toHaveScreenshot("arena-wave-relief.png", {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
 test("matches the fixed wave three HUD frame", async ({ page }) => {
   await gotoArena(page);
   const canvas = page.locator("canvas");

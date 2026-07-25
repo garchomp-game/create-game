@@ -30,7 +30,7 @@ describe("EX Protocol choice presentation", () => {
         { id: "pulse.resonance-relay", inputHint: null },
         {
           id: "pulse.rebound-overdrive",
-          inputHint: "RMB / E で発動",
+          inputHint: "右クリック / E で発動",
         },
         { id: "pulse.redline-core", inputHint: null },
       ],
@@ -40,11 +40,13 @@ describe("EX Protocol choice presentation", () => {
       "効果",
       "制約",
     ]);
+    expect(viewModel?.cards[0]?.facts[0]?.text).toContain("3回");
     expect(viewModel?.cards[1]?.facts[0]?.text).toContain("2秒以内");
     expect(viewModel?.cards[2]?.facts[2]?.text).toContain("70%");
+    expect(viewModel?.cards[2]?.facts[0]?.text).toContain("3回");
   });
 
-  it("presents Evolution I differences and Evolution II automatic Mastery", () => {
+  it("presents first-stage differences and second-stage automatic completion", () => {
     const { world, config } = createCandidate("pulse");
     offerExProtocolSelection(world, config, []);
     chooseExProtocol(world, 0, config, []);
@@ -55,7 +57,7 @@ describe("EX Protocol choice presentation", () => {
 
     expect(evolutionOne).toMatchObject({
       kind: "evolution",
-      title: "交差導線 / Resonance Relay / EVOLUTION I",
+      title: "交差導線 / 強化 1",
       cards: [
         { id: "extended-coupling" },
         { id: "dense-conduit" },
@@ -74,9 +76,9 @@ describe("EX Protocol choice presentation", () => {
       "residual-anchor",
       "endpoint-priming",
     ]);
-    expect(evolutionTwo?.subtitle).toContain("E1 延長結合");
+    expect(evolutionTwo?.subtitle).toContain("強化1 延長結合");
     expect(evolutionTwo?.footer).toContain(
-      "MASTERY 自動解禁: 交差結合 / Crosslink",
+      "完成能力を解禁: 交差結合",
     );
   });
 });
@@ -108,7 +110,7 @@ describe("EX Protocol HUD presentation", () => {
     expect(createExProtocolHudViewModel(world, config)).toMatchObject({
       name: "交差導線",
       primary: "記録 0.9s",
-      secondary: "別の敵へ当てると連鎖",
+      secondary: "次は別の敵へ当てる",
     });
   });
 
@@ -138,7 +140,7 @@ describe("EX Protocol HUD presentation", () => {
     expect(createExProtocolHudViewModel(world, config)).toMatchObject({
       name: "赤熱炉心",
       primary: "稼働中",
-      secondary: "集束1段前から強化 / 最大HP -30%",
+      secondary: "同じ敵へ3回で強化 / 最大HP -30%",
     });
   });
 
@@ -163,8 +165,8 @@ describe("EX Protocol HUD presentation", () => {
 
     expect(createExProtocolHudViewModel(world, config)).toMatchObject({
       name: "全幅潮汐掃討",
-      primary: "発動可能  [RMB / E]  CHARGE 1/1",
-      secondary: "捕捉 3/3",
+      primary: "発動可能  [右クリック / E]  準備 1/1",
+      secondary: "同時命中 3/3",
     });
   });
 
@@ -191,8 +193,8 @@ describe("EX Protocol HUD presentation", () => {
 
     expect(createExProtocolHudViewModel(world, config)).toMatchObject({
       name: "防波扇",
-      primary: "CHARGE 1/1",
-      secondary: "再装填 4.3s / 捕捉 2/2",
+      primary: "準備 1/1",
+      secondary: "再装填 4.3s / 近距離命中 2/2",
     });
   });
 
@@ -213,7 +215,7 @@ describe("EX Protocol HUD presentation", () => {
       primary: "自動迎撃",
       secondary: "完全防護 1/1",
     });
-    expect(formatSelectedExProtocolRoute(world)).toContain("MASTERY");
+    expect(formatSelectedExProtocolRoute(world)).toContain("完成能力");
   });
 
   it("uses player-facing notices for rejection and progression events", () => {
@@ -239,7 +241,7 @@ describe("EX Protocol HUD presentation", () => {
         exLevel: 2,
         elapsed: 4,
       }),
-    ).toBe("MASTERY 解禁: 完全帰還");
+    ).toBe("完成能力 解禁: 完全帰還");
   });
 });
 
@@ -256,6 +258,9 @@ function createCandidate(weaponType: WeaponTypeId): {
         ? "candidate-ex-endless-c2"
         : undefined,
   });
+  if (weaponType === "pulse") {
+    session.world.runtime.pulseFocusMaxStacks = 4;
+  }
   return { world: session.world, config: session.config };
 }
 

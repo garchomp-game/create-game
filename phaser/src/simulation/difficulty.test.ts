@@ -12,16 +12,32 @@ describe("getDifficulty", () => {
 
   it("switches to the middle band at 30 seconds", () => {
     expect(getDifficulty(30)).toEqual({
-      spawnInterval: 0.78,
-      speedMultiplier: 1.14,
+      spawnInterval: 0.75,
+      speedMultiplier: 1.02,
+      maxEnemies: 32,
+    });
+  });
+
+  it("opens the lower-density brute band at 45 seconds", () => {
+    expect(getDifficulty(45)).toEqual({
+      spawnInterval: 1.3,
+      speedMultiplier: 1.04,
+      maxEnemies: 36,
+    });
+  });
+
+  it("raises mixed pressure at 60 seconds", () => {
+    expect(getDifficulty(60)).toEqual({
+      spawnInterval: 0.95,
+      speedMultiplier: 1.1,
       maxEnemies: 42,
     });
   });
 
-  it("switches to the ranged introduction band at 60 seconds", () => {
-    expect(getDifficulty(60)).toEqual({
-      spawnInterval: 0.68,
-      speedMultiplier: 1.22,
+  it("introduces ranged enemies at 75 seconds", () => {
+    expect(getDifficulty(75)).toEqual({
+      spawnInterval: 0.78,
+      speedMultiplier: 1.18,
       maxEnemies: 50,
     });
   });

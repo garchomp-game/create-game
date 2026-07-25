@@ -13,6 +13,7 @@ import type {
   SimulationConfig,
   WorldState,
 } from "../domain/types";
+import { getProtocolFocusTriggerStacks } from "../simulation/protocols/protocolFocus";
 import { getPlayerCapacity } from "../simulation/systems/playerHealthSystem";
 
 export type ExProtocolChoiceFactViewModel = {
@@ -22,6 +23,7 @@ export type ExProtocolChoiceFactViewModel = {
 
 export type ExProtocolChoiceCardViewModel = {
   id: string;
+  protocolId: ExProtocolId;
   role: string;
   title: string;
   summary: string;
@@ -69,7 +71,9 @@ export function createExProtocolChoiceViewModel(
       title: "固有スキルを選択",
       subtitle: "通常ビルドの仕上げとなる能力を1つ選択",
       footer: "1 / 2 / 3 で選択",
-      cards: pending.choices.map(createProtocolCard),
+      cards: pending.choices.map((protocolId) =>
+        createProtocolCard(world, protocolId),
+      ),
     };
   }
   if (
@@ -81,12 +85,12 @@ export function createExProtocolChoiceViewModel(
     const tier = pending.kind === "evolution-one" ? 1 : 2;
     return {
       kind: "evolution",
-      title: `${formatProtocolName(definition)} / EVOLUTION ${tier === 1 ? "I" : "II"}`,
-      subtitle: `CURRENT: ${formatCurrentSignature(world, pending.protocolId)}`,
+      title: `${definition.displayNameJa} / 強化 ${tier}`,
+      subtitle: `現在: ${formatCurrentSignature(world, pending.protocolId)}`,
       footer:
         tier === 2
-          ? `選択後に MASTERY 自動解禁: ${definition.mastery.displayNameJa} / ${definition.mastery.displayNameEn} - ${formatMasteryEffect(pending.protocolId)}`
-          : "1 / 2 で進化先を選択",
+          ? `選択後に完成能力を解禁: ${definition.mastery.displayNameJa} - ${formatMasteryEffect(pending.protocolId)}`
+          : "1 / 2 で強化先を選択",
       cards: pending.choices.map((choiceId) =>
         createEvolutionCard(pending.protocolId, tier, choiceId),
       ),
@@ -104,6 +108,12 @@ export function createExProtocolHudViewModel(
   if (progression?.status !== "selected") return null;
 
   const definition = requireProtocol(progression.route.protocolId);
+  const focusTriggerStacks = getProtocolFocusTriggerStacks(
+    world.runtime.pulseFocusMaxStacks,
+    "focusTriggerStacksBelowMaximum" in definition.signature
+      ? definition.signature.focusTriggerStacksBelowMaximum
+      : 0,
+  );
   const base = {
     name: definition.displayNameJa,
     exLevel: world.progression.extraLevel,
@@ -119,10 +129,10 @@ export function createExProtocolHudViewModel(
       ...base,
       primary: runtime.anchor
         ? `記録 ${formatTenths(remaining)}`
-        : "集束1段前で記録",
+        : `同じ敵へ${focusTriggerStacks}回で記録`,
       secondary: runtime.anchor
-        ? "別の敵へ当てると連鎖"
-        : "同じ敵へ連続命中",
+        ? "次は別の敵へ当てる"
+        : "連続して当てる",
     };
   }
   if (runtime.kind === "rebound-overdrive") {
@@ -140,7 +150,7 @@ export function createExProtocolHudViewModel(
         armedRemaining > 0
           ? `武装 ${formatTenths(armedRemaining)}`
           : cooldownRemaining <= 0
-            ? "発動可能  [RMB / E]"
+            ? "発動可能  [右クリック / E]"
             : `再装填 ${formatTenths(cooldownRemaining)}`,
       secondary:
         armedRemaining > 0 && cooldownRemaining > 0
@@ -157,7 +167,7 @@ export function createExProtocolHudViewModel(
     return {
       ...base,
       primary: "稼働中",
-      secondary: `集束1段前から強化 / 最大HP -${ratio}%`,
+      secondary: `同じ敵へ${focusTriggerStacks}回で強化 / 最大HP -${ratio}%`,
     };
   }
   if (runtime.kind === "full-span-tidal-sweep") {
@@ -171,9 +181,9 @@ export function createExProtocolHudViewModel(
       ...base,
       primary:
         runtime.charges > 0
-          ? `発動可能  [RMB / E]  CHARGE ${runtime.charges}/${maximumCharges}`
-          : `CHARGE ${runtime.charges}/${maximumCharges}`,
-      secondary: `捕捉 ${Math.min(capture, fullSpanTidalSweep.signature.chargeDistinctTargets)}/${fullSpanTidalSweep.signature.chargeDistinctTargets}`,
+          ? `発動可能  [右クリック / E]  準備 ${runtime.charges}/${maximumCharges}`
+          : `準備 ${runtime.charges}/${maximumCharges}`,
+      secondary: `同時命中 ${Math.min(capture, fullSpanTidalSweep.signature.chargeDistinctTargets)}/${fullSpanTidalSweep.signature.chargeDistinctTargets}`,
     };
   }
   if (runtime.kind === "breakwater-fan") {
@@ -195,15 +205,15 @@ export function createExProtocolHudViewModel(
     return {
       ...base,
       primary: ready
-        ? `発動可能  [RMB / E]  HP -${hpCost}`
+        ? `発動可能  [右クリック / E]  HP -${hpCost}`
         : !canPay && runtime.charges > 0 && cooldownRemaining <= 0
           ? "HP不足"
-          : `CHARGE ${runtime.charges}/${breakwaterFan.signature.maxCharges}`,
+          : `準備 ${runtime.charges}/${breakwaterFan.signature.maxCharges}`,
       secondary: [
         cooldownRemaining > 0
           ? `再装填 ${formatTenths(cooldownRemaining)}`
           : null,
-        `捕捉 ${Math.min(capture, breakwaterFan.signature.chargeDistinctTargets)}/${breakwaterFan.signature.chargeDistinctTargets}`,
+        `近距離命中 ${Math.min(capture, breakwaterFan.signature.chargeDistinctTargets)}/${breakwaterFan.signature.chargeDistinctTargets}`,
       ]
         .filter(Boolean)
         .join(" / "),
@@ -220,9 +230,9 @@ export function createExProtocolHudViewModel(
 
 export function formatSelectedExProtocolRoute(world: WorldState): string {
   const progression = world.progression.exProtocol;
-  if (progression?.status !== "selected") return "PROTOCOL 未選択";
+  if (progression?.status !== "selected") return "固有スキル未選択";
   const definition = requireProtocol(progression.route.protocolId);
-  return `${formatProtocolName(definition)} / ${formatRouteLabel(world)}`;
+  return `${definition.displayNameJa} / ${formatRouteLabel(world)}`;
 }
 
 export function formatExProtocolRecordRoute(
@@ -238,25 +248,25 @@ export function formatExProtocolRecordRoute(
   );
   const route = [
     evolutionOne
-      ? `E1 ${evolutionOne.displayNameJa}`
-      : "E1 未到達",
+      ? `強化1 ${evolutionOne.displayNameJa}`
+      : "強化1 未到達",
     evolutionTwo
-      ? `E2 ${evolutionTwo.displayNameJa}`
-      : "E2 未到達",
+      ? `強化2 ${evolutionTwo.displayNameJa}`
+      : "強化2 未到達",
     record.masteryId
-      ? `MASTERY ${definition.mastery.displayNameJa}`
-      : "MASTERY 未解禁",
+      ? `完成能力 ${definition.mastery.displayNameJa}`
+      : "完成能力 未解禁",
   ].join(" / ");
-  return `PROTOCOL: ${formatProtocolName(definition)}\n進化経路: ${route}`;
+  return `固有スキル: ${definition.displayNameJa}\n強化経路: ${route}`;
 }
 
 export function formatExProtocolEventNotice(event: GameEvent): string | null {
   if (event.type === "ex.mastery.unlocked") {
     const definition = requireProtocol(event.protocolId);
-    return `MASTERY 解禁: ${definition.mastery.displayNameJa}`;
+    return `完成能力 解禁: ${definition.mastery.displayNameJa}`;
   }
   if (event.type === "ex.limit_break.connected") {
-    return "LIMIT BREAK 接続";
+    return "限界強化 接続";
   }
   if (event.type === "ex.relay.blocked") {
     return "導線遮断";
@@ -265,7 +275,7 @@ export function formatExProtocolEventNotice(event: GameEvent): string | null {
     const labels = {
       "already-armed": "すでに武装中",
       cooldown: "再装填中",
-      "not-charged": "CHARGE不足",
+      "not-charged": "準備不足",
       "insufficient-hp": "HP不足",
     } as const;
     return labels[event.reason];
@@ -274,7 +284,7 @@ export function formatExProtocolEventNotice(event: GameEvent): string | null {
     event.type === "ex.tidal.charged" ||
     event.type === "ex.breakwater.charged"
   ) {
-    return "CHARGE READY";
+    return "発動準備 完了";
   }
   if (event.type === "ex.special.armed") {
     return "反跳過給 武装";
@@ -284,25 +294,27 @@ export function formatExProtocolEventNotice(event: GameEvent): string | null {
     return `${definition.displayNameJa} 発動`;
   }
   if (event.type === "ex.aegis.perfect-guard.charged") {
-    return "完全防護 READY";
+    return "完全防護 準備完了";
   }
   return null;
 }
 
 function createProtocolCard(
+  world: WorldState,
   protocolId: ExProtocolId,
 ): ExProtocolChoiceCardViewModel {
   const definition = requireProtocol(protocolId);
-  const copy = getProtocolCopy(protocolId);
-  const title = formatProtocolName(definition);
+  const copy = getProtocolCopy(world, protocolId);
+  const title = definition.displayNameJa;
   return {
     id: protocolId,
+    protocolId,
     role: copy.role,
     title,
     summary: copy.summary,
     facts: copy.facts,
     inputHint:
-      definition.interaction === "active" ? "RMB / E で発動" : null,
+      definition.interaction === "active" ? "右クリック / E で発動" : null,
     ariaLabel: [
       title,
       copy.role,
@@ -326,30 +338,36 @@ function createEvolutionCard(
     );
   }
   const effect = formatEvolutionEffect(protocolId, tier, evolutionId);
-  const title = `${option.displayNameJa} / ${option.displayNameEn}`;
+  const title = option.displayNameJa;
   return {
     id: evolutionId,
-    role: `${definition.displayNameJa} / EVOLUTION ${tier === 1 ? "I" : "II"}`,
+    protocolId,
+    role: `${definition.displayNameJa} / 強化 ${tier}`,
     title,
     summary: effect,
     facts: [{ label: "効果", text: effect }],
     inputHint: null,
-    ariaLabel: `${title}。EFFECT: ${effect}`,
+    ariaLabel: `${title}。効果: ${effect}`,
   };
 }
 
 function getProtocolCopy(
+  world: WorldState,
   protocolId: ExProtocolId,
 ): Pick<ExProtocolChoiceCardViewModel, "role" | "summary" | "facts"> {
   if (protocolId === resonanceRelay.id) {
+    const triggerStacks = getProtocolFocusTriggerStacks(
+      world.runtime.pulseFocusMaxStacks,
+      resonanceRelay.signature.focusTriggerStacksBelowMaximum,
+    );
     return {
-      role: "自動 / 集束連鎖",
+      role: "自動 / 連続命中",
       summary:
-        "集束が最大の1段階手前に達した地点と次の敵を結び、間の敵へ連鎖する。",
+        `同じ敵へ${triggerStacks}回続けて当てた場所と、次に当てた別の敵を結ぶ。`,
       facts: [
         {
           label: "発動条件",
-          text: `同じ敵への連続命中で集束が最大の1段階手前に達すると、その場所を${resonanceRelay.signature.anchorLifetimeSeconds}秒記録。時間内に別の敵へ通常Pulse弾を当てる。倒した敵の場所も記録する。`,
+          text: `同じ敵へ通常Pulse弾を${triggerStacks}回続けて当てる。その場所を${resonanceRelay.signature.anchorLifetimeSeconds}秒記録するので、時間内に別の敵へ当てる。`,
         },
         {
           label: "効果",
@@ -369,7 +387,7 @@ function getProtocolCopy(
       facts: [
         {
           label: "発動条件",
-          text: `RMB / Eを押し、${reboundOverdrive.signature.armDurationSeconds}秒以内に通常Pulse弾を撃つ。その弾を壁か障害物で跳ね返す。`,
+          text: `右クリック / Eを押し、${reboundOverdrive.signature.armDurationSeconds}秒以内に通常Pulse弾を撃つ。その弾を壁か障害物で跳ね返す。`,
         },
         {
           label: "効果",
@@ -383,14 +401,18 @@ function getProtocolCopy(
     };
   }
   if (protocolId === redlineCore.id) {
+    const triggerStacks = getProtocolFocusTriggerStacks(
+      world.runtime.pulseFocusMaxStacks,
+      redlineCore.signature.focusTriggerStacksBelowMaximum,
+    );
     return {
       role: "自動 / HP交換火力",
       summary:
-        "最大HPを減らす代わりに、集束が最大の1段階手前に達する命中を高火力化する。",
+        `最大HPを減らす代わりに、同じ敵への${triggerStacks}回目の命中を強化する。`,
       facts: [
         {
           label: "発動条件",
-          text: "同じ敵へ通常Pulse弾を連続で当て、集束が最大の1段階手前に達した一撃から発動する。",
+          text: `同じ敵へ通常Pulse弾を${triggerStacks}回続けて当てる。${triggerStacks}回目から発動する。`,
         },
         {
           label: "効果",
@@ -410,7 +432,7 @@ function getProtocolCopy(
       facts: [
         {
           label: "発動条件",
-          text: `1回の通常Spread射撃を別々の敵${fullSpanTidalSweep.signature.chargeDistinctTargets}体へ当てるとCHARGE。RMB / Eで発動する。`,
+          text: `1回の通常Spread射撃を別々の敵${fullSpanTidalSweep.signature.chargeDistinctTargets}体へ当てると準備完了。右クリック / Eで発動する。`,
         },
         {
           label: "効果",
@@ -418,7 +440,7 @@ function getProtocolCopy(
         },
         {
           label: "制約",
-          text: `開始時はCHARGE 0、最大${fullSpanTidalSweep.signature.maxCharges}。発動後は通常Spread射撃でもう一度ためる必要がある。`,
+          text: `開始時の準備回数は0、最大${fullSpanTidalSweep.signature.maxCharges}回。発動後は通常Spread射撃でもう一度ためる必要がある。`,
         },
       ],
     };
@@ -430,11 +452,11 @@ function getProtocolCopy(
       facts: [
         {
           label: "発動条件",
-          text: `プレイヤーから${breakwaterFan.signature.chargeRangePx}px以内で、1回の通常Spread射撃を別々の敵${breakwaterFan.signature.chargeDistinctTargets}体へ当てるとCHARGE。RMB / Eで発動する。`,
+          text: `プレイヤーから${breakwaterFan.signature.chargeRangePx}px以内で、1回の通常Spread射撃を別々の敵${breakwaterFan.signature.chargeDistinctTargets}体へ当てると準備完了。右クリック / Eで発動する。`,
         },
         {
           label: "効果",
-          text: `前方${breakwaterFan.signature.coneAngleDegrees}°・${breakwaterFan.signature.rangePx}px内の最大${breakwaterFan.signature.maxTargets}体を攻撃し、通常敵をpush。`,
+          text: `前方${breakwaterFan.signature.coneAngleDegrees}°・${breakwaterFan.signature.rangePx}px内の最大${breakwaterFan.signature.maxTargets}体を攻撃し、通常敵を押し戻す。`,
         },
         {
           label: "制約",
@@ -530,13 +552,13 @@ function formatEvolutionEffect(
       tier === 2 &&
       evolutionId === fullSpanTidalSweep.evolutionTwo[0].id
     ) {
-      return `最大charge: ${fullSpanTidalSweep.signature.maxCharges} → ${fullSpanTidalSweep.evolutionTwo[0].maxCharges}。選択時chargeは増えない`;
+      return `最大準備回数: ${fullSpanTidalSweep.signature.maxCharges} → ${fullSpanTidalSweep.evolutionTwo[0].maxCharges}。選択時の回数は増えない`;
     }
     if (
       tier === 2 &&
       evolutionId === fullSpanTidalSweep.evolutionTwo[1].id
     ) {
-      return `${fullSpanTidalSweep.evolutionTwo[1].minimumDistinctActivationHits}体以上へ命中すると現在の通常射撃timerを${formatPercent(fullSpanTidalSweep.evolutionTwo[1].currentNormalShotTimerMultiplier)}へ短縮`;
+      return `${fullSpanTidalSweep.evolutionTwo[1].minimumDistinctActivationHits}体以上へ命中すると現在の通常射撃間隔を${formatPercent(fullSpanTidalSweep.evolutionTwo[1].currentNormalShotTimerMultiplier)}へ短縮`;
     }
   }
   if (protocolId === breakwaterFan.id) {
@@ -577,13 +599,13 @@ function formatMasteryEffect(protocolId: ExProtocolId): string {
     return `中間${resonanceRelay.mastery.minimumEligibleIntermediateTargets}体以上で各対象${formatPercent(resonanceRelay.mastery.damageMultiplier)}`;
   }
   if (protocolId === reboundOverdrive.id) {
-    return `反射後${reboundOverdrive.mastery.uniquePostRicochetHits}体命中で残りcooldownを${formatPercent(reboundOverdrive.mastery.remainingCooldownMultiplier)}へ短縮`;
+    return `反射後${reboundOverdrive.mastery.uniquePostRicochetHits}体命中で再使用までの残り時間を${formatPercent(reboundOverdrive.mastery.remainingCooldownMultiplier)}へ短縮`;
   }
   if (protocolId === redlineCore.id) {
     return `回復貫通枠の初回命中を赤熱命中の${formatPercent(redlineCore.mastery.extraCapacityHitDamageMultiplier)}へ増幅`;
   }
   if (protocolId === fullSpanTidalSweep.id) {
-    return `${fullSpanTidalSweep.mastery.minimumDistinctActivationHits}体以上で通常Sweep charge +${fullSpanTidalSweep.mastery.grantCoreSpreadSweepCharge}`;
+    return `${fullSpanTidalSweep.mastery.minimumDistinctActivationHits}体以上で通常掃射の準備回数+${fullSpanTidalSweep.mastery.grantCoreSpreadSweepCharge}`;
   }
   if (protocolId === breakwaterFan.id) {
     return `${breakwaterFan.mastery.minimumAffectedNonBossTargets}体以上で移動速度${formatPercent(breakwaterFan.mastery.moveSpeedMultiplier)}を${breakwaterFan.mastery.durationSeconds}秒`;
@@ -606,13 +628,13 @@ function formatCurrentSignature(
     throw new Error(`EX Protocol "${protocolId}" is not selected.`);
   }
   const route = progression.route;
-  if (route.evolutionOneId === null) return "SIGNATURE 稼働中";
+  if (route.evolutionOneId === null) return "基本能力 稼働中";
   const definition = requireProtocol(protocolId);
   const evolutionOne = definition.evolutionOne.find(
     (option) => option.id === route.evolutionOneId,
   );
   if (!evolutionOne) throw new Error("Selected Evolution I is missing.");
-  return `E1 ${evolutionOne.displayNameJa} / SIGNATURE 稼働中`;
+  return `強化1 ${evolutionOne.displayNameJa} / 基本能力 稼働中`;
 }
 
 function formatRouteLabel(world: WorldState): string {
@@ -626,9 +648,9 @@ function formatRouteLabel(world: WorldState): string {
     (option) => option.id === progression.route.evolutionTwoId,
   );
   return [
-    e1 ? `E1 ${e1.displayNameJa}` : "E1 -",
-    e2 ? `E2 ${e2.displayNameJa}` : "E2 -",
-    progression.route.masteryUnlocked ? "MASTERY" : null,
+    e1 ? `強化1 ${e1.displayNameJa}` : "強化1 -",
+    e2 ? `強化2 ${e2.displayNameJa}` : "強化2 -",
+    progression.route.masteryUnlocked ? "完成能力" : null,
   ]
     .filter(Boolean)
     .join(" / ");
@@ -657,12 +679,6 @@ function requireProtocol(protocolId: ExProtocolId) {
   const definition = getExProtocolDefinition(protocolId);
   if (!definition) throw new Error(`Unknown EX Protocol "${protocolId}".`);
   return definition;
-}
-
-function formatProtocolName(
-  definition: ReturnType<typeof requireProtocol>,
-): string {
-  return `${definition.displayNameJa} / ${definition.displayNameEn}`;
 }
 
 function formatPercent(multiplier: number): string {

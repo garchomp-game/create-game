@@ -272,13 +272,16 @@ describe("stepWorld", () => {
     expect(selectEnemyTypeForWave(GAME_CONFIG, getWaveBand(GAME_CONFIG, 0), 1, () => 0.99)).toBe(
       "chaser",
     );
-    expect(selectEnemyTypeForWave(GAME_CONFIG, getWaveBand(GAME_CONFIG, 35), 3, () => 0.5)).toBe(
+    expect(selectEnemyTypeForWave(GAME_CONFIG, getWaveBand(GAME_CONFIG, 35), 1, () => 0.99)).toBe(
+      "chaser",
+    );
+    expect(selectEnemyTypeForWave(GAME_CONFIG, getWaveBand(GAME_CONFIG, 50), 3, () => 0.99)).toBe(
       "brute",
     );
-    expect(selectEnemyTypeForWave(GAME_CONFIG, getWaveBand(GAME_CONFIG, 35), 1, () => 0.99)).toBe(
+    expect(selectEnemyTypeForWave(GAME_CONFIG, getWaveBand(GAME_CONFIG, 65), 1, () => 0.99)).toBe(
       "fast",
     );
-    expect(selectEnemyTypeForWave(GAME_CONFIG, getWaveBand(GAME_CONFIG, 60), 3, () => 0.95)).toBe(
+    expect(selectEnemyTypeForWave(GAME_CONFIG, getWaveBand(GAME_CONFIG, 80), 3, () => 0.99)).toBe(
       "ranged",
     );
   });

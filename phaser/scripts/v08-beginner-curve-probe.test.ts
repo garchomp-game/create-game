@@ -101,13 +101,34 @@ describe("v0.8 beginner curve baseline probe", () => {
         );
       }
       for (const weaponType of ["pulse", "spread"] as const) {
-        expect(pressureReport.summaries[weaponType].runs).toBe(
+        const summary = pressureReport.summaries[weaponType];
+        expect(summary.runs).toBe(
           seeds.length,
         );
         expect(
-          pressureReport.summaries[weaponType].milestones.level5
-            .reached,
+          summary.milestones.level5.reached,
         ).toBeGreaterThan(0);
+        if (fullProbe) {
+          const beforeBoundary = summary.pressureBins.find(
+            (bin) => bin.start === 25,
+          )!;
+          const afterBoundary = summary.pressureBins.find(
+            (bin) => bin.start === 30,
+          )!;
+          const bruteIntroduction = summary.pressureBins.find(
+            (bin) => bin.start === 45,
+          )!;
+          expect(afterBoundary.spawned.p50).toBeGreaterThanOrEqual(7);
+          expect(afterBoundary.spawned.p50).toBeLessThanOrEqual(9);
+          expect(afterBoundary.averageOnScreenEnemies.p50).toBeLessThanOrEqual(
+            beforeBoundary.averageOnScreenEnemies.p50 * 2,
+          );
+          expect(afterBoundary.spawnedByTypeP50.fast).toBe(0);
+          expect(afterBoundary.spawnedByTypeP50.ranged).toBe(0);
+          expect(bruteIntroduction.spawnedByTypeP50.brute).toBeGreaterThan(0);
+          expect(bruteIntroduction.spawnedByTypeP50.fast).toBe(0);
+          expect(bruteIntroduction.spawnedByTypeP50.ranged).toBe(0);
+        }
       }
     },
     fullProbe ? 900_000 : 120_000,

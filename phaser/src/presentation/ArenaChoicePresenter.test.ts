@@ -84,7 +84,7 @@ describe("createArenaChoiceViewModel", () => {
 
     const model = createArenaChoiceViewModel(world, SIMULATION_CONFIG);
 
-    expect(model.title).toBe("強化選択 — Level 4");
+    expect(model.title).toBe("強化選択 — Lv 4");
     expect(model.keyboardHint).toBe("数字キー 1 / 2 / 3 でも選択できます");
     expect(model.subtitleProgress).toEqual({ current: 1, required: 7 });
     expect(model).toMatchObject({
@@ -122,10 +122,10 @@ describe("createArenaChoiceViewModel", () => {
 
     const model = createArenaChoiceViewModel(world, SIMULATION_CONFIG);
 
-    expect(model.title).toBe("EX強化選択 — Level 6 / Cycle 2");
+    expect(model.title).toBe("EX強化選択 — Lv 6 / 周回 2");
     expect(model.phase).toBe("extra");
-    expect(model.statusLabel).toBe("EX強化 C2");
-    expect(model.subtitle).toBe("通常ビルド完成 / EXサイクル C2 / 未取得 2");
+    expect(model.statusLabel).toBe("EX強化 2周目");
+    expect(model.subtitle).toBe("通常ビルド完成 / EX 2周目 / 未取得 2");
     expect(model.subtitleProgress).toBeNull();
     expect(model.cards[0]).toMatchObject({
       id: "limitPower",
@@ -164,7 +164,7 @@ describe("createArenaChoiceViewModel", () => {
       visible: true,
       kind: "protocol",
       phase: "protocol",
-      eyebrow: "SIGNATURE SKILL / SELECT",
+      eyebrow: "BUILD COMPLETE / 固有スキル",
       statusLabel: "固有スキル",
       title: "固有スキル選択",
       subtitle: "通常ビルド完成 / 通常ビルドの仕上げとなる能力を1つ選択",
@@ -176,8 +176,9 @@ describe("createArenaChoiceViewModel", () => {
       id: "pulse.rebound-overdrive",
       tone: "pulse",
       categoryIcon: "signature",
+      skillIconId: "pulse.rebound-overdrive",
       facts: [{ label: "発動条件" }, { label: "効果" }, { label: "制約" }],
-      inputHint: "RMB / E で発動",
+      inputHint: "右クリック / E で発動",
       selection: { kind: "upgrade", index: 1 },
     });
   });
@@ -202,16 +203,17 @@ describe("createArenaChoiceViewModel", () => {
       kind: "evolution",
       phase: "evolution",
       statusLabel: "EX Lv 1",
-      title: "固有スキル強化 — EX Level 1",
+      title: "固有スキル強化 — EX Lv 1",
       keyboardHint: "数字キー 1 / 2 でも選択できます",
       footer: null,
     });
-    expect(model.subtitle).toContain("EVOLUTION I");
+    expect(model.subtitle).toContain("強化 1");
     expect(model.cards[0]).toMatchObject({
       kind: "evolution",
       role: "固有スキル",
       rankProgress: { current: 1, max: 2 },
       categoryIcon: "extra",
+      skillIconId: "pulse.resonance-relay",
       selection: { kind: "upgrade", index: 0 },
     });
   });
@@ -249,10 +251,10 @@ describe("createArenaChoiceViewModel", () => {
 
     const model = createArenaChoiceViewModel(session.world, session.config);
 
-    expect(model.eyebrow).toBe("LIMIT BREAK / BUILD");
+    expect(model.eyebrow).toBe("EX / 限界強化");
     expect(model.statusLabel).toBe("EX Lv 3");
-    expect(model.title).toBe("限界強化 — EX Level 3 / Cycle 1");
-    expect(model.subtitle).toContain("交差導線 / Resonance Relay");
+    expect(model.title).toBe("限界強化 — EX Lv 3 / 周回 1");
+    expect(model.subtitle).toContain("交差導線");
     expect(model.subtitle).toContain("未取得 4");
   });
 

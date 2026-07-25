@@ -26,6 +26,7 @@ export type EarlyCurveWeaponType = Extract<
 >;
 
 export type EarlyCurveProbeOptions = {
+  config?: SimulationConfig;
   seeds: readonly number[];
   durationSeconds: number;
   frameRate?: number;
@@ -184,6 +185,7 @@ const CHOICE_STATUSES = new Set<WorldState["state"]["status"]>([
 export function runEarlyCurveProbe(
   options: EarlyCurveProbeOptions,
 ): EarlyCurveProbeReport {
+  const config = options.config ?? SIMULATION_CONFIG;
   const frameRate = options.frameRate ?? 20;
   const pressureWindowSeconds = options.pressureWindowSeconds ?? 60;
   const pressureBinSeconds = options.pressureBinSeconds ?? 5;
@@ -200,6 +202,7 @@ export function runEarlyCurveProbe(
     for (const weaponType of weaponTypes) {
       runs.push(
         runEarlyCurveProbeOnce({
+          config,
           seed,
           weaponType,
           durationSeconds: options.durationSeconds,
@@ -247,6 +250,7 @@ export function runEarlyCurveProbe(
 }
 
 function runEarlyCurveProbeOnce(options: {
+  config: SimulationConfig;
   seed: number;
   weaponType: EarlyCurveWeaponType;
   durationSeconds: number;
@@ -260,7 +264,7 @@ function runEarlyCurveProbeOnce(options: {
   patrolStrategy: AutoPilotPatrolStrategy;
   stopWhenExStarts: boolean;
 }): EarlyCurveProbeRun {
-  const session = new ArenaSession(SIMULATION_CONFIG);
+  const session = new ArenaSession(options.config);
   session.start({
     seed: options.seed,
     weaponType: options.weaponType,
