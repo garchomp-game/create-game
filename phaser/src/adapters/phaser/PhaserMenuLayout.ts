@@ -29,6 +29,7 @@ const DEFAULT_MENU_LABELS: Record<MenuAction, string> = {
   start: "エンドレス",
   startExpedition: "最終遠征に挑む",
   startTraining: "基本訓練",
+  startDebugExProtocol: "DEBUG EX Protocol選択",
   practice: "練習場",
   practiceSettings: "設定",
   practiceInvincible: "HP無敵",
@@ -226,7 +227,7 @@ export function getMenuButtons(
   }
 
   if (secondaryMenu === "story") {
-    return [
+    const buttons: MenuButton[] = [
       {
         action: "startTraining",
         label: "第1章　初期作戦",
@@ -243,15 +244,28 @@ export function getMenuButtons(
         width: 560,
         height: 82,
       },
+    ];
+    if (import.meta.env.DEV) {
+      buttons.push({
+        action: "startDebugExProtocol",
+        label: "DEBUG　EX Protocol選択（パルス）",
+        x: arenaWidth / 2 - 190,
+        y: 380,
+        width: 380,
+        height: 36,
+      });
+    }
+    buttons.push(
       {
         action: "back",
         label: label("back"),
         x: arenaWidth / 2 - 80,
-        y: 420,
+        y: import.meta.env.DEV ? 438 : 420,
         width: 160,
         height: 36,
       },
-    ];
+    );
+    return buttons;
   }
 
   if (secondaryMenu === "practiceSettings") {
@@ -417,39 +431,29 @@ export function getMenuButtons(
   }
 
   if (status === "title") {
-    const primary: MenuAction[] = ["story"];
-    const support: MenuAction[] = ["start", "practice"];
+    const modes: MenuAction[] = ["story", "start", "practice"];
     const utility: MenuAction[] = [
       "ranking",
       "history",
-      "help",
       "settings",
       "betaInfo",
     ];
     return [
-      ...primary.map((action, index) => ({
+      ...modes.map((action, index) => ({
         action,
         label: label(action),
-        x: 88,
-        y: 146,
-        width: 784,
-        height: 86,
-      })),
-      ...support.map((action, index) => ({
-        action,
-        label: label(action),
-        x: 88 + index * 392,
-        y: 250,
-        width: 376,
-        height: 66,
+        x: 120 + index * 244,
+        y: 342,
+        width: 232,
+        height: 58,
       })),
       ...utility.map((action, index) => ({
         action,
         label: label(action),
-        x: 76 + index * 164,
-        y: 368,
-        width: 152,
-        height: 44,
+        x: 213 + index * 138,
+        y: 430,
+        width: 120,
+        height: 38,
       })),
     ];
   }

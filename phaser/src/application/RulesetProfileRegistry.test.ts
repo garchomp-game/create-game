@@ -54,7 +54,18 @@ describe("RulesetProfileRegistry", () => {
         "candidate-ex-endless-c2",
       ),
     ).toThrow(/not valid/);
-    expect(getRulesetProfiles()).toHaveLength(9);
+    expect(
+      resolveRulesetProfile(
+        "debug-ex",
+        "debug-ex-protocol",
+        "debug-ex-protocol-v08",
+      ),
+    ).toMatchObject({
+      rulesetVersion: "phaser-v0.8-debug-ex-protocol",
+      rankPolicy: "none",
+      features: { exProtocols: true, endlessContract: false },
+    });
+    expect(getRulesetProfiles()).toHaveLength(10);
   });
 
   it("retains the candidate-one profile tuple for stored record decoding", () => {

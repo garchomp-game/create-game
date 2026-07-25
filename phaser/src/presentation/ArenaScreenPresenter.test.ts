@@ -41,7 +41,7 @@ describe("createArenaScreenViewModel", () => {
       secondaryMenu: null,
       statusText: TEXT.ui.titleScreen,
       detailText:
-        "照準と回避で、生存限界を更新せよ\n技術プレビュー v0.7.0",
+        "— 生存限界か、最終決戦か —\nプレビュー v0.7.0",
     });
   });
 

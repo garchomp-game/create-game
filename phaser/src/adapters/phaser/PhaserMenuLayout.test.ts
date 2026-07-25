@@ -9,15 +9,14 @@ describe("PhaserMenuLayout", () => {
       "practice",
       "ranking",
       "history",
-      "help",
       "settings",
       "betaInfo",
     ]);
-    expect(findMenuActionAt("title", 960, 540, 810, 390)).toBe("betaInfo");
-    expect(findMenuActionAt("title", 960, 540, 480, 189)).toBe("story");
-    expect(findMenuActionAt("title", 960, 540, 276, 283)).toBe("start");
-    expect(findMenuActionAt("title", 960, 540, 620, 280)).toBe("practice");
-    expect(findMenuActionAt("title", 960, 540, 480, 390)).toBe("help");
+    expect(findMenuActionAt("title", 960, 540, 687, 449)).toBe("betaInfo");
+    expect(findMenuActionAt("title", 960, 540, 236, 371)).toBe("story");
+    expect(findMenuActionAt("title", 960, 540, 480, 371)).toBe("start");
+    expect(findMenuActionAt("title", 960, 540, 724, 371)).toBe("practice");
+    expect(findMenuActionAt("title", 960, 540, 549, 449)).toBe("settings");
   });
 
   it("offers the opening operation and final expedition inside Story", () => {
@@ -25,13 +24,21 @@ describe("PhaserMenuLayout", () => {
       getMenuButtons("title", 960, 540, undefined, "story").map(
         (button) => button.action,
       ),
-    ).toEqual(["startTraining", "startExpedition", "back"]);
+    ).toEqual([
+      "startTraining",
+      "startExpedition",
+      "startDebugExProtocol",
+      "back",
+    ]);
     expect(
       findMenuActionAt("title", 960, 540, 480, 217, "story"),
     ).toBe("startTraining");
     expect(
       findMenuActionAt("title", 960, 540, 480, 319, "story"),
     ).toBe("startExpedition");
+    expect(
+      findMenuActionAt("title", 960, 540, 480, 398, "story"),
+    ).toBe("startDebugExProtocol");
   });
 
   it("separates large Practice weapon starts from optional settings", () => {

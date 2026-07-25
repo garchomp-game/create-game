@@ -1,4 +1,5 @@
 import type { LocalProfile, ProfileSettings, ProfileSettingsUpdate } from "../domain/profile";
+import type { RulesetProfileId } from "../domain/ruleset";
 import type { RunRecord } from "../domain/runRecords";
 import type { GameStatus, WeaponTypeId } from "../domain/types";
 import {
@@ -20,6 +21,8 @@ import type {
 import {
   DEFAULT_MODE_ID,
   DEFAULT_STAGE_ID,
+  DEBUG_EX_PROTOCOL_MODE_ID,
+  DEBUG_EX_PROTOCOL_STAGE_ID,
   EXPEDITION_MODE_ID,
   FINAL_EXPEDITION_STAGE_ID,
   PRACTICE_MODE_ID,
@@ -47,11 +50,19 @@ export type ArenaMenuActionContext = {
   settings: ProfileSettings;
   runHistory: readonly RunRecord[];
   rankingBoardCount?: number;
+  debugToolsEnabled?: boolean;
 };
 
 export type ArenaMenuCommand =
   | { type: "showWeaponSelect"; modeId: string; stageId: string }
   | { type: "startTraining"; modeId: string; stageId: string }
+  | {
+      type: "startDebugExProtocol";
+      modeId: string;
+      stageId: string;
+      weaponType: WeaponTypeId;
+      rulesetProfileId: RulesetProfileId;
+    }
   | {
       type: "startPractice";
       modeId: string;
@@ -139,6 +150,22 @@ export class ArenaMenuController {
         type: "startTraining",
         modeId: STORY_MODE_ID,
         stageId: STORY_INTRO_STAGE_ID,
+      });
+    }
+
+    if (
+      action === "startDebugExProtocol" &&
+      context.status === "title" &&
+      this.menuState.secondaryMenu === "story" &&
+      context.debugToolsEnabled === true
+    ) {
+      this.setNotice(null);
+      return handled({
+        type: "startDebugExProtocol",
+        modeId: DEBUG_EX_PROTOCOL_MODE_ID,
+        stageId: DEBUG_EX_PROTOCOL_STAGE_ID,
+        weaponType: "pulse",
+        rulesetProfileId: "debug-ex-protocol-v08",
       });
     }
 

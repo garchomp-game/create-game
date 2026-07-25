@@ -25,6 +25,10 @@ export const STORY_INTRO_STAGE_ID = "story-intro";
 export const STORY_RULESET_VERSION = "phaser-v0.8-story-intro-v1";
 export const PRACTICE_MODE_ID = "practice";
 export const PRACTICE_STAGE_ID = "practice-arena";
+export const DEBUG_EX_PROTOCOL_MODE_ID = "debug-ex";
+export const DEBUG_EX_PROTOCOL_STAGE_ID = "debug-ex-protocol";
+export const DEBUG_EX_PROTOCOL_RULESET_VERSION =
+  "phaser-v0.8-debug-ex-protocol";
 export const DEFAULT_DIFFICULTY_ID = "standard";
 
 export type BuildReleaseIdentity = {

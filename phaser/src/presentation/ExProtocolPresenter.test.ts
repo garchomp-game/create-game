@@ -25,7 +25,7 @@ describe("EX Protocol choice presentation", () => {
 
     expect(viewModel).toMatchObject({
       kind: "protocol",
-      title: "EX Lv 0 / 固有能力を選択",
+      title: "固有スキルを選択",
       cards: [
         { id: "pulse.resonance-relay", inputHint: null },
         {
@@ -138,7 +138,7 @@ describe("EX Protocol HUD presentation", () => {
     expect(createExProtocolHudViewModel(world, config)).toMatchObject({
       name: "赤熱炉心",
       primary: "稼働中",
-      secondary: "集束MAX命中を強化 / 最大HP -30%",
+      secondary: "集束1段前から強化 / 最大HP -30%",
     });
   });
 

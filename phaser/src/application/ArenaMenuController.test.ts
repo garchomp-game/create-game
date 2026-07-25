@@ -55,6 +55,27 @@ describe("ArenaMenuController", () => {
     );
   });
 
+  it("exposes the EX Protocol shortcut only through DEV story tools", () => {
+    const { controller } = createController();
+    controller.open("story");
+
+    expect(
+      controller.handle("startDebugExProtocol", createContext()).handled,
+    ).toBe(false);
+    expect(
+      controller.handle(
+        "startDebugExProtocol",
+        createContext({ debugToolsEnabled: true }),
+      ).command,
+    ).toEqual({
+      type: "startDebugExProtocol",
+      modeId: "debug-ex",
+      stageId: "debug-ex-protocol",
+      weaponType: "pulse",
+      rulesetProfileId: "debug-ex-protocol-v08",
+    });
+  });
+
   it("owns secondary screen, filter, page, and back state", () => {
     const { controller } = createController();
     const runHistory = Array.from({ length: 8 }, (_, index) =>

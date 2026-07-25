@@ -2,7 +2,11 @@ import { expect, type Page, test } from "@playwright/test";
 
 test.use({ deviceScaleFactor: 2 });
 
-async function clickCanvasLogical(page: Page, x: number, y: number): Promise<void> {
+async function clickCanvasLogical(
+  page: Page,
+  x: number,
+  y: number,
+): Promise<void> {
   const canvas = page.locator("canvas");
   const box = await canvas.boundingBox();
   if (!box) throw new Error("Canvas is not visible.");
@@ -19,7 +23,10 @@ async function clickCanvasLogical(page: Page, x: number, y: number): Promise<voi
   await page.mouse.up();
 }
 
-async function expectChoiceCardsFit(page: Page, expectedCount: number): Promise<void> {
+async function expectChoiceCardsFit(
+  page: Page,
+  expectedCount: number,
+): Promise<void> {
   const overlay = page.locator(".arena-choice-overlay--visible");
   const cards = overlay.locator(".arena-choice-card");
   await expect(cards).toHaveCount(expectedCount);
@@ -49,13 +56,19 @@ async function expectChoiceCardsFit(page: Page, expectedCount: number): Promise<
   }
 }
 
-test("uses aligned semantic DOM controls at high pixel density", async ({ page }) => {
+test("uses aligned semantic DOM controls at high pixel density", async ({
+  page,
+}) => {
   await page.goto("/");
-  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
-  await clickCanvasLogical(page, 276, 283);
-  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
-    "weaponSelect",
-  );
+  await expect
+    .poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__)))
+    .toBe(true);
+  await clickCanvasLogical(page, 480, 371);
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status),
+    )
+    .toBe("weaponSelect");
 
   const overlay = page.locator(".arena-choice-overlay--visible");
   const canvas = page.locator("canvas");
@@ -65,12 +78,18 @@ test("uses aligned semantic DOM controls at high pixel density", async ({ page }
   await expect(weaponChoices.first()).toHaveJSProperty("tagName", "BUTTON");
   await expect(overlay).toBeFocused();
   await expect(weaponChoices.first()).toHaveAttribute("aria-keyshortcuts", "1");
-  await expect(weaponChoices.first().locator("kbd.arena-choice-index")).toHaveText("1");
-  await expect(weaponChoices.first().locator(".arena-choice-card-action")).toHaveText(
-    "この武器で開始",
-  );
-  await expect(weaponChoices.first().locator(".arena-weapon-demo--pulse")).toHaveCount(1);
-  await expect(weaponChoices.nth(1).locator(".arena-weapon-demo--spread")).toHaveCount(1);
+  await expect(
+    weaponChoices.first().locator("kbd.arena-choice-index"),
+  ).toHaveText("1");
+  await expect(
+    weaponChoices.first().locator(".arena-choice-card-action"),
+  ).toHaveText("この武器で開始");
+  await expect(
+    weaponChoices.first().locator(".arena-weapon-demo--pulse"),
+  ).toHaveCount(1);
+  await expect(
+    weaponChoices.nth(1).locator(".arena-weapon-demo--spread"),
+  ).toHaveCount(1);
   await expect(
     weaponChoices.first().locator(".arena-weapon-demo-shot"),
   ).toHaveCount(3);
@@ -79,7 +98,10 @@ test("uses aligned semantic DOM controls at high pixel density", async ({ page }
   ).toHaveCount(6);
   expect(await page.evaluate(() => window.devicePixelRatio)).toBe(2);
 
-  const [overlayBox, canvasBox] = await Promise.all([overlay.boundingBox(), canvas.boundingBox()]);
+  const [overlayBox, canvasBox] = await Promise.all([
+    overlay.boundingBox(),
+    canvas.boundingBox(),
+  ]);
   expect(overlayBox).toEqual(canvasBox);
   const typography = await weaponChoices.first().evaluate((node) => {
     const style = getComputedStyle(node);
@@ -89,26 +111,104 @@ test("uses aligned semantic DOM controls at high pixel density", async ({ page }
   expect(typography.cursor).toBe("pointer");
 
   await page.keyboard.press("2");
-  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
-    "playing",
-  );
-  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().weaponType)).toBe(
-    "spread",
-  );
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status),
+    )
+    .toBe("playing");
+  expect(
+    await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().weaponType),
+  ).toBe("spread");
   await page.evaluate(() => window.__ARENA_DEBUG__?.forceUpgradeSelect());
   const upgrades = page.locator("[data-choice-kind='upgrade']");
   await expect(upgrades).toHaveCount(3);
+  await expect(overlay.locator(".arena-choice-keyboard-hint")).toContainText(
+    "数字キー",
+  );
+  await expect(
+    overlay.locator(".arena-choice-subtitle-progress-current"),
+  ).toHaveText("0");
+  const rapidFire = overlay.locator(
+    "[data-choice-kind='upgrade'][data-choice-id='rapidFire']",
+  );
+  await expect(
+    rapidFire.locator(".arena-choice-category-badge"),
+  ).toHaveAttribute("aria-label", "武器");
+  await expect(rapidFire.locator(".arena-choice-role--category")).toHaveText(
+    "武器",
+  );
+  await expect(rapidFire.locator(".arena-choice-rank-segment")).toHaveCount(5);
+  await expect(rapidFire.locator(".arena-choice-rank-meter-label")).toHaveText(
+    "強化Lv",
+  );
+  await expect(rapidFire.locator(".arena-choice-card-metric-after")).toHaveText(
+    /\d+(?:\.\d+)?\/秒/,
+  );
+  await expect(
+    rapidFire.locator(".arena-choice-rank-segment--active"),
+  ).toHaveCount(1);
+  await expect(
+    rapidFire.locator(".arena-choice-card-action"),
+  ).not.toContainText("取得する");
+  await expect(
+    rapidFire.locator(".arena-choice-card-header .arena-choice-index"),
+  ).toHaveCount(0);
+  await expect(rapidFire.locator(".arena-choice-card-action-key")).toHaveText(
+    "1",
+  );
   await upgrades.first().focus();
   await page.keyboard.press("Enter");
-  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
-    "playing",
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status),
+    )
+    .toBe("playing");
+  await page.evaluate(() => window.__ARENA_DEBUG__?.forceUpgradeSelect());
+  await expect(page.locator(".arena-choice-keyboard-hint")).toContainText(
+    "数字キー",
   );
 });
 
-test("stacks upgrade cards across the full portrait viewport", async ({ page }) => {
+test("opens the DEV EX Protocol story directly without recording a run", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect
+    .poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__)))
+    .toBe(true);
+  await page.evaluate(() => window.__ARENA_DEBUG__?.openMenu("story"));
+
+  await clickCanvasLogical(page, 480, 398);
+
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status),
+    )
+    .toBe("protocolSelect");
+  await expect(page.locator("[data-choice-kind='protocol']")).toHaveCount(3);
+  await expect(
+    page.locator(".arena-choice-overlay--visible .arena-choice-title"),
+  ).toHaveText("固有スキル選択");
+  await expect(
+    page
+      .locator(".arena-choice-keyboard-hint")
+      .locator(".arena-choice-keyboard-hint__key"),
+  ).toHaveCount(3);
+  expect(
+    await page.evaluate(
+      () => window.__ARENA_DEBUG__?.getSnapshot().runContext,
+    ),
+  ).toBeNull();
+});
+
+test("stacks upgrade cards across the full portrait viewport", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  await expect
+    .poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__)))
+    .toBe(true);
   await page.evaluate(() => {
     window.__ARENA_DEBUG__?.restart();
     window.__ARENA_DEBUG__?.forceUpgradeSelect();
@@ -117,7 +217,7 @@ test("stacks upgrade cards across the full portrait viewport", async ({ page }) 
   const overlay = page.locator(".arena-choice-overlay--visible");
   const cards = overlay.locator("[data-choice-kind='upgrade']");
   await expect(overlay).toHaveClass(/arena-choice-overlay--portrait/);
-  await expect(overlay).toHaveCSS("background-color", "rgba(2, 6, 23, 0.16)");
+  await expect(overlay).toHaveCSS("background-color", "rgba(2, 6, 23, 0.08)");
   const overlayBox = await overlay.boundingBox();
   expect(overlayBox).toMatchObject({ x: 0, y: 0, width: 390, height: 844 });
   const first = await cards.nth(0).boundingBox();
@@ -125,9 +225,12 @@ test("stacks upgrade cards across the full portrait viewport", async ({ page }) 
   expect(first).not.toBeNull();
   expect(second).not.toBeNull();
   expect(second!.y).toBeGreaterThan(first!.y + first!.height);
-  expect(await cards.first().locator(".arena-choice-card-title").evaluate((node) =>
-    Number.parseFloat(getComputedStyle(node).fontSize),
-  )).toBeGreaterThanOrEqual(20);
+  expect(
+    await cards
+      .first()
+      .locator(".arena-choice-card-title")
+      .evaluate((node) => Number.parseFloat(getComputedStyle(node).fontSize)),
+  ).toBeGreaterThanOrEqual(20);
   expect(
     await overlay.evaluate((node) => ({
       horizontal: node.scrollWidth - node.clientWidth,
@@ -151,23 +254,34 @@ test("stacks upgrade cards across the full portrait viewport", async ({ page }) 
 test("fits weapon, EX, and contract choices in portrait", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  await expect
+    .poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__)))
+    .toBe(true);
 
-  await clickCanvasLogical(page, 276, 283);
-  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
-    "weaponSelect",
-  );
+  await clickCanvasLogical(page, 480, 371);
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status),
+    )
+    .toBe("weaponSelect");
   await expectChoiceCardsFit(page, 2);
 
   await page.evaluate(() => window.__ARENA_DEBUG__?.forceExtraUpgradeSelect());
-  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
-    "upgradeSelect",
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status),
+    )
+    .toBe("upgradeSelect");
+  await expect(page.locator(".arena-choice-shell")).toHaveAttribute(
+    "data-choice-phase",
+    "extra",
   );
-  await expect(page.locator(".arena-choice-shell")).toHaveAttribute("data-choice-phase", "extra");
   await expectChoiceCardsFit(page, 3);
 
   await page.goto("/");
-  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  await expect
+    .poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__)))
+    .toBe(true);
   await page.evaluate(() => {
     const debug = window.__ARENA_DEBUG__;
     debug?.restart();
@@ -181,19 +295,27 @@ test("fits weapon, EX, and contract choices in portrait", async ({ page }) => {
     debug?.setElapsed(240);
     debug?.step({}, 1 / 60);
   });
-  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
-    "contractSelect",
-  );
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status),
+    )
+    .toBe("contractSelect");
   await expectChoiceCardsFit(page, 2);
 });
 
-test("keeps the previous aim active after a number-key upgrade", async ({ page }) => {
+test("keeps the previous aim active after a number-key upgrade", async ({
+  page,
+}) => {
   await page.goto("/");
-  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  await expect
+    .poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__)))
+    .toBe(true);
   await page.evaluate(() => window.__ARENA_DEBUG__?.restart());
-  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
-    "playing",
-  );
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status),
+    )
+    .toBe("playing");
 
   const canvas = page.locator("canvas");
   const box = await canvas.boundingBox();
@@ -207,7 +329,11 @@ test("keeps the previous aim active after a number-key upgrade", async ({ page }
     box.y + (270 / size.height) * box.height,
   );
   await expect
-    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().stats.shotsFired))
+    .poll(() =>
+      page.evaluate(
+        () => window.__ARENA_DEBUG__?.getSnapshot().stats.shotsFired,
+      ),
+    )
     .toBeGreaterThan(0);
 
   const before = await page.evaluate(() => {
@@ -219,25 +345,37 @@ test("keeps the previous aim active after a number-key upgrade", async ({ page }
   if (!before) throw new Error("Arena snapshot is unavailable.");
 
   await page.evaluate(() => window.__ARENA_DEBUG__?.forceUpgradeSelect(true));
-  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
-    "upgradeSelect",
-  );
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status),
+    )
+    .toBe("upgradeSelect");
   await expect(page.locator(".arena-choice-overlay--visible")).toBeFocused();
   await page.keyboard.press("1");
-  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
-    "playing",
-  );
   await expect
-    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().stats.shotsFired))
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status),
+    )
+    .toBe("playing");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => window.__ARENA_DEBUG__?.getSnapshot().stats.shotsFired,
+      ),
+    )
     .toBeGreaterThan(before.shotsFired);
-  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().lastAim)).toEqual(
-    before.lastAim,
-  );
+  expect(
+    await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().lastAim),
+  ).toEqual(before.lastAim);
 });
 
-test("records pointer and keyboard choices with a one-second resume window", async ({ page }) => {
+test("records pointer and keyboard choices with a one-second resume window", async ({
+  page,
+}) => {
   await page.goto("/");
-  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  await expect
+    .poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__)))
+    .toBe(true);
   await page.evaluate(() => {
     window.__ARENA_DEBUG__?.restart();
     window.__ARENA_DEBUG__?.forceUpgradeSelect();
@@ -245,21 +383,30 @@ test("records pointer and keyboard choices with a one-second resume window", asy
 
   const firstUpgrade = page.locator("[data-choice-kind='upgrade']").first();
   await firstUpgrade.click();
-  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
-    "playing",
-  );
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status),
+    )
+    .toBe("playing");
   const selectedAt = await page.evaluate(
-    () => window.__ARENA_DEBUG__?.getSnapshot().choiceInteraction.samples[0]?.selectedAtSimulationSeconds,
+    () =>
+      window.__ARENA_DEBUG__?.getSnapshot().choiceInteraction.samples[0]
+        ?.selectedAtSimulationSeconds,
   );
   expect(selectedAt).toBeDefined();
 
   const canvas = page.locator("canvas");
   const canvasBox = await canvas.boundingBox();
   if (!canvasBox) throw new Error("Canvas is not visible.");
-  await page.mouse.move(canvasBox.x + canvasBox.width * 0.75, canvasBox.y + canvasBox.height * 0.5);
+  await page.mouse.move(
+    canvasBox.x + canvasBox.width * 0.75,
+    canvasBox.y + canvasBox.height * 0.5,
+  );
   await page.keyboard.down("w");
   await expect
-    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().elapsed))
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().elapsed),
+    )
     .toBeGreaterThanOrEqual(selectedAt! + 1);
   await page.keyboard.up("w");
 
@@ -271,16 +418,22 @@ test("records pointer and keyboard choices with a one-second resume window", asy
     inputMethod: "pointer",
     resumeWindow: { completed: true },
   });
-  expect(pointerReport!.samples[0]!.resumeWindow.movementInputFrames).toBeGreaterThan(0);
-  expect(pointerReport!.samples[0]!.resumeWindow.aimInputFrames).toBeGreaterThan(0);
+  expect(
+    pointerReport!.samples[0]!.resumeWindow.movementInputFrames,
+  ).toBeGreaterThan(0);
+  expect(
+    pointerReport!.samples[0]!.resumeWindow.aimInputFrames,
+  ).toBeGreaterThan(0);
 
   await page.evaluate(() => window.__ARENA_DEBUG__?.forceExtraUpgradeSelect());
   const extraUpgrade = page.locator("[data-choice-kind='upgrade']").first();
   await extraUpgrade.focus();
   await page.keyboard.press("1");
-  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
-    "playing",
-  );
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status),
+    )
+    .toBe("playing");
   const finalReport = await page.evaluate(
     () => window.__ARENA_DEBUG__?.getSnapshot().choiceInteraction,
   );
@@ -289,12 +442,19 @@ test("records pointer and keyboard choices with a one-second resume window", asy
     phase: "extra",
     inputMethod: "keyboard",
   });
-  expect(finalReport?.summary.inputMethodCounts).toEqual({ keyboard: 1, pointer: 1 });
+  expect(finalReport?.summary.inputMethodCounts).toEqual({
+    keyboard: 1,
+    pointer: 1,
+  });
 });
 
-test("does not install candidate-only context menu handling", async ({ page }) => {
+test("does not install candidate-only context menu handling", async ({
+  page,
+}) => {
   await page.goto("/");
-  await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
+  await expect
+    .poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__)))
+    .toBe(true);
 
   expect(
     await page.locator("canvas").evaluate((node) => {

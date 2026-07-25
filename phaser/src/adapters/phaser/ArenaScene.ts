@@ -37,6 +37,7 @@ import {
   createRankingBoardQueries,
 } from "../../application/runRecords";
 import type { RunOrigin } from "../../domain/runRecords";
+import type { RulesetProfileId } from "../../domain/ruleset";
 import type { LocalProfile, ProfileSettings } from "../../domain/profile";
 import {
   clonePracticeRunOptions,
@@ -90,6 +91,10 @@ const loadArenaDebugModules =
         ])
     : null;
 
+const loadDebugExProtocolStory = import.meta.env.DEV
+  ? () => import("./DebugExProtocolStory")
+  : null;
+
 export class ArenaScene extends Phaser.Scene {
   private inputAdapter!: PhaserInputAdapter;
   private choiceOverlay!: ArenaChoiceOverlay;
@@ -109,6 +114,7 @@ export class ArenaScene extends Phaser.Scene {
   private selectedWeapon: WeaponTypeId = SIMULATION_CONFIG.defaultWeapon;
   private selectedModeId = DEFAULT_MODE_ID;
   private selectedStageId = DEFAULT_STAGE_ID;
+  private selectedRulesetProfileId: RulesetProfileId | undefined;
   private selectedPracticeOptions: PracticeRunOptions =
     createDefaultPracticeRunOptions();
   private session!: ArenaSession;
@@ -389,6 +395,9 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private getRequestedRulesetProfileId() {
+    if (this.selectedRulesetProfileId) {
+      return this.selectedRulesetProfileId;
+    }
     const injected = this.registry.get("rulesetProfileId");
     if (typeof injected === "string" && injected.length > 0) {
       return parseRulesetProfileId(injected);
@@ -617,6 +626,7 @@ export class ArenaScene extends Phaser.Scene {
         this.profile.id,
         runContext,
       ).length,
+      debugToolsEnabled: import.meta.env.DEV,
     });
     if (!outcome.handled) return false;
 
@@ -647,6 +657,7 @@ export class ArenaScene extends Phaser.Scene {
     if (command.type === "showWeaponSelect") {
       this.selectedModeId = command.modeId;
       this.selectedStageId = command.stageId;
+      this.selectedRulesetProfileId = undefined;
       this.resetGame("weaponSelect");
       return;
     }
@@ -654,6 +665,7 @@ export class ArenaScene extends Phaser.Scene {
       this.selectedModeId = command.modeId;
       this.selectedStageId = command.stageId;
       this.selectedWeapon = "pulse";
+      this.selectedRulesetProfileId = undefined;
       this.autoPilotController.setEnabled(false);
       this.resetGame("playing");
       return;
@@ -663,8 +675,36 @@ export class ArenaScene extends Phaser.Scene {
       this.selectedStageId = command.stageId;
       this.selectedWeapon = command.weaponType;
       this.selectedPracticeOptions = clonePracticeRunOptions(command.options);
+      this.selectedRulesetProfileId = undefined;
       this.autoPilotController.setEnabled(false);
       this.resetGame("playing");
+      return;
+    }
+    if (command.type === "startDebugExProtocol") {
+      if (!loadDebugExProtocolStory) return;
+      this.selectedModeId = command.modeId;
+      this.selectedStageId = command.stageId;
+      this.selectedWeapon = command.weaponType;
+      this.selectedRulesetProfileId = command.rulesetProfileId;
+      this.autoPilotController.setEnabled(false);
+      this.resetGame("paused", this.getDebugRunOrigin());
+      void loadDebugExProtocolStory()
+        .then(({ enterDebugExProtocolStory }) => {
+          const result = enterDebugExProtocolStory(this.world, this.runConfig);
+          this.recordResult(result);
+          this.renderCurrentWorld();
+        })
+        .catch((error: unknown) => {
+          this.logger.warn("debug.ex_protocol_story.failed", {
+            message: error instanceof Error ? error.message : String(error),
+          });
+          this.showTitle();
+          this.menuController.open(
+            "story",
+            "EX Protocol画面を開始できませんでした",
+          );
+          this.renderCurrentWorld();
+        });
       return;
     }
     if (command.type === "startRun") {
@@ -765,12 +805,14 @@ export class ArenaScene extends Phaser.Scene {
   private showTitle(): void {
     this.selectedModeId = DEFAULT_MODE_ID;
     this.selectedStageId = DEFAULT_STAGE_ID;
+    this.selectedRulesetProfileId = undefined;
     this.resetGame("title");
   }
 
   private startAutoPilot(weaponType: WeaponTypeId): void {
     this.autoPilotController.start();
     this.selectedWeapon = weaponType;
+    this.selectedRulesetProfileId = undefined;
     this.resetGame("playing", this.getDebugRunOrigin());
   }
 

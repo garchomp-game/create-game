@@ -32,7 +32,7 @@ async function clickCanvasAt(page: Page, x: number, y: number): Promise<void> {
 }
 
 async function openFinalExpedition(page: Page): Promise<void> {
-  await clickCanvasAt(page, 480, 189);
+  await clickCanvasAt(page, 236, 371);
   await expect
     .poll(() =>
       page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
@@ -99,7 +99,7 @@ test("renders canvas and accepts movement and shooting input", async ({ page }) 
     "title",
   );
 
-  await clickCanvasAt(page, 276, 283);
+  await clickCanvasAt(page, 480, 371);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "weaponSelect",
   );
@@ -149,20 +149,7 @@ test("opens one help screen from play and settings without advancing the run", a
   page,
 }) => {
   await gotoArena(page);
-  await clickCanvasAt(page, 480, 390);
-  await expect
-    .poll(() =>
-      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
-    )
-    .toBe("help");
-  await clickCanvasAt(page, 480, 499);
-  await expect
-    .poll(() =>
-      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
-    )
-    .toBeNull();
-
-  await clickCanvasAt(page, 276, 283);
+  await clickCanvasAt(page, 480, 371);
   await page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']").click();
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
@@ -215,7 +202,7 @@ test("opens one help screen from play and settings without advancing the run", a
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
     .toBe("title");
-  await clickCanvasAt(page, 644, 390);
+  await clickCanvasAt(page, 549, 449);
   await expect
     .poll(() =>
       page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
@@ -240,7 +227,7 @@ test("starts Practice with chosen fixed conditions and no run record", async ({
 }) => {
   await gotoArena(page, "/?seed=20260724");
 
-  await clickCanvasAt(page, 620, 280);
+  await clickCanvasAt(page, 724, 371);
   await expect
     .poll(() =>
       page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
@@ -555,10 +542,10 @@ test("uses native cursor affordances outside active play", async ({ page }) => {
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "title",
   );
-  await moveMouseToCanvasAt(page, 276, 283);
+  await moveMouseToCanvasAt(page, 480, 371);
   await expect.poll(() => getCanvasCursor(page)).toBe("pointer");
 
-  await clickCanvasAt(page, 276, 283);
+  await clickCanvasAt(page, 480, 371);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "weaponSelect",
   );
@@ -1387,7 +1374,7 @@ test("loads local audio assets without page errors", async ({ page }) => {
     await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().music.loaded),
   ).toBe(true);
 
-  await clickCanvasAt(page, 276, 283);
+  await clickCanvasAt(page, 480, 371);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "weaponSelect",
   );
@@ -1441,7 +1428,7 @@ test("loads local audio assets without page errors", async ({ page }) => {
 test("selects spread as the run weapon and preserves it on restart", async ({ page }) => {
   await gotoArena(page, "/?seed=20260619");
 
-  await clickCanvasAt(page, 276, 283);
+  await clickCanvasAt(page, 480, 371);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "weaponSelect",
   );

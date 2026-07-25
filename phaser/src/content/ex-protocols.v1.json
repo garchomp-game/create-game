@@ -29,8 +29,9 @@
       "displayNameEn": "Resonance Relay",
       "interaction": "passive",
       "identity": ["focus", "line"],
-      "signature": {
-        "anchorLifetimeSeconds": 1.5,
+    "signature": {
+      "focusTriggerStacksBelowMaximum": 1,
+      "anchorLifetimeSeconds": 1.5,
         "relayHalfWidthPx": 6,
         "maxIntermediateTargets": 3,
         "damageMultiplier": 0.55,
@@ -142,8 +143,9 @@
       "displayNameEn": "Redline Core",
       "interaction": "passive",
       "identity": ["focus", "hp-reserve"],
-      "signature": {
-        "effectiveMaxHpMultiplier": 0.7,
+    "signature": {
+      "focusTriggerStacksBelowMaximum": 1,
+      "effectiveMaxHpMultiplier": 0.7,
         "redlineDamageMultiplier": 1.4,
         "capacityRestore": 1,
         "requiresStackBeforeAtMaximum": false,

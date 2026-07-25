@@ -61,6 +61,11 @@ test("selects Protocol, Evolution I/II, and enters Limit Break", async ({
   await expect(evolutionOne).toHaveCount(2);
   await expect(overlay).toContainText("EVOLUTION I");
   await expect(evolutionOne.nth(0)).toContainText("1.5秒 → 2.25秒");
+  const evolutionKeys = overlay
+    .locator(".arena-choice-keyboard-hint")
+    .locator(".arena-choice-keyboard-hint__key");
+  await expect(evolutionKeys).toHaveCount(2);
+  await expect(evolutionKeys.nth(1)).toHaveText("2");
 
   await evolutionOne.nth(0).focus();
   await page.keyboard.press("1");
@@ -87,7 +92,7 @@ test("selects Protocol, Evolution I/II, and enters Limit Break", async ({
     debug.grantXp(debug.getSnapshot().xpToNext);
   });
   await expectStatus(page, "upgradeSelect");
-  await expect(overlay).toContainText("LIMIT BREAK CYCLE");
+  await expect(overlay).toContainText("LIMIT BREAK / BUILD");
   await expect(overlay).not.toContainText("EXTRA LEVEL");
 });
 
@@ -185,7 +190,7 @@ test("removes candidate-only input hooks when Story onboarding starts", async ({
   await gotoCandidate(page);
   const canvas = page.locator("canvas");
   expect(await dispatchContextMenu(canvas)).toBe(false);
-  await clickCanvasLogical(canvas, 480, 189);
+  await clickCanvasLogical(canvas, 236, 371);
   await expect
     .poll(() =>
       page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),

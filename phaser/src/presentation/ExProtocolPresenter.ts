@@ -66,8 +66,8 @@ export function createExProtocolChoiceViewModel(
   ) {
     return {
       kind: "protocol",
-      title: "EX Lv 0 / 固有能力を選択",
-      subtitle: "通常ビルドへ追加する能力を1つ選択",
+      title: "固有スキルを選択",
+      subtitle: "通常ビルドの仕上げとなる能力を1つ選択",
       footer: "1 / 2 / 3 で選択",
       cards: pending.choices.map(createProtocolCard),
     };
@@ -119,7 +119,7 @@ export function createExProtocolHudViewModel(
       ...base,
       primary: runtime.anchor
         ? `記録 ${formatTenths(remaining)}`
-        : "集束MAXで記録",
+        : "集束1段前で記録",
       secondary: runtime.anchor
         ? "別の敵へ当てると連鎖"
         : "同じ敵へ連続命中",
@@ -157,7 +157,7 @@ export function createExProtocolHudViewModel(
     return {
       ...base,
       primary: "稼働中",
-      secondary: `集束MAX命中を強化 / 最大HP -${ratio}%`,
+      secondary: `集束1段前から強化 / 最大HP -${ratio}%`,
     };
   }
   if (runtime.kind === "full-span-tidal-sweep") {
@@ -344,11 +344,12 @@ function getProtocolCopy(
   if (protocolId === resonanceRelay.id) {
     return {
       role: "自動 / 集束連鎖",
-      summary: "集束MAXの地点と次に撃った敵を結び、間の敵へ連鎖する。",
+      summary:
+        "集束が最大の1段階手前に達した地点と次の敵を結び、間の敵へ連鎖する。",
       facts: [
         {
           label: "発動条件",
-          text: `同じ敵への連続命中で集束MAXにすると、その場所を${resonanceRelay.signature.anchorLifetimeSeconds}秒記録。時間内に別の敵へ通常Pulse弾を当てる。倒した敵の場所も記録する。`,
+          text: `同じ敵への連続命中で集束が最大の1段階手前に達すると、その場所を${resonanceRelay.signature.anchorLifetimeSeconds}秒記録。時間内に別の敵へ通常Pulse弾を当てる。倒した敵の場所も記録する。`,
         },
         {
           label: "効果",
@@ -384,11 +385,12 @@ function getProtocolCopy(
   if (protocolId === redlineCore.id) {
     return {
       role: "自動 / HP交換火力",
-      summary: "最大HPを減らす代わりに、集束MAXになる命中を高火力化する。",
+      summary:
+        "最大HPを減らす代わりに、集束が最大の1段階手前に達する命中を高火力化する。",
       facts: [
         {
           label: "発動条件",
-          text: "同じ敵へ通常Pulse弾を連続で当て、集束をMAXにする。MAXになった一撃から発動する。",
+          text: "同じ敵へ通常Pulse弾を連続で当て、集束が最大の1段階手前に達した一撃から発動する。",
         },
         {
           label: "効果",
@@ -502,13 +504,13 @@ function formatEvolutionEffect(
       return `実効最大HP: ${formatPercent(redlineCore.signature.effectiveMaxHpMultiplier)} → ${formatPercent(redlineCore.evolutionOne[0].effectiveMaxHpMultiplier)}。増加分は即時回復しない`;
     }
     if (tier === 1 && evolutionId === redlineCore.evolutionOne[1].id) {
-      return `最大集束命中: ${formatPercent(redlineCore.signature.redlineDamageMultiplier)} → ${formatPercent(redlineCore.evolutionOne[1].redlineDamageMultiplier)}`;
+      return `固有発動命中: ${formatPercent(redlineCore.signature.redlineDamageMultiplier)} → ${formatPercent(redlineCore.evolutionOne[1].redlineDamageMultiplier)}`;
     }
     if (tier === 2 && evolutionId === redlineCore.evolutionTwo[0].id) {
       return `集束維持時間+${redlineCore.evolutionTwo[0].focusDurationBonusSeconds}秒`;
     }
     if (tier === 2 && evolutionId === redlineCore.evolutionTwo[1].id) {
-      return `最大集束直撃時の貫通回復: ${redlineCore.signature.capacityRestore} → ${redlineCore.evolutionTwo[1].capacityRestore}`;
+      return `固有発動直撃時の貫通回復: ${redlineCore.signature.capacityRestore} → ${redlineCore.evolutionTwo[1].capacityRestore}`;
     }
   }
   if (protocolId === fullSpanTidalSweep.id) {

@@ -8,6 +8,7 @@ import type {
   Enemy,
   WorldState,
 } from "../../domain/types";
+import { getProtocolFocusTriggerStacks } from "./protocolFocus";
 
 export type RedlineDamageResolution = {
   damage: number;
@@ -106,7 +107,11 @@ export function resolveRedlineDamage(
     world.runtime.pulseFocusMaxStacks > 0 &&
     (definition.signature.requiresStackBeforeAtMaximum
       ? stackBefore
-      : stackAfter) >= world.runtime.pulseFocusMaxStacks;
+      : stackAfter) >=
+      getProtocolFocusTriggerStacks(
+        world.runtime.pulseFocusMaxStacks,
+        definition.signature.focusTriggerStacksBelowMaximum,
+      );
   if (!qualifiesForRedline) {
     return {
       damage: normalResolvedDamage,

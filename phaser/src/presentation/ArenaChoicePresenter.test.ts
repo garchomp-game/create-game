@@ -5,6 +5,7 @@ import { TEXT } from "../lang";
 import { createWorld } from "../simulation/createWorld";
 import {
   chooseExProtocol,
+  offerExProtocolEvolution,
   offerExProtocolSelection,
 } from "../simulation/exProtocolProgression";
 import { createArenaChoiceViewModel } from "./ArenaChoicePresenter";
@@ -21,12 +22,16 @@ describe("createArenaChoiceViewModel", () => {
       statusLabel: "",
       title: "",
       subtitle: "",
+      subtitleProgress: null,
+      keyboardHint: null,
       cards: [],
       backAction: null,
       footer: null,
       signature: "hidden",
     });
-    expect(createArenaChoiceViewModel(world, SIMULATION_CONFIG, false).visible).toBe(false);
+    expect(
+      createArenaChoiceViewModel(world, SIMULATION_CONFIG, false).visible,
+    ).toBe(false);
   });
 
   it("presents weapon identity and menu actions without DOM state", () => {
@@ -42,6 +47,7 @@ describe("createArenaChoiceViewModel", () => {
       eyebrow: "ENDLESS / LOADOUT",
       statusLabel: "開始装備",
       title: TEXT.ui.weaponSelectTitle,
+      keyboardHint: null,
       backAction: "back",
     });
     expect(model.cards).toEqual([
@@ -69,12 +75,18 @@ describe("createArenaChoiceViewModel", () => {
     world.state.status = "upgradeSelect";
     world.state.weaponType = "pulse";
     world.progression.level = 4;
-    world.progression.pendingUpgradeChoices = ["rapidFire", "swiftStep", "vitalCore"];
+    world.progression.pendingUpgradeChoices = [
+      "rapidFire",
+      "swiftStep",
+      "vitalCore",
+    ];
     world.progression.upgradeRanks.rapidFire = 1;
 
     const model = createArenaChoiceViewModel(world, SIMULATION_CONFIG);
 
-    expect(model.title).toBe("レベル 4 強化選択");
+    expect(model.title).toBe("強化選択 — Level 4");
+    expect(model.keyboardHint).toBe("数字キー 1 / 2 / 3 でも選択できます");
+    expect(model.subtitleProgress).toEqual({ current: 1, required: 7 });
     expect(model).toMatchObject({
       phase: "upgrade",
       eyebrow: "LEVEL UP / BUILD",
@@ -86,9 +98,11 @@ describe("createArenaChoiceViewModel", () => {
       indexLabel: "1",
       tone: "upgrade-weapon",
       title: "連射強化",
-      rank: "ランク 2/5",
+      rank: null,
+      rankProgress: { current: 2, max: 5 },
+      categoryIcon: "weapon",
       metricLabel: "取得後",
-      actionLabel: "この強化を取得",
+      actionLabel: "取得する",
       selection: { kind: "upgrade", index: 0 },
     });
     expect(model.cards[0]?.metric).toContain("連射");
@@ -108,18 +122,29 @@ describe("createArenaChoiceViewModel", () => {
 
     const model = createArenaChoiceViewModel(world, SIMULATION_CONFIG);
 
-    expect(model.title).toBe("EXTRA LEVEL 6");
+    expect(model.title).toBe("EX強化選択 — Level 6 / Cycle 2");
     expect(model.phase).toBe("extra");
     expect(model.statusLabel).toBe("EX強化 C2");
     expect(model.subtitle).toBe("通常ビルド完成 / EXサイクル C2 / 未取得 2");
+    expect(model.subtitleProgress).toBeNull();
     expect(model.cards[0]).toMatchObject({
       id: "limitPower",
       tone: "upgrade-extra",
       title: "限界出力",
-      rank: "ランク 4",
+      rank: "Lv 4",
+      rankProgress: null,
+      categoryIcon: "extra",
     });
     expect(model.cards[0]?.metric).toBe("弾ダメージ x1.24 -> x1.32");
-    expect(model.cards[1]?.rank).toBe("ランク 2/5");
+    expect(model.cards[0]?.metricChange).toEqual({
+      before: "弾ダメージ x1.24",
+      after: "x1.32",
+    });
+    expect(model.cards[1]).toMatchObject({
+      rank: null,
+      rankProgress: { current: 2, max: 5 },
+      categoryIcon: "extra",
+    });
   });
 
   it("maps EX Protocol cards into the shared choice presentation contract", () => {
@@ -129,34 +154,65 @@ describe("createArenaChoiceViewModel", () => {
       weaponType: "pulse",
       rulesetProfileId: "candidate-ex-endless-c2",
     });
-    expect(
-      offerExProtocolSelection(session.world, session.config, []),
-    ).toBe(true);
-
-    const model = createArenaChoiceViewModel(
-      session.world,
-      session.config,
+    expect(offerExProtocolSelection(session.world, session.config, [])).toBe(
+      true,
     );
+
+    const model = createArenaChoiceViewModel(session.world, session.config);
 
     expect(model).toMatchObject({
       visible: true,
       kind: "protocol",
       phase: "protocol",
-      eyebrow: "EX PROTOCOL / SIGNATURE",
-      statusLabel: "固有能力",
-      footer: "1 / 2 / 3 で選択",
+      eyebrow: "SIGNATURE SKILL / SELECT",
+      statusLabel: "固有スキル",
+      title: "固有スキル選択",
+      subtitle: "通常ビルド完成 / 通常ビルドの仕上げとなる能力を1つ選択",
+      keyboardHint: "数字キー 1 / 2 / 3 でも選択できます",
+      footer: null,
     });
     expect(model.cards).toHaveLength(3);
     expect(model.cards[1]).toMatchObject({
       id: "pulse.rebound-overdrive",
       tone: "pulse",
-      facts: [
-        { label: "発動条件" },
-        { label: "効果" },
-        { label: "制約" },
-      ],
+      categoryIcon: "signature",
+      facts: [{ label: "発動条件" }, { label: "効果" }, { label: "制約" }],
       inputHint: "RMB / E で発動",
       selection: { kind: "upgrade", index: 1 },
+    });
+  });
+
+  it("presents post-Metaphor evolution choices like normal skill cards", () => {
+    const session = new ArenaSession(SIMULATION_CONFIG);
+    session.start({
+      seed: 20260723,
+      weaponType: "pulse",
+      rulesetProfileId: "candidate-ex-endless-c2",
+    });
+    expect(offerExProtocolSelection(session.world, session.config, [])).toBe(
+      true,
+    );
+    expect(chooseExProtocol(session.world, 0, session.config, [])).toBe(true);
+    session.world.progression.extraLevel = 1;
+    expect(offerExProtocolEvolution(session.world, 1, [])).toBe(true);
+
+    const model = createArenaChoiceViewModel(session.world, session.config);
+
+    expect(model).toMatchObject({
+      kind: "evolution",
+      phase: "evolution",
+      statusLabel: "EX Lv 1",
+      title: "固有スキル強化 — EX Level 1",
+      keyboardHint: "数字キー 1 / 2 でも選択できます",
+      footer: null,
+    });
+    expect(model.subtitle).toContain("EVOLUTION I");
+    expect(model.cards[0]).toMatchObject({
+      kind: "evolution",
+      role: "固有スキル",
+      rankProgress: { current: 1, max: 2 },
+      categoryIcon: "extra",
+      selection: { kind: "upgrade", index: 0 },
     });
   });
 
@@ -167,12 +223,10 @@ describe("createArenaChoiceViewModel", () => {
       weaponType: "pulse",
       rulesetProfileId: "candidate-ex-endless-c2",
     });
-    expect(
-      offerExProtocolSelection(session.world, session.config, []),
-    ).toBe(true);
-    expect(
-      chooseExProtocol(session.world, 0, session.config, []),
-    ).toBe(true);
+    expect(offerExProtocolSelection(session.world, session.config, [])).toBe(
+      true,
+    );
+    expect(chooseExProtocol(session.world, 0, session.config, [])).toBe(true);
     session.world.state.status = "upgradeSelect";
     session.world.progression.buildCompletedAt = 120;
     session.world.progression.extraLevel = 3;
@@ -193,14 +247,11 @@ describe("createArenaChoiceViewModel", () => {
       choices: ["limitPower", "limitCycle", "limitCore"],
     };
 
-    const model = createArenaChoiceViewModel(
-      session.world,
-      session.config,
-    );
+    const model = createArenaChoiceViewModel(session.world, session.config);
 
     expect(model.eyebrow).toBe("LIMIT BREAK / BUILD");
     expect(model.statusLabel).toBe("EX Lv 3");
-    expect(model.title).toBe("EX Lv 3 / LIMIT BREAK CYCLE 1");
+    expect(model.title).toBe("限界強化 — EX Level 3 / Cycle 1");
     expect(model.subtitle).toContain("交差導線 / Resonance Relay");
     expect(model.subtitle).toContain("未取得 4");
   });

@@ -6,6 +6,7 @@ export const RULESET_PROFILE_IDS = [
   "legacy-training-v07",
   "story-onboarding-v08",
   "practice-sandbox-v08",
+  "debug-ex-protocol-v08",
   "candidate-ex-endless-c1",
   "candidate-ex-final-expedition-c1",
   "candidate-ex-endless-c2",

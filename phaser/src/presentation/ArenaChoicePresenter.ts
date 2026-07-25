@@ -11,18 +11,17 @@ import type {
 import { TEXT } from "../lang";
 import { getUpgradeRequirementProgress } from "../simulation/buildComposer";
 import { isExtraUpgradeId } from "../simulation/extraProgression";
-import { createUpgradePreview, formatUpgradePreview } from "../simulation/upgradePreview";
+import {
+  createUpgradePreview,
+  formatUpgradePreview,
+} from "../simulation/upgradePreview";
 import {
   createExProtocolChoiceViewModel,
   formatSelectedExProtocolRoute,
 } from "./ExProtocolPresenter";
 
 export type ArenaChoiceKind =
-  | "weapon"
-  | "upgrade"
-  | "protocol"
-  | "evolution"
-  | "contract";
+  "weapon" | "upgrade" | "protocol" | "evolution" | "contract";
 export type ArenaChoicePhase = ArenaChoiceKind | "extra";
 export type ArenaChoiceTone =
   | "pulse"
@@ -35,6 +34,18 @@ export type ArenaChoiceTone =
   | "upgrade-extra"
   | "contract-standard"
   | "contract-overdrive";
+
+export type ArenaChoiceCategoryIcon = UpgradeCategory | "extra" | "signature";
+
+export type ArenaChoiceRankProgress = {
+  current: number;
+  max: number;
+};
+
+export type ArenaChoiceSubtitleProgress = {
+  current: number;
+  required: number;
+};
 
 export type ArenaChoiceSelection =
   | { kind: "menu"; action: MenuAction }
@@ -50,9 +61,15 @@ export type ArenaChoiceCardViewModel = {
   role: string;
   title: string;
   rank: string | null;
+  rankProgress: ArenaChoiceRankProgress | null;
+  categoryIcon: ArenaChoiceCategoryIcon | null;
   description: string;
   metricLabel: string;
   metric: string;
+  metricChange?: {
+    before: string;
+    after: string;
+  } | null;
   actionLabel: string;
   facts?: Array<{ label: string; text: string }>;
   inputHint?: string | null;
@@ -68,6 +85,8 @@ export type ArenaChoiceViewModel = {
   statusLabel: string;
   title: string;
   subtitle: string;
+  subtitleProgress: ArenaChoiceSubtitleProgress | null;
+  keyboardHint: string | null;
   cards: ArenaChoiceCardViewModel[];
   backAction: MenuAction | null;
   footer: string | null;
@@ -89,6 +108,8 @@ export function createArenaChoiceViewModel(
       statusLabel: "",
       title: "",
       subtitle: "",
+      subtitleProgress: null,
+      keyboardHint: null,
       cards: [],
       backAction: null,
       footer: null,
@@ -119,10 +140,14 @@ function createWeaponChoices(world: WorldState): ArenaChoiceViewModel {
     phase: "weapon",
     eyebrow: expedition ? "FINAL EXPEDITION / LOADOUT" : "ENDLESS / LOADOUT",
     statusLabel: "開始装備",
-    title: expedition ? `最終遠征 / ${TEXT.ui.weaponSelectTitle}` : TEXT.ui.weaponSelectTitle,
+    title: expedition
+      ? `最終遠征 / ${TEXT.ui.weaponSelectTitle}`
+      : TEXT.ui.weaponSelectTitle,
     subtitle: expedition
       ? "5つのActを突破する開始ビルドを選択"
       : "開始ビルドの戦い方を決めます",
+    subtitleProgress: null,
+    keyboardHint: null,
     cards: [
       createWeaponCard(
         0,
@@ -164,6 +189,8 @@ function createWeaponCard(
     role,
     title: TEXT.hud.weaponNames[weaponId],
     rank: null,
+    rankProgress: null,
+    categoryIcon: null,
     description,
     metricLabel: "武器特性",
     metric,
@@ -179,6 +206,7 @@ function createUpgradeChoices(
   const choices = world.progression.pendingUpgradeChoices;
   const extra = world.progression.buildCompletedAt !== null;
   const limitBreak = world.progression.pendingChoice?.kind === "limit-break";
+  const progressPresentation = createProgressPresentation(world, config);
   return {
     visible: true,
     kind: "upgrade",
@@ -194,14 +222,18 @@ function createUpgradeChoices(
         ? `EX強化 C${world.progression.extraCycle}`
         : "通常強化",
     title: limitBreak
-      ? `EX Lv ${world.progression.extraLevel} / LIMIT BREAK CYCLE ${world.progression.extraCycle}`
+      ? `限界強化 — EX Level ${world.progression.extraLevel} / Cycle ${world.progression.extraCycle}`
       : extra
-        ? `EXTRA LEVEL ${world.progression.extraLevel}`
-        : `レベル ${world.progression.level} 強化選択`,
+        ? `EX強化選択 — Level ${world.progression.extraLevel} / Cycle ${world.progression.extraCycle}`
+        : `強化選択 — Level ${world.progression.level}`,
     subtitle: limitBreak
       ? `${formatSelectedExProtocolRoute(world)} / 未取得 ${world.progression.extraCycleRemaining.length}`
-      : createProgressText(world, config),
-    cards: choices.map((choiceId, index) => createUpgradeCard(world, config, choiceId, index)),
+      : progressPresentation.text,
+    subtitleProgress: limitBreak ? null : progressPresentation.progress,
+    keyboardHint: "数字キー 1 / 2 / 3 でも選択できます",
+    cards: choices.map((choiceId, index) =>
+      createUpgradeCard(world, config, choiceId, index),
+    ),
     backAction: null,
     footer: null,
     signature: createSignature(world),
@@ -215,6 +247,9 @@ function createExProtocolChoices(world: WorldState): ArenaChoiceViewModel {
       `Missing EX Protocol choice view model for "${world.state.status}".`,
     );
   }
+  const evolutionTier =
+    world.progression.pendingChoice?.kind === "evolution-two" ? 2 : 1;
+  const isEvolution = model.kind === "evolution";
 
   return {
     visible: true,
@@ -222,20 +257,36 @@ function createExProtocolChoices(world: WorldState): ArenaChoiceViewModel {
     phase: model.kind,
     eyebrow:
       model.kind === "protocol"
-        ? "EX PROTOCOL / SIGNATURE"
+        ? "SIGNATURE SKILL / SELECT"
         : "EX PROTOCOL / EVOLUTION",
-    statusLabel: model.kind === "protocol" ? "固有能力" : "進化選択",
-    title: model.title,
-    subtitle: model.subtitle,
+    statusLabel:
+      model.kind === "protocol"
+        ? "固有スキル"
+        : `EX Lv ${world.progression.extraLevel}`,
+    title: isEvolution
+      ? `固有スキル強化 — EX Level ${world.progression.extraLevel}`
+      : "固有スキル選択",
+    subtitle: isEvolution
+      ? `${model.title} / ${model.subtitle}`
+      : `通常ビルド完成 / ${model.subtitle}`,
+    subtitleProgress: null,
+    keyboardHint:
+      model.kind === "protocol"
+        ? "数字キー 1 / 2 / 3 でも選択できます"
+        : "数字キー 1 / 2 でも選択できます",
     cards: model.cards.map((card, index) => ({
       kind: model.kind,
       index,
       indexLabel: formatChoiceIndex(index),
       id: card.id,
       tone: world.state.weaponType === "spread" ? "spread" : "pulse",
-      role: card.role,
+      role: isEvolution ? "固有スキル" : card.role,
       title: card.title,
       rank: null,
+      rankProgress: isEvolution
+        ? { current: evolutionTier, max: 2 }
+        : null,
+      categoryIcon: isEvolution ? "extra" : "signature",
       description: card.summary,
       metricLabel: card.facts[0]?.label ?? "効果",
       metric: card.facts[0]?.text ?? card.summary,
@@ -247,7 +298,10 @@ function createExProtocolChoices(world: WorldState): ArenaChoiceViewModel {
       selection: { kind: "upgrade", index },
     })),
     backAction: null,
-    footer: model.footer,
+    footer:
+      model.kind === "protocol" || evolutionTier === 1
+        ? null
+        : model.footer,
     signature: createSignature(world),
   };
 }
@@ -263,7 +317,8 @@ function createUpgradeCard(
     const display = TEXT.upgrades.extraDefinitions[choiceId];
     const currentRank = world.progression.extraUpgradeRanks[choiceId];
     const nextRank = currentRank + 1;
-    const rank = definition.maxRank === null ? `${nextRank}` : `${nextRank}/${definition.maxRank}`;
+    const rank = definition.maxRank === null ? `Lv ${nextRank}` : null;
+    const preview = formatExtraPreview(definition.effect, currentRank);
     return {
       kind: "upgrade",
       index,
@@ -272,11 +327,17 @@ function createUpgradeCard(
       tone: "upgrade-extra",
       role: TEXT.upgrades.extraCategoryLabel,
       title: display.title,
-      rank: `${TEXT.ui.rank} ${rank}`,
+      rank,
+      rankProgress:
+        definition.maxRank === null
+          ? null
+          : { current: nextRank, max: definition.maxRank },
+      categoryIcon: "extra",
       description: display.description,
       metricLabel: "取得後",
-      metric: formatExtraPreview(definition.effect, currentRank),
-      actionLabel: "この強化を取得",
+      metric: preview,
+      metricChange: createMetricChange(preview),
+      actionLabel: "取得する",
       selection: { kind: "upgrade", index },
     };
   }
@@ -297,11 +358,17 @@ function createUpgradeCard(
     tone: getUpgradeTone(definition.category),
     role: TEXT.upgrades.categoryLabels[definition.category],
     title: display.title,
-    rank: `${TEXT.ui.rank} ${currentRank + 1}/${definition.maxRank}`,
+    rank: null,
+    rankProgress: {
+      current: currentRank + 1,
+      max: definition.maxRank,
+    },
+    categoryIcon: definition.category,
     description: display.description,
     metricLabel: "取得後",
     metric: preview,
-    actionLabel: "この強化を取得",
+    metricChange: createMetricChange(preview),
+    actionLabel: "取得する",
     selection: { kind: "upgrade", index },
   };
 }
@@ -315,6 +382,8 @@ function createContractChoices(world: WorldState): ArenaChoiceViewModel {
     statusLabel: "危険契約",
     title: TEXT.ui.contractTitle,
     subtitle: "ラン後半のリスクと記録区分を選択",
+    subtitleProgress: null,
+    keyboardHint: null,
     cards: [
       {
         kind: "contract",
@@ -325,6 +394,8 @@ function createContractChoices(world: WorldState): ArenaChoiceViewModel {
         role: "安定",
         title: "標準維持",
         rank: null,
+        rankProgress: null,
+        categoryIcon: null,
         description: "現在の難易度倍率を維持",
         metricLabel: "契約結果",
         metric: "ランキング対象を継続",
@@ -340,6 +411,8 @@ function createContractChoices(world: WorldState): ArenaChoiceViewModel {
         role: "高リスク",
         title: "過負荷",
         rank: null,
+        rankProgress: null,
+        categoryIcon: null,
         description: "敵速度 +12% / スコア x1.3",
         metricLabel: "契約結果",
         metric: "ランキング対象外",
@@ -353,16 +426,30 @@ function createContractChoices(world: WorldState): ArenaChoiceViewModel {
   };
 }
 
-function createProgressText(world: WorldState, config: SimulationConfig): string {
+function createProgressPresentation(
+  world: WorldState,
+  config: SimulationConfig,
+): {
+  text: string;
+  progress: ArenaChoiceSubtitleProgress | null;
+} {
   if (world.progression.buildCompletedAt !== null) {
-    return `通常ビルド完成 / EXサイクル C${world.progression.extraCycle} / 未取得 ${world.progression.extraCycleRemaining.length}`;
+    return {
+      text: `通常ビルド完成 / EXサイクル C${world.progression.extraCycle} / 未取得 ${world.progression.extraCycleRemaining.length}`,
+      progress: null,
+    };
   }
 
   const capstoneId = getCapstoneId(world.state.weaponType);
-  if (!capstoneId) return "通常強化を選択";
+  if (!capstoneId) {
+    return { text: "通常強化を選択", progress: null };
+  }
   const display = TEXT.upgrades.definitions[capstoneId];
   if (world.progression.upgradeRanks[capstoneId] > 0) {
-    return TEXT.upgrades.capstoneAcquired(display.title);
+    return {
+      text: TEXT.upgrades.capstoneAcquired(display.title),
+      progress: null,
+    };
   }
   const progress = getUpgradeRequirementProgress(
     config,
@@ -370,8 +457,26 @@ function createProgressText(world: WorldState, config: SimulationConfig): string
     world.progression.upgradeRanks,
   )[0];
   return progress
-    ? `${display.title} 解放まで 武器強化 ${progress.current}/${progress.required}`
-    : `${display.title}: 解放条件なし`;
+    ? {
+        text: `${display.title} 解放まで 武器強化 ${progress.current}/${progress.required}`,
+        progress: {
+          current: progress.current,
+          required: progress.required,
+        },
+      }
+    : { text: `${display.title}: 解放条件なし`, progress: null };
+}
+
+function createMetricChange(
+  metric: string,
+): ArenaChoiceCardViewModel["metricChange"] {
+  const separator = " -> ";
+  const separatorIndex = metric.indexOf(separator);
+  if (separatorIndex < 0) return null;
+  return {
+    before: metric.slice(0, separatorIndex),
+    after: metric.slice(separatorIndex + separator.length),
+  };
 }
 
 function getCapstoneId(weaponId: WeaponTypeId): UpgradeId | null {
@@ -422,15 +527,22 @@ function createSignature(world: WorldState): string {
   ].join(":");
 }
 
-function formatExtraPreview(effect: ExtraUpgradeEffect, currentRank: number): string {
+function formatExtraPreview(
+  effect: ExtraUpgradeEffect,
+  currentRank: number,
+): string {
   const nextRank = currentRank + 1;
   if (effect.type === "projectileDamage") {
     return `弾ダメージ x${(1 + effect.amountPerRank * currentRank).toFixed(2)} -> x${(
-      1 + effect.amountPerRank * nextRank
+      1 +
+      effect.amountPerRank * nextRank
     ).toFixed(2)}`;
   }
   if (effect.type === "fireRate" || effect.type === "moveSpeed") {
-    const current = Math.min(effect.maximumBonus, effect.amountPerRank * currentRank);
+    const current = Math.min(
+      effect.maximumBonus,
+      effect.amountPerRank * currentRank,
+    );
     const next = Math.min(effect.maximumBonus, effect.amountPerRank * nextRank);
     const label = effect.type === "fireRate" ? "追加連射" : "追加移動速度";
     return `${label} +${Math.round(current * 100)}% -> +${Math.round(next * 100)}%`;

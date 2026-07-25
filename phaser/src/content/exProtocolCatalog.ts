@@ -32,6 +32,7 @@ const relayProtocolSchema = z
     identity: z.array(z.string().min(1)).min(1),
     signature: z
       .object({
+        focusTriggerStacksBelowMaximum: nonNegativeInteger,
         anchorLifetimeSeconds: positiveNumber,
         relayHalfWidthPx: positiveNumber,
         maxIntermediateTargets: positiveInteger,
@@ -167,6 +168,7 @@ const redlineProtocolSchema = z
     identity: z.array(z.string().min(1)).min(1),
     signature: z
       .object({
+        focusTriggerStacksBelowMaximum: nonNegativeInteger,
         effectiveMaxHpMultiplier: positiveNumber.max(1),
         redlineDamageMultiplier: positiveNumber,
         capacityRestore: positiveInteger,

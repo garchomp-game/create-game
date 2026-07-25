@@ -198,6 +198,22 @@ export const PRACTICE_ARENA_STAGE_DEFINITION = {
   clearCondition: { type: "endless" },
 } satisfies GameContentDefinitions["stages"][number];
 
+export const DEBUG_EX_PROTOCOL_STAGE_DEFINITION = {
+  ...ARENA_DEFAULT_STAGE_DEFINITION,
+  id: "debug-ex-protocol",
+  titleKey: "stage.debug-ex-protocol.title",
+  obstacles: ARENA_DEFAULT_STAGE_DEFINITION.obstacles.map((obstacle) => ({
+    ...obstacle,
+  })),
+  progression: {
+    extraXpCurve: {
+      baseXp: 1,
+      growth: 1,
+      maxXp: 1,
+    },
+  },
+} satisfies GameContentDefinitions["stages"][number];
+
 export const GAME_CONTENT_DEFINITIONS = {
   modes: [
     {
@@ -240,6 +256,14 @@ export const GAME_CONTENT_DEFINITIONS = {
       stageIds: ["practice-arena"],
       defaultStageId: "practice-arena",
     },
+    {
+      id: "debug-ex",
+      titleKey: "mode.debug-ex.title",
+      runtimeKind: "endless",
+      recordPolicy: "none",
+      stageIds: ["debug-ex-protocol"],
+      defaultStageId: "debug-ex-protocol",
+    },
   ],
   stages: [
     ARENA_DEFAULT_STAGE_DEFINITION,
@@ -247,6 +271,7 @@ export const GAME_CONTENT_DEFINITIONS = {
     BASIC_TRAINING_STAGE_DEFINITION,
     STORY_INTRO_STAGE_DEFINITION,
     PRACTICE_ARENA_STAGE_DEFINITION,
+    DEBUG_EX_PROTOCOL_STAGE_DEFINITION,
   ],
   enemyPools: [
     {

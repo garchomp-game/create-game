@@ -49,12 +49,12 @@ async function clickCanvasLogical(
 }
 
 async function openStoryIntro(page: Page): Promise<void> {
-  await clickCanvasLogical(page, 480, 189);
+  await clickCanvasLogical(page, 236, 371);
   await clickCanvasLogical(page, 480, 217);
 }
 
 async function openFinalExpedition(page: Page): Promise<void> {
-  await clickCanvasLogical(page, 480, 189);
+  await clickCanvasLogical(page, 236, 371);
   await clickCanvasLogical(page, 480, 319);
 }
 
@@ -370,7 +370,7 @@ test("matches the Story operation selection frame", async ({ page }) => {
   await gotoArena(page);
   const canvas = page.locator("canvas");
 
-  await clickCanvasLogical(page, 480, 189);
+  await clickCanvasLogical(page, 236, 371);
   await expect
     .poll(() =>
       page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
@@ -388,7 +388,7 @@ test("shows the Practice setup and fixed in-arena control guide", async ({
   await gotoArena(page);
   const canvas = page.locator("canvas");
 
-  await moveMouseToCanvasLogical(page, 620, 280);
+  await moveMouseToCanvasLogical(page, 724, 371);
   await page.mouse.down();
   await page.mouse.up();
   await expect
@@ -560,7 +560,7 @@ test("matches the starting weapon selection frame", async ({ page }) => {
   await gotoArena(page);
   const game = page.locator("#game");
 
-  await moveMouseToCanvasLogical(page, 276, 283);
+  await moveMouseToCanvasLogical(page, 480, 371);
   await page.mouse.down();
   await page.mouse.up();
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
@@ -888,7 +888,7 @@ test("matches the fixed upgraded Spread split shot frame", async ({ page }) => {
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
-  await moveMouseToCanvasLogical(page, 276, 283);
+  await moveMouseToCanvasLogical(page, 480, 371);
   await page.mouse.down();
   await page.mouse.up();
   await page.locator("[data-choice-kind='weapon'][data-choice-id='spread']").click();
@@ -938,7 +938,7 @@ test("matches the Pulse ricochet boundary field frame", async ({ page }) => {
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
-  await moveMouseToCanvasLogical(page, 276, 283);
+  await moveMouseToCanvasLogical(page, 480, 371);
   await page.mouse.down();
   await page.mouse.up();
   await page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']").click();

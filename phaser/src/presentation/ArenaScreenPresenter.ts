@@ -8,7 +8,6 @@ import {
   getExpeditionTacticalScore,
   isRankableRun,
 } from "../application/runRecords";
-import { RELEASE_CHANNEL_LABEL } from "../config/version";
 import { toRunCentiseconds } from "../domain/runRecords";
 import type { RankIneligibilityReason, RunRecord } from "../domain/runRecords";
 import type {
@@ -283,7 +282,7 @@ export function createArenaScreenViewModel(
         ...base,
         kind: "title",
         statusText: TEXT.ui.titleScreen,
-        detailText: `照準と回避で、生存限界を更新せよ\n${RELEASE_CHANNEL_LABEL} v${uiState?.releaseIdentity.appVersion ?? import.meta.env.VITE_APP_VERSION}`,
+        detailText: `— 生存限界か、最終決戦か —\nプレビュー v${uiState?.releaseIdentity.appVersion ?? import.meta.env.VITE_APP_VERSION}`,
       };
     default:
       return { ...base, kind: "none", statusText: null, detailText: null };

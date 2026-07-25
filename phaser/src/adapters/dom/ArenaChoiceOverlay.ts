@@ -5,6 +5,7 @@ import {
   createArenaChoiceViewModel,
   type ArenaChoiceCardViewModel,
   type ArenaChoiceSelection,
+  type ArenaChoiceSubtitleProgress,
 } from "../../presentation/ArenaChoicePresenter";
 
 export type ArenaChoiceInput = {
@@ -38,7 +39,9 @@ export class ArenaChoiceOverlay {
   render(world: WorldState, enabled = true): void {
     this.syncBounds();
     const model = createArenaChoiceViewModel(world, this.config, enabled);
-    const wasVisible = this.root.classList.contains("arena-choice-overlay--visible");
+    const wasVisible = this.root.classList.contains(
+      "arena-choice-overlay--visible",
+    );
     this.root.classList.toggle("arena-choice-overlay--visible", model.visible);
     this.root.setAttribute("aria-hidden", model.visible ? "false" : "true");
     if (!model.visible) {
@@ -49,7 +52,9 @@ export class ArenaChoiceOverlay {
       return;
     }
     if (model.phase === null) {
-      throw new Error("Visible choice model must provide a presentation phase.");
+      throw new Error(
+        "Visible choice model must provide a presentation phase.",
+      );
     }
     this.root.dataset.choicePhase = model.phase;
 
@@ -64,12 +69,15 @@ export class ArenaChoiceOverlay {
       model.statusLabel,
       model.title,
       model.subtitle,
+      model.subtitleProgress,
     );
-    if (model.kind === "protocol" || model.kind === "evolution") {
+    if (model.kind === "protocol") {
       shell.classList.add(
         "arena-choice-shell--ex",
-        `arena-choice-shell--${model.kind}`,
+        "arena-choice-shell--protocol",
       );
+    } else if (model.kind === "evolution") {
+      shell.classList.add("arena-choice-shell--evolution");
     }
     const grid = element(
       "div",
@@ -77,6 +85,9 @@ export class ArenaChoiceOverlay {
     );
     model.cards.forEach((card) => grid.append(this.createChoiceButton(card)));
     shell.append(grid);
+    if (model.keyboardHint) {
+      shell.append(this.createKeyboardHint(model.cards.length));
+    }
     if (model.footer) {
       shell.append(element("p", "arena-choice-footer", model.footer));
     }
@@ -117,6 +128,7 @@ export class ArenaChoiceOverlay {
     statusLabel: string,
     title: string,
     subtitle: string,
+    subtitleProgress: ArenaChoiceSubtitleProgress | null,
   ): HTMLElement {
     const shell = element("section", "arena-choice-shell");
     shell.setAttribute("aria-label", title);
@@ -133,14 +145,59 @@ export class ArenaChoiceOverlay {
     header.append(
       commandLine,
       element("h1", "arena-choice-title", title),
-      element("p", "arena-choice-subtitle", subtitle),
+      this.createSubtitle(subtitle, subtitleProgress),
     );
     shell.append(header);
     return shell;
   }
 
-  private createChoiceButton(card: ArenaChoiceCardViewModel): HTMLButtonElement {
-    const isExChoice = card.kind === "protocol" || card.kind === "evolution";
+  private createSubtitle(
+    text: string,
+    progress: ArenaChoiceSubtitleProgress | null,
+  ): HTMLParagraphElement {
+    const subtitle = element("p", "arena-choice-subtitle");
+    if (!progress) {
+      subtitle.textContent = text;
+      return subtitle;
+    }
+
+    const progressText = `${progress.current}/${progress.required}`;
+    const progressIndex = text.lastIndexOf(progressText);
+    if (progressIndex < 0) {
+      subtitle.textContent = text;
+      return subtitle;
+    }
+
+    subtitle.append(
+      document.createTextNode(text.slice(0, progressIndex)),
+      element(
+        "strong",
+        "arena-choice-subtitle-progress-current",
+        String(progress.current),
+      ),
+      document.createTextNode(
+        `/${progress.required}${text.slice(progressIndex + progressText.length)}`,
+      ),
+    );
+    return subtitle;
+  }
+
+  private createKeyboardHint(choiceCount: number): HTMLDivElement {
+    const hint = element("div", "arena-choice-keyboard-hint");
+    hint.append(
+      element("span", "arena-choice-keyboard-hint__label", "数字キー"),
+      ...Array.from({ length: choiceCount }, (_, index) =>
+        element("kbd", "arena-choice-keyboard-hint__key", String(index + 1)),
+      ),
+      element("span", "arena-choice-keyboard-hint__label", "でも選択できます"),
+    );
+    return hint;
+  }
+
+  private createChoiceButton(
+    card: ArenaChoiceCardViewModel,
+  ): HTMLButtonElement {
+    const isExChoice = card.kind === "protocol";
     const button = element(
       "button",
       [
@@ -161,19 +218,58 @@ export class ArenaChoiceOverlay {
       button.dataset.choiceAction = card.selection.action;
     }
     const cardHeader = element("span", "arena-choice-card-header");
-    const marker = element("span", "arena-choice-card-marker");
-    marker.setAttribute("aria-hidden", "true");
-    cardHeader.append(
-      marker,
-      element("kbd", "arena-choice-index", card.indexLabel),
-      element("span", "arena-choice-role", card.role),
-    );
-    if (card.rank) cardHeader.append(element("span", "arena-choice-rank", card.rank));
+    const index = element("kbd", "arena-choice-index", card.indexLabel);
+    if (card.categoryIcon) {
+      const category = element(
+        "span",
+        `arena-choice-category-badge arena-choice-category-badge--${card.categoryIcon}`,
+        CATEGORY_ICON_GLYPHS[card.categoryIcon],
+      );
+      category.setAttribute("role", "img");
+      category.setAttribute("aria-label", card.role);
+      category.title = card.role;
+      cardHeader.append(
+        category,
+        element(
+          "span",
+          "arena-choice-role arena-choice-role--category",
+          card.role,
+        ),
+      );
+    } else {
+      const marker = element("span", "arena-choice-card-marker");
+      marker.setAttribute("aria-hidden", "true");
+      cardHeader.append(
+        marker,
+        index,
+        element("span", "arena-choice-role", card.role),
+      );
+    }
+    if (card.rankProgress) {
+      cardHeader.append(this.createRankMeter(card.rankProgress));
+    } else if (card.rank) {
+      cardHeader.append(element("span", "arena-choice-rank", card.rank));
+    }
 
-    const action = element("span", "arena-choice-card-action", card.actionLabel);
-    const actionMarker = element("span", "arena-choice-action-marker");
-    actionMarker.setAttribute("aria-hidden", "true");
-    action.append(actionMarker);
+    const action = element("span", "arena-choice-card-action");
+    if (
+      card.kind === "upgrade" ||
+      card.kind === "protocol" ||
+      card.kind === "evolution"
+    ) {
+      action.append(
+        element(
+          "kbd",
+          "arena-choice-keyboard-hint__key arena-choice-card-action-key",
+          card.indexLabel,
+        ),
+      );
+    } else {
+      action.append(document.createTextNode(card.actionLabel));
+      const actionMarker = element("span", "arena-choice-action-marker");
+      actionMarker.setAttribute("aria-hidden", "true");
+      action.append(actionMarker);
+    }
 
     button.append(
       cardHeader,
@@ -201,7 +297,7 @@ export class ArenaChoiceOverlay {
       const metric = element("span", "arena-choice-card-metric");
       metric.append(
         element("span", "arena-choice-card-metric-label", card.metricLabel),
-        element("strong", "arena-choice-card-metric-value", card.metric),
+        this.createMetricValue(card),
       );
       button.append(metric);
     }
@@ -211,6 +307,57 @@ export class ArenaChoiceOverlay {
       this.pendingInput.inputMethod = getChoiceInputMethod(event);
     });
     return button;
+  }
+
+  private createMetricValue(card: ArenaChoiceCardViewModel): HTMLElement {
+    const value = element("strong", "arena-choice-card-metric-value");
+    if (!card.metricChange) {
+      value.textContent = card.metric;
+      return value;
+    }
+
+    value.classList.add("arena-choice-card-metric-value--change");
+    value.append(
+      element(
+        "span",
+        "arena-choice-card-metric-before",
+        card.metricChange.before,
+      ),
+      element("span", "arena-choice-card-metric-arrow", "→"),
+      element(
+        "span",
+        "arena-choice-card-metric-after",
+        card.metricChange.after,
+      ),
+    );
+    return value;
+  }
+
+  private createRankMeter(
+    progress: NonNullable<ArenaChoiceCardViewModel["rankProgress"]>,
+  ): HTMLSpanElement {
+    const meter = element("span", "arena-choice-rank-meter");
+    meter.setAttribute("role", "img");
+    meter.setAttribute(
+      "aria-label",
+      `取得後ランク ${progress.current}/${progress.max}`,
+    );
+    meter.title = `取得後ランク ${progress.current}/${progress.max}`;
+    meter.append(element("span", "arena-choice-rank-meter-label", "強化Lv"));
+    for (let index = 0; index < progress.max; index += 1) {
+      const segment = element(
+        "span",
+        [
+          "arena-choice-rank-segment",
+          index < progress.current ? "arena-choice-rank-segment--active" : "",
+        ]
+          .filter(Boolean)
+          .join(" "),
+      );
+      segment.setAttribute("aria-hidden", "true");
+      meter.append(segment);
+    }
+    return meter;
   }
 
   private createWeaponDemo(weaponId: string): HTMLSpanElement {
@@ -228,13 +375,7 @@ export class ArenaChoiceOverlay {
       shot.style.setProperty("--shot-end-y", `${endY}%`);
       shot.style.setProperty(
         "--shot-delay",
-        `${
-          weaponId === "spread"
-            ? index >= 3
-              ? -0.8
-              : 0
-            : -index * 0.34
-        }s`,
+        `${weaponId === "spread" ? (index >= 3 ? -0.8 : 0) : -index * 0.34}s`,
       );
       demo.append(shot);
     });
@@ -249,15 +390,21 @@ export class ArenaChoiceOverlay {
   }
 
   private applySelection(selection: ArenaChoiceSelection): void {
-    if (selection.kind === "menu") this.pendingInput.menuAction = selection.action;
-    else if (selection.kind === "upgrade") this.pendingInput.upgradeChoice = selection.index;
+    if (selection.kind === "menu")
+      this.pendingInput.menuAction = selection.action;
+    else if (selection.kind === "upgrade")
+      this.pendingInput.upgradeChoice = selection.index;
     else this.pendingInput.contractChoice = selection.index;
   }
 
   private handleKeyDown(event: KeyboardEvent): void {
     if (!this.root.classList.contains("arena-choice-overlay--visible")) return;
     const numericIndex = Number(event.key) - 1;
-    if (Number.isInteger(numericIndex) && numericIndex >= 0 && numericIndex < this.visibleChoiceCount) {
+    if (
+      Number.isInteger(numericIndex) &&
+      numericIndex >= 0 &&
+      numericIndex < this.visibleChoiceCount
+    ) {
       const button = this.root.querySelector<HTMLButtonElement>(
         `[data-choice-index="${numericIndex}"]`,
       );
@@ -269,7 +416,9 @@ export class ArenaChoiceOverlay {
       return;
     }
     if (event.key === "Escape") {
-      const back = this.root.querySelector<HTMLButtonElement>("[data-choice-action='back']");
+      const back = this.root.querySelector<HTMLButtonElement>(
+        "[data-choice-action='back']",
+      );
       if (back) {
         event.preventDefault();
         event.stopPropagation();
@@ -287,7 +436,10 @@ export class ArenaChoiceOverlay {
     const width = portrait ? parentRect.width : canvasRect.width;
     const height = portrait ? parentRect.height : canvasRect.height;
     this.root.classList.toggle("arena-choice-overlay--portrait", portrait);
-    this.root.classList.toggle("arena-choice-overlay--compact", !portrait && width < 760);
+    this.root.classList.toggle(
+      "arena-choice-overlay--compact",
+      !portrait && width < 760,
+    );
     this.root.style.left = `${portrait ? 0 : canvasRect.left - parentRect.left}px`;
     this.root.style.top = `${portrait ? 0 : canvasRect.top - parentRect.top}px`;
     this.root.style.width = `${width}px`;
@@ -302,6 +454,19 @@ export class ArenaChoiceOverlay {
     );
   }
 }
+
+const CATEGORY_ICON_GLYPHS: Record<
+  NonNullable<ArenaChoiceCardViewModel["categoryIcon"]>,
+  string
+> = {
+  weapon: "◎",
+  mobility: "»",
+  survival: "◇",
+  support: "＋",
+  capstone: "★",
+  extra: "∞",
+  signature: "S",
+};
 
 function emptyInput(): ArenaChoiceInput {
   return {

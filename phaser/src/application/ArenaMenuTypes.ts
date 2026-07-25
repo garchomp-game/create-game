@@ -15,6 +15,7 @@ export type MenuAction =
   | "start"
   | "startExpedition"
   | "startTraining"
+  | "startDebugExProtocol"
   | "practice"
   | "practiceSettings"
   | "practiceInvincible"

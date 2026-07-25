@@ -1,6 +1,9 @@
 import {
   APP_VERSION,
   BASIC_TRAINING_STAGE_ID,
+  DEBUG_EX_PROTOCOL_MODE_ID,
+  DEBUG_EX_PROTOCOL_RULESET_VERSION,
+  DEBUG_EX_PROTOCOL_STAGE_ID,
   DEFAULT_MODE_ID,
   DEFAULT_STAGE_ID,
   ENDLESS_RULESET_VERSION,
@@ -86,6 +89,17 @@ const RULESET_PROFILES = [
     runRecordSchemaVersion: 2,
     rankPolicy: "none",
     features: { exProtocols: false, endlessContract: false },
+  },
+  {
+    id: "debug-ex-protocol-v08",
+    modeId: DEBUG_EX_PROTOCOL_MODE_ID,
+    stageId: DEBUG_EX_PROTOCOL_STAGE_ID,
+    appVersion: EX_PROTOCOL_CANDIDATE_APP_VERSION,
+    rulesetVersion: DEBUG_EX_PROTOCOL_RULESET_VERSION,
+    randomStreamVersion: RANDOM_STREAM_VERSION_V2,
+    runRecordSchemaVersion: 3,
+    rankPolicy: "none",
+    features: { exProtocols: true, endlessContract: false },
   },
   {
     id: "candidate-ex-endless-c1",

@@ -24,13 +24,13 @@ const CANDIDATE_CONFIG: SimulationConfig = {
 };
 
 describe("Redline Core", () => {
-  it("amplifies the hit that reaches maximum focus", () => {
+  it("amplifies the hit one stack before normal maximum focus", () => {
     const world = createRedlineWorld();
     const events: GameEvent[] = [];
     updateShooting(world, true, CANDIDATE_CONFIG, events);
     const bullet = world.bullets[0]!;
     const enemy = createEnemy("enemy-trigger", bullet.position, 100);
-    enemy.pulseFocusStacks = 2;
+    enemy.pulseFocusStacks = 1;
     enemy.pulseFocusExpiresAt = 10;
     world.enemies = [enemy];
 
@@ -39,7 +39,7 @@ describe("Redline Core", () => {
     const baseDamage = CANDIDATE_CONFIG.weapons.pulse.damage;
     const focusedDamage =
       baseDamage +
-      baseDamage * world.runtime.pulseFocusBonusPerStack * 2;
+      baseDamage * world.runtime.pulseFocusBonusPerStack;
     expect(enemy.hp).toBeCloseTo(100 - focusedDamage * 1.4);
     expect(events).toContainEqual(
       expect.objectContaining({
@@ -47,6 +47,22 @@ describe("Redline Core", () => {
         totalDamage: focusedDamage * 1.4,
       }),
     );
+  });
+
+  it("does not amplify below the relaxed focus threshold", () => {
+    const world = createRedlineWorld();
+    const events: GameEvent[] = [];
+    updateShooting(world, true, CANDIDATE_CONFIG, events);
+    const bullet = world.bullets[0]!;
+    const enemy = createEnemy("enemy-below-trigger", bullet.position, 100);
+    world.enemies = [enemy];
+
+    resolveCombat(world, CANDIDATE_CONFIG, events);
+
+    expect(enemy.hp).toBeCloseTo(
+      100 - CANDIDATE_CONFIG.weapons.pulse.damage,
+    );
+    expect(events.some((event) => event.type === "ex.redline.hit")).toBe(false);
   });
 
   it("amplifies a pre-existing maximum-focus hit and restores capacity once", () => {

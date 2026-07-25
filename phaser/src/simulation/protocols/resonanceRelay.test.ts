@@ -172,7 +172,7 @@ describe("Resonance Relay", () => {
     ).toBe(false);
   });
 
-  it("resolves from the stored position of a lethal maximum-focus hit", () => {
+  it("resolves from a lethal hit one stack before normal maximum focus", () => {
     const world = createResonanceWorld();
     const events: GameEvent[] = [];
     updateShooting(world, true, CANDIDATE_CONFIG, events);
@@ -184,7 +184,7 @@ describe("Resonance Relay", () => {
       1,
       1,
     );
-    anchor.pulseFocusStacks = 2;
+    anchor.pulseFocusStacks = 1;
     anchor.pulseFocusExpiresAt = 10;
     world.enemies = [anchor];
 
@@ -282,7 +282,7 @@ function createAnchor(
     100,
     1,
   );
-  anchor.pulseFocusStacks = 2;
+  anchor.pulseFocusStacks = 1;
   anchor.pulseFocusExpiresAt = 10;
   world.enemies = [anchor];
   resolveCombat(world, CANDIDATE_CONFIG, events);

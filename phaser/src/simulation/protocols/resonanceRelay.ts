@@ -12,6 +12,7 @@ import type {
 } from "../../domain/types";
 import { hasClearNavigationPath } from "../navigationField";
 import { resolveEnemyDamage } from "../systems/enemyDamageSystem";
+import { getProtocolFocusTriggerStacks } from "./protocolFocus";
 
 export type ResonanceEndpointHit = {
   priorDirectHits: number;
@@ -88,6 +89,11 @@ export function resolveResonanceAfterNormalHit(
   }
   updateResonanceRelayLifecycle(world);
   const runtime = progression.runtime;
+  const definition = EX_PROTOCOL_CATALOG.protocols[0];
+  const focusTriggerStacks = getProtocolFocusTriggerStacks(
+    hit.maximumStacks,
+    definition.signature.focusTriggerStacksBelowMaximum,
+  );
   const priorAnchor = runtime.anchor;
   const anchorEnemy = priorAnchor
     ? world.enemies.find(
@@ -106,7 +112,6 @@ export function resolveResonanceAfterNormalHit(
       ? { ...anchorEnemy.position }
       : { ...priorAnchor.position };
     const endpointPosition = { ...hit.endpointPositionBeforeHit };
-    const definition = EX_PROTOCOL_CATALOG.protocols[0];
     const blocked = !hasClearNavigationPath(
       anchorPosition,
       endpointPosition,
@@ -205,8 +210,8 @@ export function resolveResonanceAfterNormalHit(
     });
     if (
       hit.endpointSurvived &&
-      hit.maximumStacks > 0 &&
-      (endpoint.pulseFocusStacks ?? hit.stackAfter) >= hit.maximumStacks
+      focusTriggerStacks > 0 &&
+      (endpoint.pulseFocusStacks ?? hit.stackAfter) >= focusTriggerStacks
     ) {
       commitAnchor(
         world,
@@ -228,11 +233,11 @@ export function resolveResonanceAfterNormalHit(
     return;
   }
   if (
-    hit.maximumStacks > 0 &&
-    hit.stackAfter >= hit.maximumStacks &&
+    focusTriggerStacks > 0 &&
+    hit.stackAfter >= focusTriggerStacks &&
     hit.ricochetsUsed === 0 &&
     (hit.endpointSurvived ||
-      EX_PROTOCOL_CATALOG.protocols[0].signature.createAnchorFromLethalHit)
+      definition.signature.createAnchorFromLethalHit)
   ) {
     commitAnchor(
       world,

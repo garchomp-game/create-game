@@ -26,10 +26,10 @@ export async function openArenaCaptureScenario(
     .toBe(true);
 
   if (ARENA_CAPTURE_SCENARIOS[scenarioId].expectedBoss) {
-    await clickCanvasLogical(page, 480, 189);
+    await clickCanvasLogical(page, 236, 371);
     await clickCanvasLogical(page, 480, 319);
   } else {
-    await clickCanvasLogical(page, 276, 283);
+    await clickCanvasLogical(page, 480, 371);
   }
   await page
     .locator("[data-choice-kind='weapon'][data-choice-id='pulse']")

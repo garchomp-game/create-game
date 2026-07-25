@@ -29,7 +29,7 @@ test("exposes the release identity and completes the primary input path", async 
   expect(await probeVisibleCanvasSamples(page, canvas)).toBeGreaterThan(0);
   expect(await hasHorizontalViewportOverflow(page)).toBe(false);
 
-  await clickCanvasLogical(page, 276, 283);
+  await clickCanvasLogical(page, 480, 371);
   const pulseChoice = page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']");
   await expect(pulseChoice).toBeVisible();
   await pulseChoice.click();
@@ -54,7 +54,7 @@ test("publishes privacy, feedback, licenses, and complete local-data deletion", 
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
     .toBe("title");
-  await clickCanvasLogical(page, 808, 390);
+  await clickCanvasLogical(page, 687, 449);
   await expect(page).toHaveURL(/\/beta-info\.html$/);
   await expect(page.getByRole("heading", { name: "ARENA CORE" })).toBeVisible();
   await expect(page.locator("#app-version")).toHaveText(APP_VERSION);
@@ -92,7 +92,7 @@ test("starts, advances, and exits Training without creating a run record", async
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
     .toBe("title");
 
-  await clickCanvasLogical(page, 480, 189);
+  await clickCanvasLogical(page, 236, 371);
   await clickCanvasLogical(page, 480, 217);
   await expect
     .poll(() =>

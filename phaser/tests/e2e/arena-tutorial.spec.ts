@@ -264,7 +264,7 @@ async function gotoArena(page: Page): Promise<void> {
 }
 
 async function openStoryIntro(page: Page): Promise<void> {
-  await clickCanvasLogical(page, 480, 189);
+  await clickCanvasLogical(page, 236, 371);
   await expect
     .poll(() =>
       page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
