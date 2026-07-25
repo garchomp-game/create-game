@@ -10,8 +10,12 @@ import {
   type UiScreenId,
   type UiScreenTransition,
 } from "./presentation/UiScreenCatalog";
-import { renderUiCatalogFixture } from "./uiCatalog/UiCatalogFixtureRenderer";
+import {
+  renderUiCatalogFixture,
+  renderUiCatalogHud,
+} from "./uiCatalog/UiCatalogFixtureRenderer";
 import { createUiCatalogFixture } from "./uiCatalog/UiCatalogFixtures";
+import { UI_CATALOG_BACKGROUND_CANDIDATES } from "./uiCatalog/UiCatalogBackgroundCandidates";
 
 const root = getRequiredElement("#ui-catalog");
 const INPUT_PROMPT_ASSET_ROOT =
@@ -94,6 +98,8 @@ function render(): void {
             : ""
         }
 
+        ${renderBackgroundComparison(fixture)}
+
         ${renderInputPromptComparison(selectedScreenId)}
 
         <section class="catalog-routes" aria-labelledby="routes-heading">
@@ -147,6 +153,51 @@ function render(): void {
       render();
     });
   });
+}
+
+function renderBackgroundComparison(
+  fixture: ReturnType<typeof createUiCatalogFixture>,
+): string {
+  if (fixture?.kind !== "hud") return "";
+
+  return `
+    <section class="catalog-backgrounds" aria-labelledby="background-comparison-heading">
+      <div class="section-heading">
+        <h2 id="background-comparison-heading">背景テーマ比較</h2>
+        <span>同一WorldState / 960 × 540 / production未採用</span>
+      </div>
+      <p class="background-comparison__intro">
+        敵、HUD、位置、密度は固定し、背景だけを比較します。見栄えより先に、
+        四方侵入・回収・移動可能領域を説明できるかを確認します。
+      </p>
+      <div class="background-comparison">
+        ${UI_CATALOG_BACKGROUND_CANDIDATES.map(
+          (candidate) => `
+            <figure
+              id="background-${candidate.id}"
+              class="background-option"
+              data-capture-id="background-${candidate.id}"
+            >
+              <figcaption>
+                <span>${candidate.marker}</span>
+                <div>
+                  <strong>${candidate.title}</strong>
+                  <p>${candidate.premise}</p>
+                </div>
+              </figcaption>
+              <div class="background-option__viewport">
+                ${renderUiCatalogHud(fixture.model, candidate.id)}
+              </div>
+              <dl>
+                <div><dt>空間の手掛かり</dt><dd>${candidate.spatialCue}</dd></div>
+                <div><dt>確認するリスク</dt><dd>${candidate.risk}</dd></div>
+              </dl>
+            </figure>
+          `,
+        ).join("")}
+      </div>
+    </section>
+  `;
 }
 
 function renderInputPromptComparison(screenId: UiScreenId): string {
