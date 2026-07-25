@@ -12,6 +12,13 @@ import {
 } from "./presentation/UiScreenCatalog";
 
 const root = getRequiredElement("#ui-catalog");
+const INPUT_PROMPT_ASSET_ROOT =
+  "/ui-catalog-assets/kenney-input-prompts-1.5";
+const INPUT_PROMPT_COMPARISON_SCREENS = new Set<UiScreenId>([
+  "training-briefing",
+  "training-active",
+  "help",
+]);
 
 const requestedScreen = new URLSearchParams(window.location.search).get("screen");
 let selectedScreenId = isUiScreenId(requestedScreen) ? requestedScreen : "title";
@@ -68,6 +75,8 @@ function render(): void {
           </dl>
         </section>
 
+        ${renderInputPromptComparison(selectedScreenId)}
+
         <section class="catalog-routes" aria-labelledby="routes-heading">
           <div class="section-heading">
             <h2 id="routes-heading">選択状態の遷移</h2>
@@ -119,6 +128,70 @@ function render(): void {
       render();
     });
   });
+}
+
+function renderInputPromptComparison(screenId: UiScreenId): string {
+  if (!INPUT_PROMPT_COMPARISON_SCREENS.has(screenId)) return "";
+
+  return `
+    <section class="catalog-prompts" aria-labelledby="prompt-comparison-heading">
+      <div class="section-heading">
+        <h2 id="prompt-comparison-heading">入力表示の比較候補</h2>
+        <span>開発カタログ限定 / production未採用</span>
+      </div>
+      <div class="prompt-comparison">
+        <figure class="prompt-option">
+          <figcaption>
+            <strong>現行CSS表現</strong>
+            <span>軽量・色変更しやすい</span>
+          </figcaption>
+          <div class="prompt-sample prompt-sample--current">
+            <div class="wasd-grid" aria-label="W、A、S、Dキー">
+              <kbd>W</kbd>
+              <kbd>A</kbd>
+              <kbd>S</kbd>
+              <kbd>D</kbd>
+            </div>
+            <div class="mouse-label" aria-label="マウスで照準、左クリックで射撃">
+              <span aria-hidden="true">MOUSE</span>
+              <small>照準 / 左クリックで射撃</small>
+            </div>
+          </div>
+        </figure>
+        <figure class="prompt-option">
+          <figcaption>
+            <strong>Kenney SVG候補</strong>
+            <span>輪郭と形で即時認識</span>
+          </figcaption>
+          <div class="prompt-sample prompt-sample--asset">
+            <div class="wasd-grid wasd-grid--asset" aria-label="W、A、S、Dキー">
+              ${renderPromptImage("keyboard_w_outline.svg", "Wキー")}
+              ${renderPromptImage("keyboard_a_outline.svg", "Aキー")}
+              ${renderPromptImage("keyboard_s_outline.svg", "Sキー")}
+              ${renderPromptImage("keyboard_d_outline.svg", "Dキー")}
+            </div>
+            <div class="mouse-assets">
+              <span>
+                ${renderPromptImage("mouse_move.svg", "マウス移動")}
+                <small>照準</small>
+              </span>
+              <span>
+                ${renderPromptImage("mouse_left.svg", "左クリック")}
+                <small>射撃</small>
+              </span>
+            </div>
+          </div>
+        </figure>
+      </div>
+      <p class="prompt-license">
+        Kenney Input Prompts 1.5A / CC0。出典と採否条件はStarlightのUI素材台帳で管理。
+      </p>
+    </section>
+  `;
+}
+
+function renderPromptImage(filename: string, alt: string): string {
+  return `<img src="${INPUT_PROMPT_ASSET_ROOT}/${filename}" alt="${alt}" width="64" height="64">`;
 }
 
 function renderGroupButton(group: UiScreenGroup | "all", label: string): string {
