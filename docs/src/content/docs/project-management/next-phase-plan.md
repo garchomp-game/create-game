@@ -120,16 +120,19 @@ v0.8はコンテンツ量を増やす前に、Arena Coreの面白さの核を単
 | 0G | [#80](https://github.com/garchomp-game/create-game/issues/80) | candidate非依存の最大密度fixture骨格。色・音・意味は後続 |
 | 0H | [#78](https://github.com/garchomp-game/create-game/issues/78) | 選択wall-clockと再開事故。UI採否前に両UIで比較可能にする |
 | 0I | [#76](https://github.com/garchomp-game/create-game/issues/76) | 現行Chargerの予告前撃破、突進、妨害、回復をcontrolで分離 |
+| 0J | [#134](https://github.com/garchomp-game/create-game/issues/134) | 主要UI状態と遷移を通常プレイなしで比較する開発専用catalog |
 | 1 | [#76](https://github.com/garchomp-game/create-game/issues/76) | control viability通過後だけCharger衝突妨害をpaired比較 |
 | 2以降 | [#81](https://github.com/garchomp-game/create-game/issues/81) | T0 / T1の90秒transfer、5分自由選択、各単独candidateの構造化playtest |
 | 3候補 | [#93](https://github.com/garchomp-game/create-game/issues/93) | #76採否後にボス攻撃文法のruntime候補を単独比較 |
 | 後続 | [#92](https://github.com/garchomp-game/create-game/issues/92) / [#79](https://github.com/garchomp-game/create-game/issues/79) | 通常強化の基礎保証と武器教義を別candidateとして検証 |
+| 後続UI | [#135](https://github.com/garchomp-game/create-game/issues/135) | #134上で背景・素材・画面候補を比較し、採用画面だけproductionへ移す |
+| QA待ち | [#128](https://github.com/garchomp-game/create-game/issues/128) | 初心者がEndlessを最初に選ぶ前提で、序盤成長と30秒以降の段階化を人間確認 |
 
 [#77](https://github.com/garchomp-game/create-game/issues/77)は[#76](https://github.com/garchomp-game/create-game/issues/76)固有の意味や閾値を持たず、既存eventと将来candidateの事実を同じledgerへ入力できる共通基盤にします。[#80](https://github.com/garchomp-game/create-game/issues/80)はfixture骨格を先行し、candidate固有の色・音・判定は意味確定後に足します。[#81](https://github.com/garchomp-game/create-game/issues/81)は最終QAへ限定せず、RC6 baselineと各candidateを別セル・raw countで繰り返し評価します。T0 / T1は同じ初心者へ連続実施せず、事前教材なしで死亡または90秒まで観測します。
 
 ゲームルールを同時に複数変更しません。#76を最初のruntime candidateとし、#93、#94、#95、#92、#79は責務と観測を先に固定しても、production挙動へは一括投入しません。
 
-UI境界[#68](https://github.com/garchomp-game/create-game/issues/68)、比較prototype[#67](https://github.com/garchomp-game/create-game/issues/67)、選択画面縦切り[#70](https://github.com/garchomp-game/create-game/issues/70)の採用範囲はRC6基点のDraft PR #84へ集約しました。旧RC5基点のPR #72はsupersededとして閉じ、外部可読性確認が終わるまでIssueを開いたまま維持します。
+UI境界[#68](https://github.com/garchomp-game/create-game/issues/68)、比較prototype[#67](https://github.com/garchomp-game/create-game/issues/67)、選択画面縦切り[#70](https://github.com/garchomp-game/create-game/issues/70)の判断は現行Presenterと選択UIへ継承済みです。[#134](https://github.com/garchomp-game/create-game/issues/134)ではStorybook本体を先行導入せず、同じPresenter / ViewModelを使う開発専用catalogと遷移manifestを作ります。[#135](https://github.com/garchomp-game/create-game/issues/135)はその比較面を使い、[#66](https://github.com/garchomp-game/create-game/issues/66)の世界観と[#98](https://github.com/garchomp-game/create-game/issues/98)の戦闘object意味論が固まった画面から縦切りします。
 
 体験仮説は[v0.8 面白さの核の検証](../../design/core-promise-validation/)、2026-07-22の採否と停止条件は[v0.8 批判的レビューの採用判断](../../design/v08-critical-review-adoption/)、作業と統合のゲートは[v0.8 実行計画](../v08-execution-plan/)、外部助言は[外部ゲームデザイン助言メモ](../../design/external-game-design-advice/)を正本とします。[v0.8 Work再レビュー依頼](../../playtest/v08-work-design-review-request/)は受領時点の提出スナップショットとして保持します。
 

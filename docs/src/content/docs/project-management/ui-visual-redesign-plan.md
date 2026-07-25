@@ -3,7 +3,7 @@ title: UI・グラフィック再設計計画
 description: UI責務分離、比較草案、ライブラリ採否、視覚テーマ統合をゲームルールから分離して進める計画。
 ---
 
-最終整理日: 2026-07-20
+最終整理日: 2026-07-25
 
 ## 結論
 
@@ -17,6 +17,8 @@ description: UI責務分離、比較草案、ライブラリ採否、視覚テ�
 - `ArenaTheme`を正本とし、Phaser数値色とCSS custom propertiesへ各adapterで変換する。
 
 同じ情報で比較可能な視覚草案とUIライブラリ採否はWave 2で完了しました。A「戦術管制」を本番の基礎にし、B「回収航路」はステージ進行、C「精密アーケード」は武器成果とリザルトへ限定して使います。世界観・素材・fontの最終判断はWave 3に残します。行数だけを目的にした分割、React / Vueの導入、全HUDのDOM化は行いません。
+
+次の比較面は[PH-V08-035 #134](https://github.com/garchomp-game/create-game/issues/134)の開発専用UI状態カタログです。過去のTailwind草案をそのまま復活させず、現行Presenter / ViewModel、画面ID、遷移manifestを使って、実装済み状態と新候補を同じデータで比較します。視覚刷新と外部asset採用は[PH-V08-036 #135](https://github.com/garchomp-game/create-game/issues/135)へ分離します。
 
 ## 管理方針
 
@@ -95,6 +97,29 @@ CanvasとDOMを一方へ統一しません。戦闘予告はワールドとの�
 - 操作上達と競技性を強く伝えられる。
 - ストーリーとステージ差が薄くならないよう、世界観案との統合が必要である。
 
+## 背景の比較候補
+
+| 候補 | 画面内の場所 | 四方侵入の説明 | 主な注意 |
+| --- | --- | --- | --- |
+| 軌道回収プラットフォーム | 回収拠点の床面と外周の軌道空間 | 敵機が全方位から回収拠点へ接近する | 星空だけにせず、床面・航路・戦術表示でArena Core固有の回収を示す |
+| 高高度防衛プラットフォーム | 浮遊基地と低コントラストの雲海 | 航空戦力が基地を全方位から包囲する | 雲、地平線、天候が敵弾とPickupを埋めないよう抑える |
+| 惑星調査・回収区画 | 採掘拠点と外周防衛線 | 地上の敵群が拠点外周を突破する | 地形情報を増やしすぎず、画面外spawnの理由を境界表現で補う |
+
+第一比較候補は軌道回収プラットフォームです。採用ではなく、同じ最大密度fixtureで3背景を比べる起点とします。
+
+## Kenney asset候補
+
+公式asset pageでCC0を確認できる次のpackを、必要なファイルだけ比較します。
+
+- [UI Pack - Sci-Fi](https://kenney.nl/assets/ui-pack-sci-fi)
+- [Input Prompts](https://www.kenney.nl/assets/input-prompts)
+- [Game Icons](https://kenney.nl/assets/game-icons)
+- [Space Shooter Remastered](https://kenney.nl/assets/space-shooter-remastered)
+- [Simple Space](https://kenney.nl/assets/simple-space)
+- [Sci-Fi RTS](https://kenney.nl/assets/sci-fi-rts)
+
+[Kenneyの公式support](https://www.kenney.nl/support)ではasset page掲載物をCC0としていますが、採用時は同梱licenseも確認します。pack名、URL、version、取得日、元ファイル、加工、使用画面を台帳へ残し、未使用pack一式をproductionへ入れません。最初の候補はTraining / Helpのkeyboard・mouse SVGです。
+
 ## 実装順
 
 ### Wave 0: RC5基準固定
@@ -154,6 +179,28 @@ CanvasとDOMを一方へ統一しません。戦闘予告はワールドとの�
 - unit / simulation 428 passed / 2 skipped、Playwright 75 passed / 1 skipped、production buildとPreview smokeを通過した。
 - [UI統合Preview](https://v07-rc6-ui-playtest-arena-core.garchomp-game.workers.dev)で通常強化、EX、契約、portraitを確認できる。
 
+### Wave 5: UI状態カタログと遷移manifest
+
+対象: [PH-V08-035 #134](https://github.com/garchomp-game/create-game/issues/134)
+
+状態: 着手。
+
+- Storybook本体や新しいUI frameworkを先行導入しない。
+- productionと同じPresenter / ViewModelを静的fixtureへ入力する。
+- title、choice、HUD、resultから始め、画面ID、遷移、戻る操作、focus復帰を型付きmanifestへ集約する。
+- development entry、fixture、比較assetをproduction artifactへ含めない。
+
+### Wave 6: 視覚刷新とasset縦切り
+
+対象: [PH-V08-036 #135](https://github.com/garchomp-game/create-game/issues/135)
+
+状態: Wave 5と世界観比較待ち。
+
+- 背景3案とKenney候補をカタログで比較する。
+- タイトル、選択UI、HUD、リザルトを一画面ずつproductionへ移す。
+- 戦闘ルール、入力、保存、記録、乱数を変更しない。
+- 全画像、全E2E、配布build、実機確認は採用候補SHAを固定した最後にまとめる。
+
 ## 完了条件
 
 - 3案を同じ情報とviewportで比較できる。
@@ -165,4 +212,4 @@ CanvasとDOMを一方へ統一しません。戦闘予告はワールドとの�
 
 ## 次の開始点
 
-RC6のゲームルール採否とmain統合、`PH-V08-011`の表示境界、`PH-V08-012`の比較草案、`PH-V08-013`の選択画面candidateまで完了しました。次はDraft PR #84を[同一RC6ルールの比較手順](../../playtest/v08-ui-candidate-playtest/)で外部確認し、同時に#83のWork設計レビューを取得します。採用前にproductionへmergeせず、選択後1秒の入力再開と被弾は#78の計測契約へ接続します。並行して`PH-V08-010`で世界観・素材を絞り、危険反転、技能成果、最大密度fixtureへA/B/Cの役割を展開します。Stage選択とStage 1 / 5のproduction実装はv0.9の3作戦検証へ送ります。
+現行UI境界と選択UIはmainへ継承済みです。次は`PH-V08-035`で主要画面のinventory、型付き遷移manifest、title / choice / HUD / resultの4 fixtureを作ります。その上で`PH-V08-010`の背景3案と`PH-V08-036`のKenney候補を同じcatalogへ載せます。各fixtureでは対象unitと短いbrowser smokeに留め、全画像、全E2E、配布buildは視覚候補を1案へ固定した後に実行します。

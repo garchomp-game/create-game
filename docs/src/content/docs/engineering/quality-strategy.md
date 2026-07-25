@@ -41,6 +41,19 @@ CIではPlaywright同梱Chromium、ローカルでは既定で`/usr/bin/google-c
 
 この段階分けは品質基準を下げるものではありません。実装サイクル中の待ち時間を抑え、最終candidateには従来どおり再現可能な全体証拠を残すための運用です。
 
+### 実行レベル
+
+| Level | 目的 | 代表コマンド |
+| --- | --- | --- |
+| L0 Edit | 構文と局所契約を早く確認する | `npm run typecheck`、変更したtest file、lint相当の静的検査 |
+| L1 Slice | 1つの関心事が成立したことを確認する | 全unitまたは関連suite、短いfixture、対象E2E / screenshot |
+| L2 Candidate | 採否可能なSHAを固定する | 全unit、全E2E、build、artifact検査、必要なseed matrix |
+| L3 Release | 公開物と実環境を確認する | Version Preview smoke、長時間probe / GPU、手動採否 |
+
+通常のUI、文言、fixture追加はL0からL1で反復し、L2からL3は最後に一度まとめます。
+ゲームルール、保存、RNG、共通入力へ変更が波及した場合は、対応するL2契約だけを前倒しします。
+docs-only commitではruntime gateを再実行せず、直前の同一runtime SHAの証拠へ紐付けます。
+
 全E2E画像、v0.7 probe、15分GPU耐久、通常UI採否は毎PRへ含めません。描画、ゲームルール、長時間性能、人間の所感に応じて、以下の手動ゲートを追加します。
 
 実時間15分のブラウザ耐久試験は、バランスによる死亡を防ぐデバッグ保護付きの描画・メモリ試験として明示的に実行します。
