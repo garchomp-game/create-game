@@ -87,3 +87,5 @@ near-missはまだ分類しません。
 - 結果画面へ接続する前に、desktop / portrait fixtureと#81の質問を固定する。
 
 Assist / Practice導線は記録軸の契約が完成するまで接続しません。
+
+Phase Bの最小表示、同一seed再挑戦、fixed board分離は[敗因フィードバック Phase B候補](../run-outcome-insights-phase-b/)で事前登録します。
