@@ -54,6 +54,7 @@ export default defineConfig({
             { label: "UIライブラリと視覚方向", slug: "engineering/ui-library-and-visual-direction-adr" },
             { label: "タイトルとストーリー導入", slug: "engineering/story-onboarding-adr" },
             { label: "RC6の時計と記録規則", slug: "engineering/expedition-rc6-clock-and-ranking-adr" },
+            { label: "記録軸と比較条件", slug: "engineering/run-record-axis-contract-adr" },
             { label: "観戦AIの設計判断", slug: "engineering/auto-pilot-architecture" },
             { label: "品質戦略", slug: "engineering/quality-strategy" }
           ]
