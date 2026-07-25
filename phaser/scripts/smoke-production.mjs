@@ -66,7 +66,7 @@ try {
   );
   await capture(page, "01-title.png");
 
-  await clickCanvasLogical(page, 340, 495);
+  await clickCanvasLogical(page, 549, 449);
   await page.waitForTimeout(250);
   await capture(page, "02-settings.png");
   await clickCanvasLogical(page, 625, 171);
@@ -78,17 +78,17 @@ try {
   assert(autoFireEnabled === false, "settings did not persist auto-fire off");
   await pressGameKey(page, "Escape");
 
-  await clickCanvasLogical(page, 340, 447);
+  await clickCanvasLogical(page, 273, 449);
   await page.waitForTimeout(200);
   await capture(page, "03-ranking.png");
   await pressGameKey(page, "Escape");
 
-  await clickCanvasLogical(page, 620, 447);
+  await clickCanvasLogical(page, 411, 449);
   await page.waitForTimeout(200);
   await capture(page, "04-history-empty.png");
   await pressGameKey(page, "Escape");
 
-  await clickCanvasLogical(page, 340, 297);
+  await clickCanvasLogical(page, 480, 371);
   const pulseChoice = page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']");
   await pulseChoice.waitFor({ state: "visible" });
   await capture(page, "05-weapon-select.png");
@@ -130,7 +130,9 @@ try {
   await page.waitForTimeout(300);
   await capture(page, "11-returned-title.png");
 
-  await clickCanvasLogical(page, 620, 297);
+  await clickCanvasLogical(page, 236, 371);
+  await page.waitForTimeout(200);
+  await clickCanvasLogical(page, 480, 319);
   const spreadChoice = page.locator(
     "[data-choice-kind='weapon'][data-choice-id='spread']",
   );
@@ -144,7 +146,7 @@ try {
   await clickCanvasLogical(page, 480, 409);
   await page.waitForTimeout(300);
 
-  await clickCanvasLogical(page, 620, 495);
+  await clickCanvasLogical(page, 687, 449);
   await page.waitForURL(/\/beta-info(?:\.html)?\/?$/);
   assert((await page.locator("#app-version").textContent()) === expected.appVersion, "beta app mismatch");
   assert(
@@ -219,13 +221,21 @@ async function readMeta(page, name) {
 
 async function readLatestRunRecord(page) {
   return page.evaluate(() => {
-    const raw = localStorage.getItem("arena-core.run-records.v2");
-    if (!raw) return null;
-    try {
-      return JSON.parse(raw).history?.[0] ?? null;
-    } catch {
-      return null;
+    for (const key of [
+      "arena-core.run-records.v3",
+      "arena-core.run-records.v2",
+    ]) {
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      try {
+        const record = JSON.parse(raw).history?.[0] ?? null;
+        if (record) return record;
+      } catch {
+        // The application owns corruption recovery. The smoke keeps looking
+        // for another supported store until the run finishes.
+      }
     }
+    return null;
   });
 }
 
