@@ -33,7 +33,7 @@ const balanceBaseline = {
   kiteCollectHpRecoveredP50: SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 82 : 106,
   kiteCollectHealPickupsCollectedP50: 39,
   kiteCollectEffectiveHealPickupsCollectedP50:
-    SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 7 : 11,
+    SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 9 : 11,
 };
 
 describe("balance simulation", () => {

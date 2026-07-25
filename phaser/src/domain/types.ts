@@ -247,6 +247,8 @@ export type LevelingSimulationConfig = {
   growth: number;
   maxXp: number;
   upgradeChoiceCount: number;
+  firstUpgradeNotBeforeSeconds: number;
+  minimumUpgradeIntervalSeconds: number;
   extra: {
     baseXp: number;
     growth: number;
@@ -553,6 +555,7 @@ export type ProgressionState = {
   xp: number;
   xpToNext: number;
   buildCompletedAt: number | null;
+  nextUpgradeOfferAt: number;
   pendingUpgradeChoices: ProgressionChoiceId[];
   upgradeRanks: Record<UpgradeId, number>;
   extraUpgradeRanks: Record<ExtraUpgradeId, number>;

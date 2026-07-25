@@ -1009,6 +1009,7 @@ describe("stepWorld", () => {
 
   it("levels up from collected XP and enters upgrade selection", () => {
     const world = createWorld(GAME_CONFIG);
+    world.state.elapsed = GAME_CONFIG.leveling.firstUpgradeNotBeforeSeconds;
     world.progression.xp = world.progression.xpToNext - 1;
     world.pickups.push(createTestXpPickup({
       position: { ...world.player.position },

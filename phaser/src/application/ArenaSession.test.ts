@@ -51,7 +51,7 @@ describe("ArenaSession", () => {
       stableHash(
         JSON.stringify(projectLegacyWorldForDigest(session.world)),
       ),
-    ).toBe("9e021e02");
+    ).toBe("be3ffd72");
   });
 
   it("owns the active seed, config, weapon, and status without mirror state", () => {

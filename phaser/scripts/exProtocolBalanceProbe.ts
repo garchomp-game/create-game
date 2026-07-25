@@ -51,6 +51,7 @@ export type ExProtocolBalanceRun = {
   specialPresses: number;
   specialAccepted: number;
   protocolCounters: Record<string, number>;
+  focusThresholds: FocusThresholdRun | null;
   maximumEnemies: number;
   maximumProjectiles: number;
   maximumPickups: number;
@@ -60,6 +61,36 @@ export type ExProtocolBalanceRun = {
   decisionP95Ms: number;
   worldHash: string;
   violations: string[];
+};
+
+export type FocusThresholdObservation = {
+  qualifyingHits: number;
+  availableSeconds: number;
+  activeEnemySeconds: number;
+};
+
+export type FocusThresholdRun = {
+  maximumStacks: number;
+  maximum: FocusThresholdObservation;
+  oneBelowMaximum: FocusThresholdObservation;
+};
+
+export type FocusThresholdObservationSummary = {
+  totalQualifyingHits: number;
+  medianQualifyingHits: number;
+  medianAvailableSeconds: number;
+  medianActiveEnemySeconds: number;
+  zeroOpportunityRate: number;
+};
+
+export type FocusThresholdComparisonSummary = {
+  source: "pulse-baseline";
+  runs: number;
+  maximumStacksMedian: number;
+  maximum: FocusThresholdObservationSummary;
+  oneBelowMaximum: FocusThresholdObservationSummary;
+  medianAdditionalQualifyingHits: number;
+  medianAdditionalAvailableSeconds: number;
 };
 
 export type PairedMetricSummary = {
@@ -91,6 +122,7 @@ export type ExProtocolBalanceReport = {
   frameRate: number;
   runs: ExProtocolBalanceRun[];
   summaries: ExProtocolBalanceSummary[];
+  focusThresholdComparison: FocusThresholdComparisonSummary;
   violations: string[];
 };
 
@@ -197,6 +229,7 @@ export function runExProtocolBalanceMatrix(options: {
     frameRate,
     runs,
     summaries,
+    focusThresholdComparison: summarizeFocusThresholds(runs),
     violations: runs.flatMap((run) =>
       run.violations.map(
         (violation) => `${run.variantId}/${run.seed}: ${violation}`,
@@ -239,6 +272,9 @@ function runBalanceVariant(options: {
   let maximumActivationTrackers = 0;
   let maximumAegisCandidates = 0;
   let maximumCollisionResolved = 0;
+  const focusThresholds = createFocusThresholdRun(
+    session.world.runtime.pulseFocusMaxStacks,
+  );
   const violations: string[] = [];
 
   for (
@@ -258,6 +294,12 @@ function runBalanceVariant(options: {
             path,
           );
     const result = session.step(input, dt);
+    recordFocusThresholdFrame(
+      focusThresholds,
+      session.world,
+      result.events,
+      dt,
+    );
     maximumEnemies = Math.max(
       maximumEnemies,
       session.world.enemies.length,
@@ -347,6 +389,8 @@ function runBalanceVariant(options: {
     specialPresses: protocolStats.specialPresses,
     specialAccepted: protocolStats.specialAccepted,
     protocolCounters: { ...protocolStats.counters },
+    focusThresholds:
+      options.weaponId === "pulse" ? focusThresholds : null,
     maximumEnemies,
     maximumProjectiles,
     maximumPickups,
@@ -356,6 +400,138 @@ function runBalanceVariant(options: {
     decisionP95Ms: percentile(decisionDurations, 0.95),
     worldHash: stableHash(JSON.stringify(session.world)),
     violations: [...new Set(violations)],
+  };
+}
+
+function createFocusThresholdRun(
+  maximumStacks: number,
+): FocusThresholdRun {
+  return {
+    maximumStacks,
+    maximum: {
+      qualifyingHits: 0,
+      availableSeconds: 0,
+      activeEnemySeconds: 0,
+    },
+    oneBelowMaximum: {
+      qualifyingHits: 0,
+      availableSeconds: 0,
+      activeEnemySeconds: 0,
+    },
+  };
+}
+
+function recordFocusThresholdFrame(
+  comparison: FocusThresholdRun,
+  world: WorldState,
+  events: readonly GameEvent[],
+  dt: number,
+): void {
+  if (
+    world.state.weaponType !== "pulse" ||
+    comparison.maximumStacks <= 0
+  ) {
+    return;
+  }
+  const maximumThreshold = comparison.maximumStacks;
+  const oneBelowThreshold = Math.max(1, maximumThreshold - 1);
+  for (const event of events) {
+    if (event.type !== "pulse.focus.hit") continue;
+    if (event.stackAfter >= maximumThreshold) {
+      comparison.maximum.qualifyingHits += 1;
+    }
+    if (event.stackAfter >= oneBelowThreshold) {
+      comparison.oneBelowMaximum.qualifyingHits += 1;
+    }
+  }
+
+  let maximumActiveEnemies = 0;
+  let oneBelowActiveEnemies = 0;
+  for (const enemy of world.enemies) {
+    if ((enemy.pulseFocusExpiresAt ?? 0) < world.state.elapsed) continue;
+    const stacks = enemy.pulseFocusStacks ?? 0;
+    if (stacks >= maximumThreshold) maximumActiveEnemies += 1;
+    if (stacks >= oneBelowThreshold) oneBelowActiveEnemies += 1;
+  }
+  if (maximumActiveEnemies > 0) {
+    comparison.maximum.availableSeconds += dt;
+  }
+  if (oneBelowActiveEnemies > 0) {
+    comparison.oneBelowMaximum.availableSeconds += dt;
+  }
+  comparison.maximum.activeEnemySeconds += maximumActiveEnemies * dt;
+  comparison.oneBelowMaximum.activeEnemySeconds +=
+    oneBelowActiveEnemies * dt;
+}
+
+function summarizeFocusThresholds(
+  runs: readonly ExProtocolBalanceRun[],
+): FocusThresholdComparisonSummary {
+  const baselineRuns = runs.filter(
+    (run) =>
+      run.variantId === "baseline" &&
+      run.weaponId === "pulse" &&
+      run.focusThresholds !== null,
+  );
+  const maximum = baselineRuns.map(
+    (run) => run.focusThresholds!.maximum,
+  );
+  const oneBelowMaximum = baselineRuns.map(
+    (run) => run.focusThresholds!.oneBelowMaximum,
+  );
+  return {
+    source: "pulse-baseline",
+    runs: baselineRuns.length,
+    maximumStacksMedian: median(
+      baselineRuns.map(
+        (run) => run.focusThresholds!.maximumStacks,
+      ),
+    ),
+    maximum: summarizeFocusThresholdObservation(maximum),
+    oneBelowMaximum:
+      summarizeFocusThresholdObservation(oneBelowMaximum),
+    medianAdditionalQualifyingHits: median(
+      baselineRuns.map(
+        (run) =>
+          run.focusThresholds!.oneBelowMaximum.qualifyingHits -
+          run.focusThresholds!.maximum.qualifyingHits,
+      ),
+    ),
+    medianAdditionalAvailableSeconds: median(
+      baselineRuns.map(
+        (run) =>
+          run.focusThresholds!.oneBelowMaximum.availableSeconds -
+          run.focusThresholds!.maximum.availableSeconds,
+      ),
+    ),
+  };
+}
+
+function summarizeFocusThresholdObservation(
+  observations: readonly FocusThresholdObservation[],
+): FocusThresholdObservationSummary {
+  return {
+    totalQualifyingHits: observations.reduce(
+      (total, observation) => total + observation.qualifyingHits,
+      0,
+    ),
+    medianQualifyingHits: median(
+      observations.map(({ qualifyingHits }) => qualifyingHits),
+    ),
+    medianAvailableSeconds: median(
+      observations.map(({ availableSeconds }) => availableSeconds),
+    ),
+    medianActiveEnemySeconds: median(
+      observations.map(
+        ({ activeEnemySeconds }) => activeEnemySeconds,
+      ),
+    ),
+    zeroOpportunityRate:
+      observations.length > 0
+        ? observations.filter(
+            ({ qualifyingHits }) => qualifyingHits === 0,
+          ).length / observations.length
+        : 0,
   };
 }
 

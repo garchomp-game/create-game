@@ -47,6 +47,7 @@ export function updateLevelProgression(
     completeBuild(world, config, events);
     return;
   }
+  if (world.state.elapsed < world.progression.nextUpgradeOfferAt) return;
   if (world.progression.xp < world.progression.xpToNext) return;
 
   world.progression.xp -= world.progression.xpToNext;

@@ -1252,3 +1252,38 @@ Training、Endless、Assistから分離する。既定はHP無敵、出現量少
 - Story進捗保存、中間章、Endless序盤成長の再設計は別Issueへ送る。
 
 詳細は[タイトル導線とストーリー初期作戦](../../engineering/story-onboarding-adr/)を正本とする。
+
+## 2026-07-25: 序盤成長と30秒圧力を別candidateで調整する
+
+決定: [#128](https://github.com/garchomp-game/create-game/issues/128)のPhase 0
+release gateを`5e1950fd1eca`で固定し、12 seedのPhase 1 baselineを取得した。
+初強化p50は4.75〜4.85秒、Lv 5は17.75〜18.45秒、30秒直後の5秒spawn p50は
+5体から17体へ増える。標準runは全24本が通常ビルド完成前に終了した。
+
+- Candidate AはXP値を変えず、最初の通常強化を8秒、以後の通常強化を前回選択から
+  8秒より前に提示しない。
+- Candidate Aの採否後だけ、Candidate Bで重装体30秒、高速体45秒、射撃体75秒へ
+  役割追加を分け、90秒で現行waveへ合流する。
+- XP、wave、敵HP、武器火力を同じcandidateで変更しない。
+- 完全回収controlの通常完成XP約1472、EX開始XP約1652は変更しない。
+- 集束MAXは12 seedで成立hit中央値5、MAX-1は38だった。既存damage shareも低いため
+  MAX-1を維持し、MAXへ戻さずMAX-2へも緩和しない。
+
+数値、目標、stop condition、rollbackは
+[v0.8 序盤成長・圧力カーブ基準](../../design/v08-beginner-curve-baseline/)を
+正本とする。
+
+## 2026-07-25: 通常強化の8秒cadenceをCandidate Aとして採用する
+
+決定: 事前登録どおり、最初の通常強化を8秒、以後の通常強化を直前選択から
+8秒より前に提示しない。XP要求、敵wave、HP、武器火力、EX進行は変更しない。
+
+12 seed比較では初強化p50が両武器8.05秒、Lv 5が32.05秒となった。
+上限controlの通常完成p50はPulse 271.20秒、Spread 271.00秒で、
+EX開始は両武器285.80秒だった。標準runの生存p50はPulse 114.05秒、
+Spread 94.55秒で、Spreadもbaseline比13.7%低下に留まり、
+事前登録した15%非劣性を満たした。
+
+通常XPは提示可能時刻まで保持する。Trainingの固定選択、固有スキル、
+EX、限界突破にはcadenceを適用しない。次はこの採否を固定したうえで、
+Candidate Bの30秒wave段階化だけを比較する。

@@ -32,6 +32,7 @@ export function createWorld(config: SimulationConfig): WorldState {
       xp: 0,
       xpToNext: config.leveling.baseXp,
       buildCompletedAt: null,
+      nextUpgradeOfferAt: config.leveling.firstUpgradeNotBeforeSeconds,
       pendingUpgradeChoices: [],
       upgradeRanks,
       extraUpgradeRanks: createEmptyExtraUpgradeRanks(),

@@ -95,6 +95,8 @@ const levelingSimulationSchema = z
     growth: z.number().finite().min(1),
     maxXp: z.number().int().positive(),
     upgradeChoiceCount: z.number().int().min(1).max(UPGRADE_IDS.length),
+    firstUpgradeNotBeforeSeconds: nonNegativeNumber,
+    minimumUpgradeIntervalSeconds: nonNegativeNumber,
     extra: z
       .object({
         baseXp: z.number().int().positive(),

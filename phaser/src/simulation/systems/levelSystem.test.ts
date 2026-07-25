@@ -16,6 +16,42 @@ import {
 } from "./levelSystem";
 
 describe("level progression cadence", () => {
+  it("preserves XP until each normal upgrade offer reaches its cadence window", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    const firstThreshold = SIMULATION_CONFIG.leveling.firstUpgradeNotBeforeSeconds;
+    const interval = SIMULATION_CONFIG.leveling.minimumUpgradeIntervalSeconds;
+    world.progression.xp = world.progression.xpToNext;
+
+    world.state.elapsed = firstThreshold - 0.001;
+    updateLevelProgression(world, () => 0, SIMULATION_CONFIG, []);
+
+    expect(world.state.status).toBe("playing");
+    expect(world.progression.level).toBe(1);
+    expect(world.progression.xp).toBe(world.progression.xpToNext);
+
+    world.state.elapsed = firstThreshold;
+    updateLevelProgression(world, () => 0, SIMULATION_CONFIG, []);
+
+    expect(world.state.status).toBe("upgradeSelect");
+    expect(world.progression.level).toBe(2);
+    chooseUpgrade(world, 0, SIMULATION_CONFIG, []);
+    expect(world.progression.nextUpgradeOfferAt).toBe(firstThreshold + interval);
+
+    world.progression.xp = world.progression.xpToNext;
+    world.state.elapsed = firstThreshold + interval - 0.001;
+    updateLevelProgression(world, () => 0, SIMULATION_CONFIG, []);
+
+    expect(world.state.status).toBe("playing");
+    expect(world.progression.level).toBe(2);
+    expect(world.progression.xp).toBe(world.progression.xpToNext);
+
+    world.state.elapsed = firstThreshold + interval;
+    updateLevelProgression(world, () => 0, SIMULATION_CONFIG, []);
+
+    expect(world.state.status).toBe("upgradeSelect");
+    expect(world.progression.level).toBe(3);
+  });
+
   it("keeps meaningful choices moving under a ramping human-play XP model", () => {
     const world = createWorld(SIMULATION_CONFIG);
     const random = createRandomStreams(SIMULATION_CONFIG.seed);

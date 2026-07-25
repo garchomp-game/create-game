@@ -195,6 +195,8 @@ const rawSimulationConfig = {
     growth: 1.25,
     maxXp: 120,
     upgradeChoiceCount: 3,
+    firstUpgradeNotBeforeSeconds: 8,
+    minimumUpgradeIntervalSeconds: 8,
     extra: {
       baseXp: 180,
       growth: 1.04,

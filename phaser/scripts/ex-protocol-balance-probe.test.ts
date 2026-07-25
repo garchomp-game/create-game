@@ -38,6 +38,8 @@ describe("EX Protocol paired balance probe", () => {
             startElapsedSeconds: report.startElapsedSeconds,
             durationSeconds: report.durationSeconds,
             summaries: report.summaries,
+            focusThresholdComparison:
+              report.focusThresholdComparison,
             ...(process.env.ARENA_EX_PROTOCOL_PROBE_VERBOSE === "1"
               ? { runs: report.runs }
               : {}),
@@ -52,6 +54,13 @@ describe("EX Protocol paired balance probe", () => {
       for (const summary of report.summaries) {
         expect(summary.runs).toBe(seeds.length);
       }
+      expect(report.focusThresholdComparison.runs).toBe(seeds.length);
+      expect(
+        report.focusThresholdComparison.oneBelowMaximum
+          .totalQualifyingHits,
+      ).toBeGreaterThanOrEqual(
+        report.focusThresholdComparison.maximum.totalQualifyingHits,
+      );
       for (const run of report.runs) {
         expect(run.maximumEnemies).toBeLessThanOrEqual(96);
         expect(run.maximumProjectiles).toBeLessThanOrEqual(300);

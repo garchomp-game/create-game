@@ -54,6 +54,8 @@ export function chooseUpgrade(
   applyCapacityIncrease(world, config, effectiveMaxHpBefore, true);
   clearProgressionChoice(world, config);
   world.state.status = "playing";
+  world.progression.nextUpgradeOfferAt =
+    world.state.elapsed + config.leveling.minimumUpgradeIntervalSeconds;
   events.push({
     type: "upgrade.selected",
     upgradeId,
