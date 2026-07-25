@@ -249,7 +249,7 @@ RC5は基準証跡として保持し、productionへ直接昇格しません。U
 
 2026-07-25にCharger controlを6 seed x 2武器で機械screeningした結果、12本すべてで出現した一方、chargeありは1本、Pulseは予告前撃破5 / 6・charge 0 / 6でした。[#76](https://github.com/garchomp-game/create-game/issues/76)の衝突妨害runtimeは開始せず、`revise-before-candidate`として人間controlまたは再設計へ戻しています。詳細は[Charger control機械screening](../../playtest/v08-charger-control-machine-report/)を参照してください。
 
-[#94](https://github.com/garchomp-game/create-game/issues/94)はPhase Aの非介入ViewModelを基に、Standard敗北だけへ主敗因、根拠、次の一手、同一seed再挑戦を出すB1候補まで実装しました。random runの再挑戦はfixed boardへ分離し、near-missは事実だけを表示して「惜しかった」と解釈しません。候補フラグOFFの全E2Eは`108 passed / 15 skipped`で、production挙動は不変です。採用には[#81](https://github.com/garchomp-game/create-game/issues/81)の表示前自由回答と表示後の次行動確認が残ります。詳細は[敗因フィードバック Phase B候補](../../design/run-outcome-insights-phase-b/)を参照してください。
+[#94](https://github.com/garchomp-game/create-game/issues/94)はPhase Aの非介入ViewModelを基に、Standard敗北だけへ主敗因、根拠、次の一手、同一seed再挑戦を出すB1候補まで実装しました。random runの再挑戦はfixed boardへ分離し、near-missは事実だけを表示して「惜しかった」と解釈しません。候補フラグOFFの全E2Eは`108 passed / 15 skipped`で、[固定Preview](https://v08-outcome-feedback-b1-arena-core.garchomp-game.workers.dev/)の実URLsmokeも通過しました。production挙動は不変です。採用には[#81](https://github.com/garchomp-game/create-game/issues/81)の表示前自由回答と表示後の次行動確認が残ります。詳細は[敗因フィードバック Phase B候補](../../design/run-outcome-insights-phase-b/)を参照してください。
 
 旧結合commit `4bd771e`の477 unit、77 E2E、production buildは履歴証拠として保持しますが、修復候補の合格証拠へ流用しません。修復後の自動証拠、Cloudflare Version Preview、GitHub Actionsは完了し、その後に採用済み選択UI、desktop gate、WebGL fallback、戦闘オブジェクトPhase A fixture、StudyLog契約をmain `60ae8889390c`まで積み上げました。詳細は[v0.8 control観測build サマリ](../v08-observation-control-summary/)と[実施手順](../../playtest/v08-observation-control-runbook/)を参照してください。
 
