@@ -3,6 +3,7 @@ import {
   getRulesetProfiles,
   parseRulesetProfileId,
   resolveRulesetProfile,
+  resolveUpgradeCategoryFloorCandidateProfileId,
 } from "./RulesetProfileRegistry";
 
 describe("RulesetProfileRegistry", () => {
@@ -47,6 +48,41 @@ describe("RulesetProfileRegistry", () => {
       rankPolicy: "non-standard",
       features: { exProtocols: true, endlessContract: false },
     });
+    expect(
+      resolveRulesetProfile(
+        "endless",
+        "arena-default",
+        "candidate-upgrade-floor-endless-v08",
+      ),
+    ).toMatchObject({
+      appVersion: "0.8.0-candidate.3",
+      rulesetVersion: "phaser-v0.8-upgrade-category-floor-c1",
+      randomStreamVersion: "arena-rng-v2",
+      runRecordSchemaVersion: 3,
+      rankPolicy: "non-standard",
+      features: {
+        exProtocols: true,
+        endlessContract: false,
+        upgradeCategoryFloor: true,
+      },
+    });
+    expect(
+      resolveRulesetProfile(
+        "expedition",
+        "final-expedition",
+        "candidate-upgrade-floor-final-expedition-v08",
+      ),
+    ).toMatchObject({
+      appVersion: "0.8.0-candidate.3",
+      rulesetVersion:
+        "phaser-v0.8-final-expedition-upgrade-category-floor-c1",
+      rankPolicy: "non-standard",
+      features: {
+        exProtocols: true,
+        endlessContract: false,
+        upgradeCategoryFloor: true,
+      },
+    });
     expect(() =>
       resolveRulesetProfile(
         "training",
@@ -65,7 +101,28 @@ describe("RulesetProfileRegistry", () => {
       rankPolicy: "none",
       features: { exProtocols: true, endlessContract: false },
     });
-    expect(getRulesetProfiles()).toHaveLength(10);
+    expect(getRulesetProfiles()).toHaveLength(12);
+  });
+
+  it("maps only supported modes to category-floor candidate profiles", () => {
+    expect(
+      resolveUpgradeCategoryFloorCandidateProfileId(
+        "endless",
+        "arena-default",
+      ),
+    ).toBe("candidate-upgrade-floor-endless-v08");
+    expect(
+      resolveUpgradeCategoryFloorCandidateProfileId(
+        "expedition",
+        "final-expedition",
+      ),
+    ).toBe("candidate-upgrade-floor-final-expedition-v08");
+    expect(
+      resolveUpgradeCategoryFloorCandidateProfileId(
+        "practice",
+        "practice-arena",
+      ),
+    ).toBeUndefined();
   });
 
   it("retains the candidate-one profile tuple for stored record decoding", () => {

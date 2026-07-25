@@ -1,6 +1,9 @@
 import { expect, type Page, test } from "@playwright/test";
-import { APP_VERSION, RULESET_VERSION } from "../../src/config/version";
 import { probeVisibleCanvasSamples, probeWebglCanvas } from "./webglCanvasProbe";
+import {
+  ACTIVE_ENDLESS_RULESET_PROFILE_ID,
+  RELEASE_IDENTITY,
+} from "./releaseTestProfile";
 
 test("exposes the release identity and completes the primary input path", async ({ page }) => {
   const consoleErrors: string[] = [];
@@ -11,11 +14,11 @@ test("exposes the release identity and completes the primary input path", async 
   await page.goto("/");
   await expect(page.locator('meta[name="arena-app-version"]')).toHaveAttribute(
     "content",
-    APP_VERSION,
+    RELEASE_IDENTITY.appVersion,
   );
   await expect(page.locator('meta[name="arena-ruleset-version"]')).toHaveAttribute(
     "content",
-    RULESET_VERSION,
+    RELEASE_IDENTITY.rulesetVersion,
   );
   await expect(page.locator('meta[name="arena-build-commit"]')).toHaveAttribute(
     "content",
@@ -36,6 +39,13 @@ test("exposes the release identity and completes the primary input path", async 
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
     .toBe("playing");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => window.__ARENA_DEBUG__?.getSnapshot().runContext?.rulesetProfileId,
+      ),
+    )
+    .toBe(ACTIVE_ENDLESS_RULESET_PROFILE_ID);
   await canvas.click();
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().stats.shotsFired))
@@ -57,8 +67,10 @@ test("publishes privacy, feedback, licenses, and complete local-data deletion", 
   await clickCanvasLogical(page, 687, 449);
   await expect(page).toHaveURL(/\/beta-info\.html$/);
   await expect(page.getByRole("heading", { name: "ARENA CORE" })).toBeVisible();
-  await expect(page.locator("#app-version")).toHaveText(APP_VERSION);
-  await expect(page.locator("#ruleset-version")).toHaveText(RULESET_VERSION);
+  await expect(page.locator("#app-version")).toHaveText(RELEASE_IDENTITY.appVersion);
+  await expect(page.locator("#ruleset-version")).toHaveText(
+    RELEASE_IDENTITY.rulesetVersion,
+  );
   await expect(page.locator("#build-commit")).toHaveText(/^[0-9a-f]{12}$/);
   await expect(page.getByText("外部へ自動送信しません")).toBeVisible();
   await expect(page.getByRole("link", { name: "第三者ライセンス表記" })).toHaveAttribute(
@@ -67,7 +79,9 @@ test("publishes privacy, feedback, licenses, and complete local-data deletion", 
   );
   await expect(page.getByRole("link", { name: "GitHubで報告する" })).toHaveAttribute(
     "href",
-    new RegExp(`appVersion%3A\\+${APP_VERSION.replaceAll(".", "\\.")}`),
+    new RegExp(
+      `appVersion%3A\\+${RELEASE_IDENTITY.appVersion.replaceAll(".", "\\.")}`,
+    ),
   );
   expect(await hasHorizontalViewportOverflow(page)).toBe(false);
 

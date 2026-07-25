@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { EX_PROTOCOLS_ENABLED } from "./releaseTestProfile";
 
 test.use({ deviceScaleFactor: 2 });
 
@@ -251,7 +252,7 @@ test("stacks upgrade cards across the full portrait viewport", async ({
   ]);
 });
 
-test("fits weapon, EX, and contract choices in portrait", async ({ page }) => {
+test("fits weapon and EX choices in portrait", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await expect
@@ -277,7 +278,14 @@ test("fits weapon, EX, and contract choices in portrait", async ({ page }) => {
     "extra",
   );
   await expectChoiceCardsFit(page, 3);
+});
 
+test("fits legacy contract choices in portrait", async ({ page }) => {
+  test.skip(
+    EX_PROTOCOLS_ENABLED,
+    "EX Protocol candidates intentionally retire the Endless contract.",
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await expect
     .poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__)))
@@ -451,6 +459,10 @@ test("records pointer and keyboard choices with a one-second resume window", asy
 test("does not install candidate-only context menu handling", async ({
   page,
 }) => {
+  test.skip(
+    EX_PROTOCOLS_ENABLED,
+    "EX Protocol candidates use right click for their active skill.",
+  );
   await page.goto("/");
   await expect
     .poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__)))

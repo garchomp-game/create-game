@@ -66,7 +66,7 @@ v0.8では機能量を増やす前に、Arena Coreの面白さの核を小さい
 | 2 | [#81](https://github.com/garchomp-game/create-game/issues/81) | candidateを理解し、自発的に次を選ぶか | T1は固定Previewで開始可。後続cellは各単独build固定後 | 初心者・経験者を分け、90秒transferと5分自由選択をraw countで判断 |
 | 3 | [#93](https://github.com/garchomp-game/create-game/issues/93) | Bossの回復または反撃窓1件 | #76の判断記録後。必要な場合だけ | #76と別buildでcontrolと比較 |
 | 4 | [#95](https://github.com/garchomp-game/create-game/issues/95) / [#94](https://github.com/garchomp-game/create-game/issues/94) | 記録分離後の結果・再挑戦UX | division / eligibility / migration完了 | Standardを守ったまま結果導線を接続 |
-| Later | [#92](https://github.com/garchomp-game/create-game/issues/92) / [#79](https://github.com/garchomp-game/create-game/issues/79) | 通常強化offer / 武器教義 | 前段candidateの観察後。互いに別build | 候補運と教義効果を混ぜず個別採否 |
+| Later | [#92](https://github.com/garchomp-game/create-game/issues/92) / [#79](https://github.com/garchomp-game/create-game/issues/79) | 通常強化offer / 武器教義 | #92 C1自動gate完了・人間採否待ち。互いに別build | 候補運と教義効果を混ぜず個別採否 |
 
 Wave 0はsimulation非介入の契約と観測です。並行可能でも1 Issue・1 branch・1 Draft PRを守ります。Training T1は#76のgameplay candidateと分離し、視覚T2はT1の誤認証拠がある場合だけ開始します。#81は最後だけのQAではなく、baseline、Training、単独candidate、統合buildで同じ手順を再利用する検証レーンです。#76はcontrol viabilityと反転candidateを同じ変更へまとめません。
 

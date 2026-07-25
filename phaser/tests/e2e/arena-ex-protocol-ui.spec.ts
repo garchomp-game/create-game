@@ -1,12 +1,13 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import {
-  EX_PROTOCOL_CANDIDATE_APP_VERSION,
-  EX_PROTOCOL_ENDLESS_RULESET_VERSION,
-} from "../../src/config/version";
+  ACTIVE_ENDLESS_RULESET_PROFILE_ID,
+  EX_PROTOCOLS_ENABLED,
+  RELEASE_IDENTITY,
+} from "./releaseTestProfile";
 
 test.skip(
-  process.env.VITE_ARENA_EX_PROTOCOL_CANDIDATE !== "1",
-  "EX Protocol UI runs only with the candidate profile enabled.",
+  !EX_PROTOCOLS_ENABLED,
+  "EX Protocol UI runs only with an EX-enabled candidate profile.",
 );
 
 test.use({ deviceScaleFactor: 2 });
@@ -15,18 +16,18 @@ test("publishes the EX Protocol candidate identity", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator('meta[name="arena-app-version"]')).toHaveAttribute(
     "content",
-    EX_PROTOCOL_CANDIDATE_APP_VERSION,
+    RELEASE_IDENTITY.appVersion,
   );
   await expect(
     page.locator('meta[name="arena-ruleset-version"]'),
-  ).toHaveAttribute("content", EX_PROTOCOL_ENDLESS_RULESET_VERSION);
+  ).toHaveAttribute("content", RELEASE_IDENTITY.rulesetVersion);
 
   await page.goto("/beta-info.html");
   await expect(page.locator("#app-version")).toHaveText(
-    EX_PROTOCOL_CANDIDATE_APP_VERSION,
+    RELEASE_IDENTITY.appVersion,
   );
   await expect(page.locator("#ruleset-version")).toHaveText(
-    EX_PROTOCOL_ENDLESS_RULESET_VERSION,
+    RELEASE_IDENTITY.rulesetVersion,
   );
 });
 
@@ -292,7 +293,7 @@ test("persists candidate runs as v3 with provenance and Protocol aggregate", asy
   expect(persisted.envelope.schemaVersion).toBe(3);
   expect(persisted.envelope.history[0]).toMatchObject({
     schemaVersion: 3,
-    rulesetProfileId: "candidate-ex-endless-c2",
+    rulesetProfileId: ACTIVE_ENDLESS_RULESET_PROFILE_ID,
     rngVersion: "arena-rng-v2",
     exProtocol: {
       selectedId: "pulse.resonance-relay",

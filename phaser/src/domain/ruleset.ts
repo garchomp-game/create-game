@@ -11,6 +11,8 @@ export const RULESET_PROFILE_IDS = [
   "candidate-ex-final-expedition-c1",
   "candidate-ex-endless-c2",
   "candidate-ex-final-expedition-c2",
+  "candidate-upgrade-floor-endless-v08",
+  "candidate-upgrade-floor-final-expedition-v08",
 ] as const;
 
 export type RulesetProfileId = (typeof RULESET_PROFILE_IDS)[number];
@@ -19,6 +21,7 @@ export type RulesetRankPolicy = "standard" | "non-standard" | "none";
 export type GameplayFeatureFlags = Readonly<{
   exProtocols: boolean;
   endlessContract: boolean;
+  upgradeCategoryFloor?: boolean;
 }>;
 
 export type RulesetProfile = Readonly<{

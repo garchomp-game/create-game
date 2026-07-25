@@ -5,6 +5,8 @@ import {
   EX_PROTOCOL_CANDIDATE_APP_VERSION,
   EX_PROTOCOL_ENDLESS_RULESET_VERSION,
   RULESET_VERSION,
+  UPGRADE_CATEGORY_FLOOR_CANDIDATE_APP_VERSION,
+  UPGRADE_CATEGORY_FLOOR_ENDLESS_RULESET_VERSION,
   resolveBuildReleaseIdentity,
   resolveRunRulesetVersion,
 } from "./version";
@@ -32,6 +34,13 @@ describe("resolveBuildReleaseIdentity", () => {
     expect(resolveBuildReleaseIdentity(true)).toEqual({
       appVersion: EX_PROTOCOL_CANDIDATE_APP_VERSION,
       rulesetVersion: EX_PROTOCOL_ENDLESS_RULESET_VERSION,
+    });
+  });
+
+  it("gives the category-floor candidate its own release identity", () => {
+    expect(resolveBuildReleaseIdentity(true, true)).toEqual({
+      appVersion: UPGRADE_CATEGORY_FLOOR_CANDIDATE_APP_VERSION,
+      rulesetVersion: UPGRADE_CATEGORY_FLOOR_ENDLESS_RULESET_VERSION,
     });
   });
 });

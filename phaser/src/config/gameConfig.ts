@@ -11,6 +11,7 @@ const rawSimulationConfig = {
   seed: 20260619,
   features: {
     exProtocols: false,
+    upgradeCategoryFloor: false,
     pulseRicochet: true,
     pulseBoundaryRicochet: true,
     pulseFocus: true,

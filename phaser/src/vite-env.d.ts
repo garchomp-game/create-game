@@ -7,6 +7,8 @@ interface ImportMetaEnv {
   readonly VITE_ARENA_FIXED_SEED?: string;
   readonly VITE_ARENA_RUN_ORIGIN?: string;
   readonly VITE_ARENA_ENABLE_TEST_HOOKS?: string;
+  readonly VITE_ARENA_EX_PROTOCOL_CANDIDATE?: string;
+  readonly VITE_ARENA_UPGRADE_CATEGORY_FLOOR_CANDIDATE?: string;
   readonly VITE_ARENA_AUTO_PILOT_PATROL_STRATEGY?: string;
   readonly VITE_ARENA_AUTO_PILOT_MEASURE_PERFORMANCE?: string;
   readonly VITE_ARENA_AUTO_PILOT_WEAPONS?: string;

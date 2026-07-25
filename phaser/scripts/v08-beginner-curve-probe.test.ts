@@ -7,6 +7,10 @@ import {
 declare const process: { env: Record<string, string | undefined> };
 
 const fullProbe = process.env.ARENA_V08_EARLY_CURVE_FULL === "1";
+const rulesetProfileId =
+  process.env.ARENA_V08_UPGRADE_CATEGORY_FLOOR === "1"
+    ? "candidate-upgrade-floor-endless-v08"
+    : "candidate-ex-endless-c2";
 const seeds = fullProbe
   ? EARLY_CURVE_PROBE_SEEDS
   : EARLY_CURVE_PROBE_SEEDS.slice(0, 2);
@@ -27,6 +31,7 @@ describe("v0.8 beginner curve baseline probe", () => {
         pressureBinSeconds: 5,
         choiceDwellSeconds: 1.5,
         profile: "fair",
+        rulesetProfileId,
       });
       const progressionReport = fullProbe
         ? runEarlyCurveProbe({
@@ -41,6 +46,7 @@ describe("v0.8 beginner curve baseline probe", () => {
             collectionControl: "vacuum-xp",
             patrolStrategy: "periodic-v3",
             stopWhenExStarts: true,
+            rulesetProfileId,
           })
         : pressureReport;
       console.log(
@@ -52,6 +58,7 @@ describe("v0.8 beginner curve baseline probe", () => {
               pressureReport.pressureWindowSeconds,
             pressureBinSeconds: pressureReport.pressureBinSeconds,
             choiceDwellSeconds: pressureReport.choiceDwellSeconds,
+            rulesetProfileId,
             pressure: {
               profile: pressureReport.profile,
               durationSeconds: pressureReport.durationSeconds,

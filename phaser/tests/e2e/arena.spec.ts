@@ -1,9 +1,12 @@
 import { expect, type Page, test } from "@playwright/test";
 import {
-  APP_VERSION,
-  ENDLESS_RULESET_VERSION,
-  RULESET_VERSION,
-} from "../../src/config/version";
+  ACTIVE_CONFIG_VERSION,
+  ACTIVE_ENDLESS_RULESET_VERSION,
+  ACTIVE_RANK_EXCLUSION_REASONS,
+  EX_PROTOCOLS_ENABLED,
+  RELEASE_IDENTITY,
+  RUN_RECORD_STORAGE_KEY,
+} from "./releaseTestProfile";
 import type { RunRecord } from "../../src/domain/runRecords";
 import { probeVisibleCanvasSamples, probeWebglCanvas } from "./webglCanvasProbe";
 
@@ -383,6 +386,10 @@ test("runs the final expedition from mode selection through result and retry", a
 test("navigates Expedition ranking boards across weapons, fixed seeds, and rulesets", async ({
   page,
 }) => {
+  test.skip(
+    EX_PROTOCOLS_ENABLED,
+    "Candidate profiles are non-ranked; arbitrary ruleset boards are a production fixture.",
+  );
   test.setTimeout(60_000);
   await gotoArena(page, "/?seed=20260717");
   await openFinalExpedition(page);
@@ -399,12 +406,11 @@ test("navigates Expedition ranking boards across weapons, fixed seeds, and rules
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
     .toBe("gameOver");
 
-  await page.evaluate(() => {
-    const key = "arena-core.run-records.v2";
+  await page.evaluate((key) => {
     const raw = localStorage.getItem(key);
     if (!raw) throw new Error("Run record storage is missing.");
     const envelope = JSON.parse(raw) as {
-      schemaVersion: 2;
+      schemaVersion: 2 | 3;
       history: RunRecord[];
       rankings: RunRecord[];
     };
@@ -453,9 +459,9 @@ test("navigates Expedition ranking boards across weapons, fixed seeds, and rules
     );
     localStorage.setItem(
       key,
-      JSON.stringify({ schemaVersion: 2, history: records, rankings: records }),
+      JSON.stringify({ ...envelope, history: records, rankings: records }),
     );
-  });
+  }, RUN_RECORD_STORAGE_KEY);
 
   await page.reload();
   await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
@@ -817,14 +823,14 @@ test("debug run export includes playtest report metadata and KPI data", async ({
   const runExport = await page.evaluate(() => window.__ARENA_DEBUG__?.getRunExport());
   expect(runExport).toBeTruthy();
   expect(runExport?.game).toBe("arena-core-phaser");
-  expect(runExport?.appVersion).toBe(APP_VERSION);
-  expect(runExport?.rulesetVersion).toBe(ENDLESS_RULESET_VERSION);
-  expect(runExport?.configVersion).toBe(RULESET_VERSION);
+  expect(runExport?.appVersion).toBe(RELEASE_IDENTITY.appVersion);
+  expect(runExport?.rulesetVersion).toBe(ACTIVE_ENDLESS_RULESET_VERSION);
+  expect(runExport?.configVersion).toBe(ACTIVE_CONFIG_VERSION);
   expect(runExport?.buildCommit).toMatch(/^[0-9a-f]{12}$/);
   expect(runExport?.runOrigin).toBe("test");
   expect(runExport?.rankEligibility).toEqual({
     eligible: false,
-    reasons: ["automatedTest"],
+    reasons: ACTIVE_RANK_EXCLUSION_REASONS,
   });
   expect(runExport?.seed).toBe(20260619);
   expect(runExport?.performance.frameSamples).toBeGreaterThan(0);
@@ -1111,9 +1117,10 @@ test("persists a run exactly once and restores it after reload", async ({ page }
 });
 
 test("recovers from corrupted run storage without blocking game boot", async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem("arena-core.run-records.v2", "{broken");
-  });
+  await page.addInitScript(
+    (key) => localStorage.setItem(key, "{broken"),
+    RUN_RECORD_STORAGE_KEY,
+  );
   await gotoArena(page);
 
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
@@ -1121,22 +1128,26 @@ test("recovers from corrupted run storage without blocking game boot", async ({ 
   );
   expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getRunRecords())).toEqual([]);
   expect(
-    await page.evaluate(() =>
-      Object.keys(localStorage).some((key) => key.startsWith("arena-core.run-records.v2.corrupt.")),
-    ),
+    await page.evaluate((storageKey) =>
+      Object.keys(localStorage).some((key) =>
+        key.startsWith(`${storageKey}.corrupt.`),
+      ), RUN_RECORD_STORAGE_KEY),
   ).toBe(true);
 });
 
 test("keeps the result usable when run storage exceeds quota", async ({ page }) => {
-  await page.addInitScript(() => {
-    const originalSetItem = Storage.prototype.setItem;
-    Storage.prototype.setItem = function setItem(key: string, value: string): void {
-      if (key === "arena-core.run-records.v2") {
-        throw new DOMException("quota exceeded", "QuotaExceededError");
-      }
-      originalSetItem.call(this, key, value);
-    };
-  });
+  await page.addInitScript(
+    (storageKey) => {
+      const originalSetItem = Storage.prototype.setItem;
+      Storage.prototype.setItem = function setItem(key: string, value: string): void {
+        if (key === storageKey) {
+          throw new DOMException("quota exceeded", "QuotaExceededError");
+        }
+        originalSetItem.call(this, key, value);
+      };
+    },
+    RUN_RECORD_STORAGE_KEY,
+  );
   await gotoArena(page);
   await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
   await page.evaluate(() => {
@@ -1281,6 +1292,10 @@ test("resets the guest profile without clearing settings or run records", async 
 });
 
 test("clears rankings and history independently after confirmation", async ({ page }) => {
+  test.skip(
+    EX_PROTOCOLS_ENABLED,
+    "Candidate profiles are non-ranked; ranking clear remains covered by the V3 store fixtures.",
+  );
   await gotoArena(page);
   await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
   await page.evaluate(() => {
@@ -1292,12 +1307,11 @@ test("clears rankings and history independently after confirmation", async ({ pa
     1,
   );
 
-  await page.evaluate(() => {
-    const key = "arena-core.run-records.v2";
+  await page.evaluate((key) => {
     const raw = localStorage.getItem(key);
     if (!raw) throw new Error("Run record storage is missing.");
     const envelope = JSON.parse(raw) as {
-      schemaVersion: 2;
+      schemaVersion: 2 | 3;
       history: RunRecord[];
       rankings: RunRecord[];
     };
@@ -1309,7 +1323,7 @@ test("clears rankings and history independently after confirmation", async ({ pa
       rankEligibility: { eligible: true, reasons: [] },
     };
     localStorage.setItem(key, JSON.stringify({ ...envelope, rankings: [eligibleRecord] }));
-  });
+  }, RUN_RECORD_STORAGE_KEY);
   await page.reload();
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getRunRankingRecords().length))
@@ -1451,6 +1465,10 @@ test("selects spread as the run weapon and preserves it on restart", async ({ pa
 });
 
 test("replays the encounter deck timeline and excludes overdrive contracts from ranking", async ({ page }) => {
+  test.skip(
+    EX_PROTOCOLS_ENABLED,
+    "EX Protocol candidates intentionally retire the Endless contract.",
+  );
   await gotoArena(page, "/?seed=20260619");
   await page.evaluate(() => {
     const debug = window.__ARENA_DEBUG__;

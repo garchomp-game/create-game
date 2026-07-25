@@ -10,15 +10,21 @@ import {
 import { createRandomStreams } from "../src/math/random";
 import { createWorld } from "../src/simulation/createWorld";
 import {
-  getAvailableUpgradeIds,
   getRemainingUpgradeIds,
-  selectUpgradeChoices,
+  updateLevelProgression,
 } from "../src/simulation/systems/levelSystem";
+import { chooseUpgrade } from "../src/simulation/systems/upgradeSystem";
+import { updateRunStats } from "../src/simulation/systems/statsSystem";
+import {
+  UPGRADE_CATEGORY_FLOOR_INTERVENTION_LIMIT,
+  UPGRADE_CATEGORY_FLOOR_MISS_LIMIT,
+} from "../src/simulation/upgradeOfferFairness";
 
 declare const process: { env: Record<string, string | undefined> };
 
 type ProbeWeapon = Extract<WeaponTypeId, "pulse" | "spread">;
 type SelectionPolicy = "observer-priority" | "first-card";
+type OfferVariant = "control" | "category-floor-c1";
 type GapState = {
   current: number;
   maximum: number;
@@ -29,10 +35,14 @@ type OfferProbeRun = {
   seed: number;
   weaponId: ProbeWeapon;
   selectionPolicy: SelectionPolicy;
+  variant: OfferVariant;
   offerCount: number;
   selectionCount: number;
+  interventionCount: number;
   capstoneOffer: number | null;
   capstoneSelection: number | null;
+  eventHash: string;
+  worldHash: string;
   offerSequence: UpgradeId[][];
   upgradeGaps: Record<UpgradeId, GapState>;
   categoryGaps: Record<UpgradeCategory, GapState>;
@@ -46,6 +56,7 @@ const SEEDS = Array.from(
 );
 const WEAPONS: ProbeWeapon[] = ["pulse", "spread"];
 const POLICIES: SelectionPolicy[] = ["observer-priority", "first-card"];
+const VARIANTS: OfferVariant[] = ["control", "category-floor-c1"];
 const BASE_CATEGORIES = UPGRADE_CATEGORIES.filter(
   (category) => category !== "capstone",
 );
@@ -75,8 +86,31 @@ describe("v0.8 normal upgrade offer fairness control", () => {
       expect(first.every((run) => run.selectionCount === 25)).toBe(true);
       expect(first.every((run) => run.capstoneOffer !== null)).toBe(true);
       expect(first.every((run) => run.capstoneSelection !== null)).toBe(true);
+      const candidates = first.filter(
+        (run) => run.variant === "category-floor-c1",
+      );
+      expect(
+        candidates.every(
+          (run) =>
+            run.interventionCount <=
+            UPGRADE_CATEGORY_FLOOR_INTERVENTION_LIMIT,
+        ),
+      ).toBe(true);
+      expect(
+        candidates.every((run) =>
+          BASE_CATEGORIES.every(
+            (category) =>
+              run.categoryGaps[category].maximum <=
+              UPGRADE_CATEGORY_FLOOR_MISS_LIMIT,
+          ),
+        ),
+      ).toBe(true);
 
-      console.log(JSON.stringify(summarize(first), null, 2));
+      const summary = summarize(first);
+      expect(summary.controlMatrixHash).toBe(
+        FULL_PROBE ? "d14ba124" : "f81f9b61",
+      );
+      console.log(JSON.stringify(summary, null, 2));
     },
     120_000,
   );
@@ -85,8 +119,10 @@ describe("v0.8 normal upgrade offer fairness control", () => {
 function runMatrix(): OfferProbeRun[] {
   return SEEDS.flatMap((seed) =>
     WEAPONS.flatMap((weaponId) =>
-      POLICIES.map((selectionPolicy) =>
-        runOfferProbe(seed, weaponId, selectionPolicy),
+      POLICIES.flatMap((selectionPolicy) =>
+        VARIANTS.map((variant) =>
+          runOfferProbe(seed, weaponId, selectionPolicy, variant),
+        ),
       ),
     ),
   );
@@ -96,8 +132,19 @@ function runOfferProbe(
   seed: number,
   weaponId: ProbeWeapon,
   selectionPolicy: SelectionPolicy,
+  variant: OfferVariant,
 ): OfferProbeRun {
-  const world = createWorld(SIMULATION_CONFIG);
+  const config =
+    variant === "category-floor-c1"
+      ? {
+          ...SIMULATION_CONFIG,
+          features: {
+            ...SIMULATION_CONFIG.features,
+            upgradeCategoryFloor: true,
+          },
+        }
+      : SIMULATION_CONFIG;
+  const world = createWorld(config);
   world.state.weaponType = weaponId;
   const random = createRandomStreams(seed).upgrade;
   const upgradeGaps = createGapRecord(UPGRADE_IDS);
@@ -105,26 +152,27 @@ function runOfferProbe(
   const offerSequence: UpgradeId[][] = [];
   let capstoneOffer: number | null = null;
   let capstoneSelection: number | null = null;
+  const eventSequence: unknown[] = [];
 
   for (let offerIndex = 0; offerIndex < 40; offerIndex += 1) {
     const remaining = getRemainingUpgradeIds(
-      SIMULATION_CONFIG,
+      config,
       world.progression.upgradeRanks,
       weaponId,
     );
     if (remaining.length === 0) break;
-    const available = getAvailableUpgradeIds(
-      SIMULATION_CONFIG,
-      world.progression.upgradeRanks,
-      weaponId,
+    world.state.elapsed = (offerIndex + 1) * 8;
+    world.progression.xp = world.progression.xpToNext;
+    const offerEvents: Parameters<typeof updateRunStats>[1] = [];
+    updateLevelProgression(world, random, config, offerEvents);
+    updateRunStats(world, offerEvents);
+    eventSequence.push(...offerEvents);
+    const offer = offerEvents.find(
+      (event) => event.type === "upgrade.offered",
     );
-    const choices = selectUpgradeChoices(
-      SIMULATION_CONFIG,
-      random,
-      world.progression.upgradeRanks,
-      weaponId,
-    );
-    const level = offerIndex + 2;
+    expect(offer?.type).toBe("upgrade.offered");
+    if (!offer || offer.type !== "upgrade.offered") break;
+    const { choices, availableUpgradeIds: available, level } = offer;
     expect(choices.length).toBeGreaterThan(0);
     offerSequence.push([...choices]);
     recordUpgradeGaps(upgradeGaps, available, choices, level);
@@ -133,7 +181,7 @@ function runOfferProbe(
       capstoneOffer === null &&
       choices.some(
         (upgradeId) =>
-          SIMULATION_CONFIG.upgrades[upgradeId].category === "capstone",
+          config.upgrades[upgradeId].category === "capstone",
       )
     ) {
       capstoneOffer = offerIndex + 1;
@@ -144,19 +192,28 @@ function runOfferProbe(
       world.progression.upgradeRanks,
       selectionPolicy,
     );
-    world.progression.upgradeRanks[selectedId] += 1;
+    const selectedIndex = choices.indexOf(selectedId);
+    const selectionEvents: Parameters<typeof updateRunStats>[1] = [];
+    chooseUpgrade(world, selectedIndex, config, selectionEvents);
+    updateRunStats(world, selectionEvents);
+    eventSequence.push(...selectionEvents);
     if (
       capstoneSelection === null &&
-      SIMULATION_CONFIG.upgrades[selectedId].category === "capstone"
+      config.upgrades[selectedId].category === "capstone"
     ) {
       capstoneSelection = offerIndex + 1;
     }
   }
+  const completionEvents: Parameters<typeof updateRunStats>[1] = [];
+  updateLevelProgression(world, random, config, completionEvents);
+  updateRunStats(world, completionEvents);
+  eventSequence.push(...completionEvents);
 
   return {
     seed,
     weaponId,
     selectionPolicy,
+    variant,
     offerCount: offerSequence.length,
     selectionCount: Object.values(world.progression.upgradeRanks).reduce(
       (sum, rank) => sum + rank,
@@ -164,6 +221,11 @@ function runOfferProbe(
     ),
     capstoneOffer,
     capstoneSelection,
+    interventionCount: world.stats.progressionMetrics.offers.filter(
+      (offer) => offer.fairnessIntervention,
+    ).length,
+    eventHash: stableHash(JSON.stringify(eventSequence)),
+    worldHash: stableHash(JSON.stringify(world)),
     offerSequence,
     upgradeGaps,
     categoryGaps,
@@ -259,59 +321,93 @@ function summarize(runs: OfferProbeRun[]) {
   return {
     seeds: SEEDS,
     runs: runs.length,
-    groups: WEAPONS.flatMap((weaponId) =>
-      POLICIES.map((selectionPolicy) => {
-        const group = runs.filter(
-          (run) =>
-            run.weaponId === weaponId &&
-            run.selectionPolicy === selectionPolicy,
-        );
-        return {
-          weaponId,
-          selectionPolicy,
-          runs: group.length,
-          capstoneOffer: summarizeValues(
-            group.map((run) => run.capstoneOffer ?? 0),
-          ),
-          upgrades: Object.fromEntries(
-            getRelevantUpgradeIds(weaponId).map((upgradeId) => [
-              upgradeId,
-              {
-                firstOfferLevel: summarizeValues(
-                  group.map(
-                    (run) =>
-                      run.upgradeGaps[upgradeId].firstOfferLevel ?? 0,
-                  ),
-                ),
-                maximumEligibleGap: summarizeValues(
-                  group.map(
-                    (run) => run.upgradeGaps[upgradeId].maximum,
-                  ),
-                ),
-              },
-            ]),
-          ),
-          categories: Object.fromEntries(
-            BASE_CATEGORIES.map((category) => [
-              category,
-              {
-                firstOfferLevel: summarizeValues(
-                  group.map(
-                    (run) =>
-                      run.categoryGaps[category].firstOfferLevel ?? 0,
-                  ),
-                ),
-                maximumEligibleGap: summarizeValues(
-                  group.map(
-                    (run) => run.categoryGaps[category].maximum,
-                  ),
-                ),
-              },
-            ]),
-          ),
-        };
-      }),
+    controlMatrixHash: stableHash(
+      JSON.stringify(
+        runs
+          .filter((run) => run.variant === "control")
+          .map(toDigestInput),
+      ),
     ),
+    candidateMatrixHash: stableHash(
+      JSON.stringify(
+        runs
+          .filter((run) => run.variant === "category-floor-c1")
+          .map(toDigestInput),
+      ),
+    ),
+    groups: VARIANTS.flatMap((variant) =>
+      WEAPONS.flatMap((weaponId) =>
+        POLICIES.map((selectionPolicy) => {
+          const group = runs.filter(
+            (run) =>
+              run.variant === variant &&
+              run.weaponId === weaponId &&
+              run.selectionPolicy === selectionPolicy,
+          );
+          return {
+            variant,
+            weaponId,
+            selectionPolicy,
+            runs: group.length,
+            interventions: summarizeValues(
+              group.map((run) => run.interventionCount),
+            ),
+            capstoneOffer: summarizeValues(
+              group.map((run) => run.capstoneOffer ?? 0),
+            ),
+            upgrades: Object.fromEntries(
+              getRelevantUpgradeIds(weaponId).map((upgradeId) => [
+                upgradeId,
+                {
+                  firstOfferLevel: summarizeValues(
+                    group.map(
+                      (run) =>
+                        run.upgradeGaps[upgradeId].firstOfferLevel ?? 0,
+                    ),
+                  ),
+                  maximumEligibleGap: summarizeValues(
+                    group.map(
+                      (run) => run.upgradeGaps[upgradeId].maximum,
+                    ),
+                  ),
+                },
+              ]),
+            ),
+            categories: Object.fromEntries(
+              BASE_CATEGORIES.map((category) => [
+                category,
+                {
+                  firstOfferLevel: summarizeValues(
+                    group.map(
+                      (run) =>
+                        run.categoryGaps[category].firstOfferLevel ?? 0,
+                    ),
+                  ),
+                  maximumEligibleGap: summarizeValues(
+                    group.map(
+                      (run) => run.categoryGaps[category].maximum,
+                    ),
+                  ),
+                },
+              ]),
+            ),
+          };
+        }),
+      ),
+    ),
+  };
+}
+
+function toDigestInput(run: OfferProbeRun) {
+  return {
+    seed: run.seed,
+    weaponId: run.weaponId,
+    selectionPolicy: run.selectionPolicy,
+    offerSequence: run.offerSequence,
+    interventionCount: run.interventionCount,
+    capstoneOffer: run.capstoneOffer,
+    eventHash: run.eventHash,
+    worldHash: run.worldHash,
   };
 }
 
@@ -336,4 +432,13 @@ function summarizeValues(values: number[]) {
 function percentile(sorted: number[], quantile: number): number {
   if (sorted.length === 0) return 0;
   return sorted[Math.ceil((sorted.length - 1) * quantile)]!;
+}
+
+function stableHash(input: string): string {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < input.length; index += 1) {
+    hash ^= input.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
 }

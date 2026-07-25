@@ -1327,6 +1327,20 @@ wave開始4秒前の予告は設定の開始時刻と敵種差分から表示層
 
 採否ゲートとcontrol表は[通常強化の提示公平性](../../design/v08-upgrade-offer-fairness/)を正本とする。候補無効時のoffer列、event、world hash一致を確認してからproduction採用を判断する。
 
+## 2026-07-25: category floor C1を人間比較へ進める
+
+決定: 事前登録した64 seed x 2武器 x 2選択方針のpaired比較と、12 seed x 2武器の序盤カーブprobeを通過したため、`category-floor-c1`をproduction採用ではなく人間比較候補として固定する。
+
+- 基礎カテゴリの最大未提示gapはcontrol 10からC1 4へ縮小した。
+- 介入はp95で2回、最大3回で、事前登録した1 run最大4回を下回った。
+- `rapidFire`の初回提示最大level 11、単一強化の最大gap 12は変わらず、単一強化の取得順は均していない。
+- capstoneの初回提示最大offerは20のままで、置換や遅延は発生しなかった。
+- 通常25ランク完成p50はPulse 276.45秒、Spread 277.10秒で、4分から6分の目標内だった。
+- 候補OFFのcontrol hash `d14ba124`、C1 hash `9227055b`を固定し、それぞれ再実行一致を確認した。
+- candidate profileは`0.8.0-candidate.3`、rank policy `non-standard`とし、production記録へ混ぜない。
+
+自動greenは「基礎カテゴリの外れ値を限定的に抑えた」証拠であり、選択体験が単調でない証明ではない。Pulse / Spreadの手動runで反復感と待たされ感を確認し、[#92](https://github.com/garchomp-game/create-game/issues/92)で採用、再調整、棄却を決める。通常bag、reroll、特定の`rapidFire`保証は追加しない。
+
 ## 2026-07-25: 固有スキルの条件を行動文と専用アイコンで示す
 
 決定: 固有スキル選択で新たに現れる一般英語を日本語へ置き換え、カードの説明を

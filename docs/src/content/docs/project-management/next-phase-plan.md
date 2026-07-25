@@ -123,7 +123,7 @@ v0.8はコンテンツ量を増やす前に、Arena Coreの面白さの核を単
 | 1 | [#76](https://github.com/garchomp-game/create-game/issues/76) | control viability通過後だけCharger衝突妨害をpaired比較 |
 | 2以降 | [#81](https://github.com/garchomp-game/create-game/issues/81) | T0 / T1の90秒transfer、5分自由選択、各単独candidateの構造化playtest |
 | 3候補 | [#93](https://github.com/garchomp-game/create-game/issues/93) | #76採否後にボス攻撃文法のruntime候補を単独比較 |
-| 後続 | [#92](https://github.com/garchomp-game/create-game/issues/92) / [#79](https://github.com/garchomp-game/create-game/issues/79) | 通常強化の基礎保証と武器教義を別candidateとして検証 |
+| 後続 | [#92](https://github.com/garchomp-game/create-game/issues/92) / [#79](https://github.com/garchomp-game/create-game/issues/79) | #92 C1は自動gate完了・人間採否待ち。#79はcompleted-build fixtureで別candidateとして検証 |
 
 [#77](https://github.com/garchomp-game/create-game/issues/77)は[#76](https://github.com/garchomp-game/create-game/issues/76)固有の意味や閾値を持たず、既存eventと将来candidateの事実を同じledgerへ入力できる共通基盤にします。[#80](https://github.com/garchomp-game/create-game/issues/80)はfixture骨格を先行し、candidate固有の色・音・判定は意味確定後に足します。[#81](https://github.com/garchomp-game/create-game/issues/81)は最終QAへ限定せず、RC6 baselineと各candidateを別セル・raw countで繰り返し評価します。T0 / T1は同じ初心者へ連続実施せず、事前教材なしで死亡または90秒まで観測します。
 

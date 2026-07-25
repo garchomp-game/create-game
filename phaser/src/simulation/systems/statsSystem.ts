@@ -225,6 +225,9 @@ export function updateRunStats(world: WorldState, events: GameEvent[]): void {
         availableUpgradeIds: [...event.availableUpgradeIds],
         lockedUpgradeIds: [...event.lockedUpgradeIds],
         maxedUpgradeIds: [...event.maxedUpgradeIds],
+        ...(event.fairnessIntervention
+          ? { fairnessIntervention: { ...event.fairnessIntervention } }
+          : {}),
       });
     } else if (event.type === "upgrade.selected") {
       world.stats.upgradesChosen += 1;

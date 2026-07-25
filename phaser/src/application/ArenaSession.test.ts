@@ -151,6 +151,23 @@ describe("ArenaSession", () => {
     });
   });
 
+  it("enables the category floor only in its closed candidate profile", () => {
+    const legacy = new ArenaSession(SIMULATION_CONFIG);
+    legacy.start({ seed: 1, weaponType: "pulse" });
+    expect(legacy.config.features.upgradeCategoryFloor).toBe(false);
+
+    const candidate = new ArenaSession(SIMULATION_CONFIG);
+    candidate.start({
+      seed: 1,
+      weaponType: "pulse",
+      rulesetProfileId: "candidate-upgrade-floor-endless-v08",
+    });
+    expect(candidate.config.features).toMatchObject({
+      exProtocols: true,
+      upgradeCategoryFloor: true,
+    });
+  });
+
   it("starts the final expedition with isolated runtime features and progress state", () => {
     const session = new ArenaSession(SIMULATION_CONFIG);
     session.start({
