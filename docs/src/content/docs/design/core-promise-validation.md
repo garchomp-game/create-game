@@ -174,6 +174,8 @@ mode、simulation modifier、記録方針、比較eligibilityを別軸として�
 - simulation-neutralなアクセシビリティ設定はStandardのままとする。
 
 Assist / Practiceの最初のruntime候補は#95完了後に別Issueへ事前登録し、本人の明示選択で次ランから有効化します。
+型、正規化、旧記録のfail-closed判定、非変更範囲は
+[記録軸と比較条件の契約](../../engineering/run-record-axis-contract-adr/)を正本とします。
 
 ## 7. 通常強化の候補偏り
 

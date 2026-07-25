@@ -3,7 +3,7 @@ title: 直近フェーズ
 description: v0.7 RC6の安定化、v0.8の面白さ検証、Stage 1 / 5 / 10の3作戦検証へ進む現在の計画。
 ---
 
-最終整理日: 2026-07-24
+最終整理日: 2026-07-25
 
 :::note[2026-07-24 更新]
 control観測、採用済み選択UI、9課題Training、desktop gate、WebGL fallback、
@@ -116,7 +116,7 @@ v0.8はコンテンツ量を増やす前に、Arena Coreの面白さの核を単
 | 0C | [#77](https://github.com/garchomp-game/create-game/issues/77) | candidate非依存のsimulation facts、純粋ledger集計、Presenter境界 |
 | 0D | [#93](https://github.com/garchomp-game/create-game/issues/93) | ボス攻撃文法、回復窓、反撃窓の観測契約 |
 | 0E | [#94](https://github.com/garchomp-game/create-game/issues/94) | Phase Aはmain統合済み。Standard結果と同一seed再挑戦のB1候補を実装し、人間採否待ち |
-| 0F | [#95](https://github.com/garchomp-game/create-game/issues/95) | mode、modifier、record policy、PB分離、旧記録migration |
+| 0F | [#95](https://github.com/garchomp-game/create-game/issues/95) | pure contract候補完了。mode、modifier、record policy、比較eligibility、旧記録のfail-closed解釈 |
 | 0G | [#80](https://github.com/garchomp-game/create-game/issues/80) | candidate非依存の最大密度fixture骨格。色・音・意味は後続 |
 | 0H | [#78](https://github.com/garchomp-game/create-game/issues/78) | 選択wall-clockと再開事故。UI採否前に両UIで比較可能にする |
 | 0I | [#76](https://github.com/garchomp-game/create-game/issues/76) | 現行Chargerの予告前撃破、突進、妨害、回復をcontrolで分離 |
