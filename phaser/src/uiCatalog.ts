@@ -10,6 +10,8 @@ import {
   type UiScreenId,
   type UiScreenTransition,
 } from "./presentation/UiScreenCatalog";
+import { renderUiCatalogFixture } from "./uiCatalog/UiCatalogFixtureRenderer";
+import { createUiCatalogFixture } from "./uiCatalog/UiCatalogFixtures";
 
 const root = getRequiredElement("#ui-catalog");
 const INPUT_PROMPT_ASSET_ROOT =
@@ -33,6 +35,7 @@ function render(): void {
   );
   const outgoing = getOutgoingUiTransitions(selectedScreenId);
   const incoming = getIncomingUiTransitions(selectedScreenId);
+  const fixture = createUiCatalogFixture(selectedScreenId);
 
   root.innerHTML = `
     <header class="catalog-header">
@@ -74,6 +77,22 @@ function render(): void {
             <div><dt>Record</dt><dd>${formatRecordEffect(selected.recordEffect)}</dd></div>
           </dl>
         </section>
+
+        ${
+          fixture
+            ? `
+              <section class="catalog-fixture" aria-labelledby="fixture-heading">
+                <div class="section-heading">
+                  <h2 id="fixture-heading">固定状態プレビュー</h2>
+                  <span>960 × 540 / ${fixture.source}</span>
+                </div>
+                <div class="catalog-fixture__viewport">
+                  ${renderUiCatalogFixture(fixture)}
+                </div>
+              </section>
+            `
+            : ""
+        }
 
         ${renderInputPromptComparison(selectedScreenId)}
 

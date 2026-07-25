@@ -183,12 +183,15 @@ CanvasとDOMを一方へ統一しません。戦闘予告はワールドとの�
 
 対象: [PH-V08-035 #134](https://github.com/garchomp-game/create-game/issues/134)
 
-状態: 着手。
+状態: 基盤と最初の4固定fixtureを実装。Draft PR #136でレビュー中。
 
 - Storybook本体や新しいUI frameworkを先行導入しない。
-- productionと同じPresenter / ViewModelを静的fixtureへ入力する。
-- title、choice、HUD、resultから始め、画面ID、遷移、戻る操作、focus復帰を型付きmanifestへ集約する。
-- development entry、fixture、比較assetをproduction artifactへ含めない。
+- 26画面状態、54遷移、owner、記録介入、表示sourceを型付きmanifestへ集約した。
+- title / resultは`ArenaScreenViewModel`、choiceは`ArenaChoiceViewModel`から固定表示する。
+- HUDは専用Presenterがないため、固定`WorldState`とproduction formatter / wave / threat helperから開発専用read modelを作る。本体HUDの責務分離は#129統合後に別単位で判断する。
+- Training / Helpでは現行CSS keycapとKenney Input Promptsを同じ画面へ並べ、素材台帳から出典と未採用状態を追跡する。
+- development entry、fixture、比較assetがproduction artifactへ含まれないことをbuildで確認した。
+- 残りは各状態の固定fixture、現行 / candidate切替、keyboard / pointer / focus / Escape契約、安定した画像IDである。
 
 ### Wave 6: 視覚刷新とasset縦切り
 
