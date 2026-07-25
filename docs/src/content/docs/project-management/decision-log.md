@@ -1264,3 +1264,16 @@ Training、Endless、Assistから分離する。既定はHP無敵、出現量少
 - 予告中の迎撃を別の熟練成功にする案は、Pulse有利などを再評価する別candidateとして扱う。
 
 固定条件、raw count、seed別結果は[Charger control機械screening](../../playtest/v08-charger-control-machine-report/)を正本とする。
+
+## 2026-07-25: 敗因フィードバックB1をStandard限定候補として実装する
+
+決定: [#94](https://github.com/garchomp-game/create-game/issues/94) Phase Aの事実ViewModelを、候補フラグ有効時だけStandard敗北の結果画面と再挑戦へ接続する。採用前のためproduction trafficは変更しない。
+
+- 結果画面は成績、振り返り、記録契約の3列とし、主敗因、根拠、次の一手を各1件だけ表示する。
+- 最終hitではなく終了前5秒の最大damage寄与を主敗因とする。
+- Bossへ到達した場合はphaseと残HPを事実表示するが、未登録のnear-missを「惜しかった」と解釈しない。
+- 再挑戦は同じmode、stage、difficulty、weapon、ruleset、seedを使う。
+- 元がrandom seedでも反復runはfixed boardへ分離し、random PBを反復seedで更新しない。
+- 勝利、Practice、Training、候補フラグOFFでは表示とexact retryを追加しない。
+
+自動greenは因果・記録・レイアウトの整合性だけを保証する。採用は[#81](https://github.com/garchomp-game/create-game/issues/81)で、表示前の自由回答と主敗因の一致、表示後に次の行動を説明できるかを確認して決める。

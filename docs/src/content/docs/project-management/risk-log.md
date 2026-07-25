@@ -308,14 +308,14 @@ RC6手動実績: Pulse 2本とSpread 1本を通常UIで確認し、勝利ラン�
 
 ### near-miss誤表示とdivision記録混在
 
-状態: [#94](https://github.com/garchomp-game/create-game/issues/94) / [#95](https://github.com/garchomp-game/create-game/issues/95)で契約固定待ち。
+状態: #94 Phase A契約は固定済み、B1候補を人間評価中。#95のAssist / Practice記録軸は未着手。
 
 実測根拠のない「あと少し」は敗北を誤説明し、AssistやPracticeの記録がStandard PBへ入ると競技公平性を壊します。逆に支援を隠れた難度補正として実装すると、成功を自分の判断として振り返れません。
 
 対応:
 
 - near-missはボス残HP、未達objective、残り時間など保存済み事実からのみ導出し、条件不成立時は表示しない。
-- 主敗因と再挑戦条件をRunRecordから再構築できる形にし、同条件再挑戦はseed、武器、ruleset、division、modifierを維持する。
+- 主敗因と再挑戦条件を同一runのfactsと`RunContext`から再構築し、Standard B1の同条件再挑戦はseed、武器、ruleset、modifierを維持する。random seedの反復はfixed boardへ分離する。
 - `Standard | Assist | Practice`を明示し、divisionとmodifierを比較scopeへ含める。
 - Assist / PracticeをStandard PBへ混在させず、旧Overload記録の互換読み取り、旧記録migration、不明値の扱いを実装前にfixture化する。
 - 履歴に応じて標準難度を隠れて変更するDDAは導入しない。

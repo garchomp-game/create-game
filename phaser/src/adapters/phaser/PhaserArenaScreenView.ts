@@ -11,6 +11,8 @@ import { PhaserTitleScreenView } from "./PhaserTitleScreenView";
 export class PhaserArenaScreenView {
   private readonly statusText: Phaser.GameObjects.Text;
   private readonly detailText: Phaser.GameObjects.Text;
+  private readonly outcomeHeadingText: Phaser.GameObjects.Text;
+  private readonly outcomeBodyText: Phaser.GameObjects.Text;
   private readonly menuButtonTexts: Phaser.GameObjects.Text[];
   private readonly helpOverlay: PhaserHelpOverlay;
   private readonly practiceSettingsView: PhaserPracticeSettingsView;
@@ -66,6 +68,29 @@ export class PhaserArenaScreenView {
       .setDepth(20)
       .setVisible(false);
 
+    this.outcomeHeadingText = scene.add
+      .text(0, 0, "", {
+        fontFamily: ARENA_THEME.typography.canvasFontFamily,
+        fontSize: "14px",
+        color: ARENA_THEME.colors.accentBright,
+      })
+      .setOrigin(0, 0)
+      .setDepth(20)
+      .setVisible(false);
+
+    this.outcomeBodyText = scene.add
+      .text(0, 0, "", {
+        fontFamily: ARENA_THEME.typography.canvasFontFamily,
+        fontSize: "16px",
+        color: ARENA_THEME.colors.text,
+        align: "left",
+        lineSpacing: 5,
+        wordWrap: { width: 250 },
+      })
+      .setOrigin(0, 0)
+      .setDepth(20)
+      .setVisible(false);
+
     this.menuButtonTexts = Array.from({ length: 12 }, () =>
       scene.add
         .text(0, 0, "", {
@@ -89,6 +114,8 @@ export class PhaserArenaScreenView {
     this.hideButtonTexts();
     this.statusText.setVisible(false);
     this.detailText.setVisible(false);
+    this.outcomeHeadingText.setVisible(false);
+    this.outcomeBodyText.setVisible(false);
     this.helpOverlay.hide();
     this.practiceSettingsView.hide();
     this.practiceWeaponPreview.hide();
@@ -130,6 +157,19 @@ export class PhaserArenaScreenView {
         .setWordWrapWidth(280)
         .setText(screen.detailText ?? "")
         .setVisible(true);
+      if (screen.outcomeFeedback) {
+        graphics.lineStyle(1, COLOR.borderSubtle, 0.8);
+        graphics.lineBetween(320, 32, 320, 320);
+        graphics.lineBetween(630, 32, 630, 320);
+        this.outcomeHeadingText
+          .setPosition(350, 42)
+          .setText(screen.outcomeFeedback.heading)
+          .setVisible(true);
+        this.outcomeBodyText
+          .setPosition(350, 72)
+          .setText(formatOutcomeFeedback(screen.outcomeFeedback))
+          .setVisible(true);
+      }
       this.drawMenuButtons(graphics, world, screen);
       return;
     }
@@ -306,4 +346,19 @@ export class PhaserArenaScreenView {
       text.setVisible(false);
     }
   }
+}
+
+function formatOutcomeFeedback(
+  feedback: NonNullable<ArenaScreenViewModel["outcomeFeedback"]>,
+): string {
+  return [
+    "主な敗因",
+    feedback.causeTitle,
+    feedback.evidence,
+    "",
+    "次の一手",
+    feedback.nextAction,
+    feedback.progress ? "" : null,
+    feedback.progress,
+  ].filter((line): line is string => line !== null).join("\n");
 }

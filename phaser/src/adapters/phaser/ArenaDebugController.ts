@@ -75,11 +75,6 @@ import type { ArenaRenderPerformanceSnapshot } from "./PhaserArenaRenderer";
 import type { ChoiceInteractionReport } from "../../application/ChoiceInteractionMonitor";
 import type { BossShadowReport } from "../../domain/bossShadow";
 import type { RunOutcomeInsightViewModel } from "../../domain/runOutcomeInsights";
-import {
-  aggregateRunFacts,
-  createRunFactScope,
-} from "../../application/runFactKernel";
-import { createRunOutcomeInsight } from "../../application/runOutcomeInsights";
 
 export type ArenaDebugControllerDependencies = {
   session: ArenaSession;
@@ -365,13 +360,7 @@ export class ArenaDebugController {
   }
 
   private getRunOutcomeInsight(): RunOutcomeInsightViewModel | null {
-    const context = this.dependencies.runLifecycle.getContext();
-    if (!context) return null;
-    const events = this.dependencies.runLifecycle.getRunFactEvents();
-    return createRunOutcomeInsight(
-      aggregateRunFacts(createRunFactScope(context), events),
-      events,
-    );
+    return this.dependencies.runLifecycle.getRunOutcomeInsight();
   }
 
   private downloadRunExport(): ReturnType<ArenaDebugApi["downloadRunExport"]> {

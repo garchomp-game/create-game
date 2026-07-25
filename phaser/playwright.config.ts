@@ -4,6 +4,7 @@ const port = 5174;
 const isLongSoak = process.env.ARENA_LONG_SOAK === "1";
 const isHardwareSoak = isLongSoak && process.env.ARENA_HARDWARE_SOAK === "1";
 const useHeadedFirefox = process.env.ARENA_FIREFOX_HEADED === "1";
+const useRandomSeed = process.env.ARENA_E2E_RANDOM_SEED === "1";
 const chromiumExecutablePath =
   process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 
@@ -18,7 +19,7 @@ export default defineConfig({
   webServer: {
     command: isHardwareSoak
       ? `npm run preview:e2e -- --port ${port}`
-      : `VITE_ARENA_FIXED_SEED=1 VITE_ARENA_RUN_ORIGIN=test VITE_PHASER_PRESERVE_DRAWING_BUFFER=1 npm run dev -- --port ${port}`,
+      : `${useRandomSeed ? "" : "VITE_ARENA_FIXED_SEED=1 "}VITE_ARENA_RUN_ORIGIN=test VITE_PHASER_PRESERVE_DRAWING_BUFFER=1 npm run dev -- --port ${port}`,
     url: `http://127.0.0.1:${port}/`,
     reuseExistingServer: false,
     timeout: 120_000,

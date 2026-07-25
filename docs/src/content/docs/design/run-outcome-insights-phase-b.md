@@ -55,6 +55,18 @@ description: Standard結果へ主敗因、次の一手、同一seed再挑戦を�
 - production trafficは採否前に変更しない。
 - candidate専用のgameplay rulesetは作らない。
 
+## 実装状況
+
+2026-07-25に`agent/v08-outcome-feedback-phase-b`でB1を実装しました。
+
+- `RunLifecycleController`が保持する同一runのfactから、結果表示と再挑戦planを生成する。
+- 結果画面を左の成績、中央の振り返り、右の記録契約の3列にした。
+- 最後の一撃ではなく終了前5秒の最大damage寄与を表示し、助言は1件に限定した。
+- random runの同一seed再挑戦は`fixed`へ移し、random PBへ混ぜない。
+- 勝利、Practice、Training、flag OFFでは候補表示とexact retryを出さない。
+
+自動証拠はunit `105 files / 663 passed / 2 skipped`、候補E2E `1 passed`、flag OFF全E2E `108 passed / 15 skipped`です。960 x 540 fixtureでは3列と4ボタンの非重複を目視確認しました。これは候補完成の証拠であり、採用判断ではありません。
+
 ## 自動受け入れ
 
 - 同じ最終hitでも直前5秒のdamage構成に応じて表示する主因が変わる。
@@ -78,3 +90,4 @@ description: Standard結果へ主敗因、次の一手、同一seed再挑戦を�
 
 自動greenは表示と記録の整合性を保証するだけです。採用には、結果画面を見た参加者が次の一手を説明でき、誤帰属が増えないことを必要とします。
 
+次はVersion PreviewでEndless / Final Expeditionの敗北を各1本以上確認し、表示を見る前の自由回答と`causeMatch`、表示後の`nextActionFormation`を[#81](https://github.com/garchomp-game/create-game/issues/81)へ記録します。near-missの肯定表現とAssist / Practice導線は引き続き対象外です。

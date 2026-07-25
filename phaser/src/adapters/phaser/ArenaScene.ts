@@ -13,6 +13,7 @@ import {
 } from "../../config/version";
 import { BASIC_TUTORIAL_SEED } from "../../simulation/TutorialController";
 import { resolveRunOrigin, resolveSeedCategory } from "../../application/runEnvironment";
+import { createSameSeedRetryPlan } from "../../application/runRetry";
 import {
   ArenaMenuController,
   type ArenaMenuActionOutcome,
@@ -36,7 +37,7 @@ import {
   createRankEligibility,
   createRankingBoardQueries,
 } from "../../application/runRecords";
-import type { RunOrigin } from "../../domain/runRecords";
+import type { RunOrigin, SeedCategory } from "../../domain/runRecords";
 import type { RulesetProfileId } from "../../domain/ruleset";
 import type { LocalProfile, ProfileSettings } from "../../domain/profile";
 import {
@@ -94,6 +95,8 @@ const loadArenaDebugModules =
 const loadDebugExProtocolStory = import.meta.env.DEV
   ? () => import("./DebugExProtocolStory")
   : null;
+const OUTCOME_FEEDBACK_CANDIDATE_ENABLED =
+  import.meta.env.VITE_ARENA_OUTCOME_FEEDBACK_CANDIDATE === "1";
 
 export class ArenaScene extends Phaser.Scene {
   private inputAdapter!: PhaserInputAdapter;
@@ -291,7 +294,7 @@ export class ArenaScene extends Phaser.Scene {
     });
     this.recordResult(result, this.game.loop.rawDelta);
     if (result.events.some((event) => event.type === "game.restart.requested")) {
-      this.resetGame("playing");
+      this.restartCurrentRun();
       this.renderCurrentWorld();
       return;
     }
@@ -307,6 +310,8 @@ export class ArenaScene extends Phaser.Scene {
   private resetGame(
     status: WorldState["state"]["status"] = "playing",
     runOriginOverride?: RunOrigin,
+    runSeedOverride?: number,
+    seedCategoryOverride?: SeedCategory,
   ): void {
     this.autoPilotController.resetForRun(status);
     this.inputAdapter.clearTransientInput();
@@ -316,10 +321,11 @@ export class ArenaScene extends Phaser.Scene {
     this.arenaRenderer.resetPerformance();
     const fixedSeed = this.getFixedRunSeed();
     const runSeed =
-      this.selectedModeId === TRAINING_MODE_ID ||
-      this.selectedModeId === STORY_MODE_ID
+      runSeedOverride ??
+      (this.selectedModeId === TRAINING_MODE_ID ||
+        this.selectedModeId === STORY_MODE_ID
         ? BASIC_TUTORIAL_SEED
-        : this.createRunSeed(fixedSeed);
+        : this.createRunSeed(fixedSeed));
     this.session.start({
       seed: runSeed,
       weaponType: this.selectedWeapon,
@@ -363,7 +369,8 @@ export class ArenaScene extends Phaser.Scene {
             this.session.rulesetProfile.runRecordSchemaVersion,
           exProtocolsEnabled:
             this.session.rulesetProfile.features.exProtocols,
-          seedCategory: resolveSeedCategory(fixedSeed),
+          seedCategory:
+            seedCategoryOverride ?? resolveSeedCategory(fixedSeed),
           weaponId: this.world.state.weaponType,
           modifierIds: [
             `auto-fire:${this.settings.autoFireEnabled ? "on" : "off"}`,
@@ -392,6 +399,27 @@ export class ArenaScene extends Phaser.Scene {
     this.menuController.reset();
     this.feedbackLayer.reset();
     this.audioRouter.reset();
+  }
+
+  private restartCurrentRun(): void {
+    const retryPlan = OUTCOME_FEEDBACK_CANDIDATE_ENABLED
+      ? createSameSeedRetryPlan(
+          this.runLifecycle.getRunOutcomeInsight(),
+          this.runLifecycle.getContext(),
+        )
+      : null;
+    if (retryPlan) {
+      this.selectedModeId = retryPlan.modeId;
+      this.selectedStageId = retryPlan.stageId;
+      this.selectedWeapon = retryPlan.weaponId;
+      this.selectedRulesetProfileId = retryPlan.rulesetProfileId;
+    }
+    this.resetGame(
+      "playing",
+      undefined,
+      retryPlan?.seed,
+      retryPlan?.seedCategory,
+    );
   }
 
   private getRequestedRulesetProfileId() {
@@ -738,6 +766,9 @@ export class ArenaScene extends Phaser.Scene {
       settings: this.settings,
       practiceOptions: menuState.practiceOptions,
       latestRunRecord: this.runLifecycle.getLatestRecord(),
+      runOutcomeInsight: OUTCOME_FEEDBACK_CANDIDATE_ENABLED
+        ? this.runLifecycle.getRunOutcomeInsight()
+        : null,
       previousBest: this.runLifecycle.getPreviousBest(),
       previousWeaponBest: this.runLifecycle.getPreviousWeaponBest(),
       historyClearPending: menuState.historyClearPending,
