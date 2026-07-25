@@ -251,6 +251,16 @@ damageを下げてもSpreadの接触回数と生存は改善せず、C8より悪
 
 観戦AIは人間の代替ではありません。手動10分到達はcandidate固定後の受け入れrunで確認します。
 
+## 2026-07-26終了時点
+
+ゲーム数値はC8を暫定候補として固定し、追加の数値追従を止めました。C9は棄却済みです。
+本日は1,500秒release、12 seed成長probe、全E2E、配布buildを実行しません。
+性能調整とultra運用を翌日に決めた後、C8の手動所感を含めて採否を確定します。
+
+引き継ぎと未実施ゲートは
+[性能調整とultra運用の引き継ぎ](../../engineering/performance-ultra-workflow-handoff/)
+を正本とします。
+
 ## Stop conditions
 
 - Final Expeditionの勝敗、到達時刻、通常XP曲線が変わる。
