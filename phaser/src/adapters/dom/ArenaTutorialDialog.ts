@@ -33,7 +33,6 @@ export class ArenaTutorialDialog {
   }
 
   render(view: ArenaTutorialViewModel | null): void {
-    this.syncBounds();
     const wasVisible = this.root.classList.contains(
       "arena-tutorial-dialog--visible",
     );
@@ -52,6 +51,7 @@ export class ArenaTutorialDialog {
       if (wasVisible) this.restoreFocus();
       return;
     }
+    this.syncBounds();
 
     if (!wasVisible) {
       this.previousFocus =

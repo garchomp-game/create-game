@@ -220,6 +220,52 @@ describe("RunLifecycleController", () => {
       },
     });
   });
+
+  it("retains recovery facts but ignores high-volume XP collection events", () => {
+    const controller = new RunLifecycleController(new MemoryRunRecordStore());
+    controller.begin(makeContext("pickup-facts"), true);
+    controller.observeEvents([
+      {
+        type: "pickup.collected",
+        pickupId: "xp-1",
+        pickupKind: "xp",
+        xpValue: 2,
+        healValue: 0,
+        hpRecovered: 0,
+      },
+      {
+        type: "pickup.collected",
+        pickupId: "heal-1",
+        pickupKind: "heal",
+        xpValue: 0,
+        healValue: 12,
+        hpRecovered: 8,
+      },
+    ]);
+
+    expect(controller.getRunFactEvents().map(({ event }) => event.type)).toEqual([
+      "game.started",
+      "pickup.collected",
+    ]);
+    expect(controller.getRunFactEvents()[1]?.event).toMatchObject({
+      pickupKind: "heal",
+    });
+  });
+
+  it("can disable run-fact retention for the standard production path", () => {
+    const controller = new RunLifecycleController(
+      new MemoryRunRecordStore(),
+      { collectRunFacts: false },
+    );
+    controller.begin(makeContext("facts-disabled"), true);
+    controller.observeEvents([
+      { type: "game.started" },
+      { type: "game.over", score: 10, elapsed: 4 },
+    ]);
+
+    expect(controller.getRunFactEvents()).toEqual([]);
+    expect(controller.getRunOutcomeInsight()).toBeNull();
+  });
 });
 
 function enemyHit(enemyId: string, hpAfter: number) {

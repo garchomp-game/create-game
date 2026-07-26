@@ -33,15 +33,33 @@ export class PerformanceMonitor {
     actualFps: number,
     finalize = false,
   ): void {
-    const metrics = sourceMetrics.map((metric) =>
-      metric.type === "timing" &&
-      metric.name === "frame.raw_dt_ms" &&
-      observedRawDtMs !== undefined
-        ? { ...metric, valueMs: observedRawDtMs }
-        : metric,
-    );
-    for (const metric of metrics) this.metrics.record(metric);
-    this.frameReporter.report(metrics);
+    const reportedMetrics: GameMetric[] = [];
+    for (const sourceMetric of sourceMetrics) {
+      const metric =
+        sourceMetric.type === "timing" &&
+        sourceMetric.name === "frame.raw_dt_ms" &&
+        observedRawDtMs !== undefined
+          ? { ...sourceMetric, valueMs: observedRawDtMs }
+          : sourceMetric;
+      this.metrics.record(metric);
+      reportedMetrics.push(metric);
+    }
+    this.frameReporter.report(reportedMetrics);
+    if (finalize) this.finalizedSnapshot = this.createSnapshot(actualFps);
+  }
+
+  recordFrame(
+    observedRawDtMs: number,
+    actualFps: number,
+    finalize = false,
+  ): void {
+    const metric: GameMetric = {
+      type: "timing",
+      name: "frame.raw_dt_ms",
+      valueMs: observedRawDtMs,
+    };
+    this.metrics.record(metric);
+    this.frameReporter.report([metric]);
     if (finalize) this.finalizedSnapshot = this.createSnapshot(actualFps);
   }
 

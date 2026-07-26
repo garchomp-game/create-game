@@ -84,6 +84,7 @@ export type ArenaDebugControllerDependencies = {
   performance: PerformanceMonitor;
   getActualFps(): number;
   getRenderPerformance(): ArenaRenderPerformanceSnapshot;
+  resetPerformance(): void;
   getBuildCommit(): string;
   getProfile(): LocalProfile;
   getSettings(): ProfileSettings;
@@ -693,7 +694,10 @@ export class ArenaDebugController {
       scenarioId,
     );
     this.activeCaptureScenarioId = loaded ? scenarioId : null;
-    if (loaded) this.dependencies.render();
+    if (loaded) {
+      this.dependencies.resetPerformance();
+      this.dependencies.render();
+    }
     return loaded;
   }
 

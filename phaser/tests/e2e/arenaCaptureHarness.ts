@@ -55,6 +55,24 @@ export async function openArenaCaptureScenario(
       ),
     )
     .toBe(scenarioId);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          window.__ARENA_DEBUG__?.getSnapshot().renderPerformance.fullFrame
+            .samples ?? 0,
+      ),
+    )
+    .toBeGreaterThan(0);
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          () =>
+            window.__ARENA_DEBUG__?.getSnapshot().performance.frameSamples ?? 0,
+        ),
+    )
+    .toBeGreaterThan(0);
 }
 
 async function clickCanvasLogical(
@@ -96,6 +114,10 @@ export async function assertArenaCaptureStructure(
   expect(Number.isFinite(snapshot.performance.p95RawDtMs)).toBe(true);
   expect(snapshot.renderPerformance.staticBackground.drawCount).toBe(1);
   expect(snapshot.renderPerformance.renderedFrames).toBeGreaterThan(0);
+  expect(snapshot.renderPerformance.fullFrame.samples).toBeGreaterThan(0);
+  expect(
+    Number.isFinite(snapshot.renderPerformance.fullFrame.p95Ms),
+  ).toBe(true);
   expect(Number.isFinite(snapshot.renderPerformance.dynamicWorld.maxMs)).toBe(
     true,
   );

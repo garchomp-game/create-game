@@ -12,6 +12,7 @@ import { applyExpeditionBossFixture } from "./ArenaDebugFixtures";
 export const ARENA_CAPTURE_SCENARIO_IDS = [
   "rc6-control",
   "object-semantics-control",
+  "maximum-density-performance",
 ] as const;
 
 export type ArenaCaptureScenarioId =
@@ -33,7 +34,10 @@ export type ArenaCaptureLayerSnapshot = {
 export type ArenaCaptureScenarioDefinition = {
   id: ArenaCaptureScenarioId;
   baseline: "rc6" | "v08-phase-a";
-  purpose: "capture-harness-control" | "object-semantics-control";
+  purpose:
+    | "capture-harness-control"
+    | "object-semantics-control"
+    | "performance-stress";
   expectedBoss: boolean;
   expectsExpeditionAudioCue: boolean;
   expectedLayers: ArenaCaptureLayerSnapshot;
@@ -88,6 +92,25 @@ export const ARENA_CAPTURE_SCENARIOS: Record<
       hudVisible: true,
     },
   },
+  "maximum-density-performance": {
+    id: "maximum-density-performance",
+    baseline: "v08-phase-a",
+    purpose: "performance-stress",
+    expectedBoss: false,
+    expectsExpeditionAudioCue: false,
+    expectedLayers: {
+      player: 1,
+      obstacles: 4,
+      enemies: 96,
+      bosses: 0,
+      playerProjectiles: 60,
+      enemyProjectiles: 256,
+      xpPickups: 1_000,
+      healPickups: 24,
+      hazardTelegraphs: 0,
+      hudVisible: true,
+    },
+  },
 };
 
 export function applyArenaCaptureScenario(
@@ -97,6 +120,10 @@ export function applyArenaCaptureScenario(
 ): boolean {
   if (scenarioId === "object-semantics-control") {
     applyObjectSemanticsCaptureScenario(world, config);
+    return true;
+  }
+  if (scenarioId === "maximum-density-performance") {
+    applyMaximumDensityCaptureScenario(world, config);
     return true;
   }
   if (scenarioId !== "rc6-control") return false;
@@ -136,6 +163,75 @@ export function applyArenaCaptureScenario(
   world.nextVolleyId = 5;
   world.nextPickupId = 7;
   return true;
+}
+
+function applyMaximumDensityCaptureScenario(
+  world: WorldState,
+  config: SimulationConfig,
+): void {
+  world.state.status = "playing";
+  world.state.hp = config.player.maxHp + world.runtime.maxHpBonus;
+  world.state.score = 99_999;
+  world.state.lastAim = { x: 1, y: 0 };
+  world.player.position = {
+    x: config.arena.width / 2,
+    y: config.arena.height / 2,
+  };
+  world.expedition = undefined;
+  world.bullets = Array.from({ length: 60 }, (_, index) =>
+    createCapturePlayerProjectile(
+      config,
+      gridPosition(index, 10, 60, 45, 93, 86),
+      index + 1,
+    ),
+  );
+  world.enemies = Array.from({ length: 96 }, (_, index) =>
+    createCaptureEnemy(
+      config,
+      (["chaser", "brute", "fast", "ranged"] as const)[index % 4]!,
+      gridPosition(index, 12, 40, 38, 80, 66),
+      index + 1,
+    ),
+  );
+  world.enemyProjectiles = Array.from({ length: 256 }, (_, index) =>
+    createCaptureEnemyProjectile(
+      config,
+      gridPosition(index, 16, 24, 18, 60, 33.5),
+      index + 1,
+    ),
+  );
+  const healValue = Math.max(
+    config.pickup.healMinimum,
+    Math.floor(
+      (config.player.maxHp + world.runtime.maxHpBonus) *
+        config.pickup.healRatio,
+    ),
+  );
+  world.pickups = [
+    ...Array.from({ length: 1_000 }, (_, index) =>
+      createCapturePickup(
+        config,
+        "xp",
+        gridPosition(index, 40, 12, 10, 24, 21.5),
+        index + 1,
+        healValue,
+      ),
+    ),
+    ...Array.from({ length: 24 }, (_, index) =>
+      createCapturePickup(
+        config,
+        "heal",
+        gridPosition(index, 6, 90, 80, 156, 126),
+        index + 1_001,
+        healValue,
+      ),
+    ),
+  ];
+  world.nextEnemyId = 97;
+  world.nextEnemyProjectileId = 257;
+  world.nextBulletId = 61;
+  world.nextVolleyId = 61;
+  world.nextPickupId = 1_025;
 }
 
 export function readArenaCaptureLayers(
@@ -385,5 +481,19 @@ function createCapturePickup(
     xpValue: kind === "xp" ? 1 : 0,
     healValue: kind === "heal" ? healValue : 0,
     lifetime: kind === "heal" ? config.pickup.healLifetime : null,
+  };
+}
+
+function gridPosition(
+  index: number,
+  columns: number,
+  startX: number,
+  startY: number,
+  stepX: number,
+  stepY: number,
+): { x: number; y: number } {
+  return {
+    x: startX + (index % columns) * stepX,
+    y: startY + Math.floor(index / columns) * stepY,
   };
 }

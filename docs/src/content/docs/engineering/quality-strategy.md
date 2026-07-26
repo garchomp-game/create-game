@@ -67,6 +67,11 @@ ARENA_LONG_SOAK=1 ARENA_HARDWARE_SOAK=1 npx playwright test tests/e2e/arena-soak
 ゲームが有限終了することは、別の加速シミュレーションで検証します。
 長時間モードでは計測負荷と巨大な失敗成果物を避けるため動画・traceを記録せず、JSON要約と失敗スクリーンショットを残します。通常E2Eは失敗時の動画・traceを維持します。
 
+v0.8ではPhaserの実描画区間と最大密度fixtureを追加しました。アルゴリズム、
+比較値、残る実機ゲートは
+[v0.8 性能監査・最適化レポート](../../playtest/v08-performance-optimization-report/)
+を参照してください。
+
 ## 単体テストとシミュレーションテスト
 
 `simulation`、`math`、`format`、設定スキーマはPhaserなしで検証します。

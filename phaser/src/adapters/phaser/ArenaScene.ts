@@ -188,7 +188,10 @@ export class ArenaScene extends Phaser.Scene {
       import.meta.env.VITE_ARENA_UPGRADE_CATEGORY_FLOOR_CANDIDATE === "1"
         ? new LocalRunRecordStoreV3(storage)
         : new LocalRunRecordStore(storage);
-    this.runLifecycle = new RunLifecycleController(this.runRecordStore);
+    this.runLifecycle = new RunLifecycleController(this.runRecordStore, {
+      collectRunFacts:
+        OUTCOME_FEEDBACK_CANDIDATE_ENABLED || loadArenaDebugModules !== null,
+    });
     this.initializeProfile(storage);
     this.menuController = new ArenaMenuController({
       runRecordStore: this.runRecordStore,
@@ -230,6 +233,7 @@ export class ArenaScene extends Phaser.Scene {
       this.inputAdapter.destroy();
       this.choiceOverlay.destroy();
       this.tutorialDialog.destroy();
+      this.arenaRenderer.destroy();
     });
     if (loadArenaDebugModules) {
       void this.initializeDebugController();
@@ -284,6 +288,10 @@ export class ArenaScene extends Phaser.Scene {
       this.feedbackLayer.update(0);
       this.debugController.stepDebugControls(manualInput);
       this.renderCurrentWorld();
+      this.performanceMonitor.recordFrame(
+        this.game.loop.rawDelta,
+        this.game.loop.actualFps,
+      );
       return;
     }
 
@@ -580,6 +588,10 @@ export class ArenaScene extends Phaser.Scene {
       performance: this.performanceMonitor,
       getActualFps: () => this.game?.loop?.actualFps ?? 0,
       getRenderPerformance: () => this.arenaRenderer.getPerformanceSnapshot(),
+      resetPerformance: () => {
+        this.performanceMonitor.reset();
+        this.arenaRenderer.resetPerformance();
+      },
       getBuildCommit: () => this.getBuildCommit(),
       getProfile: () => this.profile,
       getSettings: () => this.settings,

@@ -250,6 +250,7 @@ describe("EX Protocol path matrix", () => {
           dynamicWorld: { averageMs: 0, maxMs: 0 },
           screenHud: { averageMs: 0, maxMs: 0 },
           feedback: { averageMs: 0, maxMs: 0 },
+          fullFrame: { samples: 0, averageMs: 0, p95Ms: 0, maxMs: 0 },
         },
         choiceInteraction: createEmptyChoiceInteractionReport(),
         bossShadow: createEmptyBossShadowReport(),

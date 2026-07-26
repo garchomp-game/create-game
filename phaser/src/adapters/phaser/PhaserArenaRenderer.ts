@@ -19,13 +19,16 @@ import {
   ARENA_CURSOR_DEPTH,
   ARENA_DYNAMIC_WORLD_DEPTH,
   ARENA_SCREEN_GRAPHICS_DEPTH,
+  ARENA_STATIC_WORLD_DEPTH,
 } from "./PhaserArenaDepths";
 import { PhaserTutorialLayer } from "./PhaserTutorialLayer";
 import { PhaserPracticeGuideLayer } from "./PhaserPracticeGuideLayer";
 import { PhaserArenaEntityLayer } from "./PhaserArenaEntityLayer";
+import { PhaserFrameRenderProfiler } from "./PhaserFrameRenderProfiler";
 
 export class PhaserArenaRenderer {
   private readonly worldGraphics: Phaser.GameObjects.Graphics;
+  private readonly staticWorldGraphics: Phaser.GameObjects.Graphics;
   private readonly screenGraphics: Phaser.GameObjects.Graphics;
   private readonly cursorGraphics: Phaser.GameObjects.Graphics;
   private readonly background: PhaserTacticalBackground;
@@ -35,6 +38,7 @@ export class PhaserArenaRenderer {
   private readonly hud: PhaserHud;
   private readonly tutorialLayer: PhaserTutorialLayer;
   private readonly practiceGuideLayer: PhaserPracticeGuideLayer;
+  private readonly frameRenderProfiler: PhaserFrameRenderProfiler;
   private renderedFrames = 0;
   private worldRenderTotalMs = 0;
   private worldRenderMaxMs = 0;
@@ -43,6 +47,7 @@ export class PhaserArenaRenderer {
   private feedbackRenderTotalMs = 0;
   private feedbackRenderMaxMs = 0;
   private runConfig: SimulationConfig;
+  private obstacleSignature = "";
 
   constructor(
     scene: Phaser.Scene,
@@ -51,12 +56,19 @@ export class PhaserArenaRenderer {
     private readonly profilingEnabled = false,
   ) {
     this.runConfig = simulationConfig;
+    this.frameRenderProfiler = new PhaserFrameRenderProfiler(
+      scene.game.events,
+      profilingEnabled,
+    );
     this.background = new PhaserTacticalBackground(
       scene,
       simulationConfig,
       viewConfig,
     );
     this.entityLayer = new PhaserArenaEntityLayer(scene, viewConfig);
+    this.staticWorldGraphics = scene.add
+      .graphics()
+      .setDepth(ARENA_STATIC_WORLD_DEPTH);
     this.worldGraphics = scene.add
       .graphics()
       .setDepth(ARENA_DYNAMIC_WORLD_DEPTH);
@@ -103,6 +115,7 @@ export class PhaserArenaRenderer {
     );
 
     const worldStartedAt = this.profilingEnabled ? now() : 0;
+    this.syncObstacles(world);
     this.entityLayer.render(world);
     this.worldView.render(this.worldGraphics, world, pointerWorld);
     this.practiceGuideLayer.render(world);
@@ -150,6 +163,11 @@ export class PhaserArenaRenderer {
     this.screenHudRenderMaxMs = 0;
     this.feedbackRenderTotalMs = 0;
     this.feedbackRenderMaxMs = 0;
+    this.frameRenderProfiler.reset();
+  }
+
+  destroy(): void {
+    this.frameRenderProfiler.destroy();
   }
 
   getPerformanceSnapshot(): ArenaRenderPerformanceSnapshot {
@@ -169,7 +187,20 @@ export class PhaserArenaRenderer {
         averageMs: this.feedbackRenderTotalMs / samples,
         maxMs: this.feedbackRenderMaxMs,
       },
+      fullFrame: this.frameRenderProfiler.getSnapshot(),
     };
+  }
+
+  private syncObstacles(world: WorldState): void {
+    const signature = world.obstacles
+      .map(
+        ({ id, x, y, width, height }) =>
+          `${id}:${x}:${y}:${width}:${height}`,
+      )
+      .join("|");
+    if (signature === this.obstacleSignature) return;
+    this.obstacleSignature = signature;
+    this.worldView.renderObstacles(this.staticWorldGraphics, world.obstacles);
   }
 }
 
@@ -179,6 +210,12 @@ export type ArenaRenderPerformanceSnapshot = {
   dynamicWorld: { averageMs: number; maxMs: number };
   screenHud: { averageMs: number; maxMs: number };
   feedback: { averageMs: number; maxMs: number };
+  fullFrame: {
+    samples: number;
+    averageMs: number;
+    p95Ms: number;
+    maxMs: number;
+  };
 };
 
 function now(): number {

@@ -136,6 +136,36 @@ describe("ArenaCaptureScenarios", () => {
     );
     expect(session.world.obstacles).toEqual([]);
   });
+
+  it("loads the maximum supported render density deterministically", () => {
+    const first = new ArenaSession(SIMULATION_CONFIG);
+    const second = new ArenaSession(SIMULATION_CONFIG);
+    first.start({ seed: 20260726, weaponType: "pulse" });
+    second.start({ seed: 20260726, weaponType: "pulse" });
+    const seedsBefore = { ...first.randomStreams.seeds };
+
+    expect(
+      applyArenaCaptureScenario(
+        first.world,
+        first.config,
+        "maximum-density-performance",
+      ),
+    ).toBe(true);
+    expect(
+      applyArenaCaptureScenario(
+        second.world,
+        second.config,
+        "maximum-density-performance",
+      ),
+    ).toBe(true);
+
+    expect(first.world).toEqual(second.world);
+    expect(first.randomStreams.seeds).toEqual(seedsBefore);
+    expect(readArenaCaptureLayers(first.world, first.config)).toEqual(
+      ARENA_CAPTURE_SCENARIOS["maximum-density-performance"].expectedLayers,
+    );
+    expect(first.world.pickups).toHaveLength(1_024);
+  });
 });
 
 function createExpeditionSession(): ArenaSession {

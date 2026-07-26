@@ -6,7 +6,18 @@ import {
   getSpriteRotation,
   PLAYER_TEXTURE_KEY,
 } from "./PhaserArenaEntityVisuals";
-import { ARENA_ENTITY_DEPTH } from "./PhaserArenaDepths";
+import {
+  ARENA_ENTITY_DEPTH,
+  ARENA_PROJECTILE_DEPTH,
+} from "./PhaserArenaDepths";
+import {
+  BOSS_PROJECTILE_TEXTURE_KEY,
+  ENEMY_PROJECTILE_TEXTURE_KEY,
+  ENEMY_PROJECTILE_TEXTURE_RADIUS,
+  ENEMY_PROJECTILE_TEXTURE_SIZE,
+  RECOVERY_KIT_TEXTURE_KEY,
+  ensureArenaGeneratedTextures,
+} from "./PhaserArenaGeneratedTextures";
 
 type PooledImage = {
   image: Phaser.GameObjects.Image;
@@ -19,12 +30,17 @@ export class PhaserArenaEntityLayer {
   private readonly enemyPool: Phaser.GameObjects.Image[] = [];
   private readonly xpImages = new Map<string, PooledImage>();
   private readonly xpPool: Phaser.GameObjects.Image[] = [];
+  private readonly enemyProjectileImages = new Map<string, PooledImage>();
+  private readonly enemyProjectilePool: Phaser.GameObjects.Image[] = [];
+  private readonly healImages = new Map<string, PooledImage>();
+  private readonly healPool: Phaser.GameObjects.Image[] = [];
   private frame = 0;
 
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly viewConfig: ViewConfig,
   ) {
+    ensureArenaGeneratedTextures(scene, viewConfig);
     this.playerImage = this.createImage(PLAYER_TEXTURE_KEY);
   }
 
@@ -33,6 +49,8 @@ export class PhaserArenaEntityLayer {
     this.syncPlayer(world);
     this.syncEnemies(world);
     this.syncXpPickups(world);
+    this.syncEnemyProjectiles(world);
+    this.syncHealPickups(world);
   }
 
   private syncPlayer(world: WorldState): void {
@@ -132,6 +150,75 @@ export class PhaserArenaEntityLayer {
     this.releaseStale(this.xpImages, this.xpPool);
   }
 
+  private syncEnemyProjectiles(world: WorldState): void {
+    for (const projectile of world.enemyProjectiles) {
+      const textureKey = projectile.source?.bossAttackId
+        ? BOSS_PROJECTILE_TEXTURE_KEY
+        : ENEMY_PROJECTILE_TEXTURE_KEY;
+      let pooled = this.enemyProjectileImages.get(projectile.id);
+      if (!pooled) {
+        pooled = {
+          image: this.acquireImage(
+            this.enemyProjectilePool,
+            textureKey,
+            ARENA_PROJECTILE_DEPTH,
+          ),
+          seenFrame: this.frame,
+        };
+        this.enemyProjectileImages.set(projectile.id, pooled);
+      } else if (pooled.image.texture.key !== textureKey) {
+        pooled.image.setTexture(textureKey);
+      }
+
+      const displaySize =
+        ENEMY_PROJECTILE_TEXTURE_SIZE *
+        (projectile.radius / ENEMY_PROJECTILE_TEXTURE_RADIUS);
+      pooled.seenFrame = this.frame;
+      pooled.image
+        .setVisible(true)
+        .setPosition(projectile.position.x, projectile.position.y)
+        .setDisplaySize(displaySize, displaySize)
+        .setAlpha(1);
+    }
+
+    this.releaseStale(
+      this.enemyProjectileImages,
+      this.enemyProjectilePool,
+    );
+  }
+
+  private syncHealPickups(world: WorldState): void {
+    for (const pickup of world.pickups) {
+      if (pickup.kind !== "heal") continue;
+      let pooled = this.healImages.get(pickup.id);
+      if (!pooled) {
+        pooled = {
+          image: this.acquireImage(
+            this.healPool,
+            RECOVERY_KIT_TEXTURE_KEY,
+            ARENA_PROJECTILE_DEPTH,
+          ),
+          seenFrame: this.frame,
+        };
+        this.healImages.set(pickup.id, pooled);
+      }
+
+      const displaySize = pickup.radius * 4.5;
+      pooled.seenFrame = this.frame;
+      pooled.image
+        .setVisible(true)
+        .setPosition(pickup.position.x, pickup.position.y)
+        .setDisplaySize(displaySize, displaySize)
+        .setAlpha(
+          pickup.lifetime !== null && pickup.lifetime < 3
+            ? 0.72
+            : 1,
+        );
+    }
+
+    this.releaseStale(this.healImages, this.healPool);
+  }
+
   private releaseStale(
     active: Map<string, PooledImage>,
     pool: Phaser.GameObjects.Image[],
@@ -147,17 +234,21 @@ export class PhaserArenaEntityLayer {
   private acquireImage(
     pool: Phaser.GameObjects.Image[],
     textureKey: string,
+    depth = ARENA_ENTITY_DEPTH,
   ): Phaser.GameObjects.Image {
-    const image = pool.pop() ?? this.createImage(textureKey);
-    image.setTexture(textureKey).setVisible(true);
+    const image = pool.pop() ?? this.createImage(textureKey, depth);
+    image.setTexture(textureKey).setDepth(depth).setVisible(true);
     return image;
   }
 
-  private createImage(textureKey: string): Phaser.GameObjects.Image {
+  private createImage(
+    textureKey: string,
+    depth = ARENA_ENTITY_DEPTH,
+  ): Phaser.GameObjects.Image {
     return this.scene.add
       .image(-100, -100, textureKey)
       .setOrigin(0.5)
-      .setDepth(ARENA_ENTITY_DEPTH)
+      .setDepth(depth)
       .setVisible(false);
   }
 }

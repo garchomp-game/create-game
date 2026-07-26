@@ -1,9 +1,14 @@
 import { expect, test } from "@playwright/test";
+import { ArenaSession } from "../../src/application/ArenaSession";
 import { SIMULATION_CONFIG } from "../../src/config/gameConfig";
+import { getThreatTier } from "../../src/simulation/threatDirector";
+import { getCollapseStage } from "../../src/simulation/systems/collapseSystem";
 import { probeVisibleCanvasSamples, probeWebglCanvas } from "./webglCanvasProbe";
 
 const SOAK_DURATION_MS = 15 * 60 * 1000;
 const SAMPLE_INTERVAL_MS = 500;
+const MINIMUM_SIMULATION_SECONDS = 890;
+const SOAK_RUNTIME_CONFIG = resolveSoakRuntimeConfig();
 
 test("runs the rendered arena for fifteen real-time minutes with debug sustain", async ({ page }, testInfo) => {
   test.skip(
@@ -121,6 +126,17 @@ test("runs the rendered arena for fifteen real-time minutes with debug sustain",
   const summary = {
     wallSeconds: SOAK_DURATION_MS / 1000,
     simulationSeconds: finalSnapshot.elapsed,
+    status: finalSnapshot.status,
+    threatTier: finalSnapshot.resultSummary.threatTier,
+    expectedThreatTier: getThreatTier(
+      SOAK_RUNTIME_CONFIG,
+      MINIMUM_SIMULATION_SECONDS,
+    ),
+    collapseStage: finalSnapshot.encounter.collapse.stage,
+    expectedCollapseStage: getCollapseStage(
+      SOAK_RUNTIME_CONFIG,
+      MINIMUM_SIMULATION_SECONDS,
+    ),
     maxEnemies,
     maxProjectiles,
     maxPlayerBullets,
@@ -132,6 +148,7 @@ test("runs the rendered arena for fifteen real-time minutes with debug sustain",
     fpsAtStart,
     fpsAtEnd,
     performance: runExport.performance,
+    renderPerformance: runExport.renderPerformance,
     longFrameRatio,
     storageBytes,
     renderer: rendererProbe.kind,
@@ -139,6 +156,7 @@ test("runs the rendered arena for fifteen real-time minutes with debug sustain",
     webglVendor: rendererProbe.vendor,
     preserveDrawingBuffer: rendererProbe.preserveDrawingBuffer,
     nonBlankSamples,
+    consoleErrorCount: consoleErrors.length,
   };
   await testInfo.attach("soak-summary", {
     body: JSON.stringify(summary, null, 2),
@@ -146,15 +164,21 @@ test("runs the rendered arena for fifteen real-time minutes with debug sustain",
   });
   process.stdout.write(`[arena-soak] ${JSON.stringify(summary)}\n`);
 
-  expect(finalSnapshot.elapsed).toBeGreaterThanOrEqual(890);
+  expect(finalSnapshot.elapsed).toBeGreaterThanOrEqual(
+    MINIMUM_SIMULATION_SECONDS,
+  );
   expect(finalSnapshot.status).toBe("playing");
-  expect(finalSnapshot.resultSummary.threatTier).toBeGreaterThanOrEqual(15);
-  expect(finalSnapshot.encounter.collapse.stage).toBeGreaterThanOrEqual(7);
+  expect(finalSnapshot.resultSummary.threatTier).toBeGreaterThanOrEqual(
+    getThreatTier(SOAK_RUNTIME_CONFIG, MINIMUM_SIMULATION_SECONDS),
+  );
+  expect(finalSnapshot.encounter.collapse.stage).toBeGreaterThanOrEqual(
+    getCollapseStage(SOAK_RUNTIME_CONFIG, MINIMUM_SIMULATION_SECONDS),
+  );
   expect(maxEnemies).toBeLessThanOrEqual(96);
   expect(maxProjectiles).toBeLessThanOrEqual(300);
   expect(maxPlayerBullets).toBeLessThanOrEqual(60);
   expect(maxEnemyProjectiles).toBeLessThanOrEqual(
-    SIMULATION_CONFIG.threat.maximumEnemyProjectiles,
+    SOAK_RUNTIME_CONFIG.threat.maximumEnemyProjectiles,
   );
   expect(maxPickups).toBeLessThanOrEqual(2_000);
   expect(maxHeap).toBeLessThan(512 * 1024 * 1024);
@@ -162,6 +186,10 @@ test("runs the rendered arena for fifteen real-time minutes with debug sustain",
   expect(runExport.performance.frameSamples).toBeGreaterThan(1_000);
   expect(runExport.performance.p95RawDtMs).toBeLessThanOrEqual(34);
   expect(runExport.performance.actualFps).toBeGreaterThan(15);
+  expect(runExport.renderPerformance.fullFrame.samples).toBeGreaterThan(1_000);
+  expect(
+    Number.isFinite(runExport.renderPerformance.fullFrame.p95Ms),
+  ).toBe(true);
   expect(longFrameRatio).toBeLessThan(0.01);
   expect(rendererProbe.kind).toBe("webgl");
   expect(rendererProbe.preserveDrawingBuffer).toBe(false);
@@ -169,6 +197,15 @@ test("runs the rendered arena for fifteen real-time minutes with debug sustain",
   expect(nonBlankSamples).toBeGreaterThan(0);
   expect(consoleErrors).toEqual([]);
 });
+
+function resolveSoakRuntimeConfig() {
+  const session = new ArenaSession(SIMULATION_CONFIG);
+  session.start({
+    seed: SIMULATION_CONFIG.seed,
+    weaponType: "pulse",
+  });
+  return session.config;
+}
 
 async function readHeap(page: import("@playwright/test").Page): Promise<number> {
   return page.evaluate(() => {

@@ -19,6 +19,7 @@ import {
   getHelpTabButtonBounds,
 } from "./PhaserHelpLayout";
 import { drawRecoveryKitIcon } from "./PhaserRecoveryKitIcon";
+import { drawEnemyProjectileIcon } from "./PhaserEnemyProjectileIcon";
 
 type HelpTextSpec = {
   text: string;
@@ -201,16 +202,13 @@ export class PhaserHelpOverlay {
     this.enemyPreviews.fast.render({ x: 130, y: 335, radius: 15 });
     this.enemyPreviews.ranged.render({ x: 540, y: 335, radius: 18 });
 
-    this.drawDiamond(
+    drawEnemyProjectileIcon(
       graphics,
       350,
       425,
-      13,
-      this.viewConfig.enemyProjectile.color,
-      this.viewConfig.enemyProjectile.stroke,
+      10,
+      this.viewConfig.enemyProjectile,
     );
-    graphics.fillStyle(this.viewConfig.enemyProjectile.core, 1);
-    graphics.fillCircle(350, 425, 3.5);
   }
 
   private drawField(graphics: Phaser.GameObjects.Graphics): void {

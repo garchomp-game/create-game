@@ -89,6 +89,7 @@ export default defineConfig({
           items: [
             { label: "手動プレイ記録", slug: "playtest/playtest-notes" },
             { label: "バランス回帰テスト", slug: "playtest/balance-probe" },
+            { label: "v0.8 性能監査", slug: "playtest/v08-performance-optimization-report" },
             { label: "v0.7 統合QA", slug: "playtest/v07-qa-report" },
             { label: "v0.7 RC6 QA計画", slug: "playtest/v07-rc6-qa-plan" }
           ]

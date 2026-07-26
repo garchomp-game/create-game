@@ -170,6 +170,7 @@ function createTestInput(world: WorldState) {
       dynamicWorld: { averageMs: 0.35, maxMs: 1.2 },
       screenHud: { averageMs: 0.12, maxMs: 0.6 },
       feedback: { averageMs: 0.04, maxMs: 0.2 },
+      fullFrame: { samples: 720, averageMs: 1.1, p95Ms: 1.5, maxMs: 4.2 },
     },
     choiceInteraction: createEmptyChoiceInteractionReport(),
     bossShadow: createEmptyBossShadowReport(),

@@ -190,6 +190,89 @@ describe("boss-fight pickup sustain", () => {
   });
 });
 
+describe("pickup update performance contracts", () => {
+  it("expires, attracts, and collects in one pass with cache invalidation", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    world.state.hp = 50;
+    world.pickups = [
+      {
+        id: "expired-heal",
+        kind: "heal",
+        position: { x: 100, y: 100 },
+        radius: SIMULATION_CONFIG.pickup.healRadius,
+        xpValue: 0,
+        healValue: 12,
+        lifetime: 0.1,
+      },
+      {
+        id: "xp-at-player",
+        kind: "xp",
+        position: { ...world.player.position },
+        radius: SIMULATION_CONFIG.pickup.xpRadius,
+        xpValue: 3,
+        healValue: 0,
+        lifetime: null,
+      },
+      {
+        id: "heal-at-player",
+        kind: "heal",
+        position: { ...world.player.position },
+        radius: SIMULATION_CONFIG.pickup.healRadius,
+        xpValue: 0,
+        healValue: 12,
+        lifetime: 10,
+      },
+    ];
+    const pickupArray = world.pickups;
+    const events: GameEvent[] = [];
+
+    updatePickups(world, SIMULATION_CONFIG, events, 0.2);
+
+    expect(world.pickups).not.toBe(pickupArray);
+    expect(world.pickups).toEqual([]);
+    expect(events.map((event) => event.type)).toEqual([
+      "pickup.expired",
+      "pickup.collected",
+      "pickup.collected",
+    ]);
+    expect(world.progression.xp).toBe(3);
+    expect(world.state.hp).toBe(62);
+  });
+
+  it("places a large deterministic kill batch without overlapping pickups", () => {
+    const world = createWorld(SIMULATION_CONFIG);
+    const config = {
+      ...SIMULATION_CONFIG,
+      pickup: {
+        ...SIMULATION_CONFIG.pickup,
+        healDropChance: 0,
+        healDropMaxChance: 0,
+        healDropPityBonus: 0,
+      },
+    };
+    const events: GameEvent[] = Array.from({ length: 80 }, (_, index) => ({
+      ...createKill(world, index),
+      position: { x: 120, y: 120 },
+    }));
+
+    updatePickups(world, config, events);
+
+    expect(world.pickups).toHaveLength(80);
+    for (let left = 0; left < world.pickups.length; left += 1) {
+      for (let right = left + 1; right < world.pickups.length; right += 1) {
+        const first = world.pickups[left]!;
+        const second = world.pickups[right]!;
+        const dx = first.position.x - second.position.x;
+        const dy = first.position.y - second.position.y;
+        const combinedRadius = first.radius + second.radius;
+        expect(dx * dx + dy * dy).toBeGreaterThan(
+          combinedRadius * combinedRadius,
+        );
+      }
+    }
+  });
+});
+
 function createKill(
   world: WorldState,
   index: number,

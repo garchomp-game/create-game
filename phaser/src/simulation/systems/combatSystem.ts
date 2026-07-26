@@ -8,6 +8,7 @@ import type {
 } from "../../domain/types";
 import { circleCircle, segmentCircleFirstIntersection } from "../../math/geometry";
 import type { BulletFrameMotions, BulletMotionSegment } from "./bulletSystem";
+import { EnemySpatialIndex, type IndexedEnemy } from "../EnemySpatialIndex";
 import { recordChargerPlayerHit } from "./chargerEnemySystem";
 import { resolveEnemyDamage } from "./enemyDamageSystem";
 import { applyPlayerDamage } from "./playerHealthSystem";
@@ -37,6 +38,10 @@ export function resolveCombat(
 ): void {
   const remainingBullets: Bullet[] = [];
   const deadEnemies = new Set<Enemy>();
+  const enemySpatialIndex =
+    world.enemies.length >= 24
+      ? new EnemySpatialIndex(world.enemies)
+      : null;
 
   for (const bullet of world.bullets) {
     const motion = bulletMotions?.get(bullet.id) ?? createStationaryMotion(bullet);
@@ -44,19 +49,13 @@ export function resolveCombat(
     let stoppedByHitCapacity = false;
 
     for (const segment of segments) {
-      const intersections = world.enemies
-        .map((enemy, index) => ({
-          enemy,
-          index,
-          hit: segmentCircleFirstIntersection(segment.start, segment.end, enemy, bullet.radius),
-        }))
-        .filter(
-          (candidate) =>
-            candidate.hit !== null &&
-            !deadEnemies.has(candidate.enemy) &&
-            !bullet.hitEnemyIds.includes(candidate.enemy.id),
-        )
-        .sort((a, b) => a.hit!.t - b.hit!.t || a.index - b.index);
+      const intersections = collectSegmentIntersections(
+        world.enemies,
+        enemySpatialIndex,
+        segment,
+        bullet,
+        deadEnemies,
+      );
 
       for (const { enemy } of intersections) {
         if (deadEnemies.has(enemy) || bullet.hitEnemyIds.includes(enemy.id)) continue;
@@ -98,6 +97,45 @@ export function resolveCombat(
   world.enemies = world.enemies.filter((enemy) => !deadEnemies.has(enemy));
   resolveEnemyProjectileHits(world, config, events);
   resolveEnemyContactDamage(world, config, events);
+}
+
+function collectSegmentIntersections(
+  enemies: readonly Enemy[],
+  spatialIndex: EnemySpatialIndex | null,
+  segment: BulletMotionSegment,
+  bullet: Bullet,
+  deadEnemies: ReadonlySet<Enemy>,
+) {
+  const candidates: readonly IndexedEnemy[] = spatialIndex
+    ? spatialIndex.querySegment(segment.start, segment.end, bullet.radius)
+    : enemies.map((enemy, index) => ({ enemy, index }));
+  const intersections: Array<{
+    enemy: Enemy;
+    index: number;
+    hit: NonNullable<
+      ReturnType<typeof segmentCircleFirstIntersection>
+    >;
+  }> = [];
+
+  for (const { enemy, index } of candidates) {
+    if (
+      deadEnemies.has(enemy) ||
+      bullet.hitEnemyIds.includes(enemy.id)
+    ) {
+      continue;
+    }
+    const hit = segmentCircleFirstIntersection(
+      segment.start,
+      segment.end,
+      enemy,
+      bullet.radius,
+    );
+    if (hit) intersections.push({ enemy, index, hit });
+  }
+  intersections.sort(
+    (left, right) => left.hit.t - right.hit.t || left.index - right.index,
+  );
+  return intersections;
 }
 
 function createStationaryMotion(bullet: Bullet): { segments: BulletMotionSegment[]; survives: true } {

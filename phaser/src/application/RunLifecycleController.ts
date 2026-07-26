@@ -33,6 +33,10 @@ export type RunLifecycleFinalizeOutcome = {
   newWeaponPersonalBest: boolean;
 };
 
+export type RunLifecycleControllerOptions = {
+  collectRunFacts?: boolean;
+};
+
 export class RunLifecycleController {
   private readonly coordinator: RunRecordCoordinator;
   private history: RunRecord[];
@@ -44,8 +48,16 @@ export class RunLifecycleController {
   private runFactEvents: ObservedGameEvent[] = [];
   private nextRunFactSequence = 0;
   private bossEnemyIds = new Set<string>();
+  private terminalRunFactObserved = false;
+  private cachedRunOutcomeInsight: RunOutcomeInsightViewModel | null = null;
+  private runOutcomeInsightCached = false;
+  private readonly collectRunFacts: boolean;
 
-  constructor(private readonly store: RunRecordStorePort) {
+  constructor(
+    private readonly store: RunRecordStorePort,
+    options: RunLifecycleControllerOptions = {},
+  ) {
+    this.collectRunFacts = options.collectRunFacts ?? true;
     this.coordinator = new RunRecordCoordinator(store);
     const loaded = store.load();
     this.history = loaded.history;
@@ -61,7 +73,10 @@ export class RunLifecycleController {
     this.runFactEvents = [];
     this.nextRunFactSequence = 0;
     this.bossEnemyIds.clear();
-    if (started) this.appendRunFactEvent({ type: "game.started" }, 0);
+    this.resetRunOutcomeInsight();
+    if (started && this.collectRunFacts) {
+      this.appendRunFactEvent({ type: "game.started" }, 0);
+    }
   }
 
   discard(): void {
@@ -73,6 +88,7 @@ export class RunLifecycleController {
     this.runFactEvents = [];
     this.nextRunFactSequence = 0;
     this.bossEnemyIds.clear();
+    this.resetRunOutcomeInsight();
   }
 
   observeEvents(events: readonly GameEvent[], observedElapsed = 0): void {
@@ -82,6 +98,7 @@ export class RunLifecycleController {
       if (event.type === "contract.selected") {
         this.coordinator.addModifier(`contract:${event.choice}`, event.choice === "standard");
       }
+      if (!this.collectRunFacts) continue;
       if (event.type === "boss.spawned") this.bossEnemyIds.add(event.enemyId);
       if (isRunFactEvent(event, this.bossEnemyIds)) {
         this.appendRunFactEvent(event, resolveEventElapsed(event, observedElapsed));
@@ -208,13 +225,20 @@ export class RunLifecycleController {
   }
 
   getRunOutcomeInsight(): RunOutcomeInsightViewModel | null {
+    if (!this.collectRunFacts || !this.terminalRunFactObserved) return null;
+    if (this.runOutcomeInsightCached) {
+      return this.cachedRunOutcomeInsight
+        ? structuredClone(this.cachedRunOutcomeInsight)
+        : null;
+    }
     const context = this.getContext();
     if (!context) return null;
-    const events = this.getRunFactEvents();
-    return createRunOutcomeInsight(
-      aggregateRunFacts(createRunFactScope(context), events),
-      events,
+    this.cachedRunOutcomeInsight = createRunOutcomeInsight(
+      aggregateRunFacts(createRunFactScope(context), this.runFactEvents),
+      this.runFactEvents,
     );
+    this.runOutcomeInsightCached = true;
+    return structuredClone(this.cachedRunOutcomeInsight);
   }
 
   private appendRunFactEvent(event: GameEvent, elapsed: number): void {
@@ -224,6 +248,21 @@ export class RunLifecycleController {
       event: structuredClone(event),
     });
     this.nextRunFactSequence += 1;
+    this.runOutcomeInsightCached = false;
+    this.cachedRunOutcomeInsight = null;
+    if (
+      event.type === "game.over" ||
+      event.type === "expedition.completed" ||
+      event.type === "expedition.failed"
+    ) {
+      this.terminalRunFactObserved = true;
+    }
+  }
+
+  private resetRunOutcomeInsight(): void {
+    this.terminalRunFactObserved = false;
+    this.cachedRunOutcomeInsight = null;
+    this.runOutcomeInsightCached = false;
   }
 }
 
@@ -232,6 +271,7 @@ function isRunFactEvent(
   bossEnemyIds: ReadonlySet<string>,
 ): boolean {
   if (event.type === "enemy.hit") return bossEnemyIds.has(event.enemyId);
+  if (event.type === "pickup.collected") return event.pickupKind === "heal";
   return RUN_FACT_EVENT_TYPES.has(event.type);
 }
 
@@ -241,7 +281,6 @@ const RUN_FACT_EVENT_TYPES: ReadonlySet<GameEvent["type"]> = new Set([
   "expedition.completed",
   "expedition.failed",
   "player.damaged",
-  "pickup.collected",
   "enemy.killed",
   "boss.spawned",
   "boss.phase.changed",

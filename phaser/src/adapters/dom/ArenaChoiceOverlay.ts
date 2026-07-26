@@ -38,7 +38,6 @@ export class ArenaChoiceOverlay {
   }
 
   render(world: WorldState, enabled = true): void {
-    this.syncBounds();
     const model = createArenaChoiceViewModel(world, this.config, enabled);
     const wasVisible = this.root.classList.contains(
       "arena-choice-overlay--visible",
@@ -52,6 +51,7 @@ export class ArenaChoiceOverlay {
       this.visibleChoiceCount = 0;
       return;
     }
+    this.syncBounds();
     if (model.phase === null) {
       throw new Error(
         "Visible choice model must provide a presentation phase.",

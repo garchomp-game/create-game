@@ -10,7 +10,6 @@ import type {
 } from "../../domain/types";
 import { getCollapseSafeBounds } from "../../simulation/systems/collapseSystem";
 import { HUD_LEFT_PANEL_BOUNDS } from "./PhaserHudLayout";
-import { drawRecoveryKitIcon } from "./PhaserRecoveryKitIcon";
 import { selectNearestOffscreen } from "./ArenaRenderSelectors";
 
 export class PhaserArenaWorldView {
@@ -31,37 +30,8 @@ export class PhaserArenaWorldView {
     this.drawPulseBoundaryField(graphics, world);
     this.drawExpeditionSituation(graphics, world);
 
-    for (const obstacle of world.obstacles) {
-      graphics.fillStyle(this.viewConfig.obstacle.fill, 1);
-      graphics.fillRoundedRect(
-        obstacle.x,
-        obstacle.y,
-        obstacle.width,
-        obstacle.height,
-        this.viewConfig.obstacle.radius,
-      );
-      graphics.lineStyle(2, this.viewConfig.obstacle.stroke, 1);
-      graphics.strokeRoundedRect(
-        obstacle.x,
-        obstacle.y,
-        obstacle.width,
-        obstacle.height,
-        this.viewConfig.obstacle.radius,
-      );
-    }
-
-    for (const item of world.pickups) {
-      if (item.kind === "heal") {
-        this.drawHealPickup(graphics, item);
-      }
-    }
-
     for (const item of world.bullets) {
       this.drawPlayerBullet(graphics, item, bullet.color);
-    }
-
-    for (const item of world.enemyProjectiles) {
-      this.drawEnemyProjectile(graphics, item);
     }
 
     for (const item of world.enemies) {
@@ -90,6 +60,31 @@ export class PhaserArenaWorldView {
       world.player.position.y,
       world.player.radius + 5,
     );
+  }
+
+  renderObstacles(
+    graphics: Phaser.GameObjects.Graphics,
+    obstacles: WorldState["obstacles"],
+  ): void {
+    graphics.clear();
+    for (const obstacle of obstacles) {
+      graphics.fillStyle(this.viewConfig.obstacle.fill, 1);
+      graphics.fillRoundedRect(
+        obstacle.x,
+        obstacle.y,
+        obstacle.width,
+        obstacle.height,
+        this.viewConfig.obstacle.radius,
+      );
+      graphics.lineStyle(2, this.viewConfig.obstacle.stroke, 1);
+      graphics.strokeRoundedRect(
+        obstacle.x,
+        obstacle.y,
+        obstacle.width,
+        obstacle.height,
+        this.viewConfig.obstacle.radius,
+      );
+    }
   }
 
   private drawPlayerBullet(
@@ -661,19 +656,6 @@ export class PhaserArenaWorldView {
     );
   }
 
-  private drawHealPickup(
-    graphics: Phaser.GameObjects.Graphics,
-    pickup: WorldState["pickups"][number],
-  ): void {
-    drawRecoveryKitIcon(
-      graphics,
-      pickup.position.x,
-      pickup.position.y,
-      pickup.radius * 2.25,
-      this.viewConfig.pickup,
-    );
-  }
-
   private drawEnemyMark(
     graphics: Phaser.GameObjects.Graphics,
     enemy: WorldState["enemies"][number],
@@ -816,36 +798,6 @@ export class PhaserArenaWorldView {
       graphics.lineStyle(3, 0x94a3b8, 0.85);
       graphics.lineBetween(x - radius, y - radius, x + radius, y + radius);
       graphics.lineBetween(x + radius, y - radius, x - radius, y + radius);
-    }
-  }
-
-  private drawEnemyProjectile(
-    graphics: Phaser.GameObjects.Graphics,
-    projectile: WorldState["enemyProjectiles"][number],
-  ): void {
-    const { x, y } = projectile.position;
-    const r = projectile.radius + 3;
-    const view = this.viewConfig.enemyProjectile;
-    const bossProjectile = Boolean(projectile.source?.bossAttackId);
-    this.drawPolygon(
-      graphics,
-      [
-        { x, y: y - r },
-        { x: x + r, y },
-        { x, y: y + r },
-        { x: x - r, y },
-      ],
-      bossProjectile ? 0x9f1239 : view.color,
-      bossProjectile ? 0xfef08a : view.stroke,
-    );
-    graphics.lineStyle(1, view.core, 0.95);
-    graphics.lineBetween(x - r * 0.45, y, x + r * 0.45, y);
-    graphics.lineBetween(x, y - r * 0.45, x, y + r * 0.45);
-    graphics.fillStyle(view.core, 1);
-    graphics.fillCircle(x, y, Math.max(2, projectile.radius * 0.35));
-    if (bossProjectile) {
-      graphics.lineStyle(2, 0xfb7185, 0.9);
-      graphics.strokeCircle(x, y, r + 3);
     }
   }
 

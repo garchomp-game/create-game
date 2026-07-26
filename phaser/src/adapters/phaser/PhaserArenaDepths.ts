@@ -1,4 +1,6 @@
 export const ARENA_DYNAMIC_WORLD_DEPTH = 0;
+export const ARENA_STATIC_WORLD_DEPTH = -5;
+export const ARENA_PROJECTILE_DEPTH = 0.5;
 export const ARENA_ENTITY_DEPTH = 1;
 export const ARENA_SCREEN_GRAPHICS_DEPTH = 9;
 export const ARENA_SCREEN_ENTITY_PREVIEW_DEPTH = 20.5;
