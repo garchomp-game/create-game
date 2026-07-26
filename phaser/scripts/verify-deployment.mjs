@@ -34,6 +34,11 @@ if (!relativeFiles.includes("third-party-notices.txt")) {
 }
 if (!relativeFiles.includes("_headers")) {
   errors.push("dist/_headers is missing");
+} else {
+  const headers = await readFile(path.join(DIST_DIRECTORY, "_headers"), "utf8");
+  if (!/img-src[^;]*\bblob:/.test(headers)) {
+    errors.push("Content-Security-Policy img-src must allow Phaser blob textures");
+  }
 }
 if (!relativeFiles.some((file) => file.startsWith("assets/") && file.endsWith(".js"))) {
   errors.push("the built JavaScript entry is missing");
