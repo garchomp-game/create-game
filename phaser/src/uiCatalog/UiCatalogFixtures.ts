@@ -266,6 +266,7 @@ function createCatalogUiState(
     settings: createDefaultProfileSettings(),
     practiceOptions: createDefaultPracticeRunOptions(),
     latestRunRecord: null,
+    runOutcomeInsight: null,
     previousBest: null,
     previousWeaponBest: null,
     historyClearPending: false,

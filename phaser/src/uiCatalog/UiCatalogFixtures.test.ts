@@ -18,7 +18,7 @@ describe("createUiCatalogFixture", () => {
       model: {
         visible: true,
         phase: "upgrade",
-        title: "強化選択 — Level 4",
+        title: "強化選択 — Lv 4",
       },
     });
     expect(result).toMatchObject({
