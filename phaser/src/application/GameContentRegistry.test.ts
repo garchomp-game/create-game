@@ -70,6 +70,7 @@ describe("GameContentRegistry", () => {
           },
         },
         progression: {
+          normalXpCurve: { baseXp: 20, growth: 1.05, maxXp: 60 },
           extraXpCurve: { baseXp: 180, growth: 1.12, maxXp: 900 },
         },
         clearCondition: { type: "bossDefeat", bossId: "final-command-ship" },

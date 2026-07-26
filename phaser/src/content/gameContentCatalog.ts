@@ -3,6 +3,12 @@ import { FINAL_COMMAND_SHIP_BOSS_ID } from "./bossCatalog";
 import { ENDLESS_ENCOUNTER_DECK_ID } from "./endlessEncounterCards";
 import { FINAL_EXPEDITION_ENCOUNTER_DECK_ID } from "./expeditionEncounterCards";
 
+const ENDLESS_NORMAL_XP_CURVE = {
+  baseXp: 15,
+  growth: 1.05,
+  maxXp: 60,
+};
+
 export const ARENA_DEFAULT_STAGE_DEFINITION = {
   id: "arena-default",
   titleKey: "stage.arena-default.title",
@@ -117,11 +123,7 @@ export const ARENA_DEFAULT_STAGE_DEFINITION = {
     },
   },
   progression: {
-    normalXpCurve: {
-      baseXp: 15,
-      growth: 1.05,
-      maxXp: 60,
-    },
+    normalXpCurve: { ...ENDLESS_NORMAL_XP_CURVE },
     normalUpgradeCadence: {
       firstUpgradeNotBeforeSeconds: 0,
       minimumUpgradeIntervalSeconds: 0,
@@ -206,6 +208,10 @@ export const FINAL_EXPEDITION_STAGE_DEFINITION = {
     },
   },
   progression: {
+    normalXpCurve: {
+      ...ENDLESS_NORMAL_XP_CURVE,
+      baseXp: 20,
+    },
     extraXpCurve: {
       baseXp: 180,
       growth: 1.12,

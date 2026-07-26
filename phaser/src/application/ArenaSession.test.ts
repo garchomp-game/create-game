@@ -237,9 +237,9 @@ describe("ArenaSession", () => {
       maxXp: 900,
     });
     expect(session.config.leveling).toMatchObject({
-      baseXp: SIMULATION_CONFIG.leveling.baseXp,
-      growth: SIMULATION_CONFIG.leveling.growth,
-      maxXp: SIMULATION_CONFIG.leveling.maxXp,
+      baseXp: 20,
+      growth: 1.05,
+      maxXp: 60,
       firstUpgradeNotBeforeSeconds:
         SIMULATION_CONFIG.leveling.firstUpgradeNotBeforeSeconds,
       minimumUpgradeIntervalSeconds:

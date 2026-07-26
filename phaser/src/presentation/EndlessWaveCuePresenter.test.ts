@@ -60,27 +60,27 @@ describe("createEndlessWaveCueViewModel", () => {
     session.start({ seed: 1, weaponType: "pulse" });
     const config = session.config;
 
-    expect(createEndlessWaveCueViewModel(config, 56)).toEqual({
+    expect(createEndlessWaveCueViewModel(config, 41)).toEqual({
       kind: "warning",
       text: "重装体接近まで 4秒",
     });
-    expect(createEndlessWaveCueViewModel(config, 60)).toEqual({
+    expect(createEndlessWaveCueViewModel(config, 45)).toEqual({
       kind: "relief",
       text: "再編時間 5秒 / 重装体投入 / 大型を狙う",
     });
-    expect(createEndlessWaveCueViewModel(config, 116)).toEqual({
+    expect(createEndlessWaveCueViewModel(config, 56)).toEqual({
       kind: "warning",
       text: "高速体接近まで 4秒",
     });
-    expect(createEndlessWaveCueViewModel(config, 120)).toEqual({
+    expect(createEndlessWaveCueViewModel(config, 60)).toEqual({
       kind: "pressure",
       text: "高速体投入 / 距離を取る",
     });
-    expect(createEndlessWaveCueViewModel(config, 296)).toEqual({
+    expect(createEndlessWaveCueViewModel(config, 71)).toEqual({
       kind: "warning",
       text: "射撃体接近まで 4秒",
     });
-    expect(createEndlessWaveCueViewModel(config, 300)).toEqual({
+    expect(createEndlessWaveCueViewModel(config, 75)).toEqual({
       kind: "pressure",
       text: "射撃体投入 / 射線から外れる",
     });
