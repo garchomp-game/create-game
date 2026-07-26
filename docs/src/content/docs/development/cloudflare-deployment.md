@@ -150,13 +150,15 @@ console / page / request errorは0件です。
 
 2026-07-26に、上記のEX Protocol C2とEndless再調整へ、設定画面の
 10%ステッパー、左上の戻る導線、確認付き初期化を統合しました。
+同じPreview aliasを最終遠征の通常XP 20開始、1.05倍、上限60へ
+更新しています。敵の出現、報酬倍率、EX曲線は変更していません。
 production trafficは変更していません。
 
 | 項目 | 値 |
 | --- | --- |
-| Runtime commit | `c394d0e7cca0` |
+| Runtime commit | `0d8a3724e54d` |
 | app / ruleset | `0.8.0-candidate.2` / `phaser-v0.8-ex-protocols-c2` |
-| Cloudflare Version ID | `efe4b7bf-b9e9-4d53-a95f-841e31ccda85` |
+| Cloudflare Version ID | `3b173c05-aa05-4f59-9911-b1eb74887e5b` |
 | Preview URL | `https://v08-integrated-settings-c394d0e-arena-core.garchomp-game.workers.dev` |
 | production traffic | 変更なし |
 
