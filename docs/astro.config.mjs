@@ -78,6 +78,7 @@ export default defineConfig({
             { label: "チケット一覧", slug: "project-management/tickets" },
             { label: "意思決定記録", slug: "project-management/decision-log" },
             { label: "リスク一覧", slug: "project-management/risk-log" },
+            { label: "Ultra自律開発運用", slug: "project-management/ultra-workflow" },
             { label: "運用方針", slug: "project-management/operating-model" }
           ]
         },
