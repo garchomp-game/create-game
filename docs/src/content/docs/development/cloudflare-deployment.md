@@ -109,6 +109,25 @@ WebGL fallback、StudyLog契約を含む最新mainへC2を再統合しました�
 実URLでHTTP 200、版情報、canvas、Training開始、`Dで右へ`の即時ガイド、
 debug hook非公開、console / page error 0件を確認しました。
 
+### v0.8 現行統合・性能改善Preview
+
+2026-07-26に、EX Protocol C2、通常強化カテゴリ偏り抑制、
+敗因フィードバック、最新UI・共通entity表示、最大密度性能改善を
+1つの確認用buildへ統合しました。production trafficは変更していません。
+
+| 項目 | 値 |
+| --- | --- |
+| Runtime commit | `7629000d089c` |
+| app / ruleset | `0.8.0-candidate.3` / `phaser-v0.8-upgrade-category-floor-c1` |
+| Cloudflare Version ID | `7eedca3b-4999-4958-a3e8-4acae56c0318` |
+| Preview URL | `https://v08-integrated-perf-d19401a-arena-core.garchomp-game.workers.dev` |
+| production traffic | 変更なし |
+
+公開スモークで版情報、CanvasとPNGスプライト、設定保存、Endlessの自然終了、
+履歴・再挑戦、最終遠征開始、ベータ情報を確認しました。
+console / page / request errorは0件です。初回スモークでPhaserのblob textureを
+CSPが拒否する問題を検出し、`img-src`へ`blob:`を限定追加した修正版です。
+
 静的ファイルの取得ではWorkerスクリプトを実行しません。ランキング、共有履歴、アカウントAPIは公開ベータ後に`/api/*`として追加し、それまではプロフィール、履歴、ローカルランキングをブラウザの`localStorage`へ保存します。
 
 ## 初回認証
