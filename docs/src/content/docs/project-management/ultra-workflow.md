@@ -139,6 +139,10 @@ Analysis計装は観測build、debug hook、明示probeを基本とし、通常b
 実装中は、作業メモまたはIssueコメントの1か所へ事実を集約します。
 各小変更で`current-state`、実行計画、risk、decision、Issue、PRをすべて更新しません。
 
+ソロ開発では`main`へ直接commitし、候補SHAをそのcommitで固定します。PR作成を完了条件にせず、
+push後の`main` CIを共有証跡として使います。長時間作業のためにbranchやworktreeを増やさず、
+feature flagと開発専用fixtureで候補を分離します。
+
 | 時点 | 更新先 |
 | --- | --- |
 | 作業開始 | Issueの対象範囲と開始状態 |
@@ -179,4 +183,3 @@ Ultra終了時は次だけを簡潔に報告します。
 
 - [運用方針](../operating-model/)
 - [品質戦略](../../engineering/quality-strategy/)
-

@@ -39,6 +39,22 @@ description: 要件整理、チケット分割、実装、検証、記録の進�
 Ultraを使う長時間の自律作業では、ゴールの粒度、反復上限、QAの昇格条件、
 計装と文書同期の扱いを[Ultra自律開発運用](../ultra-workflow/)に従って決めます。
 
+## ソロ開発のGit運用
+
+2026-07-26以降は`main`を唯一の常用branchとします。
+
+- 通常作業は`main`へ直接、小さな意味単位でcommitする。
+- taskごとの長期branch、stacked PR、常設worktreeは作らない。
+- push前は変更対象のunit、型検査、必要な対象E2Eを実行する。
+- push後は`main`のGitHub Actionsを共有証跡とする。
+- `main` CIが失敗した場合は、新機能へ進まず次commitで修復する。
+- 実験候補は長期branchではなく、feature flag、開発専用entry、固定fixtureで隔離する。
+- rollbackはrelease tag、Cloudflare Version、git commit SHAで行う。
+
+PRを使うのは、外部レビューを明示的に依頼する場合、破壊的migration、公開API変更、
+または複数人開発へ移行した場合に限定します。一時branchを作った場合も、採否完了後すぐ
+`main`へ統合または破棄し、branchとworktreeを残しません。
+
 ## 実装中の検証 cadence
 
 各小変更で同じ重い証拠を取り直しません。検証は次の3段階へ分けます。
@@ -73,9 +89,17 @@ APIのtimeout後は作成済みかを確認し、同じIssueやコメントを�
 - GitHubのタイトルには `PH-V05-001` のような文書側IDを含める。
 - [チケット一覧](../tickets/)から対応するIssueへリンクする。
 - 要件を変更した場合は、Issueだけで完結させず、対象バージョンの詳細資料と意思決定記録を更新する。
-- 完了時は、自動テストと手動確認の証跡をIssueへ残してから閉じる。
+- 実装と自動受け入れが完了したIssueは閉じ、横断的な人間確認だけが残る場合は
+  構造化プレイテストIssueへ集約する。
+- 重複、現仕様で無効、後続Issueへ包含されたIssueは理由と移行先を残して閉じる。
+- Issueのハード削除は、誤作成、機密情報、内容が空のものに限る。通常は履歴を残して閉じる。
+- 具体的な着手条件がないアイデアはopen Issueにせず、Starlightのbacklogへ置く。
 
-GitHub Projectsは横断的な実行順の正本として使います。
+open Issueの上限は原則12件、`priority:P0`は2件、同時着手は1件までとします。
+新しいIssueを追加するときは、既存Issueの完了、統合、延期を同時に確認します。
+
+GitHub Projectsは一覧表示の補助として任意利用し、実行順の必須正本にはしません。
+直近の順序は[直近フェーズ](../next-phase-plan/)、実行対象はopen Issueで管理します。
 
 現在のProjectは[Arena Core Roadmap](https://github.com/users/garchomp-game/projects/1)です。
 
@@ -85,7 +109,7 @@ GitHub Projectsは横断的な実行順の正本として使います。
 - `Area`: Release、Architecture、Gameplay、Presentation、QA。
 - `Size`: S、M、L。時間見積もりではなく変更範囲と検証量の目安にする。
 - `Wave`: 0 Baselineから6 QA。依存関係を満たす実装順として使う。
-- Milestoneはリリース単位、Projectは複数Milestoneをまたぐ依存順、Issueは実装単位を表す。
+- Milestoneはリリース単位、Issueは実装単位を表します。Project fieldの同期は必須にしません。
 
 自律作業では、`Status=Todo`だけを着手可能とはみなしません。[v0.7 実行計画](../v07-execution-plan/)のDefinition of Readyを満たし、入口ゲートを越えたIssueから進めます。
 

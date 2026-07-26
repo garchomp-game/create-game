@@ -3,6 +3,21 @@ title: 意思決定記録
 description: 主要な方針変更と、その判断理由。
 ---
 
+## 2026-07-26: ソロ開発はmain一本とopen Issue上限制へ移行する
+
+決定: Arena Coreは当面ソロ開発を続けるため、`main`を唯一の常用branchとし、
+task branch、stacked PR、常設worktreeを通常運用から外す。
+
+- 通常変更は局所QA後に`main`へ直接commitし、push後のCIを共有証跡とする。
+- PRは外部レビュー、破壊的migration、複数人開発など明確な理由がある場合だけ使う。
+- 実験はfeature flagと開発専用fixtureで隔離し、長期branchで保持しない。
+- open Issueは原則12件、P0は2件、同時着手は1件までとする。
+- 実装済み・重複・後続へ包含されたIssueは閉じ、人間確認は構造化プレイテストへ集約する。
+- GitHub Projectsは任意の一覧表示とし、Starlightの直近フェーズとopen Issueを実行基準にする。
+
+過去Issueは参照リンクと判断履歴が多いため一括削除せず、移行理由を残してcloseする。
+誤作成や機密情報を含む場合だけハード削除する。
+
 ## 2026-06-29: v0.3安定版候補
 
 決定: v0.3を安定版候補として扱う。
