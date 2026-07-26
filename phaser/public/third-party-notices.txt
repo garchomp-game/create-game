@@ -1,5 +1,5 @@
 Arena Core - Third-Party Notices
-Last updated: 2026-07-17
+Last updated: 2026-07-26
 
 Arena Core's original source code, generated audio, and other original assets are
 not licensed by this notice. No open-source license grant for those original
@@ -101,3 +101,12 @@ The BGM and sound effects are generated in this repository without third-party
 recordings or samples. See public/audio/README.md in the source repository.
 The game requests only local operating-system font families and does not ship a
 third-party web font.
+
+-------------------------------------------------------------------------------
+Kenney Space Shooter (Remastered) - CC0 1.0 Universal
+https://kenney.nl/assets/space-shooter-remastered
+
+Selected player ship, enemy ship, and pickup graphics are derived from Space
+Shooter (Remastered) by Kenney Vleugels. The source asset pack is dedicated to
+the public domain under CC0 1.0 Universal. A copy of the asset pack notice is
+included at public/assets/kenney/space-shooter/LICENSE.txt.

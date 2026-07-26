@@ -11,6 +11,7 @@ import type {
 import { getCollapseSafeBounds } from "../../simulation/systems/collapseSystem";
 import { HUD_LEFT_PANEL_BOUNDS } from "./PhaserHudLayout";
 import { drawRecoveryKitIcon } from "./PhaserRecoveryKitIcon";
+import { selectNearestOffscreen } from "./ArenaRenderSelectors";
 
 export class PhaserArenaWorldView {
   constructor(
@@ -23,7 +24,7 @@ export class PhaserArenaWorldView {
     world: WorldState,
     pointerWorld: Vec2 | null,
   ): void {
-    const { bullet, pickup, player } = this.viewConfig;
+    const { bullet, player } = this.viewConfig;
 
     graphics.clear();
     this.drawCollapse(graphics, world);
@@ -52,11 +53,6 @@ export class PhaserArenaWorldView {
     for (const item of world.pickups) {
       if (item.kind === "heal") {
         this.drawHealPickup(graphics, item);
-      } else {
-        graphics.fillStyle(pickup.xpColor, 1);
-        graphics.fillCircle(item.position.x, item.position.y, item.radius);
-        graphics.lineStyle(2, 0x14532d, 1);
-        graphics.strokeCircle(item.position.x, item.position.y, item.radius);
       }
     }
 
@@ -82,10 +78,18 @@ export class PhaserArenaWorldView {
     this.drawOffscreenEnemyIndicators(graphics, world);
 
     this.drawAimGuide(graphics, world, pointerWorld);
-    graphics.fillStyle(player.color, 1);
-    graphics.fillCircle(world.player.position.x, world.player.position.y, world.player.radius);
-    graphics.lineStyle(2, player.stroke, 1);
-    graphics.strokeCircle(world.player.position.x, world.player.position.y, world.player.radius);
+    graphics.lineStyle(2, player.stroke, 0.72);
+    graphics.strokeCircle(
+      world.player.position.x,
+      world.player.position.y,
+      world.player.radius + 2,
+    );
+    graphics.lineStyle(1, player.color, 0.32);
+    graphics.strokeCircle(
+      world.player.position.x,
+      world.player.position.y,
+      world.player.radius + 5,
+    );
   }
 
   private drawPlayerBullet(
@@ -494,44 +498,8 @@ export class PhaserArenaWorldView {
       return;
     }
 
-    if (view.shape === "circle") {
-      graphics.fillStyle(view.color, 1);
-      graphics.fillCircle(x, y, r);
-      graphics.lineStyle(2, view.stroke, 1);
-      graphics.strokeCircle(x, y, r);
-    } else if (view.shape === "square") {
-      graphics.fillStyle(view.color, 1);
-      graphics.fillRect(x - r, y - r, r * 2, r * 2);
-      graphics.lineStyle(2, view.stroke, 1);
-      graphics.strokeRect(x - r, y - r, r * 2, r * 2);
-    } else if (view.shape === "diamond") {
-      this.drawPolygon(
-        graphics,
-        [
-          { x, y: y - r * 1.18 },
-          { x: x + r * 1.18, y },
-          { x, y: y + r * 1.18 },
-          { x: x - r * 1.18, y },
-        ],
-        view.color,
-        view.stroke,
-      );
-    } else if (view.shape === "triangle") {
-      this.drawPolygon(
-        graphics,
-        this.getRegularPolygonPoints(x, y, r * 1.25, 3, -Math.PI / 2),
-        view.color,
-        view.stroke,
-      );
-    } else {
-      this.drawPolygon(
-        graphics,
-        this.getRegularPolygonPoints(x, y, r * 1.08, 6, Math.PI / 6),
-        view.color,
-        view.stroke,
-      );
-    }
-
+    graphics.lineStyle(1.5, view.stroke, enemy.enteredArena ? 0.76 : 0.48);
+    graphics.strokeCircle(x, y, r + 1);
     this.drawEnemyMark(graphics, enemy, view);
     if (enemy.elite?.kind === "commander") {
       this.drawCommanderEliteMark(graphics, enemy, elapsed);
@@ -556,27 +524,15 @@ export class PhaserArenaWorldView {
     const { x, y } = enemy.position;
     const radius = enemy.radius;
     const accent = phase === 2 ? 0xfb7185 : 0xfacc15;
-    const wing = [
-      { x: x - radius * 1.65, y: y - radius * 0.25 },
-      { x: x - radius * 0.55, y: y - radius * 0.72 },
-      { x: x + radius * 0.55, y: y - radius * 0.72 },
-      { x: x + radius * 1.65, y: y - radius * 0.25 },
-      { x: x + radius * 1.25, y: y + radius * 0.62 },
-      { x: x, y: y + radius * 0.9 },
-      { x: x - radius * 1.25, y: y + radius * 0.62 },
-    ];
-    this.drawPolygon(graphics, wing, 0x3f1d4b, accent);
-    this.drawPolygon(
-      graphics,
-      this.getRegularPolygonPoints(x, y, radius, 6, Math.PI / 6),
-      0x172554,
-      0xf8fafc,
-    );
-    graphics.lineStyle(3, accent, 0.92);
+    graphics.fillStyle(accent, 0.1);
+    graphics.fillCircle(x, y, radius * 1.28);
+    graphics.lineStyle(3, accent, 0.88);
+    graphics.strokeCircle(x, y, radius * 1.18);
+    graphics.lineStyle(2, 0xf8fafc, 0.72);
     graphics.strokeCircle(x, y, radius * 0.55);
-    graphics.fillStyle(phase === 2 ? 0xfda4af : 0xfef3c7, 1);
-    graphics.fillCircle(x, y, radius * 0.24);
-    graphics.lineStyle(2, 0x67e8f9, 0.8);
+    graphics.fillStyle(phase === 2 ? 0xfda4af : 0xfef3c7, 0.9);
+    graphics.fillCircle(x, y, radius * 0.16);
+    graphics.lineStyle(2, 0x67e8f9, 0.72);
     const ring = this.getRegularPolygonPoints(
       x,
       y,
@@ -587,8 +543,11 @@ export class PhaserArenaWorldView {
     this.tracePolygon(graphics, ring);
     graphics.strokePath();
     graphics.lineStyle(3, accent, 0.95);
-    graphics.lineBetween(x - radius * 1.5, y, x - radius * 0.72, y);
-    graphics.lineBetween(x + radius * 0.72, y, x + radius * 1.5, y);
+    graphics.lineBetween(x - radius * 1.75, y, x - radius * 1.12, y);
+    graphics.lineBetween(x + radius * 1.12, y, x + radius * 1.75, y);
+    graphics.lineStyle(2, 0xf8fafc, 0.65);
+    graphics.lineBetween(x - radius * 1.55, y - 6, x - radius * 1.55, y + 6);
+    graphics.lineBetween(x + radius * 1.55, y - 6, x + radius * 1.55, y + 6);
   }
 
   private drawPulseFocusPips(
@@ -614,37 +573,16 @@ export class PhaserArenaWorldView {
   ): void {
     if (world.state.status !== "playing" && world.state.status !== "paused") return;
 
-    const visibleLimit = 8;
-    const offscreenEnemies = world.enemies
-      .filter((enemy) => this.isOffscreen(enemy))
-      .sort((left, right) =>
-        this.distanceToPlayer(world, left) - this.distanceToPlayer(world, right),
-      )
-      .slice(0, visibleLimit);
+    const offscreenEnemies = selectNearestOffscreen(
+      world.enemies,
+      world.player.position,
+      this.simulationConfig.arena,
+      8,
+    );
 
     for (const enemy of offscreenEnemies) {
       this.drawOffscreenEnemyIndicator(graphics, world, enemy);
     }
-  }
-
-  private isOffscreen(enemy: WorldState["enemies"][number]): boolean {
-    const { width, height } = this.simulationConfig.arena;
-    return (
-      enemy.position.x < 0 ||
-      enemy.position.x > width ||
-      enemy.position.y < 0 ||
-      enemy.position.y > height
-    );
-  }
-
-  private distanceToPlayer(
-    world: WorldState,
-    enemy: WorldState["enemies"][number],
-  ): number {
-    return Math.hypot(
-      world.player.position.x - enemy.position.x,
-      world.player.position.y - enemy.position.y,
-    );
   }
 
   private drawOffscreenEnemyIndicator(

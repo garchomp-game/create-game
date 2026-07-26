@@ -15,13 +15,21 @@ import { PhaserTacticalBackground } from "./PhaserTacticalBackground";
 import type { PhaserUiState } from "./PhaserUiState";
 import type { TutorialSnapshot } from "../../domain/tutorial";
 import { createArenaTutorialViewModel } from "../../presentation/ArenaTutorialPresenter";
-import { ARENA_DYNAMIC_WORLD_DEPTH } from "./PhaserArenaDepths";
+import {
+  ARENA_CURSOR_DEPTH,
+  ARENA_DYNAMIC_WORLD_DEPTH,
+  ARENA_SCREEN_GRAPHICS_DEPTH,
+} from "./PhaserArenaDepths";
 import { PhaserTutorialLayer } from "./PhaserTutorialLayer";
 import { PhaserPracticeGuideLayer } from "./PhaserPracticeGuideLayer";
+import { PhaserArenaEntityLayer } from "./PhaserArenaEntityLayer";
 
 export class PhaserArenaRenderer {
-  private readonly graphics: Phaser.GameObjects.Graphics;
+  private readonly worldGraphics: Phaser.GameObjects.Graphics;
+  private readonly screenGraphics: Phaser.GameObjects.Graphics;
+  private readonly cursorGraphics: Phaser.GameObjects.Graphics;
   private readonly background: PhaserTacticalBackground;
+  private readonly entityLayer: PhaserArenaEntityLayer;
   private readonly worldView: PhaserArenaWorldView;
   private readonly screenView: PhaserArenaScreenView;
   private readonly hud: PhaserHud;
@@ -40,6 +48,7 @@ export class PhaserArenaRenderer {
     scene: Phaser.Scene,
     private readonly simulationConfig: SimulationConfig,
     viewConfig: ViewConfig,
+    private readonly profilingEnabled = false,
   ) {
     this.runConfig = simulationConfig;
     this.background = new PhaserTacticalBackground(
@@ -47,7 +56,14 @@ export class PhaserArenaRenderer {
       simulationConfig,
       viewConfig,
     );
-    this.graphics = scene.add.graphics().setDepth(ARENA_DYNAMIC_WORLD_DEPTH);
+    this.entityLayer = new PhaserArenaEntityLayer(scene, viewConfig);
+    this.worldGraphics = scene.add
+      .graphics()
+      .setDepth(ARENA_DYNAMIC_WORLD_DEPTH);
+    this.screenGraphics = scene.add
+      .graphics()
+      .setDepth(ARENA_SCREEN_GRAPHICS_DEPTH);
+    this.cursorGraphics = scene.add.graphics().setDepth(ARENA_CURSOR_DEPTH);
     this.worldView = new PhaserArenaWorldView(simulationConfig, viewConfig);
     this.hud = new PhaserHud(scene, simulationConfig);
     this.tutorialLayer = new PhaserTutorialLayer(scene, simulationConfig);
@@ -86,12 +102,14 @@ export class PhaserArenaRenderer {
       tutorialSnapshot,
     );
 
-    const worldStartedAt = now();
-    this.worldView.render(this.graphics, world, pointerWorld);
+    const worldStartedAt = this.profilingEnabled ? now() : 0;
+    this.entityLayer.render(world);
+    this.worldView.render(this.worldGraphics, world, pointerWorld);
     this.practiceGuideLayer.render(world);
-    const worldDuration = now() - worldStartedAt;
-    const screenStartedAt = now();
-    this.screenView.render(this.graphics, world, screen);
+    const worldDuration = this.profilingEnabled ? now() - worldStartedAt : 0;
+    const screenStartedAt = this.profilingEnabled ? now() : 0;
+    this.screenGraphics.clear();
+    this.screenView.render(this.screenGraphics, world, screen);
     this.hud.render(
       world,
       uiState?.secondaryMenu === null || uiState?.secondaryMenu === undefined,
@@ -102,7 +120,10 @@ export class PhaserArenaRenderer {
       world,
       createArenaTutorialViewModel(tutorialSnapshot, world.state.status),
     );
-    this.worldView.renderCursor(this.graphics, pointerWorld);
+    this.cursorGraphics.clear();
+    this.worldView.renderCursor(this.cursorGraphics, pointerWorld);
+    if (!this.profilingEnabled) return;
+
     const screenDuration = now() - screenStartedAt;
     this.renderedFrames += 1;
     this.worldRenderTotalMs += worldDuration;
@@ -115,6 +136,7 @@ export class PhaserArenaRenderer {
   }
 
   recordFeedbackRender(durationMs: number): void {
+    if (!this.profilingEnabled) return;
     if (!Number.isFinite(durationMs) || durationMs < 0) return;
     this.feedbackRenderTotalMs += durationMs;
     this.feedbackRenderMaxMs = Math.max(this.feedbackRenderMaxMs, durationMs);

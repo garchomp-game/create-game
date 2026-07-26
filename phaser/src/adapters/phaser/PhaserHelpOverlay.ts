@@ -9,10 +9,11 @@ import {
   ARENA_THEME,
 } from "../../presentation/ArenaTheme";
 import {
+  HELP_OVERLAY_ENTITY_DEPTH,
   HELP_OVERLAY_GRAPHICS_DEPTH,
   HELP_OVERLAY_TEXT_DEPTH,
 } from "./PhaserArenaDepths";
-import { drawEnemyIcon } from "./PhaserEnemyIcon";
+import { PhaserArenaEntityPreview } from "./PhaserArenaEntityPreview";
 import {
   getHelpCloseButtonBounds,
   getHelpTabButtonBounds,
@@ -35,6 +36,14 @@ export class PhaserHelpOverlay {
   private readonly commonTexts: Phaser.GameObjects.Text[];
   private readonly tabTexts: Phaser.GameObjects.Text[];
   private readonly pageTexts: Record<HelpPage, Phaser.GameObjects.Text[]>;
+  private readonly playerPreview: PhaserArenaEntityPreview;
+  private readonly xpPreview: PhaserArenaEntityPreview;
+  private readonly enemyPreviews: {
+    chaser: PhaserArenaEntityPreview;
+    brute: PhaserArenaEntityPreview;
+    fast: PhaserArenaEntityPreview;
+    ranged: PhaserArenaEntityPreview;
+  };
 
   constructor(
     scene: Phaser.Scene,
@@ -45,6 +54,44 @@ export class PhaserHelpOverlay {
       .graphics()
       .setDepth(HELP_OVERLAY_GRAPHICS_DEPTH)
       .setVisible(false);
+    this.playerPreview = new PhaserArenaEntityPreview(
+      scene,
+      "player",
+      viewConfig,
+      HELP_OVERLAY_ENTITY_DEPTH,
+    );
+    this.xpPreview = new PhaserArenaEntityPreview(
+      scene,
+      "xp",
+      viewConfig,
+      HELP_OVERLAY_ENTITY_DEPTH,
+    );
+    this.enemyPreviews = {
+      chaser: new PhaserArenaEntityPreview(
+        scene,
+        "chaser",
+        viewConfig,
+        HELP_OVERLAY_ENTITY_DEPTH,
+      ),
+      brute: new PhaserArenaEntityPreview(
+        scene,
+        "brute",
+        viewConfig,
+        HELP_OVERLAY_ENTITY_DEPTH,
+      ),
+      fast: new PhaserArenaEntityPreview(
+        scene,
+        "fast",
+        viewConfig,
+        HELP_OVERLAY_ENTITY_DEPTH,
+      ),
+      ranged: new PhaserArenaEntityPreview(
+        scene,
+        "ranged",
+        viewConfig,
+        HELP_OVERLAY_ENTITY_DEPTH,
+      ),
+    };
     this.commonTexts = this.createTexts(scene, createCommonTextSpecs(simulationConfig));
     this.tabTexts = this.createTexts(scene, createTabTextSpecs(simulationConfig));
     this.pageTexts = {
@@ -56,6 +103,7 @@ export class PhaserHelpOverlay {
 
   hide(): void {
     this.graphics.clear().setVisible(false);
+    this.hideEntityPreviews();
     for (const text of this.allTexts()) text.setVisible(false);
   }
 
@@ -63,6 +111,7 @@ export class PhaserHelpOverlay {
     const { width, height } = this.simulationConfig.arena;
     const graphics = this.graphics;
     graphics.clear().setVisible(true);
+    this.hideEntityPreviews();
     for (const text of this.commonTexts) text.setVisible(true);
     for (const text of this.tabTexts) text.setVisible(true);
     for (const text of this.pageTexts[page]) text.setVisible(true);
@@ -147,10 +196,10 @@ export class PhaserHelpOverlay {
     graphics.lineBetween(480, 166, 480, 385);
     graphics.lineBetween(56, 275, 904, 275);
 
-    drawEnemyIcon(graphics, 130, 205, 18, this.viewConfig.enemy.chaser);
-    drawEnemyIcon(graphics, 540, 205, 22, this.viewConfig.enemy.brute);
-    drawEnemyIcon(graphics, 130, 335, 15, this.viewConfig.enemy.fast);
-    drawEnemyIcon(graphics, 540, 335, 18, this.viewConfig.enemy.ranged);
+    this.enemyPreviews.chaser.render({ x: 130, y: 205, radius: 18 });
+    this.enemyPreviews.brute.render({ x: 540, y: 205, radius: 22 });
+    this.enemyPreviews.fast.render({ x: 130, y: 335, radius: 15 });
+    this.enemyPreviews.ranged.render({ x: 540, y: 335, radius: 18 });
 
     this.drawDiamond(
       graphics,
@@ -169,15 +218,14 @@ export class PhaserHelpOverlay {
     graphics.lineBetween(480, 166, 480, 448);
     graphics.lineBetween(56, 300, 904, 300);
 
-    graphics.fillStyle(this.viewConfig.player.color, 1);
-    graphics.fillCircle(145, 220, 20);
-    graphics.lineStyle(3, this.viewConfig.player.stroke, 1);
-    graphics.strokeCircle(145, 220, 20);
-
-    graphics.fillStyle(this.viewConfig.pickup.xpColor, 1);
-    graphics.fillCircle(545, 220, 17);
-    graphics.lineStyle(3, 0x14532d, 1);
-    graphics.strokeCircle(545, 220, 17);
+    this.playerPreview.render({ x: 145, y: 220, radius: 20 });
+    this.xpPreview.render({
+      x: 545,
+      y: 220,
+      radius: 17,
+      alpha: 0.7,
+      displayScale: 2.4,
+    });
 
     drawRecoveryKitIcon(
       graphics,
@@ -286,6 +334,12 @@ export class PhaserHelpOverlay {
       ...this.pageTexts.enemies,
       ...this.pageTexts.field,
     ];
+  }
+
+  private hideEntityPreviews(): void {
+    this.playerPreview.hide();
+    this.xpPreview.hide();
+    for (const preview of Object.values(this.enemyPreviews)) preview.hide();
   }
 }
 

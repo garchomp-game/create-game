@@ -46,6 +46,17 @@ export class PhaserTacticalBackground {
       this.graphics.lineBetween(0, y + 0.5, width, y + 0.5);
     }
 
+    this.graphics.fillStyle(0x0f766e, 0.035);
+    this.graphics.fillRect(0, center.y - 58, width, 116);
+    this.graphics.lineStyle(1, 0x5eead4, 0.14);
+    this.graphics.lineBetween(0, center.y - 58, width, center.y - 58);
+    this.graphics.lineBetween(0, center.y + 58, width, center.y + 58);
+    this.graphics.lineStyle(2, 0xfacc15, 0.12);
+    for (let x = 24; x < width; x += 96) {
+      this.graphics.lineBetween(x, center.y - 58, x + 16, center.y - 58);
+      this.graphics.lineBetween(x, center.y + 58, x + 16, center.y + 58);
+    }
+
     this.graphics.lineStyle(1, 0x52635f, 0.28);
     this.graphics.strokeCircle(center.x, center.y, 84);
     this.graphics.strokeCircle(center.x, center.y, 168);
@@ -53,6 +64,34 @@ export class PhaserTacticalBackground {
     this.graphics.lineBetween(center.x + 112, center.y, center.x + 194, center.y);
     this.graphics.lineBetween(center.x, center.y - 194, center.x, center.y - 112);
     this.graphics.lineBetween(center.x, center.y + 112, center.x, center.y + 194);
+
+    const sectorRadius = Math.min(width, height) * 0.43;
+    this.graphics.lineStyle(1, 0x67e8f9, 0.11);
+    for (let index = 0; index < 12; index += 1) {
+      const angle = (Math.PI * 2 * index) / 12;
+      const inner = sectorRadius - (index % 3 === 0 ? 16 : 8);
+      this.graphics.lineBetween(
+        center.x + Math.cos(angle) * inner,
+        center.y + Math.sin(angle) * inner,
+        center.x + Math.cos(angle) * sectorRadius,
+        center.y + Math.sin(angle) * sectorRadius,
+      );
+    }
+    this.graphics.strokeCircle(center.x, center.y, sectorRadius);
+
+    this.graphics.fillStyle(0x94a3b8, 0.12);
+    for (const [x, y] of [
+      [82, 90],
+      [266, 68],
+      [748, 98],
+      [880, 226],
+      [126, 424],
+      [332, 496],
+      [694, 452],
+      [846, 384],
+    ] as const) {
+      this.graphics.fillCircle(x, y, 1.5);
+    }
 
     const cornerLength = 34;
     const inset = 18;

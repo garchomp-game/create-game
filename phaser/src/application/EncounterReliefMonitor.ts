@@ -39,6 +39,17 @@ export class EncounterReliefMonitor {
 
   observe(world: WorldState, sourceEvents: readonly GameEvent[]): void {
     const observedAt = finiteNonNegative(world.state.elapsed);
+    const hasOpenEpisode = this.episodes.some(
+      (episode) => episode.endBoard === null,
+    );
+    const startsEpisode = sourceEvents.some(
+      (event) => event.type === "encounter.recovery.started",
+    );
+    const attachesWarning =
+      this.episodes.some((episode) => episode.nextWarning === null) &&
+      sourceEvents.some((event) => event.type === "encounter.warning.started");
+    if (!hasOpenEpisode && !startsEpisode && !attachesWarning) return;
+
     const currentBoard = captureBoard(world, observedAt);
 
     for (const event of sourceEvents) {

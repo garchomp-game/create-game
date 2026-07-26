@@ -4,6 +4,8 @@ import {
   ARENA_PHASER_COLORS as COLOR,
   ARENA_THEME,
 } from "../../presentation/ArenaTheme";
+import { ARENA_SCREEN_ENTITY_PREVIEW_DEPTH } from "./PhaserArenaDepths";
+import { PhaserArenaEntityPreview } from "./PhaserArenaEntityPreview";
 
 const PREVIEW_Y = 326;
 const PREVIEW_HEIGHT = 82;
@@ -11,22 +13,48 @@ const PREVIEW_WIDTH = 320;
 
 export class PhaserPracticeWeaponPreview {
   private readonly labels: Phaser.GameObjects.Text[];
+  private readonly playerPreviews: PhaserArenaEntityPreview[];
+  private readonly targetPreviews: PhaserArenaEntityPreview[];
+  private targetPreviewIndex = 0;
 
   constructor(
     private readonly scene: Phaser.Scene,
-    private readonly viewConfig: ViewConfig,
+    viewConfig: ViewConfig,
   ) {
     this.labels = [
       this.createLabel("高速・直線"),
       this.createLabel("低速・扇状"),
     ];
+    this.playerPreviews = Array.from(
+      { length: 2 },
+      () =>
+        new PhaserArenaEntityPreview(
+          scene,
+          "player",
+          viewConfig,
+          ARENA_SCREEN_ENTITY_PREVIEW_DEPTH,
+        ),
+    );
+    this.targetPreviews = Array.from(
+      { length: 4 },
+      () =>
+        new PhaserArenaEntityPreview(
+          scene,
+          "chaser",
+          viewConfig,
+          ARENA_SCREEN_ENTITY_PREVIEW_DEPTH,
+        ),
+    );
   }
 
   hide(): void {
     for (const label of this.labels) label.setVisible(false);
+    for (const preview of this.playerPreviews) preview.hide();
+    for (const preview of this.targetPreviews) preview.hide();
   }
 
   render(graphics: Phaser.GameObjects.Graphics): void {
+    this.targetPreviewIndex = 0;
     const phase =
       import.meta.env.VITE_ARENA_RUN_ORIGIN === "test"
         ? 0.42
@@ -73,15 +101,17 @@ export class PhaserPracticeWeaponPreview {
 
     const playerX = x + 28;
     const centerY = PREVIEW_Y + 51;
-    graphics.fillStyle(this.viewConfig.player.color, 1);
-    graphics.fillCircle(playerX, centerY, 11);
-    graphics.lineStyle(2, this.viewConfig.player.stroke, 1);
-    graphics.strokeCircle(playerX, centerY, 11);
+    this.playerPreviews[weapon === "pulse" ? 0 : 1]!.render({
+      x: playerX,
+      y: centerY,
+      radius: 11,
+      direction: { x: 1, y: 0 },
+    });
     graphics.lineStyle(2, accent, 0.9);
     graphics.lineBetween(playerX + 11, centerY, playerX + 21, centerY);
 
     if (weapon === "pulse") {
-      this.drawTarget(graphics, x + 292, centerY, 8);
+      this.drawTarget(x + 292, centerY, 8);
       for (const offset of [0, 0.34, 0.68]) {
         const progress = (phase + offset) % 1;
         this.drawShot(
@@ -97,7 +127,7 @@ export class PhaserPracticeWeaponPreview {
 
     const targetYs = [centerY - 19, centerY, centerY + 19];
     for (const targetY of targetYs) {
-      this.drawTarget(graphics, x + 292, targetY, 6);
+      this.drawTarget(x + 292, targetY, 6);
     }
     for (const volleyOffset of [0, 0.5]) {
       const progress = (phase + volleyOffset) % 1;
@@ -127,16 +157,17 @@ export class PhaserPracticeWeaponPreview {
   }
 
   private drawTarget(
-    graphics: Phaser.GameObjects.Graphics,
     x: number,
     y: number,
     radius: number,
   ): void {
-    const target = this.viewConfig.enemy.chaser;
-    graphics.fillStyle(target.color, 1);
-    graphics.fillCircle(x, y, radius);
-    graphics.lineStyle(2, target.stroke, 1);
-    graphics.strokeCircle(x, y, radius);
+    const preview = this.targetPreviews[this.targetPreviewIndex++];
+    preview?.render({
+      x,
+      y,
+      radius,
+      direction: { x: -1, y: 0 },
+    });
   }
 
   private createLabel(text: string): Phaser.GameObjects.Text {

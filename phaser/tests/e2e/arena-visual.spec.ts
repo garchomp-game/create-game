@@ -397,7 +397,7 @@ test("shows the Practice setup and fixed in-arena control guide", async ({
     )
     .toBe("practice");
   await expect(canvas).toHaveScreenshot("arena-practice-setup.png", {
-    maxDiffPixelRatio: 0.01,
+    maxDiffPixelRatio: 0.001,
   });
 
   await moveMouseToCanvasLogical(page, 300, 250);
@@ -415,7 +415,7 @@ test("shows the Practice setup and fixed in-arena control guide", async ({
     )
     .toBe("practiceSettings");
   await expect(canvas).toHaveScreenshot("arena-practice-settings.png", {
-    maxDiffPixelRatio: 0.01,
+    maxDiffPixelRatio: 0.001,
   });
 
   await moveMouseToCanvasLogical(page, 480, 464);
@@ -428,7 +428,7 @@ test("shows the Practice setup and fixed in-arena control guide", async ({
     .toBeNull();
   await page.evaluate(() => window.__ARENA_DEBUG__?.setPaused(true));
   await expect(canvas).toHaveScreenshot("arena-practice-guide.png", {
-    maxDiffPixelRatio: 0.01,
+    maxDiffPixelRatio: 0.001,
   });
 });
 
@@ -727,19 +727,19 @@ test("matches the shared control and legend help frame", async ({ page }) => {
   await page.waitForTimeout(150);
 
   await expect(canvas).toHaveScreenshot("arena-help.png", {
-    maxDiffPixelRatio: 0.01,
+    maxDiffPixelRatio: 0.001,
   });
   await moveMouseToCanvasLogical(page, 480, 111);
   await page.mouse.down();
   await page.mouse.up();
   await expect(canvas).toHaveScreenshot("arena-help-enemies.png", {
-    maxDiffPixelRatio: 0.01,
+    maxDiffPixelRatio: 0.001,
   });
   await moveMouseToCanvasLogical(page, 640, 111);
   await page.mouse.down();
   await page.mouse.up();
   await expect(canvas).toHaveScreenshot("arena-help-field.png", {
-    maxDiffPixelRatio: 0.01,
+    maxDiffPixelRatio: 0.001,
   });
 });
 

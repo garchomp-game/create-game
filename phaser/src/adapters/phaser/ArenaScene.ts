@@ -80,6 +80,7 @@ import { DevRunExportClient } from "../telemetry/DevRunExportClient";
 import { ArenaChoiceOverlay } from "../dom/ArenaChoiceOverlay";
 import { ArenaTutorialDialog } from "../dom/ArenaTutorialDialog";
 import { createArenaTutorialViewModel } from "../../presentation/ArenaTutorialPresenter";
+import { ARENA_ENTITY_TEXTURES } from "./PhaserArenaEntityVisuals";
 
 const loadArenaDebugModules =
   import.meta.env.DEV ||
@@ -138,6 +139,9 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   preload(): void {
+    for (const texture of ARENA_ENTITY_TEXTURES) {
+      this.load.image(texture.key, texture.path);
+    }
     this.load.audio("bgmEndless", "/audio/arena-loop.ogg");
     this.load.audio("bgmVictory", "/audio/expedition-clear-loop.ogg");
     this.load.audio("shot", "/audio/shot.ogg");
@@ -195,7 +199,12 @@ export class ArenaScene extends Phaser.Scene {
       this.game.canvas,
       this.simulationConfig,
     );
-    this.arenaRenderer = new PhaserArenaRenderer(this, this.simulationConfig, this.viewConfig);
+    this.arenaRenderer = new PhaserArenaRenderer(
+      this,
+      this.simulationConfig,
+      this.viewConfig,
+      loadArenaDebugModules !== null,
+    );
     this.feedbackLayer = new PhaserFeedbackLayer(this);
     this.feedbackLayer.configure(this.settings);
     this.audioRouter = new PhaserAudioEventRouter(
@@ -332,8 +341,10 @@ export class ArenaScene extends Phaser.Scene {
           ? this.selectedPracticeOptions
           : undefined,
     });
-    this.bossShadowMonitor.reset(this.world);
-    this.encounterReliefMonitor.reset(this.world);
+    if (loadArenaDebugModules) {
+      this.bossShadowMonitor.reset(this.world);
+      this.encounterReliefMonitor.reset(this.world);
+    }
     this.inputAdapter.configureExProtocolInput(
       this.runConfig.features.exProtocols,
     );
@@ -412,8 +423,10 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   private recordResult(result: StepWorldResult, observedRawDtMs?: number): void {
-    this.bossShadowMonitor.observe(this.world, result.events);
-    this.encounterReliefMonitor.observe(this.world, result.events);
+    if (loadArenaDebugModules) {
+      this.bossShadowMonitor.observe(this.world, result.events);
+      this.encounterReliefMonitor.observe(this.world, result.events);
+    }
     const gameOver = result.events.some((event) => event.type === "game.over");
     this.performanceMonitor.record(
       result.metrics,
@@ -509,9 +522,13 @@ export class ArenaScene extends Phaser.Scene {
       this.world.state.status,
       this.world.expedition?.outcome ?? null,
     );
-    const feedbackStartedAt = now();
-    this.feedbackLayer.render();
-    this.arenaRenderer.recordFeedbackRender(now() - feedbackStartedAt);
+    if (loadArenaDebugModules) {
+      const feedbackStartedAt = now();
+      this.feedbackLayer.render();
+      this.arenaRenderer.recordFeedbackRender(now() - feedbackStartedAt);
+    } else {
+      this.feedbackLayer.render();
+    }
     this.debugOverlay.render();
   }
 

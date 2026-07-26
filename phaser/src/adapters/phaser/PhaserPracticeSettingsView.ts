@@ -6,8 +6,9 @@ import {
   ARENA_PHASER_COLORS as COLOR,
   ARENA_THEME,
 } from "../../presentation/ArenaTheme";
+import { ARENA_SCREEN_ENTITY_PREVIEW_DEPTH } from "./PhaserArenaDepths";
+import { PhaserArenaEntityPreview } from "./PhaserArenaEntityPreview";
 import { getMenuButtons, type MenuButton } from "./PhaserMenuLayout";
-import { drawEnemyIcon } from "./PhaserEnemyIcon";
 
 const TEXT_DEPTH = 21;
 const VALUE_X_OFFSET = 136;
@@ -15,13 +16,14 @@ const VALUE_WIDTH = 128;
 
 export class PhaserPracticeSettingsView {
   private readonly texts: Phaser.GameObjects.Text[];
+  private readonly enemyPreviews: Record<EnemyTypeId, PhaserArenaEntityPreview>;
   private textIndex = 0;
 
   constructor(
     scene: Phaser.Scene,
     private readonly arenaWidth: number,
     private readonly arenaHeight: number,
-    private readonly viewConfig: ViewConfig,
+    viewConfig: ViewConfig,
   ) {
     this.texts = Array.from({ length: 20 }, () =>
       scene.add
@@ -33,11 +35,38 @@ export class PhaserPracticeSettingsView {
         .setDepth(TEXT_DEPTH)
         .setVisible(false),
     );
+    this.enemyPreviews = {
+      chaser: new PhaserArenaEntityPreview(
+        scene,
+        "chaser",
+        viewConfig,
+        ARENA_SCREEN_ENTITY_PREVIEW_DEPTH,
+      ),
+      brute: new PhaserArenaEntityPreview(
+        scene,
+        "brute",
+        viewConfig,
+        ARENA_SCREEN_ENTITY_PREVIEW_DEPTH,
+      ),
+      fast: new PhaserArenaEntityPreview(
+        scene,
+        "fast",
+        viewConfig,
+        ARENA_SCREEN_ENTITY_PREVIEW_DEPTH,
+      ),
+      ranged: new PhaserArenaEntityPreview(
+        scene,
+        "ranged",
+        viewConfig,
+        ARENA_SCREEN_ENTITY_PREVIEW_DEPTH,
+      ),
+    };
   }
 
   hide(): void {
     this.textIndex = 0;
     for (const text of this.texts) text.setVisible(false);
+    for (const preview of Object.values(this.enemyPreviews)) preview.hide();
   }
 
   render(
@@ -246,13 +275,12 @@ export class PhaserPracticeSettingsView {
     }
     const radius =
       enemyTypeId === "brute" ? 12 : enemyTypeId === "fast" ? 9 : 10;
-    drawEnemyIcon(
-      graphics,
-      button.x + 58,
-      button.y + 20,
+    this.enemyPreviews[enemyTypeId].render({
+      x: button.x + 58,
+      y: button.y + 20,
       radius,
-      this.viewConfig.enemy[enemyTypeId],
-    );
+      alpha: enabled ? 1 : 0.45,
+    });
     this.showText(label, button.x + 82, button.y + 20, {
       fontSize: 16,
       color: enabled

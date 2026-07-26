@@ -62,6 +62,20 @@ export class BossEncounterShadowMonitor {
 
   observe(world: WorldState, sourceEvents: readonly GameEvent[]): void {
     const observedAt = finiteNonNegative(world.state.elapsed);
+    if (
+      this.activeBoss === null &&
+      !sourceEvents.some((event) => event.type === "boss.spawned")
+    ) {
+      this.lastObservedElapsed = observedAt;
+      return;
+    }
+    if (
+      this.activeBoss?.defeatedAt !== null &&
+      this.activeBoss?.defeatedAt !== undefined
+    ) {
+      this.lastObservedElapsed = observedAt;
+      return;
+    }
     const events = sourceEvents
       .map((event, sequence) => ({
         event,
