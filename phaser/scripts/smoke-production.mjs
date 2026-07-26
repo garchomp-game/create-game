@@ -69,7 +69,7 @@ try {
   await clickCanvasLogical(page, 549, 449);
   await page.waitForTimeout(250);
   await capture(page, "02-settings.png");
-  await clickCanvasLogical(page, 625, 171);
+  await clickCanvasLogical(page, 480, 258);
   await page.waitForTimeout(200);
   const autoFireEnabled = await page.evaluate(() => {
     const raw = localStorage.getItem("arena-core.settings.v1");
