@@ -3,16 +3,41 @@ title: 直近フェーズ
 description: v0.7 RC6の安定化、v0.8の面白さ検証、Stage 1 / 5 / 10の3作戦検証へ進む現在の計画。
 ---
 
-最終整理日: 2026-07-25
+最終整理日: 2026-07-26
 
-:::note[2026-07-24 更新]
-control観測、採用済み選択UI、9課題Training、desktop gate、WebGL fallback、
-戦闘オブジェクトPhase A fixture、StudyLog契約はmain `60ae8889390c`まで統合済みです。
-現在のP0は[#126](https://github.com/garchomp-game/create-game/issues/126)の
-EX Protocol C2人間採否です。最新main統合、固定Version Preview、4件のCIは
-完了しました。C2は通常buildでOFF、production trafficはv0.6.8のまま維持し、
-人間6体系確認前に採用しません。
+:::note[2026-07-26 運用整理]
+ソロ開発の通常経路を`main`へ一本化し、積み上げDraft PRの有効な変更を
+`a4d954c`まで統合しました。open Issueは10件、P0は構造化プレイテスト
+[#81](https://github.com/garchomp-game/create-game/issues/81)とUI視覚刷新
+[#135](https://github.com/garchomp-game/create-game/issues/135)の2件です。
+完了した実装の人間確認は#81、世界観・背景・戦闘オブジェクトを含む視覚候補は
+#135へ集約します。
 :::
+
+## 現在のopen Issue
+
+| 優先度 | Issue | 役割 |
+| --- | --- | --- |
+| P0 | [#81](https://github.com/garchomp-game/create-game/issues/81) | 初心者・経験者の構造化プレイテスト |
+| P0 | [#135](https://github.com/garchomp-game/create-game/issues/135) | UI、背景、素材、戦闘オブジェクトの視覚刷新 |
+| P1 | [#76](https://github.com/garchomp-game/create-game/issues/76) | Charger control再設計。viability通過までruntime保留 |
+| P1 | [#77](https://github.com/garchomp-game/create-game/issues/77) | 技能shadow ledgerの後続 |
+| P1 | [#79](https://github.com/garchomp-game/create-game/issues/79) | 武器教義の比較候補 |
+| P1 | [#80](https://github.com/garchomp-game/create-game/issues/80) | 最大密度fixtureと警告優先度 |
+| P1 | [#93](https://github.com/garchomp-game/create-game/issues/93) | ボス攻撃文法と回復・反撃窓 |
+| P1 | [#62](https://github.com/garchomp-game/create-game/issues/62) | Stage 1 / 5 / 10の進行基盤 |
+| P1 | [#64](https://github.com/garchomp-game/create-game/issues/64) | Stage 1の学習縦切り |
+| P1 | [#65](https://github.com/garchomp-game/create-game/issues/65) | Stage 5の複合判断縦切り |
+
+完了した[#92](https://github.com/garchomp-game/create-game/issues/92)、
+[#94](https://github.com/garchomp-game/create-game/issues/94)、
+[#95](https://github.com/garchomp-game/create-game/issues/95)、
+[#128](https://github.com/garchomp-game/create-game/issues/128)、
+[#134](https://github.com/garchomp-game/create-game/issues/134)はmainへ統合済みです。
+旧[#66](https://github.com/garchomp-game/create-game/issues/66)、
+[#68](https://github.com/garchomp-game/create-game/issues/68)、
+[#98](https://github.com/garchomp-game/create-game/issues/98)の未完了範囲は
+#81または#135へ移管しました。
 
 ## 現在の判断
 
