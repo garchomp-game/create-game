@@ -70,11 +70,46 @@ const DEFAULT_MENU_LABELS: Record<MenuAction, string> = {
   resetSettings: "設定を初期化",
   resetProfile: "ゲストIDを再生成",
   settingsBgm: "BGM",
+  settingsBgmDecrease: "−",
+  settingsBgmIncrease: "＋",
   settingsSfx: "効果音",
+  settingsSfxDecrease: "−",
+  settingsSfxIncrease: "＋",
   settingsShake: "画面揺れ",
+  settingsShakeDecrease: "−",
+  settingsShakeIncrease: "＋",
   settingsFlash: "画面点滅",
+  settingsFlashDecrease: "−",
+  settingsFlashIncrease: "＋",
   settingsAutoFire: "自動射撃",
 };
+
+const SETTINGS_STEPPER_ROWS = [
+  {
+    y: 116,
+    decreaseAction: "settingsBgmDecrease",
+    increaseAction: "settingsBgmIncrease",
+  },
+  {
+    y: 162,
+    decreaseAction: "settingsSfxDecrease",
+    increaseAction: "settingsSfxIncrease",
+  },
+  {
+    y: 312,
+    decreaseAction: "settingsShakeDecrease",
+    increaseAction: "settingsShakeIncrease",
+  },
+  {
+    y: 358,
+    decreaseAction: "settingsFlashDecrease",
+    increaseAction: "settingsFlashIncrease",
+  },
+] as const satisfies ReadonlyArray<{
+  y: number;
+  decreaseAction: MenuAction;
+  increaseAction: MenuAction;
+}>;
 
 export function getMenuButtons(
   status: GameStatus,
@@ -139,35 +174,57 @@ export function getMenuButtons(
   }
 
   if (secondaryMenu === "settings") {
-    const halfWidth = 250;
-    const leftX = arenaWidth / 2 - 270;
-    const rightX = arenaWidth / 2 + 20;
+    const rowX = arenaWidth / 2 - 310;
+    const rowWidth = 620;
     const actions = [
-      ["settingsBgm", leftX, 150],
-      ["settingsSfx", leftX, 202],
-      ["settingsShake", leftX, 254],
-      ["settingsFlash", leftX, 306],
-      ["settingsAutoFire", rightX, 150],
-      ["help", rightX, 202],
-      ["resetSettings", rightX, 254],
-      ["resetProfile", rightX, 306],
+      ...SETTINGS_STEPPER_ROWS.slice(0, 2).map((row) => [
+        row.increaseAction,
+        rowX,
+        row.y,
+        rowWidth,
+        40,
+      ] as const),
+      ["settingsAutoFire", rowX, 238, rowWidth, 40],
+      ...SETTINGS_STEPPER_ROWS.slice(2).map((row) => [
+        row.increaseAction,
+        rowX,
+        row.y,
+        rowWidth,
+        40,
+      ] as const),
     ] as const;
     return [
-      ...actions.map(([action, buttonX, buttonY]) => ({
+      ...actions.map(([action, buttonX, buttonY, width, height]) => ({
         action,
         label: label(action),
         x: buttonX,
         y: buttonY,
-        width: halfWidth,
-        height: buttonHeight,
+        width,
+        height,
       })),
       {
         action: "back" as const,
         label: label("back"),
-        x,
-        y: 390,
-        width: buttonWidth,
-        height: buttonHeight,
+        x: 24,
+        y: 24,
+        width: 128,
+        height: 36,
+      },
+      {
+        action: "resetSettings" as const,
+        label: label("resetSettings"),
+        x: arenaWidth / 2 - 230,
+        y: 444,
+        width: 210,
+        height: 38,
+      },
+      {
+        action: "resetProfile" as const,
+        label: label("resetProfile"),
+        x: arenaWidth / 2 + 20,
+        y: 444,
+        width: 210,
+        height: 38,
       },
     ];
   }
@@ -450,6 +507,31 @@ export function getMenuButtons(
   return [];
 }
 
+export function getSettingsStepperButtons(
+  arenaWidth: number,
+): MenuButton[] {
+  const rowX = arenaWidth / 2 - 310;
+  const rowWidth = 620;
+  return SETTINGS_STEPPER_ROWS.flatMap((row) => [
+    {
+      action: row.decreaseAction,
+      label: "−",
+      x: rowX + rowWidth - 164,
+      y: row.y + 4,
+      width: 36,
+      height: 32,
+    },
+    {
+      action: row.increaseAction,
+      label: "＋",
+      x: rowX + rowWidth - 40,
+      y: row.y + 4,
+      width: 36,
+      height: 32,
+    },
+  ]);
+}
+
 export function getUpgradeChoiceButtons(
   choiceCount: number,
   arenaWidth: number,
@@ -478,6 +560,12 @@ export function findMenuActionAt(
   y: number,
   secondaryMenu: SecondaryMenu | null = null,
 ): MenuAction | null {
+  if (secondaryMenu === "settings") {
+    const stepperButton = getSettingsStepperButtons(arenaWidth).find((item) =>
+      pointInRect(x, y, item),
+    );
+    if (stepperButton) return stepperButton.action;
+  }
   const button = getMenuButtons(status, arenaWidth, arenaHeight, undefined, secondaryMenu).find(
     (item) => pointInRect(x, y, item),
   );

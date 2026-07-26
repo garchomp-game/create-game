@@ -68,24 +68,43 @@ describe("PhaserMenuLayout", () => {
     ).toBe("practiceEnemyChaser");
   });
 
-  it("opens help from settings and exposes one stable close target", () => {
+  it("keeps settings rows focused while exposing explicit stepper targets", () => {
     expect(
       getMenuButtons("title", 960, 540, undefined, "settings").map(
         (button) => button.action,
       ),
     ).toEqual([
-      "settingsBgm",
-      "settingsSfx",
-      "settingsShake",
-      "settingsFlash",
+      "settingsBgmIncrease",
+      "settingsSfxIncrease",
       "settingsAutoFire",
-      "help",
+      "settingsShakeIncrease",
+      "settingsFlashIncrease",
+      "back",
       "resetSettings",
       "resetProfile",
-      "back",
     ]);
-    expect(findMenuActionAt("title", 960, 540, 625, 223, "settings")).toBe(
-      "help",
+    const settingsButtons = getMenuButtons(
+      "title",
+      960,
+      540,
+      undefined,
+      "settings",
+    );
+    expect(settingsButtons.find((button) => button.action === "back")).toMatchObject({
+      x: 24,
+      y: 24,
+    });
+    expect(
+      settingsButtons.find((button) => button.action === "resetSettings"),
+    ).toMatchObject({ y: 444 });
+    expect(findMenuActionAt("title", 960, 540, 64, 42, "settings")).toBe(
+      "back",
+    );
+    expect(findMenuActionAt("title", 960, 540, 640, 136, "settings")).toBe(
+      "settingsBgmDecrease",
+    );
+    expect(findMenuActionAt("title", 960, 540, 770, 136, "settings")).toBe(
+      "settingsBgmIncrease",
     );
     expect(
       getMenuButtons("playing", 960, 540, undefined, "help").map(

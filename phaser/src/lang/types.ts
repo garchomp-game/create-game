@@ -51,9 +51,17 @@ export type MenuActionLabel =
   | "resetSettings"
   | "resetProfile"
   | "settingsBgm"
+  | "settingsBgmDecrease"
+  | "settingsBgmIncrease"
   | "settingsSfx"
+  | "settingsSfxDecrease"
+  | "settingsSfxIncrease"
   | "settingsShake"
+  | "settingsShakeDecrease"
+  | "settingsShakeIncrease"
   | "settingsFlash"
+  | "settingsFlashDecrease"
+  | "settingsFlashIncrease"
   | "settingsAutoFire";
 
 export type UiText = {

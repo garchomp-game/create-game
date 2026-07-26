@@ -334,6 +334,39 @@ describe("createArenaScreenViewModel", () => {
     expect(viewModel.menuLabels.settingsBgm).toContain("50%");
     expect(viewModel.menuLabels.settingsAutoFire).toContain("オフ");
     expect(viewModel.menuLabels.historyFilterPulse).toBe("[パルス]");
+    expect(viewModel.settingsPanel).toMatchObject({
+      heading: "設定",
+      groups: [
+        {
+          heading: "サウンド",
+          rows: [
+            {
+              action: "settingsBgmIncrease",
+              decreaseAction: "settingsBgmDecrease",
+              value: "50%",
+            },
+            {
+              action: "settingsSfxIncrease",
+              decreaseAction: "settingsSfxDecrease",
+              value: "100%",
+            },
+          ],
+        },
+        {
+          heading: "操作",
+          rows: [
+            {
+              action: "settingsAutoFire",
+              value: "オフ",
+              enabled: false,
+            },
+          ],
+        },
+        {
+          heading: "画面効果",
+        },
+      ],
+    });
   });
 
   it("provides a deterministic result fallback when no record was saved", () => {

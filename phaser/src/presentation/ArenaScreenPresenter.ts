@@ -57,6 +57,7 @@ export type ArenaScreenViewModel = {
   detailText: string | null;
   outcomeFeedback: OutcomeFeedbackScreenViewModel | null;
   practiceSettings: PracticeSettingsScreenViewModel | null;
+  settingsPanel: SettingsScreenViewModel | null;
   menuLabels: Partial<Record<MenuAction, string>>;
   focusedMenuAction: MenuAction | null;
 };
@@ -89,6 +90,32 @@ export type PracticeSettingsScreenViewModel = {
   }>;
 };
 
+export type SettingsScreenViewModel = {
+  heading: string;
+  notice: string | null;
+  groups: ReadonlyArray<{
+    heading: string;
+    rows: ReadonlyArray<{
+      action:
+        | "settingsBgmIncrease"
+        | "settingsSfxIncrease"
+        | "settingsShakeIncrease"
+        | "settingsFlashIncrease"
+        | "settingsAutoFire";
+      label: string;
+      value: string;
+      control: "stepper" | "toggle";
+      decreaseAction:
+        | "settingsBgmDecrease"
+        | "settingsSfxDecrease"
+        | "settingsShakeDecrease"
+        | "settingsFlashDecrease"
+        | null;
+      enabled: boolean | null;
+    }>;
+  }>;
+};
+
 export function createArenaScreenViewModel(
   world: WorldState,
   simulationConfig: SimulationConfig,
@@ -102,6 +129,7 @@ export function createArenaScreenViewModel(
     helpPage: uiState?.helpPage ?? "controls",
     outcomeFeedback: null,
     practiceSettings: null,
+    settingsPanel: null,
     menuLabels: createMenuLabels(uiState),
     focusedMenuAction: uiState?.focusedMenuAction ?? null,
   };
@@ -138,8 +166,9 @@ export function createArenaScreenViewModel(
     return {
       ...base,
       kind: "settings",
-      statusText: `${TEXT.ui.settingsTitle}\n${uiState!.profile.displayName ?? "ゲスト"}  ${uiState!.profile.id.slice(0, 8)}\n${uiState!.notice ?? "選択すると値が切り替わります"}`,
+      statusText: null,
       detailText: null,
+      settingsPanel: createSettingsScreenViewModel(uiState!),
     };
   }
   if (secondaryMenu === "story") {
@@ -707,6 +736,75 @@ function formatTimeMedal(medal: "gold" | "silver" | "bronze" | null): string {
   if (medal === "silver") return "銀";
   if (medal === "bronze") return "銅";
   return "なし";
+}
+
+function createSettingsScreenViewModel(
+  uiState: ArenaUiState,
+): SettingsScreenViewModel {
+  const percent = (value: number, muted = false) =>
+    muted ? "オフ" : `${Math.round(value * 100)}%`;
+
+  return {
+    heading: TEXT.ui.settingsTitle,
+    notice: uiState.notice,
+    groups: [
+      {
+        heading: "サウンド",
+        rows: [
+          {
+            action: "settingsBgmIncrease",
+            label: TEXT.ui.menu.settingsBgm,
+            value: percent(uiState.settings.bgmVolume, uiState.settings.bgmMuted),
+            control: "stepper",
+            decreaseAction: "settingsBgmDecrease",
+            enabled: null,
+          },
+          {
+            action: "settingsSfxIncrease",
+            label: TEXT.ui.menu.settingsSfx,
+            value: percent(uiState.settings.sfxVolume, uiState.settings.sfxMuted),
+            control: "stepper",
+            decreaseAction: "settingsSfxDecrease",
+            enabled: null,
+          },
+        ],
+      },
+      {
+        heading: "操作",
+        rows: [
+          {
+            action: "settingsAutoFire",
+            label: TEXT.ui.menu.settingsAutoFire,
+            value: uiState.settings.autoFireEnabled ? "オン" : "オフ",
+            control: "toggle",
+            decreaseAction: null,
+            enabled: uiState.settings.autoFireEnabled,
+          },
+        ],
+      },
+      {
+        heading: "画面効果",
+        rows: [
+          {
+            action: "settingsShakeIncrease",
+            label: TEXT.ui.menu.settingsShake,
+            value: percent(uiState.settings.shakeIntensity),
+            control: "stepper",
+            decreaseAction: "settingsShakeDecrease",
+            enabled: null,
+          },
+          {
+            action: "settingsFlashIncrease",
+            label: TEXT.ui.menu.settingsFlash,
+            value: percent(uiState.settings.flashIntensity),
+            control: "stepper",
+            decreaseAction: "settingsFlashDecrease",
+            enabled: null,
+          },
+        ],
+      },
+    ],
+  };
 }
 
 function createMenuLabels(

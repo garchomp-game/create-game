@@ -148,7 +148,7 @@ test("renders canvas and accepts movement and shooting input", async ({ page }) 
   expect(consoleErrors).toEqual([]);
 });
 
-test("opens one help screen from play and settings without advancing the run", async ({
+test("opens one help screen from play without advancing the run", async ({
   page,
 }) => {
   await gotoArena(page);
@@ -205,24 +205,6 @@ test("opens one help screen from play and settings without advancing the run", a
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
     .toBe("title");
-  await clickCanvasAt(page, 549, 449);
-  await expect
-    .poll(() =>
-      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
-    )
-    .toBe("settings");
-  await clickCanvasAt(page, 625, 223);
-  await expect
-    .poll(() =>
-      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
-    )
-    .toBe("help");
-  await clickCanvasAt(page, 480, 499);
-  await expect
-    .poll(() =>
-      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
-    )
-    .toBe("settings");
 });
 
 test("starts Practice with chosen fixed conditions and no run record", async ({
@@ -1243,17 +1225,29 @@ test("changes and resets settings through the pointer UI", async ({ page }) => {
   await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
   await page.evaluate(() => window.__ARENA_DEBUG__?.openMenu("settings"));
 
-  await clickCanvasAt(page, 335, 171);
+  await holdKeyForFrame(page, "ArrowLeft");
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSettings().bgmVolume)).toBe(
-    0.5,
+    0.9,
+  );
+  await clickCanvasAt(page, 770, 136);
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSettings().bgmVolume)).toBe(
+    1,
+  );
+  await clickCanvasAt(page, 640, 136);
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSettings().bgmVolume)).toBe(
+    0.9,
   );
 
   await page.reload();
   await expect.poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__))).toBe(true);
-  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getSettings().bgmVolume)).toBe(0.5);
+  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getSettings().bgmVolume)).toBe(0.9);
 
   await page.evaluate(() => window.__ARENA_DEBUG__?.openMenu("settings"));
-  await clickCanvasAt(page, 625, 275);
+  await clickCanvasAt(page, 355, 451);
+  await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSettings().bgmVolume)).toBe(
+    0.9,
+  );
+  await clickCanvasAt(page, 355, 451);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSettings())).toMatchObject({
     bgmVolume: 1,
     sfxVolume: 1,
@@ -1278,7 +1272,11 @@ test("resets the guest profile without clearing settings or run records", async 
   );
   const previousProfileId = await page.evaluate(() => window.__ARENA_DEBUG__?.getProfile().id);
 
-  await clickCanvasAt(page, 625, 327);
+  await clickCanvasAt(page, 605, 451);
+  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getProfile().id)).toBe(
+    previousProfileId,
+  );
+  await clickCanvasAt(page, 605, 451);
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getProfile().id))
     .not.toBe(previousProfileId);

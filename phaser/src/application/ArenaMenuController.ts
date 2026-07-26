@@ -37,6 +37,8 @@ export type ArenaMenuState = {
   helpPage: HelpPage;
   historyClearPending: boolean;
   rankingClearPending: boolean;
+  settingsResetPending: boolean;
+  profileResetPending: boolean;
   historyPage: number;
   historyWeaponFilter: HistoryWeaponFilter;
   rankingBoardIndex: number;
@@ -121,6 +123,15 @@ export class ArenaMenuController {
     action: MenuAction,
     context: ArenaMenuActionContext,
   ): ArenaMenuActionOutcome {
+    if (action !== "resetSettings" && this.menuState.settingsResetPending) {
+      this.menuState.settingsResetPending = false;
+      this.menuState.notice = null;
+    }
+    if (action !== "resetProfile" && this.menuState.profileResetPending) {
+      this.menuState.profileResetPending = false;
+      this.menuState.notice = null;
+    }
+
     if (
       action === "start" &&
       (context.status === "title" || context.status === "trainingComplete")
@@ -402,6 +413,13 @@ export class ArenaMenuController {
     }
 
     if (action === "resetSettings") {
+      if (!this.menuState.settingsResetPending) {
+        this.menuState.settingsResetPending = true;
+        this.menuState.notice = "もう一度選ぶと設定を初期化します";
+        return handled();
+      }
+
+      this.menuState.settingsResetPending = false;
       return this.runSettingsUpdate(
         () => this.dependencies.profileStore.resetSettings(),
         "設定を初期化しました",
@@ -409,6 +427,13 @@ export class ArenaMenuController {
     }
 
     if (action === "resetProfile") {
+      if (!this.menuState.profileResetPending) {
+        this.menuState.profileResetPending = true;
+        this.menuState.notice = "もう一度選ぶとゲストIDを再生成します";
+        return handled();
+      }
+
+      this.menuState.profileResetPending = false;
       try {
         const profile = this.dependencies.profileStore.resetProfile();
         return handled({ type: "profileReset", profile });
@@ -421,8 +446,17 @@ export class ArenaMenuController {
       }
     }
 
-    if (action === "settingsBgm") {
-      const next = cycleLevel(context.settings.bgmMuted ? 0 : context.settings.bgmVolume);
+    const bgmDirection = getSettingsStepDirection(
+      action,
+      "settingsBgm",
+      "settingsBgmDecrease",
+      "settingsBgmIncrease",
+    );
+    if (bgmDirection !== null) {
+      const next = adjustSettingsLevel(
+        context.settings.bgmMuted ? 0 : context.settings.bgmVolume,
+        bgmDirection,
+      );
       return this.runSettingsUpdate(() =>
         this.dependencies.profileStore.updateSettings({
           bgmVolume: next,
@@ -431,8 +465,17 @@ export class ArenaMenuController {
       );
     }
 
-    if (action === "settingsSfx") {
-      const next = cycleLevel(context.settings.sfxMuted ? 0 : context.settings.sfxVolume);
+    const sfxDirection = getSettingsStepDirection(
+      action,
+      "settingsSfx",
+      "settingsSfxDecrease",
+      "settingsSfxIncrease",
+    );
+    if (sfxDirection !== null) {
+      const next = adjustSettingsLevel(
+        context.settings.sfxMuted ? 0 : context.settings.sfxVolume,
+        sfxDirection,
+      );
       return this.runSettingsUpdate(() =>
         this.dependencies.profileStore.updateSettings({
           sfxVolume: next,
@@ -441,18 +484,36 @@ export class ArenaMenuController {
       );
     }
 
-    if (action === "settingsShake") {
+    const shakeDirection = getSettingsStepDirection(
+      action,
+      "settingsShake",
+      "settingsShakeDecrease",
+      "settingsShakeIncrease",
+    );
+    if (shakeDirection !== null) {
       return this.runSettingsUpdate(() =>
         this.dependencies.profileStore.updateSettings({
-          shakeIntensity: cycleLevel(context.settings.shakeIntensity),
+          shakeIntensity: adjustSettingsLevel(
+            context.settings.shakeIntensity,
+            shakeDirection,
+          ),
         }),
       );
     }
 
-    if (action === "settingsFlash") {
+    const flashDirection = getSettingsStepDirection(
+      action,
+      "settingsFlash",
+      "settingsFlashDecrease",
+      "settingsFlashIncrease",
+    );
+    if (flashDirection !== null) {
       return this.runSettingsUpdate(() =>
         this.dependencies.profileStore.updateSettings({
-          flashIntensity: cycleLevel(context.settings.flashIntensity),
+          flashIntensity: adjustSettingsLevel(
+            context.settings.flashIntensity,
+            flashDirection,
+          ),
         }),
       );
     }
@@ -508,6 +569,8 @@ function createInitialMenuState(
     helpPage: "controls",
     historyClearPending: false,
     rankingClearPending: false,
+    settingsResetPending: false,
+    profileResetPending: false,
     historyPage: 0,
     historyWeaponFilter: "all",
     rankingBoardIndex: 0,
@@ -529,10 +592,20 @@ function handled(
   };
 }
 
-function cycleLevel(value: number): number {
-  if (value >= 0.75) return 0.5;
-  if (value >= 0.25) return 0;
-  return 1;
+function getSettingsStepDirection(
+  action: MenuAction,
+  legacyAction: MenuAction,
+  decreaseAction: MenuAction,
+  increaseAction: MenuAction,
+): -1 | 1 | null {
+  if (action === decreaseAction) return -1;
+  if (action === legacyAction || action === increaseAction) return 1;
+  return null;
+}
+
+function adjustSettingsLevel(value: number, direction: -1 | 1): number {
+  const stepped = Math.round((value + direction * 0.1) * 10) / 10;
+  return Math.max(0, Math.min(1, stepped));
 }
 
 function getPracticeEnemyType(action: MenuAction) {

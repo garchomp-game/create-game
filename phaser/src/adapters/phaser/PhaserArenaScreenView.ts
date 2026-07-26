@@ -5,6 +5,7 @@ import { ARENA_PHASER_COLORS as COLOR, ARENA_THEME } from "../../presentation/Ar
 import { getMenuButtons } from "./PhaserMenuLayout";
 import { PhaserHelpOverlay } from "./PhaserHelpOverlay";
 import { PhaserPracticeSettingsView } from "./PhaserPracticeSettingsView";
+import { PhaserSettingsView } from "./PhaserSettingsView";
 import { PhaserTitleScreenView } from "./PhaserTitleScreenView";
 
 export class PhaserArenaScreenView {
@@ -15,6 +16,7 @@ export class PhaserArenaScreenView {
   private readonly menuButtonTexts: Phaser.GameObjects.Text[];
   private readonly helpOverlay: PhaserHelpOverlay;
   private readonly practiceSettingsView: PhaserPracticeSettingsView;
+  private readonly settingsView: PhaserSettingsView;
   private readonly titleScreenView: PhaserTitleScreenView;
 
   constructor(
@@ -32,6 +34,11 @@ export class PhaserArenaScreenView {
       simulationConfig.arena.width,
       simulationConfig.arena.height,
       viewConfig,
+    );
+    this.settingsView = new PhaserSettingsView(
+      scene,
+      simulationConfig.arena.width,
+      simulationConfig.arena.height,
     );
     this.titleScreenView = new PhaserTitleScreenView(
       scene,
@@ -112,6 +119,7 @@ export class PhaserArenaScreenView {
     this.outcomeBodyText.setVisible(false);
     this.helpOverlay.hide();
     this.practiceSettingsView.hide();
+    this.settingsView.hide();
     this.titleScreenView.hide();
 
     if (screen.kind === "help") {
@@ -242,6 +250,10 @@ export class PhaserArenaScreenView {
 
     if (screen.secondaryMenu === "practiceSettings") {
       this.practiceSettingsView.render(graphics, screen);
+      return;
+    }
+    if (screen.secondaryMenu === "settings") {
+      this.settingsView.render(graphics, screen);
       return;
     }
 

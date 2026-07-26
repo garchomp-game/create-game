@@ -258,7 +258,10 @@ export class PhaserInputAdapter {
       secondaryMenu,
     );
     if (hoveredAction) {
-      const hoveredIndex = menuButtons.findIndex((button) => button.action === hoveredAction);
+      const focusAction = getSettingsFocusAction(hoveredAction);
+      const hoveredIndex = menuButtons.findIndex(
+        (button) => button.action === focusAction,
+      );
       if (hoveredIndex >= 0) this.focusedMenuIndex = hoveredIndex;
     }
     if (menuButtons.length > 0) {
@@ -276,6 +279,16 @@ export class PhaserInputAdapter {
         this.focusedMenuIndex = (this.focusedMenuIndex + 1) % menuButtons.length;
       }
     }
+    const settingsAdjustmentAction =
+      secondaryMenu === "settings"
+        ? getSettingsKeyboardAdjustmentAction(
+            menuButtons[this.focusedMenuIndex]?.action ?? null,
+            Phaser.Input.Keyboard.JustDown(this.keys.left) ||
+              Phaser.Input.Keyboard.JustDown(this.keys.arrowLeft),
+            Phaser.Input.Keyboard.JustDown(this.keys.right) ||
+              Phaser.Input.Keyboard.JustDown(this.keys.arrowRight),
+          )
+        : null;
     const keyboardActivated =
       menuButtons.length > 0 &&
       (startJustDown ||
@@ -286,10 +299,7 @@ export class PhaserInputAdapter {
         status === "trainingComplete") &&
       Phaser.Input.Keyboard.JustDown(this.keys.escape);
     const helpAvailable =
-      secondaryMenu === "settings" ||
-      secondaryMenu === "help" ||
-      status === "playing" ||
-      status === "paused";
+      secondaryMenu === "help" || status === "playing" || status === "paused";
     const helpAction =
       helpButtonPressed || (helpAvailable && helpJustDown)
         ? secondaryMenu === "help"
@@ -303,9 +313,10 @@ export class PhaserInputAdapter {
         ? "back"
         : pointerPressed
           ? hoveredAction
-          : keyboardActivated
-            ? menuButtons[this.focusedMenuIndex]?.action ?? null
-            : null);
+          : settingsAdjustmentAction ??
+            (keyboardActivated
+              ? menuButtons[this.focusedMenuIndex]?.action ?? null
+              : null));
     this.pendingMenuAction = menuAction;
     const clickedUpgradeChoice =
       pointerPressed && status === "upgradeSelect"
@@ -541,4 +552,33 @@ export class PhaserInputAdapter {
     if (Phaser.Input.Keyboard.JustDown(this.keys.upgrade3)) return 2;
     return null;
   }
+}
+
+function getSettingsFocusAction(action: MenuAction | null): MenuAction | null {
+  if (action === "settingsBgmDecrease") return "settingsBgmIncrease";
+  if (action === "settingsSfxDecrease") return "settingsSfxIncrease";
+  if (action === "settingsShakeDecrease") return "settingsShakeIncrease";
+  if (action === "settingsFlashDecrease") return "settingsFlashIncrease";
+  return action;
+}
+
+function getSettingsKeyboardAdjustmentAction(
+  focusedAction: MenuAction | null,
+  decreasePressed: boolean,
+  increasePressed: boolean,
+): MenuAction | null {
+  if (decreasePressed === increasePressed) return null;
+  if (focusedAction === "settingsBgmIncrease") {
+    return decreasePressed ? "settingsBgmDecrease" : "settingsBgmIncrease";
+  }
+  if (focusedAction === "settingsSfxIncrease") {
+    return decreasePressed ? "settingsSfxDecrease" : "settingsSfxIncrease";
+  }
+  if (focusedAction === "settingsShakeIncrease") {
+    return decreasePressed ? "settingsShakeDecrease" : "settingsShakeIncrease";
+  }
+  if (focusedAction === "settingsFlashIncrease") {
+    return decreasePressed ? "settingsFlashDecrease" : "settingsFlashIncrease";
+  }
+  return null;
 }

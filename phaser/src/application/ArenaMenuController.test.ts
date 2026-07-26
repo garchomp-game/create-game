@@ -227,8 +227,8 @@ describe("ArenaMenuController", () => {
     const { controller, logger, profileStore } = createController();
     const context = createContext();
 
-    const updated = controller.handle("settingsBgm", context);
-    expect(updated.settings).toMatchObject({ bgmVolume: 0.5, bgmMuted: false });
+    const updated = controller.handle("settingsBgmDecrease", context);
+    expect(updated.settings).toMatchObject({ bgmVolume: 0.9, bgmMuted: false });
 
     profileStore.updateSettings.mockImplementationOnce(() => {
       throw new Error("storage unavailable");
@@ -242,14 +242,42 @@ describe("ArenaMenuController", () => {
     });
   });
 
-  it("returns the regenerated profile as an explicit command", () => {
+  it("confirms before resetting settings", () => {
+    const { controller, profileStore } = createController();
+
+    const confirmation = controller.handle("resetSettings", createContext());
+    expect(confirmation.settings).toBeUndefined();
+    expect(profileStore.resetSettings).not.toHaveBeenCalled();
+    expect(controller.state).toMatchObject({
+      settingsResetPending: true,
+      notice: "もう一度選ぶと設定を初期化します",
+    });
+
+    const outcome = controller.handle("resetSettings", createContext());
+    expect(outcome.settings).toEqual(createDefaultProfileSettings());
+    expect(profileStore.resetSettings).toHaveBeenCalledOnce();
+    expect(controller.state).toMatchObject({
+      settingsResetPending: false,
+      notice: "設定を初期化しました",
+    });
+  });
+
+  it("confirms before returning the regenerated profile as an explicit command", () => {
     const { controller, profileStore } = createController();
     const nextProfile = createProfile("profile-next");
     profileStore.resetProfile.mockReturnValue(nextProfile);
 
-    const outcome = controller.handle("resetProfile", createContext());
+    const confirmation = controller.handle("resetProfile", createContext());
+    expect(confirmation.command).toBeUndefined();
+    expect(profileStore.resetProfile).not.toHaveBeenCalled();
+    expect(controller.state).toMatchObject({
+      profileResetPending: true,
+      notice: "もう一度選ぶとゲストIDを再生成します",
+    });
 
+    const outcome = controller.handle("resetProfile", createContext());
     expect(outcome.command).toEqual({ type: "profileReset", profile: nextProfile });
+    expect(controller.state.profileResetPending).toBe(false);
   });
 });
 
