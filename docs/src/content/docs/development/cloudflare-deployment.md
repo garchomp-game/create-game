@@ -128,6 +128,24 @@ debug hook非公開、console / page error 0件を確認しました。
 console / page / request errorは0件です。初回スモークでPhaserのblob textureを
 CSPが拒否する問題を検出し、`img-src`へ`blob:`を限定追加した修正版です。
 
+### v0.8 EX Protocol・Endless再調整Preview
+
+2026-07-26に、初回XP 15、段階導入wave、180〜210秒の危険イベント、
+600秒のアリーナ崩壊とEX Protocol C2を同じ配布buildへ統合しました。
+production trafficは変更していません。
+
+| 項目 | 値 |
+| --- | --- |
+| Runtime commit | `ca921934aecc` |
+| app / ruleset | `0.8.0-candidate.2` / `phaser-v0.8-ex-protocols-c2` |
+| Cloudflare Version ID | `40f3e972-826c-4123-80f3-a5c00d3339e8` |
+| Preview URL | `https://v08-ex-balance-ca92193-arena-core.garchomp-game.workers.dev` |
+| production traffic | 変更なし |
+
+公開スモークで版情報、Canvas、設定保存、Endlessの自然終了、履歴・再挑戦、
+最終遠征開始、ベータ情報、第三者ライセンスを確認しました。
+console / page / request errorは0件です。
+
 静的ファイルの取得ではWorkerスクリプトを実行しません。ランキング、共有履歴、アカウントAPIは公開ベータ後に`/api/*`として追加し、それまではプロフィール、履歴、ローカルランキングをブラウザの`localStorage`へ保存します。
 
 ## 初回認証
