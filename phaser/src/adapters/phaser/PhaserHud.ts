@@ -9,18 +9,18 @@ import { TEXT } from "../../lang";
 import { getWaveBand } from "../../simulation/waveDirector";
 import { getThreatTier } from "../../simulation/threatDirector";
 import { getDifficultyElapsed } from "../../simulation/difficultyClock";
-import { getNextCollapseAt } from "../../simulation/systems/collapseSystem";
 import type { AutoPilotMode } from "../../simulation/autoPilot";
 import {
   createExProtocolHudViewModel,
   formatExProtocolEventNotice,
 } from "../../presentation/ExProtocolPresenter";
-import { createEndlessWaveCueViewModel } from "../../presentation/EndlessWaveCuePresenter";
 import { createProgressionHudViewModel } from "../../presentation/ProgressionHudPresenter";
+import { createTacticalStatusViewModel } from "../../presentation/TacticalStatusPresenter";
 import { getPlayerEffectiveMaxHp } from "../../simulation/systems/playerHealthSystem";
 import { HUD_LEFT_PANEL_BOUNDS } from "./PhaserHudLayout";
 import { getHelpHudButtonBounds } from "./PhaserHelpLayout";
 import { getPracticeSettingsButtonBounds } from "./PhaserPracticeLayout";
+import { PhaserTacticalStatusDock } from "./PhaserTacticalStatusDock";
 
 export class PhaserHud {
   private readonly scene: Phaser.Scene;
@@ -31,11 +31,11 @@ export class PhaserHud {
   private readonly xpValueText: Phaser.GameObjects.Text;
   private readonly metaText: Phaser.GameObjects.Text;
   private readonly weaponText: Phaser.GameObjects.Text;
-  private readonly encounterText: Phaser.GameObjects.Text;
   private readonly bossText: Phaser.GameObjects.Text;
   private readonly autoPilotText: Phaser.GameObjects.Text;
   private readonly helpText: Phaser.GameObjects.Text;
   private readonly practiceSettingsText: Phaser.GameObjects.Text;
+  private readonly tacticalStatusDock: PhaserTacticalStatusDock;
   private protocolText: Phaser.GameObjects.Text | null = null;
   private protocolNotice: { text: string; expiresAt: number } | null = null;
   private runConfig: SimulationConfig;
@@ -50,9 +50,10 @@ export class PhaserHud {
     this.xpValueText = this.createText(scene, 352, 53).setOrigin(1, 0);
     this.metaText = this.createText(scene, simulationConfig.arena.width - 28, 24).setOrigin(1, 0);
     this.weaponText = this.createText(scene, simulationConfig.arena.width - 28, 52).setOrigin(1, 0);
-    this.encounterText = this.createText(scene, simulationConfig.arena.width / 2, 112)
-      .setOrigin(0.5, 0)
-      .setFontSize(15);
+    this.tacticalStatusDock = new PhaserTacticalStatusDock(
+      scene,
+      simulationConfig.arena.width,
+    );
     this.bossText = this.createText(scene, simulationConfig.arena.width / 2, 108)
       .setOrigin(0.5, 0)
       .setFontSize(14);
@@ -132,7 +133,10 @@ export class PhaserHud {
       enabled && (world.state.status === "playing" || world.state.status === "paused");
     this.setVisible(visible);
     this.graphics.clear();
-    if (!visible) return;
+    if (!visible) {
+      this.tacticalStatusDock.render(null, false);
+      return;
+    }
 
     const leftPanel = HUD_LEFT_PANEL_BOUNDS;
     const rightPanel = {
@@ -144,6 +148,11 @@ export class PhaserHud {
     const maxHp = getPlayerEffectiveMaxHp(world, this.runConfig);
     const hpRatio = maxHp > 0 ? world.state.hp / maxHp : 0;
     const progressionHud = createProgressionHudViewModel(world);
+    const tacticalStatus = createTacticalStatusViewModel(
+      world,
+      this.runConfig,
+    );
+    this.tacticalStatusDock.render(tacticalStatus, true);
     const difficultyElapsed = getDifficultyElapsed(world);
     const wave = getWaveBand(this.runConfig, difficultyElapsed);
     const threatTier = getThreatTier(this.runConfig, difficultyElapsed);
@@ -220,7 +229,8 @@ export class PhaserHud {
         )
         .setVisible(true);
     }
-    if (autoPilotEnabled) {
+    const showAutoPilotBadge = autoPilotEnabled && tacticalStatus === null;
+    if (showAutoPilotBadge) {
       const badge = { x: this.simulationConfig.arena.width / 2 - 78, y: 14, width: 156, height: 30 };
       this.graphics.fillStyle(0x083344, 0.9);
       this.graphics.fillRoundedRect(badge.x, badge.y, badge.width, badge.height, 4);
@@ -235,12 +245,12 @@ export class PhaserHud {
     }
     this.autoPilotText
       .setText(formatAutoPilotMode(autoPilotMode))
-      .setVisible(autoPilotEnabled);
+      .setVisible(showAutoPilotBadge);
     const protocol = createExProtocolHudViewModel(
       world,
       this.runConfig,
     );
-    if (protocol) {
+    if (protocol && !tacticalStatus?.expanded) {
       const notice =
         this.protocolNotice &&
         this.protocolNotice.expiresAt >= world.state.elapsed
@@ -320,7 +330,6 @@ export class PhaserHud {
       const boss = world.expedition.boss;
       const hpRatio = boss.maxHp > 0 ? bossEnemy.hp / boss.maxHp : 0;
       const seconds = Math.max(0, boss.action.endsAt - world.state.elapsed);
-      this.encounterText.setVisible(false);
       const panel = {
         x: this.simulationConfig.arena.width / 2 - 250,
         y: this.simulationConfig.arena.height - 76,
@@ -340,31 +349,6 @@ export class PhaserHud {
       this.drawBar(panel.x + 28, panel.y + 48, panel.width - 56, 8, hpRatio, 0xef4444);
     } else {
       this.bossText.setVisible(false);
-      const encounterLabel = this.getEncounterLabel(world);
-      this.encounterText.setText(encounterLabel).setVisible(Boolean(encounterLabel));
-      if (encounterLabel) {
-        const commanderActive = world.enemies.some(
-          (enemy) => enemy.elite?.kind === "commander",
-        );
-        const banner = {
-          x: this.simulationConfig.arena.width / 2 - 350,
-          y: 104,
-          width: 700,
-          height: world.expedition ? (commanderActive ? 62 : 44) : 34,
-        };
-        this.graphics.fillStyle(0x020617, 0.88);
-        this.graphics.fillRoundedRect(banner.x, banner.y, banner.width, banner.height, 6);
-        this.graphics.lineStyle(
-          2,
-          world.encounter.director.phase === "active" ||
-              world.expedition?.director.phase === "active" ||
-              world.encounter.collapse.stage > 0
-            ? 0xf97316
-            : 0xfacc15,
-          0.95,
-        );
-        this.graphics.strokeRoundedRect(banner.x, banner.y, banner.width, banner.height, 6);
-      }
     }
   }
 
@@ -404,7 +388,6 @@ export class PhaserHud {
     this.xpValueText.setVisible(visible);
     this.metaText.setVisible(visible);
     this.weaponText.setVisible(visible);
-    this.encounterText.setVisible(visible && Boolean(this.encounterText.text));
     this.bossText.setVisible(false);
     this.autoPilotText.setVisible(false);
     this.helpText.setVisible(false);
@@ -412,118 +395,6 @@ export class PhaserHud {
     this.protocolText?.setVisible(false);
   }
 
-  private getEncounterLabel(world: WorldState): string {
-    const labels: string[] = [];
-    if (world.expedition) {
-      const expedition = world.expedition;
-      const phase = expedition.director.phase;
-      const card = formatExpeditionCard(expedition.currentCardTitleKey);
-      const direction = formatExpeditionDirection(expedition.currentDirection);
-      const phaseLabel =
-        phase === "telegraph"
-          ? `予告 ${direction} > ${card}`
-          : phase === "deploying"
-            ? `展開待機 ${direction} > ${card}`
-          : phase === "active"
-            ? `交戦中 ${card}`
-            : phase === "recovery"
-              ? `制圧確認 ${card}`
-              : null;
-      const commander = world.enemies.find(
-        (enemy) => enemy.elite?.kind === "commander",
-      );
-      const commanderLabel = commander?.elite
-        ? `\n指揮個体 HP ${Math.ceil(commander.hp)} / ${commander.elite.maximumHp}`
-        : "";
-      labels.push(
-        `${formatExpeditionAct(expedition.actId)}: ${expedition.objective}${phaseLabel ? `\n${phaseLabel}` : ""}${commanderLabel}`,
-      );
-      return labels.join(" / ");
-    }
-    const director = world.encounter.director;
-    const scheduledAt = director.scheduledAt;
-    const encounterId = director.currentId;
-    if (scheduledAt !== null && encounterId !== null && director.phase === "warning") {
-      labels.push(
-        TEXT.hud.encounterWarning(
-          TEXT.hud.encounterNames[encounterId],
-          Math.max(0, Math.ceil(scheduledAt - world.state.elapsed)),
-        ),
-      );
-    }
-    if (scheduledAt !== null && encounterId !== null && director.phase === "active") {
-      const end =
-        scheduledAt +
-        this.runConfig.encounter.director.definitions[encounterId].activeDuration;
-      labels.push(
-        TEXT.hud.encounterActive(
-          TEXT.hud.encounterNames[encounterId],
-          Math.max(0, Math.ceil(end - world.state.elapsed)),
-        ),
-      );
-    }
-    if (scheduledAt !== null && encounterId !== null && director.phase === "recovery") {
-      const definition = this.runConfig.encounter.director.definitions[encounterId];
-      const end =
-        scheduledAt +
-        definition.activeDuration +
-        definition.recoveryDuration;
-      labels.push(
-        TEXT.hud.encounterRecovery(
-          TEXT.hud.encounterNames[encounterId],
-          Math.max(0, Math.ceil(end - world.state.elapsed)),
-        ),
-      );
-    }
-    if (this.runConfig.features.arenaCollapse) {
-      const nextAt = getNextCollapseAt(
-        this.runConfig,
-        world.encounter.collapse.stage,
-      );
-      const untilNext = nextAt - world.state.elapsed;
-      if (
-        untilNext >= 0 &&
-        untilNext <= this.runConfig.encounter.collapse.warningDuration
-      ) {
-        labels.push(TEXT.hud.collapseWarning(Math.ceil(untilNext)));
-      } else if (world.encounter.collapse.stage > 0) {
-        labels.push(TEXT.hud.collapseActive(world.encounter.collapse.stage));
-      }
-    }
-    if (labels.length === 0 && !world.practice) {
-      const cue = createEndlessWaveCueViewModel(
-        this.runConfig,
-        getDifficultyElapsed(world),
-      );
-      if (cue) labels.push(cue.text);
-    }
-    if (world.encounter.contract.choice === "overdrive") labels.push(TEXT.hud.overdriveContract);
-    return labels.join(" / ");
-  }
-}
-
-function formatExpeditionAct(actId: string): string {
-  const labels: Record<string, string> = {
-    "perimeter-watch": "ACT 1 四方警戒",
-    "first-assault": "ACT 2 重装襲来",
-    counterattack: "ACT 3 反撃",
-    breakthrough: "ACT 4 包囲突破",
-    "command-ship": "ACT 5 最終決戦",
-  };
-  return labels[actId] ?? actId;
-}
-
-function formatExpeditionCard(titleKey: string | null): string {
-  if (!titleKey) return "次の遭遇";
-  const labels: Record<string, string> = {
-    "encounter.vanguard-arc.title": "前衛弧状波",
-    "encounter.crossfire-pincer.title": "十字挟撃",
-    "encounter.heavy-escort.title": "重装護衛隊",
-    "encounter.commander-counterattack.title": "指揮個体反撃",
-    "encounter.charger-breakthrough.title": "突撃突破隊",
-    "encounter.command-ship-showdown.title": "敵指揮艦決戦",
-  };
-  return labels[titleKey] ?? titleKey;
 }
 
 function formatBossAttack(
@@ -538,17 +409,6 @@ function formatBossActionPhase(phase: "telegraph" | "execute" | "recovery"): str
   if (phase === "telegraph") return "予告";
   if (phase === "execute") return "攻撃";
   return "反撃機会";
-}
-
-function formatExpeditionDirection(
-  direction: WorldState["expedition"] extends infer T
-    ? T extends { currentDirection: infer D }
-      ? D
-      : never
-    : never,
-): string {
-  const labels = { north: "北", east: "東", south: "南", west: "西" } as const;
-  return direction ? labels[direction] : "外周";
 }
 
 function getHpBarColor(ratio: number): number {

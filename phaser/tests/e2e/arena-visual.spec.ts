@@ -1173,7 +1173,8 @@ test("matches the endless contract selection frame", async ({ page }) => {
 test("matches the arena collapse frame", async ({ page }) => {
   await gotoArena(page);
   const canvas = page.locator("canvas");
-  await page.evaluate(() => {
+  const collapseStartsAt = SIMULATION_CONFIG.encounter.collapse.startsAt;
+  await page.evaluate((collapseAt) => {
     const debug = window.__ARENA_DEBUG__;
     debug?.restart();
     debug?.step({}, 1 / 60);
@@ -1181,12 +1182,12 @@ test("matches the arena collapse frame", async ({ page }) => {
     if (scheduledAt === null || scheduledAt === undefined) throw new Error("Encounter was not scheduled.");
     debug?.setElapsed(scheduledAt + 40);
     debug?.step({}, 1 / 60);
-    debug?.setElapsed(SIMULATION_CONFIG.encounter.collapse.startsAt);
+    debug?.setElapsed(collapseAt);
     debug?.step({}, 1 / 60);
     debug?.step({ contractChoicePressed: 0 }, 1 / 60);
     debug?.step({}, 1 / 60);
     debug?.setPaused(true);
-  });
+  }, collapseStartsAt);
 
   await expect(canvas).toHaveScreenshot("arena-collapse.png", {
     maxDiffPixelRatio: 0.01,
