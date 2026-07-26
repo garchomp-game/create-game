@@ -42,8 +42,6 @@ const DEFAULT_MENU_LABELS: Record<MenuAction, string> = {
   practiceEnemyBrute: "重装体",
   practiceEnemyFast: "高速体",
   practiceEnemyRanged: "射撃体",
-  practiceStartPulse: "パルスで開始",
-  practiceStartSpread: "拡散で開始",
   selectPulse: "パルスを選ぶ",
   selectSpread: "拡散を選ぶ",
   contractStandard: "標準を維持",
@@ -189,39 +187,6 @@ export function getMenuButtons(
         action: "back",
         label: label("back"),
         ...close,
-      },
-    ];
-  }
-
-  if (secondaryMenu === "practice") {
-    const weaponWidth = 320;
-    const weaponHeight = 120;
-    const leftX = arenaWidth / 2 - 340;
-    const rightX = arenaWidth / 2 + 20;
-    return [
-      {
-        action: "practiceStartPulse",
-        label: label("practiceStartPulse"),
-        x: leftX,
-        y: 190,
-        width: weaponWidth,
-        height: weaponHeight,
-      },
-      {
-        action: "practiceStartSpread",
-        label: label("practiceStartSpread"),
-        x: rightX,
-        y: 190,
-        width: weaponWidth,
-        height: weaponHeight,
-      },
-      {
-        action: "back",
-        label: label("back"),
-        x: arenaWidth / 2 - 80,
-        y: 438,
-        width: 160,
-        height: 36,
       },
     ];
   }

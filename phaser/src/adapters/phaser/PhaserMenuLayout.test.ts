@@ -41,27 +41,7 @@ describe("PhaserMenuLayout", () => {
     ).toBe("startDebugExProtocol");
   });
 
-  it("separates large Practice weapon starts from optional settings", () => {
-    const actions = getMenuButtons(
-      "title",
-      960,
-      540,
-      undefined,
-      "practice",
-    ).map((button) => button.action);
-
-    expect(actions).toEqual([
-      "practiceStartPulse",
-      "practiceStartSpread",
-      "back",
-    ]);
-    expect(findMenuActionAt("title", 960, 540, 300, 250, "practice")).toBe(
-      "practiceStartPulse",
-    );
-    expect(findMenuActionAt("title", 960, 540, 660, 250, "practice")).toBe(
-      "practiceStartSpread",
-    );
-
+  it("keeps Practice runtime settings independent from shared weapon selection", () => {
     expect(
       getMenuButtons("title", 960, 540, undefined, "practiceSettings").map(
         (button) => button.action,

@@ -710,6 +710,11 @@ export class ArenaScene extends Phaser.Scene {
     if (command.type === "showWeaponSelect") {
       this.selectedModeId = command.modeId;
       this.selectedStageId = command.stageId;
+      if (command.practiceOptions) {
+        this.selectedPracticeOptions = clonePracticeRunOptions(
+          command.practiceOptions,
+        );
+      }
       this.selectedRulesetProfileId = undefined;
       this.resetGame("weaponSelect");
       return;
@@ -718,16 +723,6 @@ export class ArenaScene extends Phaser.Scene {
       this.selectedModeId = command.modeId;
       this.selectedStageId = command.stageId;
       this.selectedWeapon = "pulse";
-      this.selectedRulesetProfileId = undefined;
-      this.autoPilotController.setEnabled(false);
-      this.resetGame("playing");
-      return;
-    }
-    if (command.type === "startPractice") {
-      this.selectedModeId = command.modeId;
-      this.selectedStageId = command.stageId;
-      this.selectedWeapon = command.weaponType;
-      this.selectedPracticeOptions = clonePracticeRunOptions(command.options);
       this.selectedRulesetProfileId = undefined;
       this.autoPilotController.setEnabled(false);
       this.resetGame("playing");

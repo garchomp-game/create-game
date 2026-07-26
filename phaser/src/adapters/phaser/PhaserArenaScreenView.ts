@@ -5,7 +5,6 @@ import { ARENA_PHASER_COLORS as COLOR, ARENA_THEME } from "../../presentation/Ar
 import { getMenuButtons } from "./PhaserMenuLayout";
 import { PhaserHelpOverlay } from "./PhaserHelpOverlay";
 import { PhaserPracticeSettingsView } from "./PhaserPracticeSettingsView";
-import { PhaserPracticeWeaponPreview } from "./PhaserPracticeWeaponPreview";
 import { PhaserTitleScreenView } from "./PhaserTitleScreenView";
 
 export class PhaserArenaScreenView {
@@ -16,7 +15,6 @@ export class PhaserArenaScreenView {
   private readonly menuButtonTexts: Phaser.GameObjects.Text[];
   private readonly helpOverlay: PhaserHelpOverlay;
   private readonly practiceSettingsView: PhaserPracticeSettingsView;
-  private readonly practiceWeaponPreview: PhaserPracticeWeaponPreview;
   private readonly titleScreenView: PhaserTitleScreenView;
 
   constructor(
@@ -33,10 +31,6 @@ export class PhaserArenaScreenView {
       scene,
       simulationConfig.arena.width,
       simulationConfig.arena.height,
-      viewConfig,
-    );
-    this.practiceWeaponPreview = new PhaserPracticeWeaponPreview(
-      scene,
       viewConfig,
     );
     this.titleScreenView = new PhaserTitleScreenView(
@@ -118,7 +112,6 @@ export class PhaserArenaScreenView {
     this.outcomeBodyText.setVisible(false);
     this.helpOverlay.hide();
     this.practiceSettingsView.hide();
-    this.practiceWeaponPreview.hide();
     this.titleScreenView.hide();
 
     if (screen.kind === "help") {
@@ -284,9 +277,6 @@ export class PhaserArenaScreenView {
         .setVisible(true);
     }
 
-    if (screen.secondaryMenu === "practice") {
-      this.practiceWeaponPreview.render(graphics);
-    }
     this.drawMenuButtons(graphics, world, screen);
   }
 
@@ -313,14 +303,8 @@ export class PhaserArenaScreenView {
         button.action === screen.focusedMenuAction,
       );
       const text = this.menuButtonTexts[index]!;
-      const isPracticeWeapon =
-        screen.secondaryMenu === "practice" &&
-        (button.action === "practiceStartPulse" ||
-          button.action === "practiceStartSpread");
-      const isPracticeBack =
-        screen.secondaryMenu === "practice" && button.action === "back";
       text
-        .setFontSize(isPracticeWeapon ? 22 : isPracticeBack ? 15 : 18)
+        .setFontSize(18)
         .setText(button.label)
         .setPosition(button.x + button.width / 2, button.y + button.height / 2)
         .setVisible(true);

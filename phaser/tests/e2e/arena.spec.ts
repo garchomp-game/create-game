@@ -233,11 +233,13 @@ test("starts Practice with chosen fixed conditions and no run record", async ({
   await clickCanvasAt(page, 724, 371);
   await expect
     .poll(() =>
-      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status),
     )
-    .toBe("practice");
+    .toBe("weaponSelect");
 
-  await clickCanvasAt(page, 660, 250);
+  await page
+    .locator('.arena-choice-card[data-choice-id="spread"]')
+    .click();
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
     .toBe("playing");

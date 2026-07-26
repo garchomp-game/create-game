@@ -133,15 +133,17 @@ describe("ArenaMenuController", () => {
     const { controller } = createController();
     const context = createContext();
 
-    expect(controller.handle("practice", context).handled).toBe(true);
-    expect(controller.state).toMatchObject({
-      secondaryMenu: "practice",
+    expect(controller.handle("practice", context).command).toEqual({
+      type: "showWeaponSelect",
+      modeId: "practice",
+      stageId: "practice-arena",
       practiceOptions: {
         invincible: true,
         intensity: "relaxed",
         enemyTypeIds: ["chaser", "brute"],
       },
     });
+    expect(controller.state.secondaryMenu).toBeNull();
 
     expect(controller.handle("practiceSettings", context).handled).toBe(false);
     controller.reset();
@@ -154,14 +156,11 @@ describe("ArenaMenuController", () => {
     controller.handle("back", context);
     expect(controller.state.secondaryMenu).toBeNull();
 
-    expect(
-      controller.handle("practiceStartSpread", context).command,
-    ).toEqual({
-      type: "startPractice",
+    expect(controller.handle("practice", context).command).toEqual({
+      type: "showWeaponSelect",
       modeId: "practice",
       stageId: "practice-arena",
-      weaponType: "spread",
-      options: {
+      practiceOptions: {
         invincible: false,
         intensity: "standard",
         enemyTypeIds: ["brute", "fast"],

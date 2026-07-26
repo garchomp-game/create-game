@@ -2,7 +2,6 @@ export type SecondaryMenu =
   | "history"
   | "ranking"
   | "settings"
-  | "practice"
   | "story"
   | "practiceSettings"
   | "help";
@@ -28,8 +27,6 @@ export type MenuAction =
   | "practiceEnemyBrute"
   | "practiceEnemyFast"
   | "practiceEnemyRanged"
-  | "practiceStartPulse"
-  | "practiceStartSpread"
   | "selectPulse"
   | "selectSpread"
   | "contractStandard"

@@ -47,7 +47,7 @@ describe("createArenaChoiceViewModel", () => {
       eyebrow: "ENDLESS / LOADOUT",
       statusLabel: "開始装備",
       title: TEXT.ui.weaponSelectTitle,
-      keyboardHint: null,
+      keyboardHint: "数字キー 1 / 2 でも選択できます",
       backAction: "back",
     });
     expect(model.cards).toEqual([
@@ -56,7 +56,11 @@ describe("createArenaChoiceViewModel", () => {
         indexLabel: "1",
         tone: "pulse",
         role: "単体集中",
-        metricLabel: "武器特性",
+        facts: [
+          { label: "弾道", text: "高速・直線" },
+          { label: "得意", text: "単体への連続命中" },
+          { label: "成長", text: "集束共鳴 → 反響回路" },
+        ],
         actionLabel: "この武器で開始",
         selection: { kind: "menu", action: "selectPulse" },
       }),
@@ -68,6 +72,33 @@ describe("createArenaChoiceViewModel", () => {
         selection: { kind: "menu", action: "selectSpread" },
       }),
     ]);
+  });
+
+  it("uses the same weapon cards for Practice with a mode-specific heading", () => {
+    const session = new ArenaSession(SIMULATION_CONFIG);
+    session.start({
+      seed: 20260726,
+      weaponType: "pulse",
+      status: "weaponSelect",
+      modeId: "practice",
+      stageId: "practice-arena",
+    });
+
+    const model = createArenaChoiceViewModel(session.world, session.config);
+
+    expect(model).toMatchObject({
+      kind: "weapon",
+      phase: "weapon",
+      eyebrow: "PRACTICE / LOADOUT",
+      statusLabel: "開始装備",
+      title: TEXT.ui.weaponSelectTitle,
+      subtitle: "難易度固定・記録対象外。同じ武器性能で自由に練習できます",
+      keyboardHint: "数字キー 1 / 2 でも選択できます",
+      cards: [
+        { id: "pulse", selection: { kind: "menu", action: "selectPulse" } },
+        { id: "spread", selection: { kind: "menu", action: "selectSpread" } },
+      ],
+    });
   });
 
   it("formats normal upgrade ranks and effect previews", () => {

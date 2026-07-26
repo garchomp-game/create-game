@@ -127,20 +127,9 @@ describe("createArenaScreenViewModel", () => {
     });
   });
 
-  it("separates Practice settings from its weapon selection screen", () => {
+  it("presents Practice settings independently from the shared weapon screen", () => {
     const world = createWorld(SIMULATION_CONFIG);
     world.state.status = "title";
-
-    const weaponScreen = createArenaScreenViewModel(
-      world,
-      SIMULATION_CONFIG,
-      createUiState({ secondaryMenu: "practice" }),
-    );
-    expect(weaponScreen).toMatchObject({
-      kind: "practice",
-      secondaryMenu: "practice",
-    });
-    expect(weaponScreen.statusText).toContain("開始武器を選択");
 
     const settingsScreen = createArenaScreenViewModel(
       world,

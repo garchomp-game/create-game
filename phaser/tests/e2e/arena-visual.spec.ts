@@ -394,16 +394,16 @@ test("shows the Practice setup and fixed in-arena control guide", async ({
   await page.mouse.up();
   await expect
     .poll(() =>
-      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
+      page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status),
     )
-    .toBe("practice");
+    .toBe("weaponSelect");
   await expect(canvas).toHaveScreenshot("arena-practice-setup.png", {
     maxDiffPixelRatio: 0.001,
   });
 
-  await moveMouseToCanvasLogical(page, 300, 250);
-  await page.mouse.down();
-  await page.mouse.up();
+  await page
+    .locator('.arena-choice-card[data-choice-id="pulse"]')
+    .click();
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
     .toBe("playing");

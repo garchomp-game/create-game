@@ -25,8 +25,6 @@ export type MenuActionLabel =
   | "practiceEnemyBrute"
   | "practiceEnemyFast"
   | "practiceEnemyRanged"
-  | "practiceStartPulse"
-  | "practiceStartSpread"
   | "selectPulse"
   | "selectSpread"
   | "contractStandard"

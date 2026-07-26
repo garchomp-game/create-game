@@ -54,7 +54,12 @@ export type ArenaMenuActionContext = {
 };
 
 export type ArenaMenuCommand =
-  | { type: "showWeaponSelect"; modeId: string; stageId: string }
+  | {
+      type: "showWeaponSelect";
+      modeId: string;
+      stageId: string;
+      practiceOptions?: PracticeRunOptions;
+    }
   | { type: "startTraining"; modeId: string; stageId: string }
   | {
       type: "startDebugExProtocol";
@@ -62,13 +67,6 @@ export type ArenaMenuCommand =
       stageId: string;
       weaponType: WeaponTypeId;
       rulesetProfileId: RulesetProfileId;
-    }
-  | {
-      type: "startPractice";
-      modeId: string;
-      stageId: string;
-      weaponType: WeaponTypeId;
-      options: PracticeRunOptions;
     }
   | { type: "startRun"; weaponType: WeaponTypeId }
   | { type: "showTitle" }
@@ -170,8 +168,13 @@ export class ArenaMenuController {
     }
 
     if (action === "practice" && context.status === "title") {
-      this.open("practice");
-      return handled();
+      this.setNotice(null);
+      return handled({
+        type: "showWeaponSelect",
+        modeId: PRACTICE_MODE_ID,
+        stageId: PRACTICE_STAGE_ID,
+        practiceOptions: clonePracticeRunOptions(this.menuState.practiceOptions),
+      });
     }
 
     if (
@@ -225,20 +228,6 @@ export class ArenaMenuController {
       this.menuState.practiceOptions = toggled;
       this.menuState.notice = null;
       return handled();
-    }
-
-    if (
-      action === "practiceStartPulse" ||
-      action === "practiceStartSpread"
-    ) {
-      return handled({
-        type: "startPractice",
-        modeId: PRACTICE_MODE_ID,
-        stageId: PRACTICE_STAGE_ID,
-        weaponType:
-          action === "practiceStartPulse" ? "pulse" : "spread",
-        options: clonePracticeRunOptions(this.menuState.practiceOptions),
-      });
     }
 
     if (

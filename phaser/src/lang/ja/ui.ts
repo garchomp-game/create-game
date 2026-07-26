@@ -63,8 +63,6 @@ export const uiText: UiText = {
     practiceEnemyBrute: "重装体",
     practiceEnemyFast: "高速体",
     practiceEnemyRanged: "射撃体",
-    practiceStartPulse: "パルスで開始",
-    practiceStartSpread: "拡散で開始",
     selectPulse: "パルスを選ぶ",
     selectSpread: "拡散を選ぶ",
     contractStandard: "標準を維持",

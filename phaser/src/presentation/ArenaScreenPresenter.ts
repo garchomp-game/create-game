@@ -154,18 +154,6 @@ export function createArenaScreenViewModel(
       detailText: null,
     };
   }
-  if (secondaryMenu === "practice") {
-    return {
-      ...base,
-      kind: "practice",
-      statusText: [
-        "PRACTICE SANDBOX",
-        "難易度固定 / 記録・ランキング対象外",
-        uiState!.notice ?? "開始武器を選択",
-      ].join("\n"),
-      detailText: null,
-    };
-  }
   if (secondaryMenu === "practiceSettings") {
     const options = uiState!.practiceOptions;
     return {

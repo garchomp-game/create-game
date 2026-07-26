@@ -1,6 +1,7 @@
 import type { ChoiceInteractionInputMethod } from "../../application/ChoiceInteractionMonitor";
 import type { MenuAction } from "../../application/ArenaMenuTypes";
 import type { SimulationConfig, WorldState } from "../../domain/types";
+import { ARENA_ENTITY_VISUAL_CATALOG } from "../../presentation/ArenaEntityVisualCatalog";
 import {
   createArenaChoiceViewModel,
   type ArenaChoiceCardViewModel,
@@ -375,7 +376,12 @@ export class ArenaChoiceOverlay {
       `arena-weapon-demo arena-weapon-demo--${weaponId}`,
     );
     demo.setAttribute("aria-hidden", "true");
-    demo.append(element("span", "arena-weapon-demo-player"));
+    const player = element("span", "arena-weapon-demo-player");
+    const playerImage = element("img", "arena-weapon-demo-player__image");
+    playerImage.src = ARENA_ENTITY_VISUAL_CATALOG.player.path;
+    playerImage.alt = "";
+    player.append(playerImage);
+    demo.append(player);
 
     const trajectories =
       weaponId === "spread" ? [25, 50, 75, 25, 50, 75] : [50, 50, 50];
@@ -391,7 +397,9 @@ export class ArenaChoiceOverlay {
 
     const targetYs = weaponId === "spread" ? [25, 50, 75] : [50];
     for (const targetY of targetYs) {
-      const target = element("span", "arena-weapon-demo-target");
+      const target = element("img", "arena-weapon-demo-target");
+      target.src = ARENA_ENTITY_VISUAL_CATALOG.chaser.path;
+      target.alt = "";
       target.style.setProperty("--target-y", `${targetY}%`);
       demo.append(target);
     }

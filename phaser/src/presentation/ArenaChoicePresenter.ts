@@ -136,27 +136,38 @@ export function createArenaChoiceViewModel(
 
 function createWeaponChoices(world: WorldState): ArenaChoiceViewModel {
   const expedition = Boolean(world.expedition);
+  const practice = Boolean(world.practice);
   return {
     visible: true,
     kind: "weapon",
     phase: "weapon",
-    eyebrow: expedition ? "FINAL EXPEDITION / LOADOUT" : "ENDLESS / LOADOUT",
+    eyebrow: expedition
+      ? "FINAL EXPEDITION / LOADOUT"
+      : practice
+        ? "PRACTICE / LOADOUT"
+        : "ENDLESS / LOADOUT",
     statusLabel: "開始装備",
     title: expedition
       ? `最終遠征 / ${TEXT.ui.weaponSelectTitle}`
       : TEXT.ui.weaponSelectTitle,
     subtitle: expedition
       ? "5つのActを突破する開始ビルドを選択"
-      : "開始ビルドの戦い方を決めます",
+      : practice
+        ? "難易度固定・記録対象外。同じ武器性能で自由に練習できます"
+        : "開始ビルドの戦い方を決めます",
     subtitleProgress: null,
-    keyboardHint: null,
+    keyboardHint: "数字キー 1 / 2 でも選択できます",
     cards: [
       createWeaponCard(
         0,
         "pulse",
         "単体集中",
         "高速な単線射撃。狙い続けた敵への連続命中で火力を伸ばす。",
-        "固有: 集束共鳴 / 最終: 反響回路",
+        [
+          { label: "弾道", text: "高速・直線" },
+          { label: "得意", text: "単体への連続命中" },
+          { label: "成長", text: "集束共鳴 → 反響回路" },
+        ],
         "selectPulse",
       ),
       createWeaponCard(
@@ -164,7 +175,11 @@ function createWeaponChoices(world: WorldState): ArenaChoiceViewModel {
         "spread",
         "範囲制圧",
         "広角の複数弾。敵集団を同時に捉えて射撃テンポを上げる。",
-        "固有: 分裂射撃 / 最終: 掃射循環",
+        [
+          { label: "弾道", text: "低速・扇状" },
+          { label: "得意", text: "複数の敵を同時攻撃" },
+          { label: "成長", text: "分裂射撃 → 掃射循環" },
+        ],
         "selectSpread",
       ),
     ],
@@ -179,7 +194,7 @@ function createWeaponCard(
   weaponId: Extract<WeaponTypeId, "pulse" | "spread">,
   role: string,
   description: string,
-  metric: string,
+  facts: Array<{ label: string; text: string }>,
   action: MenuAction,
 ): ArenaChoiceCardViewModel {
   return {
@@ -195,8 +210,10 @@ function createWeaponCard(
     categoryIcon: null,
     description,
     metricLabel: "武器特性",
-    metric,
+    metric: "",
     actionLabel: "この武器で開始",
+    facts,
+    ariaLabel: `${index + 1}. ${TEXT.hud.weaponNames[weaponId]}。${role}。${description}`,
     selection: { kind: "menu", action },
   };
 }
