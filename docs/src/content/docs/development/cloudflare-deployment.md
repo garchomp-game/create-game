@@ -146,6 +146,25 @@ production trafficは変更していません。
 最終遠征開始、ベータ情報、第三者ライセンスを確認しました。
 console / page / request errorは0件です。
 
+### v0.8 設定UI・戻る導線統合Preview
+
+2026-07-26に、上記のEX Protocol C2とEndless再調整へ、設定画面の
+10%ステッパー、左上の戻る導線、確認付き初期化を統合しました。
+production trafficは変更していません。
+
+| 項目 | 値 |
+| --- | --- |
+| Runtime commit | `c394d0e7cca0` |
+| app / ruleset | `0.8.0-candidate.2` / `phaser-v0.8-ex-protocols-c2` |
+| Cloudflare Version ID | `efe4b7bf-b9e9-4d53-a95f-841e31ccda85` |
+| Preview URL | `https://v08-integrated-settings-c394d0e-arena-core.garchomp-game.workers.dev` |
+| production traffic | 変更なし |
+
+公開スモークで版情報、設定画面と自動射撃の保存、Canvas、Endlessの自然終了、
+履歴・再挑戦、最終遠征開始、ベータ情報、第三者ライセンスを確認しました。
+console / page / request errorは0件です。旧設定画面の座標を参照していた
+公開スモークも、新しい自動射撃行へ同期しました。
+
 静的ファイルの取得ではWorkerスクリプトを実行しません。ランキング、共有履歴、アカウントAPIは公開ベータ後に`/api/*`として追加し、それまではプロフィール、履歴、ローカルランキングをブラウザの`localStorage`へ保存します。
 
 ## 初回認証
