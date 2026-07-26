@@ -1502,6 +1502,7 @@ describe("stepWorld", () => {
   it("reports the simulated dt when an endless contract is offered", () => {
     const world = createWorld(GAME_CONFIG);
     world.state.elapsed = GAME_CONFIG.encounter.contract.offerAt;
+    world.encounter.director.completedCount = 1;
 
     const result = stepWorld(
       world,

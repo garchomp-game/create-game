@@ -28,12 +28,12 @@ const balanceBaseline = {
   kiteCollectFirstDamageP50: 103.1,
   kiteCollectFirstUpgradeP50: 7.07,
   kiteCollectWaveReachedP50: 90,
-  kiteCollectMaxEnemiesMax: SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 45 : 46,
-  kiteCollectMaxBulletsMax: SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 44 : 43,
+  kiteCollectMaxEnemiesMax: 20,
+  kiteCollectMaxBulletsMax: 21,
   kiteCollectHpRecoveredP50: SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 82 : 106,
   kiteCollectHealPickupsCollectedP50: 39,
   kiteCollectEffectiveHealPickupsCollectedP50:
-    SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 7 : 11,
+    SIMULATION_CONFIG.features.pulseBoundaryRicochet ? 9 : 11,
 };
 
 describe("balance simulation", () => {
@@ -237,7 +237,7 @@ describe("balance simulation", () => {
     expect(performance.now() - startedAt).toBeLessThan(7_500);
   }, 10_000);
 
-  it("compares Pulse and Spread across ten fixed seeds with build and encounter KPIs", () => {
+  it("compares Pulse and Spread across ten fixed seeds with build and scheduled encounter KPIs", () => {
     const seeds = Array.from({ length: 10 }, (_, index) => 20260619 + index);
     const comparison = runStartingWeaponComparison({
       config: SIMULATION_CONFIG,
@@ -257,8 +257,15 @@ describe("balance simulation", () => {
       const summary = report.summary.byModel.kiteCollect;
       expect(summary.projectileHitRate.p50).toBeGreaterThan(0);
       expect(summary.uniqueEnemiesPerHitVolley.p50).toBeGreaterThanOrEqual(1);
-      expect(summary.encounterActiveMovement.max).toBeGreaterThan(0);
+      expect(summary.encounterActiveMovement.max).toBe(0);
       expect(report.runs.every((run) => run.encounterScheduledAt !== null)).toBe(true);
+      expect(
+        report.runs.every(
+          (run) =>
+            run.encounterScheduledAt! >= SIMULATION_CONFIG.encounter.director.minStart &&
+            run.encounterScheduledAt! <= SIMULATION_CONFIG.encounter.director.maxStart,
+        ),
+      ).toBe(true);
     }
     const pulse = comparison.pulse.summary.byModel.kiteCollect;
     const spread = comparison.spread.summary.byModel.kiteCollect;

@@ -264,10 +264,7 @@ const rawSimulationConfig = {
   },
   encounter: {
     director: {
-      minStart: 135,
-      maxStart: 165,
-      minInterval: 48,
-      maxInterval: 68,
+      ...ARENA_DEFAULT_STAGE_DEFINITION.difficulty.encounterTiming,
       minimumInterval: 26,
       intervalReductionPerThreatTier: 1.4,
       definitions: {

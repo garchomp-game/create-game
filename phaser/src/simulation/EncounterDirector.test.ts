@@ -39,7 +39,7 @@ describe("EncounterDirector", () => {
         enemyWeights: source.enemyWeights,
       });
     }
-    expect(deck.initialDelay).toEqual({ minSeconds: 135, maxSeconds: 165 });
+    expect(deck.initialDelay).toEqual({ minSeconds: 180, maxSeconds: 210 });
     expect(deck.interval).toEqual({ minSeconds: 48, maxSeconds: 68 });
   });
 

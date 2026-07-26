@@ -1181,7 +1181,7 @@ test("matches the arena collapse frame", async ({ page }) => {
     if (scheduledAt === null || scheduledAt === undefined) throw new Error("Encounter was not scheduled.");
     debug?.setElapsed(scheduledAt + 40);
     debug?.step({}, 1 / 60);
-    debug?.setElapsed(600);
+    debug?.setElapsed(SIMULATION_CONFIG.encounter.collapse.startsAt);
     debug?.step({}, 1 / 60);
     debug?.step({ contractChoicePressed: 0 }, 1 / 60);
     debug?.step({}, 1 / 60);

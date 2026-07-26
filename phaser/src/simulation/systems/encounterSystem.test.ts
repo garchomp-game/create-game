@@ -25,8 +25,12 @@ describe("encounter deck", () => {
     const scheduledAt = first.encounter.director.scheduledAt!;
     expect(encounterId).toBe(second.encounter.director.currentId);
     expect(scheduledAt).toBe(second.encounter.director.scheduledAt);
-    expect(scheduledAt).toBeGreaterThanOrEqual(135);
-    expect(scheduledAt).toBeLessThanOrEqual(165);
+    expect(scheduledAt).toBeGreaterThanOrEqual(
+      SIMULATION_CONFIG.encounter.director.minStart,
+    );
+    expect(scheduledAt).toBeLessThanOrEqual(
+      SIMULATION_CONFIG.encounter.director.maxStart,
+    );
     expect(events).toContainEqual({
       type: "encounter.scheduled",
       encounterId,
@@ -85,6 +89,9 @@ describe("encounter deck", () => {
           definition.activeDuration +
           definition.recoveryDuration;
         updateEncounter(world, random, SIMULATION_CONFIG, []);
+        if (world.state.status === "contractSelect") {
+          chooseEndlessContract(world, 0, SIMULATION_CONFIG, []);
+        }
       }
 
       return sequence;

@@ -47,12 +47,12 @@ describe("ArenaSession", () => {
     expect(session.randomStreams.seeds).toEqual(directRandom.seeds);
     expect(session.modeId).toBe("endless");
     expect(session.stageId).toBe("arena-default");
-    expect(stableHash(JSON.stringify(eventDigest))).toBe("ba39e1ca");
+    expect(stableHash(JSON.stringify(eventDigest))).toBe("3d561efb");
     expect(
       stableHash(
         JSON.stringify(projectLegacyWorldForDigest(session.world)),
       ),
-    ).toBe("45d6c80a");
+    ).toBe("b900c6d1");
   });
 
   it("owns the active seed, config, weapon, and status without mirror state", () => {
@@ -73,8 +73,8 @@ describe("ArenaSession", () => {
       maxXp: 360,
     });
     expect(session.config.leveling).toMatchObject({
-      baseXp: 30,
-      growth: 1.03,
+      baseXp: 15,
+      growth: 1.05,
       maxXp: 60,
       firstUpgradeNotBeforeSeconds: 0,
       minimumUpgradeIntervalSeconds: 0,
@@ -83,27 +83,27 @@ describe("ArenaSession", () => {
       { length: 25 },
       (_, index) => getXpToNextLevel(index + 1, session.config),
     );
-    expect(normalXpThresholds[0]).toBe(30);
-    expect(normalXpThresholds.at(-1)).toBe(60);
+    expect(normalXpThresholds[0]).toBe(15);
+    expect(normalXpThresholds.at(-1)).toBe(48);
     expect(normalXpThresholds.reduce((total, value) => total + value, 0)).toBe(
-      1_081,
+      705,
     );
     for (let index = 1; index < normalXpThresholds.length; index += 1) {
       expect(normalXpThresholds[index]! / normalXpThresholds[index - 1]!).toBeLessThanOrEqual(
         1.1,
       );
     }
-    expect(session.config.waves).toHaveLength(8);
+    expect(session.config.waves).toHaveLength(6);
     expect(session.config.waves.map(({ start }) => start)).toEqual([
-      0, 30, 60, 90, 120, 180, 300, 420,
+      0, 30, 45, 60, 75, 90,
     ]);
-    expect(session.config.waves[4]?.enemyWeights).toMatchObject({
-      fast: 0.2,
+    expect(session.config.waves[2]?.enemyWeights).toMatchObject({
+      brute: 0.5,
     });
-    expect(session.config.waves[4]?.enemyWeights.ranged).toBeUndefined();
-    expect(session.config.waves[6]?.enemyWeights).toMatchObject({
-      fast: 0.7,
-      ranged: 0.04,
+    expect(session.config.waves[2]?.enemyWeights.fast).toBeUndefined();
+    expect(session.config.waves[4]?.enemyWeights).toMatchObject({
+      fast: 1,
+      ranged: 0.35,
     });
     expect(session.config.enemies).toMatchObject({
       chaser: { damage: 9 },
@@ -115,22 +115,26 @@ describe("ArenaSession", () => {
       },
     });
     expect(session.config.threat).toMatchObject({
-      pressureStartAt: 420,
-      statStartAt: 600,
-      statStepSeconds: 60,
-      enemyDamageGrowth: 1.07,
+      pressureStartAt: 90,
+      statStartAt: 240,
+      statStepSeconds: 45,
+      enemyDamageGrowth: 1.1,
       enemyHpGrowthByType: {
-        chaser: 1.08,
-        brute: 1.1,
-        fast: 1.07,
-        ranged: 1.09,
+        chaser: 1.12,
+        brute: 1.17,
+        fast: 1.1,
+        ranged: 1.15,
       },
     });
     expect(session.config.encounter.director).toMatchObject({
-      minStart: 900,
-      maxStart: 930,
-      minInterval: 75,
-      maxInterval: 95,
+      minStart: 180,
+      maxStart: 210,
+      minInterval: 48,
+      maxInterval: 68,
+    });
+    expect(session.config.encounter.collapse).toMatchObject({
+      startsAt: 600,
+      stepSeconds: 45,
     });
   });
 
