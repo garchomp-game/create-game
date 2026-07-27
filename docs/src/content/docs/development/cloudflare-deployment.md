@@ -152,13 +152,15 @@ console / page / request errorは0件です。
 10%ステッパー、左上の戻る導線、確認付き初期化を統合しました。
 同じPreview aliasを最終遠征の通常XP 20開始、1.05倍、上限60へ
 更新しています。敵の出現、報酬倍率、EX曲線は変更していません。
+2026-07-27には作戦目標、増援、危険イベント、再編、崩壊の通知を
+左右HUD間の単一スロットへ統合し、戦場中央を覆わない表示へ更新しました。
 production trafficは変更していません。
 
 | 項目 | 値 |
 | --- | --- |
-| Runtime commit | `0d8a3724e54d` |
+| Runtime commit | `9279d2c1cc75` |
 | app / ruleset | `0.8.0-candidate.2` / `phaser-v0.8-ex-protocols-c2` |
-| Cloudflare Version ID | `3b173c05-aa05-4f59-9911-b1eb74887e5b` |
+| Cloudflare Version ID | `2c968aef-9c18-4036-a05f-cd6cf4cfabc9` |
 | Preview URL | `https://v08-integrated-settings-c394d0e-arena-core.garchomp-game.workers.dev` |
 | production traffic | 変更なし |
 
