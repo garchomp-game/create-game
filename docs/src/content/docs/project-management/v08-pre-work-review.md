@@ -3,7 +3,11 @@ title: v0.8 作業開始前レビュー
 description: Training、視覚意味、敗因説明、危険反転、UI、RC6公開を混同せずに進めるための開始条件、依存、停止条件。
 ---
 
-最終整理日: 2026-07-23
+最終整理日: 2026-07-27
+
+> 2026-07-27追記: 本ページはcandidate分離を決めた作業前snapshotです。
+> 現在のopen Issueと順序は[課題解決キュー](../issue-resolution-queue/)を
+> 正本とし、ここにある旧`do now / prepare only`表は再利用しません。
 
 > 2026-07-24追記: このページの着手前snapshotは、[v0.8 Issue・PR readiness](../v08-issue-pr-readiness-20260724/)で再取得した`main`、Open Issue / PR、#113修復、EX C2 / UI source lineageにより更新されています。以下の旧SHAとPR状態は当時の判断履歴として読みます。
 

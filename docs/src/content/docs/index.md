@@ -12,21 +12,22 @@ description: ゲーム設計、実装方針、開発計画、プレイテスト�
 | 項目 | 状態 |
 | --- | --- |
 | 主実装 | Phaser版 |
-| 現在の基盤 | productionはv0.6.8。v0.8観測、選択UI、9課題Training、desktop gate、WebGL fallback、StudyLogをmainへ統合済み |
+| 現在の基盤 | Story初期作戦、Endless、最終遠征、Practice、固有スキル、共通visual、PC専用gateをmainへ統合済み |
 | 公開先 | [arena-core.garchomp-game.workers.dev](https://arena-core.garchomp-game.workers.dev/) |
-| 次の作業 | #126のEX Protocol C2は最新main統合、固定Version Preview、全CIを完了。人間6体系と実GPUゲートで採否する |
-| その次 | #81の初心者T1、T1.2短文候補、H1/H2無操作ヒントを比較し、採用後にO1共通導線とv0.8統合採否へ進む |
+| 次の作業 | [#138](https://github.com/garchomp-game/create-game/issues/138)で、初回タイトルの主CTAとモード階層を決める |
+| その次 | Story進行、用語、タイトル視覚、画面横断UI、最大密度、人間検証を一件ずつ進める |
 
-最新状況は [現在地](game/current-state/) を参照してください。
+最新状況は [現在地](game/current-state/)、実行順は
+[課題解決キュー](project-management/issue-resolution-queue/) を参照してください。
 
 ## 目的別の読み方
 
 | 知りたいこと | 読むページ |
 | --- | --- |
-| 今何が動き、次に何をするか | [現在地](game/current-state/) / [今回のv0.8 control観測build](game/v08-observation-control-summary/) / [直近フェーズ](project-management/next-phase-plan/) / [v0.8 実行計画](project-management/v08-execution-plan/) |
+| 今何が動き、次に何をするか | [現在地](game/current-state/) / [課題解決キュー](project-management/issue-resolution-queue/) / [直近フェーズ](project-management/next-phase-plan/) |
 | どんなゲームを目指すか | [ゲーム方針](product/game-direction/) / [拡張設計の全体像](design/gameplay-expansion-blueprint/) |
 | 外部助言とv0.8設計契約 | [外部ゲームデザイン助言メモ](design/external-game-design-advice/) / [Work提出スナップショット](playtest/v08-work-design-review-request/) / [批判的レビューの採用判断](design/v08-critical-review-adoption/) / [v0.8 面白さの核の検証](design/core-promise-validation/) / [危険反転の実装前比較](design/hazard-reversal-preflight/) / [武器教義の実装前比較](design/weapon-doctrine-preflight/) / [最大密度の可読性・警告音 事前監査](design/maximum-density-readability-preflight/) / [v0.8観測境界](engineering/v08-observability-preflight/) |
-| v0.8で追加した責務 | [Boss文法 #93](https://github.com/garchomp-game/create-game/issues/93) / [敗因・再挑戦 #94](https://github.com/garchomp-game/create-game/issues/94) / [division記録 #95](https://github.com/garchomp-game/create-game/issues/95) |
+| v0.8で追加した責務 | [Story導線](engineering/story-onboarding-adr/) / [敗因・再挑戦](design/run-outcome-insights-phase-b/) / [記録軸](engineering/run-record-axis-contract-adr/) |
 | 実装上の境界と品質基準 | [アーキテクチャ](engineering/architecture/) / [品質戦略](engineering/quality-strategy/) |
 | UI、グラフィック、比較草案 | [UI・グラフィック再設計計画](project-management/ui-visual-redesign-plan/) / [選択UI候補プレイテスト](playtest/v08-ui-candidate-playtest/) / [UI/UXとフィードバック](design/ui-ux/) |
 | バージョンごとの作業内容 | [ロードマップ](project-management/roadmap/) / [チケット一覧](project-management/tickets/) / [v0.5チケット詳細](project-management/v05-tickets/) / [v0.6チケット詳細](project-management/v06-tickets/) |
@@ -38,6 +39,7 @@ description: ゲーム設計、実装方針、開発計画、プレイテスト�
 似た内容を扱うページは、役割を次のように分けます。
 
 - [現在地](game/current-state/): 実装済み機能と最新判断。
+- [課題解決キュー](project-management/issue-resolution-queue/): 現在の単一Next Issue、依存順、旧Issueの終了理由。
 - [拡張設計の全体像](design/gameplay-expansion-blueprint/): 面白さを作る原則とシステム全体像。
 - [直近フェーズ](project-management/next-phase-plan/): 今から着手する範囲と順序。
 - [v0.8 実行計画](project-management/v08-execution-plan/): v0.8の依存、candidate分離、統合・採否ゲート。

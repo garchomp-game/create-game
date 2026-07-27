@@ -145,55 +145,43 @@ description: v0.4からv1.0までの目的と主要チケット。
 
 ## v0.8 Core Promise Validation
 
-目的:
-
-- 危険を避けるだけでなく攻撃機会へ反転する、Arena Core固有の短い攻防を試す。
-- スコアだけで見えない上達と武器固有の行動を記録し、次ランの目標へつなげる。
-- ボス攻撃を予告、回避、回復、反撃の文法として比較し、HP量以外の強さを作る。
-- 敗因、実測near-miss、同条件再挑戦を事実から提示し、再挑戦を強制せず近づける。
-- Standard / Assist / Practiceの記録を分離し、支援と競技PBを混在させない。C1以前のOverload記録は互換読み取りだけを維持する。
-- 選択停止、最大密度の可読性、警告音を計測し、演出追加前の品質基準を作る。
-- 現行visualのTrainingと戦闘オブジェクト視覚candidateを分け、説明不足と識別不足を切り分ける。
-- 初心者と経験者を分けた再利用可能な構造化プレイテストで各candidateを採否する。
-
-主要チケット:
-
-- [`PH-V08-010` #66](https://github.com/garchomp-game/create-game/issues/66) 世界観と視覚テーマの決定。
-- [`PH-V08-011` #68](https://github.com/garchomp-game/create-game/issues/68) UIプレゼンテーション境界とデザイントークン。
-- [`PH-V08-012` #67](https://github.com/garchomp-game/create-game/issues/67) 比較可能なUI草案とライブラリ採否。
-- [`PH-V08-013` #70](https://github.com/garchomp-game/create-game/issues/70) 採用UI縦切り: 選択画面。
-- [`PH-V08-014` #76](https://github.com/garchomp-game/create-game/issues/76) Charger衝突妨害による危険反転の単一candidate。
-- [`PH-V08-015` #77](https://github.com/garchomp-game/create-game/issues/77) candidate非依存の技能shadow ledgerと成果フィードバック。
-- [`PH-V08-016` #78](https://github.com/garchomp-game/create-game/issues/78) 強化選択の停止時間と頻度を計測する。
-- [`PH-V08-017` #79](https://github.com/garchomp-game/create-game/issues/79) Pulse / Spreadの武器教義ブランチ。
-- [`PH-V08-018` #80](https://github.com/garchomp-game/create-game/issues/80) 最大密度の視覚fixtureと警告音分離。
-- [`PH-V08-019` #81](https://github.com/garchomp-game/create-game/issues/81) 初心者・経験者の構造化プレイテスト。
-- [`PH-V08-020` #83](https://github.com/garchomp-game/create-game/issues/83) 緊張・緩和と難易度支援の設計契約。
-- [`PH-V08-021` #92](https://github.com/garchomp-game/create-game/issues/92) 通常強化の候補偏りと基礎ビルド保証。
-- [`PH-V08-022` #93](https://github.com/garchomp-game/create-game/issues/93) ボス攻撃文法と回復・反撃窓の比較。
-- [`PH-V08-023` #94](https://github.com/garchomp-game/create-game/issues/94) 敗因説明、実測near-miss、同条件再挑戦。
-- [`PH-V08-024` #95](https://github.com/garchomp-game/create-game/issues/95) Standard / Assist / Practiceの記録契約と旧Overload記録の互換性。
-- [`PH-V08-025` #97](https://github.com/garchomp-game/create-game/issues/97) 選択式・再プレイ可能な基本操作Training。
-- [`PH-V08-026` #98](https://github.com/garchomp-game/create-game/issues/98) 撃つ・避ける・取るの戦闘オブジェクト視覚言語。
-- `PH-V08-027` EX Protocol 6体系candidate。ローカル実装中、GitHub Issue未作成、production OFF。
-
-`PH-V08-027`は[#79](https://github.com/garchomp-game/create-game/issues/79)のpreflightを6体系・24 routeへ具体化したowner handoffです。既存のproduction順を追い越して統合せず、専用ruleset、RunRecord v3、feature OFF rollback、自動probe、人間採否を揃えてからsplit / superseded関係を決めます。
-
-## v0.9 3作戦キャンペーン検証
+状態: 観測・Story・固有スキル・難度・visual基盤はmainへ統合済み。
+2026-07-27から、入口、用語、視覚、最大密度、人間採否を一件ずつ閉じる
+[課題解決キュー](../issue-resolution-queue/)へ移行した。
 
 目的:
 
-- Stage 1 / 5 / 10で、初回学習、複合判断、高難度最終試験を接続する。
-- 欠番を許容する進行と選択基盤を作り、未実装stageを表示しない。
-- 3本の採否と制作実績から、残り7本を実装する価値と見積もりを判断する。
+- 初回プレイヤーが最初の行動を一秒で選べるタイトルへする。
+- Story初期作戦、最終遠征、Endless、Practiceの役割を明確にする。
+- 専門語を減らし、残す固有名は行動と効果から理解できるようにする。
+- 第一画面、選択、HUD、リザルトを同じグラフィカルな視覚文法へ揃える。
+- 最大密度と初心者・経験者の人間検証で、実装済み候補を採否する。
 
 主要チケット:
 
-- [`PH-V09-001` #62](https://github.com/garchomp-game/create-game/issues/62) Stage 1 / 5 / 10進行と選択基盤。
-- [`PH-V09-002` #64](https://github.com/garchomp-game/create-game/issues/64) Stage 1 基礎迎撃の学習縦切り。
-- [`PH-V09-003` #65](https://github.com/garchomp-game/create-game/issues/65) Stage 5 四方包囲の複合判断縦切り。
+- [`PH-V08-036` #135](https://github.com/garchomp-game/create-game/issues/135) 視覚刷新の親epic。
+- [`PH-V08-037` #138](https://github.com/garchomp-game/create-game/issues/138) 初回タイトルの行動導線。
+- [`PH-V08-038` #139](https://github.com/garchomp-game/create-game/issues/139) Storyの階層と進行。
+- [`PH-V08-039` #140](https://github.com/garchomp-game/create-game/issues/140) 用語と説明文。
+- [`PH-V08-040` #141](https://github.com/garchomp-game/create-game/issues/141) タイトル / Storyの視覚縦切り。
+- [`PH-V08-041` #142](https://github.com/garchomp-game/create-game/issues/142) 選択UI / HUD / リザルト。
+- [`PH-V08-018` #80](https://github.com/garchomp-game/create-game/issues/80) 最大密度と警告。
+- [`PH-V08-019` #81](https://github.com/garchomp-game/create-game/issues/81) 構造化プレイテスト。
 
-旧10ステージ案のStage 2から4、6から9はdeferredです。3作戦の採否後に再計画します。
+## v0.9 Story Expansion Decision
+
+目的:
+
+- 現行の初期作戦と最終遠征の間をどう拡張するか決める。
+- 中間作戦、難易度別、ハイブリッドを学習・継続性・制作量で比較する。
+- 数を先に決めず、最初に実装する縦切り一件だけを選ぶ。
+
+主要チケット:
+
+- [`PH-V09-004` #143](https://github.com/garchomp-game/create-game/issues/143)
+  Story拡張方針の比較。
+
+旧#62 / #64 / #65は現行Storyと重複するため終了し、要件の再利用元として保持します。
 
 ## v1.0 最初のローカル完成版
 

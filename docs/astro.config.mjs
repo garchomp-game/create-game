@@ -37,7 +37,7 @@ export default defineConfig({
             { label: "エンドレス後半", slug: "design/endless-escalation" },
             { label: "モードと戦闘展開", slug: "design/encounters-and-modes" },
             { label: "v0.7 最初のエクスペディション", slug: "design/v07-first-expedition" },
-            { label: "エクスペディション展開", slug: "design/expedition-campaign" },
+            { label: "旧エクスペディション3作戦案", slug: "design/expedition-campaign" },
             { label: "世界観と試合内ドラマ", slug: "design/narrative-and-match-drama" },
             { label: "UI/UXとフィードバック", slug: "design/ui-ux" },
             { label: "UI素材台帳", slug: "design/ui-asset-ledger" },
@@ -64,6 +64,7 @@ export default defineConfig({
         {
           label: "計画と運用",
           items: [
+            { label: "課題解決キュー", slug: "project-management/issue-resolution-queue" },
             { label: "直近フェーズ", slug: "project-management/next-phase-plan" },
             { label: "v0.8 Issue・PR readiness", slug: "project-management/v08-issue-pr-readiness-20260724" },
             { label: "GitHub mutation台帳", slug: "project-management/github-mutation-ledger-20260724" },

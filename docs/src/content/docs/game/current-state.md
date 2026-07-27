@@ -5,6 +5,12 @@ description: Arena Core Phaser版の実装状況、確認済み課題、次の�
 
 最終整理日: 2026-07-27
 
+:::note[現在の単一Next]
+実装済み機能の追加より先に、[#138](https://github.com/garchomp-game/create-game/issues/138)
+で初回タイトルの主CTAとモード階層を決めます。以降の順序と旧Issueの終了理由は
+[課題解決キュー](../../project-management/issue-resolution-queue/)を正本とします。
+:::
+
 ## 現在の状態
 
 Phaser版v0.6.8は、Phaser 4.2.1 WebGL、可変桁HUD、ゲスト・ローカル保存を公開ベータとして固定した版です。[Cloudflare公開URL](https://arena-core.garchomp-game.workers.dev/)は基準commit `ff686f992a65`、Version ID `e86f90b8-ea15-4d1d-b01b-59e4f9fea78e`を配信しています。タイトルとリザルト、HTML meta、ベータ情報ページからアプリ版、ルール版、ビルドを識別できます。保存データ、削除、既知制約、フィードバック、第三者ライセンスも同一オリジンで公開します。
@@ -232,13 +238,17 @@ v0.6の手動採否、外周反射の公開固定、長時間HUD、Phaser 4.2.1 
 
 ## v0.7 RC5基準とRC6安定化
 
-有限ランの縦切りは、5 Act、構造化出現、HP 500のCommander、Charger、3攻撃・2段階の指揮艦ボス、勝敗と攻撃源記録まで統合しました。現行`final-expedition`はStage 1 / 5 / 10の3作戦検証におけるStage 10最終試験です。RC5版は`0.7.0` / `phaser-v0.7.0-final-expedition-rc5`です。
+有限ランの縦切りは、5 Act、構造化出現、HP 500のCommander、Charger、
+3攻撃・2段階の指揮艦ボス、勝敗と攻撃源記録まで統合しました。
+現行`final-expedition`はStoryの高難度な最終遠征です。旧Stage 1 / 5 / 10案では
+Stage 10相当でしたが、現在の製品進行はこの番号を前提にしません。
+RC5版は`0.7.0` / `phaser-v0.7.0-final-expedition-rc5`です。
 
 RC3で`赤 -> 大型黄 -> 小型黄緑 -> 紫`の順で敵を解禁し、大型黄だけHPを3から8へ上げました。RC4はEndlessのEX C5を累計4,258 XPで到達可能にしました。一方、RC3 / RC4の手動5勝から、ボスを中央へ寄せて周回し、貫通で雑魚と回復を供給し続ける欠陥を確認しました。RC5では範囲外か遮蔽物で避ける制圧衝撃波、ボス戦の回復drop毎秒1個制限、完遂・速攻ボーナス、3列リザルトを追加しています。
 
 自動回帰は完了し、commit `155d4986ffe1`、Cloudflare Version `ef6324fd-1cf6-450f-8026-fbcf0f579842`を`https://v07-final-expedition-arena-core.garchomp-game.workers.dev`へ公開しました。固定6ランは両武器とも全勝し、72件のE2Eと実URLsmokeも通過しています。
 
-RC5は基準証跡として保持し、productionへ直接昇格しません。UI変更前の基点`d16655a`からRC6を分け、Wave 1でEncounter時計、Commander 120秒とspawn defer、Wave 2で勝利時間、戦術点、時間メダル、overall / weapon、fixed実seed、`phaser-v0.7.0-final-expedition-rc6`を実装しました。Wave 3の2400 HP有限回復候補は0/6勝利となり棄却し、既定controlを維持しています。Stage 10のメダルは金9分、銀10分、銅12分で、速攻加点は廃止しています。
+RC5は基準証跡として保持し、productionへ直接昇格しません。UI変更前の基点`d16655a`からRC6を分け、Wave 1でEncounter時計、Commander 120秒とspawn defer、Wave 2で勝利時間、戦術点、時間メダル、overall / weapon、fixed実seed、`phaser-v0.7.0-final-expedition-rc6`を実装しました。Wave 3の2400 HP有限回復候補は0/6勝利となり棄却し、既定controlを維持しています。最終遠征のメダルは金9分、銀10分、銅12分で、速攻加点は廃止しています。
 
 提出物再レビュー後のrelease contract追補はcode commit `c908450a7101`で完了しました。repair release matrixの4条件を個別assertし、Expeditionの比較・保存・メダル・表示・PB差分を整数centisecondへ統一しました。Commander解決後はAct 3の通常目標へ戻り、敗北履歴は`PB対象外: 遠征未完遂`を表示します。このcode SHAでunit / simulationは65 files、420 passed / 2 skipped、normal / repair probeは各`1 passed / 1 skipped`、Playwrightは73 passed / 1 skipped、production buildと配布検査も成功しています。
 
@@ -252,7 +262,13 @@ RC5は基準証跡として保持し、productionへ直接昇格しません。U
 
 同じrun exportから、現行Chargerの成立性、強化選択のwall-clockと復帰1秒、危険イベント終了後5秒、Boss攻撃別の被弾・回復・反撃窓を取得できます。修復候補では連続choiceの復帰episodeをqueueで保持し、敗因、進捗、比較差分の純粋ViewModelを`runOutcomeInsight`としてdebug exportへ接続しました。Workers観測PreviewからはブラウザdownloadでJSONを取得できます。ゲーム数値、RNG、`RunRecord`、ランキング契約、production trafficは変更していません。
 
-2026-07-25にCharger controlを6 seed x 2武器で機械screeningした結果、12本すべてで出現した一方、chargeありは1本、Pulseは予告前撃破5 / 6・charge 0 / 6でした。[#76](https://github.com/garchomp-game/create-game/issues/76)の衝突妨害runtimeは開始せず、`revise-before-candidate`として人間controlまたは再設計へ戻しています。詳細は[Charger control機械screening](../../playtest/v08-charger-control-machine-report/)を参照してください。
+2026-07-25にCharger controlを6 seed x 2武器で機械screeningした結果、
+12本すべてで出現した一方、chargeありは1本、Pulseは予告前撃破5 / 6・
+charge 0 / 6でした。[#76](https://github.com/garchomp-game/create-game/issues/76)の
+衝突妨害runtimeは開始せず、2026-07-27に現candidateを終了しました。
+別の危険反転を扱う場合は、新しい成功条件を持つIssueとして起票します。
+詳細は[Charger control機械screening](../../playtest/v08-charger-control-machine-report/)を
+参照してください。
 
 [#94](https://github.com/garchomp-game/create-game/issues/94)はPhase Aの非介入ViewModelを基に、Standard敗北だけへ主敗因、根拠、次の一手、同一seed再挑戦を出すB1候補まで実装しました。random runの再挑戦はfixed boardへ分離し、near-missは事実だけを表示して「惜しかった」と解釈しません。候補フラグOFFの全E2Eは`108 passed / 15 skipped`で、[固定Preview](https://v08-outcome-feedback-b1-arena-core.garchomp-game.workers.dev/)の実URLsmokeも通過しました。production挙動は不変です。採用には[#81](https://github.com/garchomp-game/create-game/issues/81)の表示前自由回答と表示後の次行動確認が残ります。詳細は[敗因フィードバック Phase B候補](../../design/run-outcome-insights-phase-b/)を参照してください。
 
@@ -266,14 +282,36 @@ RC5は基準証跡として保持し、productionへ直接昇格しません。U
 
 runtime commit `dca3cec1127b`は[Draft PR #127](https://github.com/garchomp-game/create-game/pull/127)と[固定Version Preview](https://v08-ex-c2-integration-dca3cec-arena-core.garchomp-game.workers.dev/)へ出し、実URLsmokeを完了しました。PRのPhaser、Starlight、browser smoke、EX candidateもすべてgreenです。残るのはPulse / Spread各3体系の人間操作、Aegis / Tidalの実GPU高密度確認です。詳細は[EX Protocol C2 最新main統合レポート](../../playtest/v08-ex-c2-main-integration-report/)を参照してください。
 
+## 2026-07-27統合main
+
+EX C2以降も、次の変更を`main`へ統合しています。
+
+- Story、Endless、Practiceの開始武器選択を共通化した。
+- 自機、4敵種、boss、XP、回復、敵弾を共通visual catalogから表示する。
+- Training、Practice、Helpも同じentity visualを参照する。
+- 軌道回収プラットフォームを基礎にした戦術背景をproductionへ適用した。
+- 設定画面を行ラベル、値、`- / +`へ整理し、Practice設定をプレイ中へ移した。
+- Endlessを初回XP 15、1.05倍、上限60、敵役割の段階導入、3分台の危険、
+  10分のアリーナ崩壊へ調整した。
+- StoryのXPだけを初回20へ揃え、敵出現は従来の作戦定義を維持した。
+- 高密度runtimeの距離判定、sprite更新、pickup処理、表示更新を最適化した。
+- 作戦表示をarena中央から外し、上端のcompact tactical HUDへ移した。
+
+最新の固定Previewは
+[v08-integrated-settings-c394d0e](https://v08-integrated-settings-c394d0e-arena-core.garchomp-game.workers.dev/)
+です。production trafficの昇格判断とは分離しています。
+
 ## 次の優先順
 
-公開ベータ基準、RC6、control観測、採用済み選択UI、9課題Training、desktop gate、WebGL fallback、Phase A fixture、StudyLog契約はmainへ統合済みです。
+1. #138で初回タイトルの主CTAとモード階層を決める。
+2. #139でStory初期作戦の完了保存と最終遠征の扱いを決める。
+3. #140でプレイヤー向け表示語を整理する。
+4. #141でタイトルとStory入口をグラフィカルな縦切りとして仕上げる。
+5. #142で選択UI、HUD、リザルトへ同じ視覚文法を展開する。
+6. #80で最大密度、警告音、実GPUを確認する。
+7. #81で初心者と経験者の統合候補を採否する。
 
-1. #92の通常強化候補と#94の敗因B1候補を別Previewで人間確認し、採用・修正・棄却を分ける。
-2. 固定PreviewでPulse / Spread各3 Protocolの人間操作と、Aegis / Tidalの実GPU高密度確認を行う。
-3. #81でTrainingと敗因B1を別cellとして測り、表示前の回答を候補表示で汚染しない。
-4. 採用した候補だけをmainへ統合し、v0.8統合buildでEndless / Final Expedition / Storyの最終回帰を行う。
-5. #98 Phase B、Charger、Boss、イベント緩和は、観測事実と事前登録した合格条件がある場合だけ別candidateで進める。
-
-採否の理由は[v0.8 批判的レビューの採用判断](../../design/v08-critical-review-adoption/)、直近の詳細は[直近フェーズ](../../project-management/next-phase-plan/)と[v0.8 実行計画](../../project-management/v08-execution-plan/)、技術契約は[RC6の時計と記録規則](../../engineering/expedition-rc6-clock-and-ranking-adr/)、3作戦系列は[エクスペディション3作戦検証](../../design/expedition-campaign/)、表示改善は[UI・グラフィック再設計計画](../../project-management/ui-visual-redesign-plan/)を参照してください。
+直近の詳細は[課題解決キュー](../../project-management/issue-resolution-queue/)と
+[直近フェーズ](../../project-management/next-phase-plan/)、表示境界は
+[UI・グラフィック再設計計画](../../project-management/ui-visual-redesign-plan/)を
+参照してください。旧v0.8実験計画と3作戦案は履歴資料として保持します。

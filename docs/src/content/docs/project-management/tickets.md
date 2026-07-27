@@ -155,31 +155,19 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 
 ## v0.8 Core Promise Validation
 
+現在の実行順と終了理由は[課題解決キュー](../issue-resolution-queue/)を正本とします。
+
 | ID | GitHub | チケット | 優先度 | 状態 |
 | --- | --- | --- | --- | --- |
-| `PH-V08-010` | [#66](https://github.com/garchomp-game/create-game/issues/66) | 世界観と視覚テーマの決定 | P1 | #135へ統合し終了 |
-| `PH-V08-011` | [#68](https://github.com/garchomp-game/create-game/issues/68) | UIプレゼンテーション境界とデザイントークン | P1 | main統合済み・完了 |
-| `PH-V08-012` | [#67](https://github.com/garchomp-game/create-game/issues/67) | 比較可能なUI草案とライブラリ採否 | P1 | branch実装済み、統合待ち |
-| `PH-V08-013` | [#70](https://github.com/garchomp-game/create-game/issues/70) | 採用UI縦切り: 選択画面 | P1 | Draft PR #84。同一RC6比較手順はmain統合済み、外部可読性確認と採否待ち |
-| `PH-V08-014` | [#76](https://github.com/garchomp-game/create-game/issues/76) | Charger control viabilityと衝突妨害candidate | P1 | 機械screeningはwarning。Pulse charge 0/6、予告前撃破5/6のためruntimeを保留し、人間controlまたは再設計へ戻す |
-| `PH-V08-015` | [#77](https://github.com/garchomp-game/create-game/issues/77) | 技能shadow ledgerと成果フィードバック | P1 | PR #102をmainへ統合しPhase 0完了。Presenter、容量上限付きsummary、固有fact接続は後続 |
-| `PH-V08-016` | [#78](https://github.com/garchomp-game/create-game/issues/78) | 強化選択の停止時間と頻度を計測する | P1 | 二時計と責務を監査済み。文書境界はWave 0H、runtimeは#70採否後 |
-| `PH-V08-017` | [#79](https://github.com/garchomp-game/create-game/issues/79) | Pulse / Spreadの武器教義ブランチ | P1 | Todo。Wave 3 |
-| `PH-V08-018` | [#80](https://github.com/garchomp-game/create-game/issues/80) | 最大密度の視覚fixtureと警告音分離 | P1 | PR #103をmainへ統合し共通skeleton完了。最大密度scenarioと警告優先度は後続 |
-| `PH-V08-019` | [#81](https://github.com/garchomp-game/create-game/issues/81) | 初心者・経験者の構造化プレイテスト | P0 | T0 / T1の90秒transferと必須run後5分自由選択を含む反復検証レーン |
-| `PH-V08-020` | [#83](https://github.com/garchomp-game/create-game/issues/83) | 緊張・緩和と難易度支援の設計契約 | P1 | 設計判断と正本同期をmainへ統合済み。2026-07-22の採否記録で補足 |
-| `PH-V08-021` | [#92](https://github.com/garchomp-game/create-game/issues/92) | 通常強化の候補偏りと基礎ビルド保証 | P1 | main統合済み・完了。人間確認は#81へ集約 |
-| `PH-V08-022` | [#93](https://github.com/garchomp-game/create-game/issues/93) | ボス攻撃文法と回復・反撃窓を比較可能にする | P1 | 攻撃文法と観測契約を先行するWave 0D。runtime候補は#76採否後 |
-| `PH-V08-023` | [#94](https://github.com/garchomp-game/create-game/issues/94) | 敗因説明・実測near-miss・即時再挑戦 | P1 | main統合済み・完了。人間確認は#81へ集約 |
-| `PH-V08-024` | [#95](https://github.com/garchomp-game/create-game/issues/95) | Standard / Assist / Practiceのmode、modifier、記録policy、比較eligibility | P1 | pure contractをmainへ統合し完了。Assist runtimeは必要時に新規起票 |
-| `PH-V08-025` | [#97](https://github.com/garchomp-game/create-game/issues/97) | 選択式・再プレイ可能な基本操作Training | P1 | 9課題runtime、owner gate、PR CI、固定Previewを完了しmain採用。#81で事前教材なし90秒transferを確認 |
-| `PH-V08-026` | [#98](https://github.com/garchomp-game/create-game/issues/98) | 撃つ・避ける・取るの戦闘オブジェクト視覚言語 | P1 | 共通visualをmainへ統合し、残作業を#81 / #135へ移管 |
-| `PH-V08-027` | [#110](https://github.com/garchomp-game/create-game/issues/110) | 危険イベント終了後5秒の立て直しshadow計測 | P1 | ゲーム数値を変えず、5秒窓と次警告時盤面をdev exportへ出す |
-| `PH-V08-028` | [#112](https://github.com/garchomp-game/create-game/issues/112) | 批判レビューcontrol観測の結合build | P1 | gameplay candidateを含めず、独立shadowを1回の手動runで取得可能にする |
-| `PH-V08-033` | [#126](https://github.com/garchomp-game/create-game/issues/126) | EX Protocol C2を最新mainへ統合 | P0 | Draft PR #127、固定Preview、全CI green。人間6体系・実GPU・production採否は未完了 |
-| `PH-V08-034` | [#128](https://github.com/garchomp-game/create-game/issues/128) | 初回プレイの成長・Endless難度カーブと固有スキル可読性 | P0 | main統合済み・完了。人間確認は#81へ集約 |
-| `PH-V08-035` | [#134](https://github.com/garchomp-game/create-game/issues/134) | 開発専用UI状態カタログと画面遷移図 | P1 | MVPをmainへ統合し完了。視覚比較は#135へ継続 |
-| `PH-V08-036` | [#135](https://github.com/garchomp-game/create-game/issues/135) | UI視覚刷新とKenney素材の比較採用 | P0 | 現在の視覚作業の集約先 |
+| `PH-V08-010`〜`017`, `020`〜`035` | [課題解決キュー](../issue-resolution-queue/) | RC6後の観測、Story、UI境界、固有スキル、難度、visual基盤 | - | 実装済みまたは後継へ移管 |
+| `PH-V08-018` | [#80](https://github.com/garchomp-game/create-game/issues/80) | 最大密度の視覚fixtureと警告音分離 | P1 | Queue 6。統合候補の最終品質ゲート |
+| `PH-V08-019` | [#81](https://github.com/garchomp-game/create-game/issues/81) | 初心者・経験者の構造化プレイテスト | P0 | Queue 7。v0.8最後の人間採否 |
+| `PH-V08-036` | [#135](https://github.com/garchomp-game/create-game/issues/135) | UI視覚刷新 | P0 | 子Issueを束ねる親epic |
+| `PH-V08-037` | [#138](https://github.com/garchomp-game/create-game/issues/138) | 初回タイトルの行動導線 | P0 | **Next** |
+| `PH-V08-038` | [#139](https://github.com/garchomp-game/create-game/issues/139) | Story初期作戦と最終遠征の階層・進行 | P0 | Queue 2 |
+| `PH-V08-039` | [#140](https://github.com/garchomp-game/create-game/issues/140) | プレイヤー向け用語と説明文 | P1 | Queue 3 |
+| `PH-V08-040` | [#141](https://github.com/garchomp-game/create-game/issues/141) | タイトル / Storyのグラフィカル縦切り | P0 | Queue 4 |
+| `PH-V08-041` | [#142](https://github.com/garchomp-game/create-game/issues/142) | 選択UI / HUD / リザルトの視覚統一 | P1 | Queue 5 |
 
 ## 横断QA
 
@@ -188,16 +176,18 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-QA-001` | [#86](https://github.com/garchomp-game/create-game/issues/86) | GitHub Actionsの再現可能なPR品質ゲート | P1 | 完了。PR #87 / #96をmainへ統合し、PRとmainの3 job greenを取得 |
 | `PH-QA-002` | [#88](https://github.com/garchomp-game/create-game/issues/88) | Encounter配置期限と予告方向の境界を固定する | P1 | 完了。PR #89をmainへ統合し、全ローカル回帰と3 job greenを取得 |
 
-旧`PH-V08-001`から`006`の保存、解放、チャレンジ、熟練度、プロフィール、アカウント判断は削除していません。RC6、v0.8の面白さ検証、Stage 1 / 5 / 10の進行契約が固まるまでLater backlogへ延期します。
+旧`PH-V08-001`から`006`の保存、解放、チャレンジ、熟練度、
+プロフィール、アカウント判断は削除していません。v0.8の入口と人間採否が
+完了するまでLater backlogへ延期します。
 
-## v0.9 3作戦キャンペーン検証
+## v0.9 Story Expansion Decision
 
-| ID | GitHub | チケット | 旧計画との関係 |
+| ID | GitHub | チケット | 状態 |
 | --- | --- | --- | --- |
-| `PH-V09-001` | [#62](https://github.com/garchomp-game/create-game/issues/62) | Stage 1 / 5 / 10進行と選択基盤 | 旧`PH-V08-007`を再スコープ |
-| `PH-V09-002` | [#64](https://github.com/garchomp-game/create-game/issues/64) | Stage 1 基礎迎撃の学習縦切り | 旧`PH-V08-008`。Stage 2から4をdefer |
-| `PH-V09-003` | [#65](https://github.com/garchomp-game/create-game/issues/65) | Stage 5 四方包囲の複合判断縦切り | 旧`PH-V08-009`。Stage 6から9をdefer |
+| `PH-V09-001`〜`003` | [#62](https://github.com/garchomp-game/create-game/issues/62) / [#64](https://github.com/garchomp-game/create-game/issues/64) / [#65](https://github.com/garchomp-game/create-game/issues/65) | 旧Stage 1 / 5 / 10案 | 2026-07-27にsupersededとして終了 |
+| `PH-V09-004` | [#143](https://github.com/garchomp-game/create-game/issues/143) | Story拡張を中間作戦・難易度別・ハイブリッドから決める | Deferred。#81後に開始 |
 
-Stage 10はv0.7 RC6で安定化する現行`final-expedition`です。3本の採否後に、deferredのStage 2から4、6から9と、リリース準備チケットを再採番します。
+現行Storyは`初期作戦 + 最終遠征`です。次のコンテンツ量を先に固定せず、
+#143で最初の縦切り一件だけを選びます。
 
 v0.5の全体計画は [v0.5作業計画](../endless-polish-plan/)、v0.6の個別要件は[v0.6チケット詳細](../v06-tickets/)、v0.7は[v0.7 実行計画](../v07-execution-plan/)、v0.8は[v0.8 実行計画](../v08-execution-plan/)、その先は [中長期作業計画](../gameplay-expansion-plan/) を参照してください。

@@ -3,7 +3,15 @@ title: UI・グラフィック再設計計画
 description: UI責務分離、比較草案、ライブラリ採否、視覚テーマ統合をゲームルールから分離して進める計画。
 ---
 
-最終整理日: 2026-07-25
+最終整理日: 2026-07-27
+
+:::note[2026-07-27の実行単位]
+#134のUI catalog、共通entity visual、Kenney素材の最小採用、戦術背景、
+設定・Practice・共通武器選択、compact tactical HUDはmainへ統合済みです。
+残る視覚作業は親[#135](https://github.com/garchomp-game/create-game/issues/135)の
+子Issue #138から#142として一件ずつ進めます。現在の順序は
+[課題解決キュー](../issue-resolution-queue/)を正本とします。
+:::
 
 ## 結論
 
@@ -18,7 +26,12 @@ description: UI責務分離、比較草案、ライブラリ採否、視覚テ�
 
 同じ情報で比較可能な視覚草案とUIライブラリ採否はWave 2で完了しました。A「戦術管制」を本番の基礎にし、B「回収航路」はステージ進行、C「精密アーケード」は武器成果とリザルトへ限定して使います。世界観・素材・fontの最終判断はWave 3に残します。行数だけを目的にした分割、React / Vueの導入、全HUDのDOM化は行いません。
 
-次の比較面は[PH-V08-035 #134](https://github.com/garchomp-game/create-game/issues/134)の開発専用UI状態カタログです。過去のTailwind草案をそのまま復活させず、現行Presenter / ViewModel、画面ID、遷移manifestを使って、実装済み状態と新候補を同じデータで比較します。視覚刷新と外部asset採用は[PH-V08-036 #135](https://github.com/garchomp-game/create-game/issues/135)へ分離します。
+比較面は[PH-V08-035 #134](https://github.com/garchomp-game/create-game/issues/134)で
+実装済みです。過去のTailwind草案を復活させず、現行Presenter / ViewModel、
+画面ID、遷移manifestを使って実装済み状態と新候補を同じデータで比較します。
+視覚刷新と外部asset採用は
+[PH-V08-036 #135](https://github.com/garchomp-game/create-game/issues/135)の
+子Issueへ分離します。
 
 ## 管理方針
 
@@ -200,7 +213,7 @@ Aは第一候補を維持しますが、これは低コスト比較の結果で�
 
 対象: [PH-V08-035 #134](https://github.com/garchomp-game/create-game/issues/134)
 
-状態: 基盤と最初の4固定fixtureを実装。Draft PR #136でレビュー中。
+状態: MVPをmainへ統合し、Issueを完了。
 
 - Storybook本体や新しいUI frameworkを先行導入しない。
 - 26画面状態、54遷移、owner、記録介入、表示sourceを型付きmanifestへ集約した。
@@ -214,7 +227,8 @@ Aは第一候補を維持しますが、これは低コスト比較の結果で�
 
 対象: [PH-V08-036 #135](https://github.com/garchomp-game/create-game/issues/135)
 
-状態: 開発カタログ上の背景control + A / B / C比較まで実装。production採用は保留。
+状態: 共通visual、軌道回収背景、選択・設定・Practice・HUDの一部をmainへ統合。
+タイトル / Storyの第一画面と画面横断の最終統一は子Issueへ分割。
 
 - 背景3案とKenney候補をカタログで比較する。背景の最初の固定比較は完了した。
 - タイトル、選択UI、HUD、リザルトを一画面ずつproductionへ移す。
@@ -232,4 +246,11 @@ Aは第一候補を維持しますが、これは低コスト比較の結果で�
 
 ## 次の開始点
 
-現行UI境界と選択UIはmainへ継承済みです。次は`PH-V08-035`で主要画面のinventory、型付き遷移manifest、title / choice / HUD / resultの4 fixtureを作ります。その上で`PH-V08-010`の背景3案と`PH-V08-036`のKenney候補を同じcatalogへ載せます。各fixtureでは対象unitと短いbrowser smokeに留め、全画像、全E2E、配布buildは視覚候補を1案へ固定した後に実行します。
+現行UI境界、選択UI、catalog、共通visualはmainへ継承済みです。
+次は[#138](https://github.com/garchomp-game/create-game/issues/138)で
+初回タイトルの主CTAと階層を決めます。Story進行と主要用語を確定後、
+#141でタイトル / Storyのグラフィカル縦切り、#142で選択UI / HUD /
+リザルトへ展開します。
+
+各Issueでは対象unitと短いbrowser smokeに留め、全画像、全E2E、
+配布build、実GPUは#80へ渡す統合候補でまとめます。
