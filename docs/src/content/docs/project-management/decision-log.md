@@ -3,6 +3,54 @@ title: 意思決定記録
 description: 主要な方針変更と、その判断理由。
 ---
 
+## 2026-07-31: 「包囲反転 × 一戦構築CORE」を製品コンセプトへ固定する
+
+決定: Arena Coreの製品コンセプトを、次の三段へ固定する。
+
+> **コンセプト:** 包囲は、反撃の設計図になる。
+>
+> **ゲーム構造:** 一戦でCOREは完成する。次の一戦で強くなっているのは、あなた。
+>
+> **第1キャンペーン:** 誰も知らない11分目へ。
+
+- 四方の圧力を読み、位置、射線、標的順、危機後の隙を使って反撃可能な構造へ
+  変えることを、製品全体の体験目標にする。
+- 各ランは最小構成から始まり、その一戦の中でCOREを完成させる。
+- 次のランへ攻撃力、装備、素材、レアリティを持ち越さず、プレイヤー自身の
+  理解と操作上達を継続性の中心にする。
+- 現行Story初期作戦は導入訓練として維持し、「11分目」は第1キャンペーン固有の
+  将来縦切りとする。
+- 現行Endlessの600秒以降の崩壊、PB、ランキングを「11分目」のために変更しない。
+- 「毎回まったく異なるビルド」は排他的分岐の人間検証が通るまで外向けに約束しない。
+
+実装済み事実と採用した方向を分離する。現時点で成立しているのは、四方圧力、
+移動と照準の分離、Pulse / Spread、一戦内成長、Commander撃破後の増援停止です。
+「包囲反転」を一貫して感じられることと「11分目」は未実装・未検証です。
+
+次フェーズは[#144](https://github.com/garchomp-game/create-game/issues/144)で
+Commander反撃窓を実証し、[#143](https://github.com/garchomp-game/create-game/issues/143)で
+一戦完結Story構造を決め、[#145](https://github.com/garchomp-game/create-game/issues/145)で
+11分目を一作戦だけ縦切りする。
+
+## 2026-07-31: CodexはPM統合・単一writer・独立監査で運用する
+
+決定: CodexによるArena Core作業は、メインエージェントをPM兼ゲームディレクターとし、
+サブエージェントへ調査、実装、独立監査を境界付きで委譲する。
+
+- 同時に扱うactive Issue、主な採否、workspace writerは各一件とする。
+- 読取専用の調査・監査は並行化し、PMが証拠、優先順位、採否を統合する。
+- workerにはGoal Contract、所有ファイル、対象外、受け入れ条件、QA、停止条件を渡す。
+- worker稼働中はPMもworkspaceへ書かず、worker停止とCheckpoint確認後に
+  ローカルcandidate commitを作ってから監査と候補QAをSHAへ結び付ける。
+- auditorは固定差分を独立に読み、重大指摘が解消するまで候補を採用しない。
+- commit、push、GitHub mutation、文書同期、最終報告はメインエージェントが所有する。
+  ただし資格情報の有無と現在依頼の書込許可を分け、許可範囲外はlocal candidateで止める。
+- ソロ開発の`main`直接・小commit運用を維持し、subagentごとの常設branch、PR、
+  worktreeは作らない。
+
+耐久ルールはrootの`AGENTS.md`、project設定は`.codex/config.toml`、詳細な実行契約は
+[Codex PM・サブエージェント運用](../codex-autonomous-operation/)を正本とする。
+
 ## 2026-07-26: ソロ開発はmain一本とopen Issue上限制へ移行する
 
 決定: Arena Coreは当面ソロ開発を続けるため、`main`を唯一の常用branchとし、

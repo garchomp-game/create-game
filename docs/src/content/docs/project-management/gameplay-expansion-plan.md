@@ -292,7 +292,7 @@ v0.7完了条件:
 
 | ID | チケット | 完了条件 |
 | --- | --- | --- |
-| `PH-V08-010` | [世界観と視覚テーマ #66](https://github.com/garchomp-game/create-game/issues/66) | Stage 1 / 5 / 10へ共通する視覚、音、素材規則を決める |
+| `PH-V08-010` | [世界観と視覚テーマ #66](https://github.com/garchomp-game/create-game/issues/66) | 現行モードへ共通する視覚、音、素材規則を決める |
 | `PH-V08-011` | [UI境界 #68](https://github.com/garchomp-game/create-game/issues/68) | Phaser非依存PresenterとPassive Viewを維持する |
 | `PH-V08-012` | [比較UI #67](https://github.com/garchomp-game/create-game/issues/67) | 戦術管制を基礎採用し、prototype依存をproductionへ入れない |
 | `PH-V08-013` | [選択画面縦切り #70](https://github.com/garchomp-game/create-game/issues/70) | 停止中の戦場、数字キー、直前照準を維持する |
@@ -303,36 +303,45 @@ v0.7完了条件:
 | `PH-V08-018` | [最大密度fixture #80](https://github.com/garchomp-game/create-game/issues/80) | プレイヤー、敵弾、予告、回復を最大密度で識別できる |
 | `PH-V08-019` | [構造化プレイテスト #81](https://github.com/garchomp-game/create-game/issues/81) | 初心者・経験者の行動変化と再挑戦理由から採否する |
 
+この一覧はv0.8初期計画の履歴です。#76 / #77 / #79を含む旧候補の終了理由と
+現在の完了条件は[課題解決キュー](../issue-resolution-queue/)を優先します。
+
 v0.8完了条件:
 
-- 危険反転が不可視即死を作らず、熟練者の攻撃機会になる。
+- 初回導線、用語、視覚、最大密度を統合候補で判断できる。
 - PulseとSpreadの違いを数値ではなく行動として説明できる。
 - 選択UIの停止と再開にhard stallがない。
 - 最大密度でも差し迫る敵弾と危険予告を識別できる。
 - 初心者と経験者の双方から、失敗理由と次に試す行動を得られる。
 
-保存、解放、チャレンジ、プロフィール、アカウント同期の旧`PH-V08-001`から`006`はLater backlogへ延期します。3作戦の進行契約が固まる前に実装しません。
+保存、解放、チャレンジ、プロフィール、アカウント同期の旧`PH-V08-001`から`006`はLater backlogへ延期します。一戦完結Storyの進行契約が固まる前に追加実装しません。
 
-## v0.9 3作戦キャンペーン検証
+## v0.9 コンセプト実証と一戦完結Story
 
 目的:
 
-- Stage 1 / 5 / 10で初回学習、複合判断、最終試験を接続する。
-- 3本の実績から残り7本の必要性と制作見積もりを判断する。
+- Commander制圧後の既存挙動で、包囲が反撃・回収・位置改善へ変わるか実証する。
+- 中間作戦、難易度別、ハイブリッドを、一戦完結・戦闘力非持越しの制約で比較する。
+- 「誰も知らない11分目」を一作戦だけ縦切りし、現行Endlessと分離して採否する。
 
 | ID | チケット | 完了条件 |
 | --- | --- | --- |
-| `PH-V09-001` | [Stage 1 / 5 / 10進行 #62](https://github.com/garchomp-game/create-game/issues/62) | 欠番を許容し、未実装stageを見せず、記録scopeを維持する |
-| `PH-V09-002` | [Stage 1 基礎迎撃 #64](https://github.com/garchomp-game/create-game/issues/64) | 赤だけで移動、照準、回収、最初の勝利を学べる |
-| `PH-V09-003` | [Stage 5 四方包囲 #65](https://github.com/garchomp-game/create-game/issues/65) | 優先方向と退路を選び、Stage 10より低い複合圧力になる |
+| `PH-V09-004` | [Story構造決定 #143](https://github.com/garchomp-game/create-game/issues/143) | 一戦完結の制約で構造と最初の縦切りを決める |
+| `PH-V09-005` | [包囲反転の既存Commander実証 #144](https://github.com/garchomp-game/create-game/issues/144) | 原因を説明できる反撃・回収・位置改善が成立するか採否する |
+| `PH-V09-006` | [「誰も知らない11分目」縦切り #145](https://github.com/garchomp-game/create-game/issues/145) | Story専用rulesetで10:00から11:00の一作戦を採否する |
+
+実行順は **#144 → #143 → #145** とします。
+
+旧`PH-V09-001`〜`003`と#62 / #64 / #65はsuperseded履歴です。
+敵の学習順と記録契約だけを必要に応じて再利用します。
 
 v0.9完了条件:
 
-- Stage 1、5、10の失敗理由と学ぶ技能が重複しない。
-- Stage 1より5、Stage 5より10が明確に難しい。
-- Pulse / Spread双方が3本を突破でき、役割差が残る。
-- stage追加で`ArenaScene`へstage ID分岐を増やさない。
-- 残りStage 2から4、6から9を実装、再設計、延期のいずれかへ判断する。
+- 包囲反転を、実測と人間の説明の両方から採用または棄却できる。
+- Story作戦が毎回ゼロから始まり、素材や恒久戦闘力を要求しない。
+- 11分目の作戦が現行Endless、最終遠征、PB、ランキングを変更しない。
+- Pulse / Spread双方で縦切りを検証し、狙い方の差が残る。
+- 一作戦の制作・QA実績から、次の作戦を追加、再設計、延期のいずれかへ判断する。
 
 ## v1.0 最初のローカル完成版
 

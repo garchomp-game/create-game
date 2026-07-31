@@ -3,11 +3,16 @@ title: Ultra自律開発運用
 description: 長時間の自律作業で、開発速度と品質を両立するための共通ルール。
 ---
 
-最終更新日: 2026-07-26
+最終更新日: 2026-07-31
 
 このページは、Arena CoreでUltraを使って長時間の自律作業を進める際の正本です。
 Ultraは調査、実装、局所検証を長く自律的に続けるために使います。
 すべての検証を各変更で繰り返すための指定ではありません。
+
+役割分担、単一writer、Goal Contract、独立監査、完了条件は
+[Codex PM・サブエージェント運用](../codex-autonomous-operation/)を併用します。
+メインエージェントはPM兼ゲームディレクターとして統合と採否を所有し、
+読取調査は並行化してもworkspaceへ書くagentは一体にします。
 
 ## 基本原則
 
@@ -30,6 +35,7 @@ Ultra開始時は、次の項目を短く固定します。
 | 完了条件 | 実装結果と必要な証拠 |
 | QA段階 | 編集中、候補固定、採用前のどこまで進めるか |
 | 停止条件 | 人間判断へ戻す条件 |
+| 書込権限 | local-only、commit、push-main、GitHub Issue / Projectの許可範囲 |
 
 「v0.8の残Issueをすべて完了する」のような複数の採否判断を含む目標は、
 関心事ごとのチェックポイントへ分割します。複数Issueを連続して処理する場合も、
@@ -63,7 +69,10 @@ Ultra開始時は、次の項目を短く固定します。
 
 ### 2. 候補固定
 
-目的はPRへ載せる候補を確認することです。候補SHAごとに原則1回実行します。
+目的はmainへ載せるcommit候補を確認することです。候補SHAごとに原則1回実行します。
+編集中文脈のCheckpointがgreenになった後、PMが`main`へローカルcandidate commitを
+作成し、独立監査と以下のQAをそのSHAへ結び付けます。修正した場合は新しいSHAとして
+監査と必要なQAをやり直します。
 
 - fast unit全件
 - production build
@@ -143,11 +152,14 @@ Analysis計装は観測build、debug hook、明示probeを基本とし、通常b
 push後の`main` CIを共有証跡として使います。長時間作業のためにbranchやworktreeを増やさず、
 feature flagと開発専用fixtureで候補を分離します。
 
+commit、push、Issue / Project更新は別の許可範囲です。利用可能な資格情報だけを理由に
+外部変更せず、現在の依頼が許可しない場合はローカルcandidateで停止します。
+
 | 時点 | 更新先 |
 | --- | --- |
 | 作業開始 | Issueの対象範囲と開始状態 |
 | 実装中 | 作業メモまたはIssueコメント |
-| 候補固定 | PR本文、必要な設計・プレイテスト資料 |
+| 候補固定 | candidate commit、必要な設計・プレイテスト資料 |
 | 採否確定 | current-state、decision、未解決risk、Issue完了証拠 |
 
 Decision logは選択肢の比較と判断が変わった場合、Risk logは未解決の危険が残る場合だけ更新します。

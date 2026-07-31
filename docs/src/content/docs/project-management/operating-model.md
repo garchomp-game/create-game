@@ -38,6 +38,9 @@ description: 要件整理、チケット分割、実装、検証、記録の進�
 
 Ultraを使う長時間の自律作業では、ゴールの粒度、反復上限、QAの昇格条件、
 計装と文書同期の扱いを[Ultra自律開発運用](../ultra-workflow/)に従って決めます。
+メインエージェントをPM兼ゲームディレクターとし、調査・実装・独立監査を
+委譲する場合は[Codex PM・サブエージェント運用](../codex-autonomous-operation/)を
+実行契約にします。
 
 ## ソロ開発のGit運用
 
@@ -84,8 +87,10 @@ APIのtimeout後は作成済みかを確認し、同じIssueやコメントを�
 
 ## チケットとGitHubの役割
 
-- Starlightの作業計画とチケット詳細を、目的、対象範囲、受け入れ条件の正本とする。
-- GitHub Issueを、担当、進捗、実装中の議論、関連PRの正本とする。
+- Starlightを、製品コンセプト、永続する設計判断、実装済み事実、全体順序の正本とする。
+- 現在着手するGitHub Issueを、その一件のGoal Contract、対象範囲、受け入れ条件、
+  進捗、実装中の議論の正本とする。
+- 両者が競合する場合は着手せず、PMが最新の採用判断を確認して両方を同期する。
 - GitHubのタイトルには `PH-V05-001` のような文書側IDを含める。
 - [チケット一覧](../tickets/)から対応するIssueへリンクする。
 - 要件を変更した場合は、Issueだけで完結させず、対象バージョンの詳細資料と意思決定記録を更新する。
@@ -99,7 +104,8 @@ open Issueの上限は原則12件、`priority:P0`は2件、同時着手は1件�
 新しいIssueを追加するときは、既存Issueの完了、統合、延期を同時に確認します。
 
 GitHub Projectsは一覧表示の補助として任意利用し、実行順の必須正本にはしません。
-直近の順序は[直近フェーズ](../next-phase-plan/)、実行対象はopen Issueで管理します。
+直近の順序は[課題解決キュー](../issue-resolution-queue/)、実行対象と現在の
+契約はopen Issueで管理します。
 
 現在のProjectは[Arena Core Roadmap](https://github.com/users/garchomp-game/projects/1)です。
 
@@ -123,3 +129,7 @@ gh api repos/garchomp-game/create-game --jq .permissions
 ```
 
 APIの実ユーザーが`garchomp-game`で、対象リポジトリに`push`または`admin`権限がある場合だけ、Project、Milestone、Issueを変更します。
+
+この権限確認は、現在の依頼における外部書込の許可を代替しません。Goal Contractで
+`local-only`、`commit`、`push-main`、`GitHub Issue / Project`の許可範囲を分け、
+依頼に含まれない変更は資格情報が利用可能でも実行しません。

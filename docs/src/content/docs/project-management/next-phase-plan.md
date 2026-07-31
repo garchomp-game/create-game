@@ -3,7 +3,7 @@ title: 直近フェーズ
 description: v0.8の初回導線、用語、視覚、最大密度、人間検証を一件ずつ完了する計画。
 ---
 
-最終整理日: 2026-07-27
+最終整理日: 2026-07-31
 
 ## 結論
 
@@ -15,6 +15,21 @@ v0.8の次工程は新しいゲームルールの追加ではなく、初回プ�
 同時に`status:next`を付けるIssueは一件だけにし、現在は
 [#138 初回タイトルの行動導線](https://github.com/garchomp-game/create-game/issues/138)
 を扱います。
+
+## 採用した軸
+
+製品全体は[ゲームコンセプト](../../product/game-concept/)の三段を正本とします。
+
+> **コンセプト:** 包囲は、反撃の設計図になる。
+>
+> **ゲーム構造:** 一戦でCOREは完成する。次の一戦で強くなっているのは、あなた。
+>
+> **第1キャンペーン:** 誰も知らない11分目へ。
+
+v0.8は入口、用語、視覚、人間検証を整えるフェーズであり、未実装の
+「包囲反転」や「11分目」を実装済みとして見せません。現行キューの後に、
+既存Commanderで体験核を実証し、Story構造を決め、11分目を一作戦だけ
+縦切りします。
 
 ## 現在のopen Issue
 
@@ -28,7 +43,9 @@ v0.8の次工程は新しいゲームルールの追加ではなく、初回プ�
 | Queue | [#142 選択UI / HUD / リザルト](https://github.com/garchomp-game/create-game/issues/142) | #141の視覚文法を継承 |
 | Gate | [#80 最大密度・警告](https://github.com/garchomp-game/create-game/issues/80) | 統合候補の品質ゲート |
 | Gate | [#81 構造化プレイテスト](https://github.com/garchomp-game/create-game/issues/81) | v0.8最後の人間採否 |
-| Later | [#143 Story拡張方針](https://github.com/garchomp-game/create-game/issues/143) | v0.8完了までdeferred |
+| Later | [#144 Commander反撃窓](https://github.com/garchomp-game/create-game/issues/144) | v0.8完了後に既存挙動を実証 |
+| Later | [#143 一戦完結Story構造](https://github.com/garchomp-game/create-game/issues/143) | #144の採否後に構造を決定 |
+| Later | [#145 11分目Story縦切り](https://github.com/garchomp-game/create-game/issues/145) | #143の採用後に一作戦を実装 |
 
 ## 既に成立している基盤
 
@@ -118,14 +135,24 @@ simulation、保存、乱数、共通入力へ触れた場合だけ対象gateを
 判断理由と後継は[課題解決キュー](../issue-resolution-queue/)に記録しています。
 旧Issue自体は削除せず、比較結果とコメントを履歴として保持します。
 
-## v0.9へ進む条件
+## v0.9へ進む条件と順序
 
-[#143](https://github.com/garchomp-game/create-game/issues/143)は次を満たした後に
-`status:next`へ変更します。
+最初に[#144](https://github.com/garchomp-game/create-game/issues/144)を
+`status:next`へ変更できる条件は次の通りです。
 
 1. #138から#142の採否が完了している。
 2. #80の高密度gateが完了している。
 3. #81で初期作戦から最終遠征までの理解と難度差を観測している。
-4. 中間作戦、難易度別、ハイブリッドのどれを作るかを比較できる。
+4. 同時に着手中のIssueがない。
 
-先に10本やStage 1 / 5 / 10を製品要件へ戻しません。
+その後は次の順序を固定します。
+
+1. [#144](https://github.com/garchomp-game/create-game/issues/144):
+   現行Commander撃破後の増援停止が、説明可能な反撃・回収・位置改善になるか実証する。
+2. [#143](https://github.com/garchomp-game/create-game/issues/143):
+   中間作戦、難易度別、ハイブリッドを一戦完結・戦闘力非持越しの制約で比較する。
+3. [#145](https://github.com/garchomp-game/create-game/issues/145):
+   Story専用の10:00から11:00を一作戦だけ縦切りする。
+
+先に10本やStage 1 / 5 / 10を製品要件へ戻しません。現行Endlessの
+600秒以降、PB、ランキングも11分目の都合で変更しません。

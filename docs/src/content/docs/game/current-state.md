@@ -3,12 +3,22 @@ title: 現在地
 description: Arena Core Phaser版の実装状況、確認済み課題、次の作業。
 ---
 
-最終整理日: 2026-07-27
+最終整理日: 2026-07-31
 
 :::note[現在の単一Next]
 実装済み機能の追加より先に、[#138](https://github.com/garchomp-game/create-game/issues/138)
 で初回タイトルの主CTAとモード階層を決めます。以降の順序と旧Issueの終了理由は
 [課題解決キュー](../../project-management/issue-resolution-queue/)を正本とします。
+:::
+
+:::note[採用した次フェーズ軸]
+製品コンセプトを「包囲は、反撃の設計図になる」、一戦の構造を
+「一戦でCOREは完成する。次の一戦で強くなっているのは、あなた」、
+第1キャンペーン候補を「誰も知らない11分目へ」としました。
+
+これは設計上の北極星です。10:00の記録途絶、11:00クリア、真Endless解禁は
+まだ実装されていません。実装事実との区分は
+[プロダクトコンセプト](../../product/game-concept/)を参照してください。
 :::
 
 ## 現在の状態
@@ -30,6 +40,19 @@ v0.7 RC6は[フォローアップ監査](../../playtest/v07-rc6-integration-repo
 v0.8の最初の独立candidateとして、[#97](https://github.com/garchomp-game/create-game/issues/97)の選択式Training T1をruntime SHA `78b79da9c5aad7f7998ef7b5b1938f80850fdb6a`へ固定し、main採用を決定しました。Work再レビューで求められた説明確認、XP直後の強化、障害物外側の救済線、理由付きretry、修復直前の訓練ダメージ、上部小型チェックリスト、強化選択中断、明示的な完了画面に加え、敵本体の接触ダメージを射撃前に観察する9課題構成へ更新しました。`recordPolicy: none`により履歴、ランキング、PB、報酬を作りません。配布build `2247bd9cd16a`はPR #99の3 CI jobと[Cloudflare固定Preview](https://v08-training-t1-contact-2247bd9-arena-core.garchomp-game.workers.dev/)の実URLsmokeを通過しています。残るのは[#81](https://github.com/garchomp-game/create-game/issues/81)の事前教材なし初心者転移確認で、production trafficは変更しません。詳細は[Training T1候補](../../playtest/v08-training-t1-candidate/)を参照してください。
 
 ゲーム数値はv0.6.6のままです。672.20秒 / 92728点でアリーナ崩壊2段階へ到達したPulse手動ランにより、精密射撃調整の採用を完了しました。Pulseは照準・貫通・反射角で成果上限を伸ばす単線武器、Spreadは広角の複数標的処理を安定させる武器として分かれています。
+
+## コンセプトに対する現在の証拠
+
+| コンセプト要素 | 現在の事実 | 判定 |
+| --- | --- | --- |
+| 読める包囲 | 四方侵入、敵役割、画面外方向、危険予告がある | 基盤あり |
+| 移動と照準の分離 | WASD移動とマウス照準を別方向へ扱える | 成立 |
+| 一戦内CORE形成 | 武器別25ランク、固有能力、EX進行がある | 成長基盤は実装済み。自分のCOREを完成させた感覚は未検証 |
+| 危機から反撃 | Commander撃破で増援を止められる | 一部成立。全危機では未検証 |
+| 11分目 | Endlessは600秒から崩壊するが継続する | Story作戦として未実装 |
+
+したがって、外向けに約束できる現在の強みと、次フェーズで証明する設計目標を
+同じ「実装済み」へまとめません。
 
 アリーナ内の4障害物とPulse外周反射フィールドを公開ルールとして採用しました。直近のPulse / Spread各2手動ランは約2.5万点から3.3万点、約350秒から417秒へ重なり、Pulseだけが外周追撃1332命中・625撃破を記録しています。外周反射はSpreadを直接強化せず、Pulseの貫通順と復路射線を成果へ変えるため、数値を変えず有効のまま固定します。ルール版は`phaser-v0.6.8-pulse-boundary-ricochet`へ分け、旧記録を新ランキングへ混ぜません。
 

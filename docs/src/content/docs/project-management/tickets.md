@@ -162,11 +162,11 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 | `PH-V08-010`〜`017`, `020`〜`035` | [課題解決キュー](../issue-resolution-queue/) | RC6後の観測、Story、UI境界、固有スキル、難度、visual基盤 | - | 実装済みまたは後継へ移管 |
 | `PH-V08-018` | [#80](https://github.com/garchomp-game/create-game/issues/80) | 最大密度の視覚fixtureと警告音分離 | P1 | Queue 6。統合候補の最終品質ゲート |
 | `PH-V08-019` | [#81](https://github.com/garchomp-game/create-game/issues/81) | 初心者・経験者の構造化プレイテスト | P0 | Queue 7。v0.8最後の人間採否 |
-| `PH-V08-036` | [#135](https://github.com/garchomp-game/create-game/issues/135) | UI視覚刷新 | P0 | 子Issueを束ねる親epic |
+| `PH-V08-036` | [#135](https://github.com/garchomp-game/create-game/issues/135) | UI視覚刷新 | - | 子Issueを束ねる親epic |
 | `PH-V08-037` | [#138](https://github.com/garchomp-game/create-game/issues/138) | 初回タイトルの行動導線 | P0 | **Next** |
-| `PH-V08-038` | [#139](https://github.com/garchomp-game/create-game/issues/139) | Story初期作戦と最終遠征の階層・進行 | P0 | Queue 2 |
+| `PH-V08-038` | [#139](https://github.com/garchomp-game/create-game/issues/139) | Story初期作戦と最終遠征の階層・進行 | P1 | Queue 2 |
 | `PH-V08-039` | [#140](https://github.com/garchomp-game/create-game/issues/140) | プレイヤー向け用語と説明文 | P1 | Queue 3 |
-| `PH-V08-040` | [#141](https://github.com/garchomp-game/create-game/issues/141) | タイトル / Storyのグラフィカル縦切り | P0 | Queue 4 |
+| `PH-V08-040` | [#141](https://github.com/garchomp-game/create-game/issues/141) | タイトル / Storyのグラフィカル縦切り | P1 | Queue 4 |
 | `PH-V08-041` | [#142](https://github.com/garchomp-game/create-game/issues/142) | 選択UI / HUD / リザルトの視覚統一 | P1 | Queue 5 |
 
 ## 横断QA
@@ -180,14 +180,16 @@ v0.4は2026-07-10に終了判断を行いました。延期した操作案はv0.
 プロフィール、アカウント判断は削除していません。v0.8の入口と人間採否が
 完了するまでLater backlogへ延期します。
 
-## v0.9 Story Expansion Decision
+## v0.9 コンセプト実証と一戦完結Story
 
 | ID | GitHub | チケット | 状態 |
 | --- | --- | --- | --- |
 | `PH-V09-001`〜`003` | [#62](https://github.com/garchomp-game/create-game/issues/62) / [#64](https://github.com/garchomp-game/create-game/issues/64) / [#65](https://github.com/garchomp-game/create-game/issues/65) | 旧Stage 1 / 5 / 10案 | 2026-07-27にsupersededとして終了 |
-| `PH-V09-004` | [#143](https://github.com/garchomp-game/create-game/issues/143) | Story拡張を中間作戦・難易度別・ハイブリッドから決める | Deferred。#81後に開始 |
+| `PH-V09-005` | [#144](https://github.com/garchomp-game/create-game/issues/144) | Commander制圧後の反撃窓で包囲反転を実証する | Deferred。#81後に開始 |
+| `PH-V09-004` | [#143](https://github.com/garchomp-game/create-game/issues/143) | 一戦完結Storyの構造と最初の縦切りを決める | Deferred。#144後に開始 |
+| `PH-V09-006` | [#145](https://github.com/garchomp-game/create-game/issues/145) | 「誰も知らない11分目」Story作戦を縦切りする | Deferred。#143採用後に開始 |
 
 現行Storyは`初期作戦 + 最終遠征`です。次のコンテンツ量を先に固定せず、
-#143で最初の縦切り一件だけを選びます。
+**#144 → #143 → #145** の順で体験核、構造、最初の一作戦を決めます。
 
 v0.5の全体計画は [v0.5作業計画](../endless-polish-plan/)、v0.6の個別要件は[v0.6チケット詳細](../v06-tickets/)、v0.7は[v0.7 実行計画](../v07-execution-plan/)、v0.8は[v0.8 実行計画](../v08-execution-plan/)、その先は [中長期作業計画](../gameplay-expansion-plan/) を参照してください。

@@ -168,20 +168,26 @@ description: v0.4からv1.0までの目的と主要チケット。
 - [`PH-V08-018` #80](https://github.com/garchomp-game/create-game/issues/80) 最大密度と警告。
 - [`PH-V08-019` #81](https://github.com/garchomp-game/create-game/issues/81) 構造化プレイテスト。
 
-## v0.9 Story Expansion Decision
+## v0.9 コンセプト実証と一戦完結Story
 
 目的:
 
-- 現行の初期作戦と最終遠征の間をどう拡張するか決める。
-- 中間作戦、難易度別、ハイブリッドを学習・継続性・制作量で比較する。
-- 数を先に決めず、最初に実装する縦切り一件だけを選ぶ。
+- 現行Commander撃破後の増援停止が「包囲は、反撃の設計図になる」を
+  実際の行動として証明できるか確認する。
+- 中間作戦、難易度別、ハイブリッドを、一戦完結・戦闘力非持越しの制約で比較する。
+- 「誰も知らない11分目」を現行Endlessと分離した一作戦だけで採否する。
 
 主要チケット:
 
+- [`PH-V09-005` #144](https://github.com/garchomp-game/create-game/issues/144)
+  Commander制圧後の既存反撃窓を実証する。
 - [`PH-V09-004` #143](https://github.com/garchomp-game/create-game/issues/143)
-  Story拡張方針の比較。
+  一戦完結Storyの構造と最初の縦切りを決める。
+- [`PH-V09-006` #145](https://github.com/garchomp-game/create-game/issues/145)
+  「誰も知らない11分目」をStory専用rulesetで縦切りする。
 
-旧#62 / #64 / #65は現行Storyと重複するため終了し、要件の再利用元として保持します。
+実行順は **#144 → #143 → #145** です。旧#62 / #64 / #65は現行Storyと
+重複するため終了し、敵学習順と記録契約の再利用元として保持します。
 
 ## v1.0 最初のローカル完成版
 

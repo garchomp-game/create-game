@@ -5,6 +5,32 @@ description: 現在の主要リスク、影響、対応方針。
 
 ## 優先度1
 
+### 採用コンセプトが実装済み機能として先行表示される
+
+状態: 未解決。2026-07-31に製品コンセプトを固定し、実証Issue #144 / #143 / #145を
+deferredで作成した。
+
+「包囲は、反撃の設計図になる」と「誰も知らない11分目へ」は方向として採用したが、
+現行runtimeで常に成立することをまだ検証していません。コピー、タイトル、Story一覧を
+先に変えると、現在遊べない反撃構造や11分クリアを実装済みだと誤認させる危険があります。
+また、現行Endlessの600秒崩壊をStoryの10分記録途絶と混同すると、PBとランキングの
+意味を壊します。
+
+対応:
+
+- [ゲームコンセプト](../../product/game-concept/)で、実装済み事実、採用した方向、
+  未実装・未検証を分ける。
+- v0.8の#138から#142では、未実装の11分目を主CTAや一般Helpへ先行表示しない。
+- [#144](https://github.com/garchomp-game/create-game/issues/144)で、現行Commander制圧後の
+  反撃窓を実測と人間説明の両方から採否する。
+- [#145](https://github.com/garchomp-game/create-game/issues/145)はStory専用stage、
+  ruleset、記録scopeへ閉じ、EndlessとFinal Expeditionを回帰させない。
+- current-state、Issue、タイトル文言のいずれでも、方向を現在機能と書かない。
+
+停止条件: 未実装の11分目を現在の製品導線へ表示する、EndlessのPB / ranking scopeを
+Story都合で変更する、または「包囲反転」の原因を人間が説明できない状態でコンセプト実証を
+完了扱いする場合は採用を止めます。
+
 ### 長時間ランの成長停滞と永久生存
 
 状態: v0.7 RC5でC5到達性を維持。600秒以降は公開ベータで継続観測。
@@ -159,6 +185,26 @@ Act表示だけをrun時間から補正すると、Encounter Directorが次Act�
 実績: 自動射撃は既定で有効、設定から無効化可能です。無効時も左クリックとSpaceで射撃でき、右クリックは射撃へ反応しません。
 
 ## 優先度2
+
+### 複数Codex agentの編集競合と判断の分散
+
+状態: 運用契約を導入。実作業で継続監視。
+
+複数agentが同じworkspaceを同時編集すると、差分の上書き、scope拡張、QA結果の混在、
+GitHubの二重mutationが起きます。調査役が製品判断まで行うと、PMが統合できない複数の
+正本も生まれます。
+
+対応:
+
+- 単一active Issue、単一採否、単一writerを維持する。
+- researcher / auditorをread-only、workerを一体だけのworkspace writerにする。
+- commit、push、Issue更新はメインエージェントだけが行う。
+- worker停止後にcandidate差分を固定してからauditorへ渡す。
+- `AGENTS.md`と[Codex PM・サブエージェント運用](../codex-autonomous-operation/)を
+  各セッションの実行契約にする。
+
+停止条件: 二体以上のwriterが同じファイルを所有する、agentごとに別の受け入れ条件を
+使う、または監査中のcandidate差分が変わった場合は統合を止めます。
 
 ### 観戦AIの巡回が武器比較を歪める
 

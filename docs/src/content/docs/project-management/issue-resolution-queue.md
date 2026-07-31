@@ -1,17 +1,18 @@
 ---
 title: 課題解決キュー
-description: 初回導線、用語、視覚、最大密度、人間検証を一件ずつ判断する現在のIssue正本。
+description: 現行v0.8と次フェーズのIssueを、単一active・依存順で判断する正本。
 ---
 
-最終更新日: 2026-07-27
+最終更新日: 2026-07-31
 
 ## このページの役割
 
 このページは、Arena Coreの残課題を一度に実装せず、ユーザーと一件ずつ
 要件・採否・実装結果を確認するための正本です。
 
-- 詳細仕様と進捗はGitHub Issueを正本にします。
-- 全体順序、Issue間の依存、終了した旧計画の理由は本ページを正本にします。
+- 製品コンセプト、永続する設計判断、全体順序はStarlightを正本にします。
+- 現在着手する一件の実行契約、受け入れ条件、進捗はGitHub Issueを正本にします。
+- GitHub IssueとStarlightが競合する場合は実装を止め、先にPMが矛盾を解消します。
 - 同時に`status:next`を付けるIssueは一件だけにします。
 - 完了後に次の`status:queued`を`status:next`へ昇格します。
 - 実装前に判断が必要なIssueは`type:decision`を付けます。
@@ -29,11 +30,24 @@ description: 初回導線、用語、視覚、最大密度、人間検証を一�
 | 5 | [#142 選択UI / HUD / リザルト](https://github.com/garchomp-game/create-game/issues/142) | `status:queued` | 採用した視覚文法の画面横断統一 |
 | 6 | [#80 最大密度・警告ゲート](https://github.com/garchomp-game/create-game/issues/80) | `status:queued` | 高密度でも自機、危険、回復、目的を読めるか |
 | 7 | [#81 構造化プレイテスト](https://github.com/garchomp-game/create-game/issues/81) | `status:queued` | 初心者と経験者の実行動でv0.8を採否する |
-| Later | [#143 Story拡張方針](https://github.com/garchomp-game/create-game/issues/143) | `status:deferred` | 中間作戦、難易度別、ハイブリッドの比較 |
 
 順序1から5では対象unit、対象fixture、短いbrowser smokeを基本にします。
 全unit、全E2E、全画像、配布build、実GPU確認は、順序6へ渡す統合候補で
 まとめて実行します。
+
+## v0.9準備キュー
+
+v0.8の順序7まで完了した後、次の一件だけを`status:next`へ昇格します。
+
+| 順序 | Issue | 現在 | 今回決めること |
+| ---: | --- | --- | --- |
+| 8 | [#144 Commander反撃窓](https://github.com/garchomp-game/create-game/issues/144) | `status:deferred` | 既存Commander制圧が説明可能な反撃・回収・位置改善になるか |
+| 9 | [#143 一戦完結Story構造](https://github.com/garchomp-game/create-game/issues/143) | `status:deferred` | 中間作戦、難易度別、ハイブリッドと最初の縦切り |
+| 10 | [#145 11分目Story縦切り](https://github.com/garchomp-game/create-game/issues/145) | `status:deferred` | Story専用の10:00〜11:00が第1キャンペーンとして成立するか |
+
+順序は **#144 → #143 → #145** です。#144は現行挙動で成立すれば
+runtimeを変えずに閉じます。#145は現行Endlessの崩壊、PB、ランキングと
+別のStory専用ruleset / 記録scopeにします。
 
 ## 外部指摘との対応
 
@@ -77,9 +91,11 @@ Issueは削除していません。本文、コメント、比較結果を履歴
 
 ## 正本の使い分け
 
-- 現在の一件と順序: 本ページ。
+- 製品コンセプト: [ゲームコンセプト](../../product/game-concept/)。
+- 現在の一件と全体順序: 本ページ。
 - 現在動く機能: [現在地](../../game/current-state/)。
 - 直近の作業方針: [直近フェーズ](../next-phase-plan/)。
+- Codexの担当分けと完了条件: [Codex PM・サブエージェント運用](../codex-autonomous-operation/)。
 - UI境界と比較方法: [UI・グラフィック再設計計画](../ui-visual-redesign-plan/)。
 - タイトルとStoryの既存判断: [タイトル導線とストーリー初期作戦](../../engineering/story-onboarding-adr/)。
 - 採否履歴: [意思決定記録](../decision-log/)。

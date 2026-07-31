@@ -19,6 +19,7 @@ export default defineConfig({
           items: [
             { label: "現在地", slug: "game/current-state" },
             { label: "ゲーム方針", slug: "product/game-direction" },
+            { label: "プロダクトコンセプト", slug: "product/game-concept" },
             { label: "基本ゲームループ", slug: "product/core-loop" },
             { label: "開発環境", slug: "development/setup" },
             { label: "Cloudflareデプロイ", slug: "development/cloudflare-deployment" }
@@ -38,7 +39,7 @@ export default defineConfig({
             { label: "モードと戦闘展開", slug: "design/encounters-and-modes" },
             { label: "v0.7 最初のエクスペディション", slug: "design/v07-first-expedition" },
             { label: "旧エクスペディション3作戦案", slug: "design/expedition-campaign" },
-            { label: "世界観と試合内ドラマ", slug: "design/narrative-and-match-drama" },
+            { label: "旧世界観・試合内ドラマ草案", slug: "design/narrative-and-match-drama" },
             { label: "UI/UXとフィードバック", slug: "design/ui-ux" },
             { label: "UI素材台帳", slug: "design/ui-asset-ledger" },
             { label: "障害物・敵経路・弾", slug: "design/obstacles-and-projectiles" },
@@ -82,6 +83,7 @@ export default defineConfig({
             { label: "意思決定記録", slug: "project-management/decision-log" },
             { label: "リスク一覧", slug: "project-management/risk-log" },
             { label: "Ultra自律開発運用", slug: "project-management/ultra-workflow" },
+            { label: "Codex PM・サブエージェント運用", slug: "project-management/codex-autonomous-operation" },
             { label: "運用方針", slug: "project-management/operating-model" }
           ]
         },

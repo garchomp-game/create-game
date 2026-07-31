@@ -13,7 +13,7 @@ description: 選択式基本訓練の実装契約、自動証拠、人間採否�
 最新`main`の再監査で、総合演習に固定`8/8`が残り、checklistが初期Rangedを
 覆う測定ノイズを確認しました。旧固定Previewは9課題実装の履歴証拠として残しますが、
 新しい初心者T1には使用しません。data-derived `9/9`とchecklist depthだけを直した
-[T1.1 Readiness](./v08-onboarding-t11-readiness/)を新しい基準とします。
+[T1.1 Readiness](../v08-onboarding-t11-readiness/)を新しい基準とします。
 :::
 
 | 項目 | 値 |
