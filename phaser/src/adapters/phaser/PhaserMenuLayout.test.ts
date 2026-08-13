@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { findMenuActionAt, getMenuButtons } from "./PhaserMenuLayout";
+import {
+  findMenuActionAt,
+  getMenuButtons,
+  getTitleMenuTier,
+  type MenuButton,
+} from "./PhaserMenuLayout";
 
 describe("PhaserMenuLayout", () => {
   it("exposes public beta information from the title menu", () => {
@@ -12,11 +17,54 @@ describe("PhaserMenuLayout", () => {
       "settings",
       "betaInfo",
     ]);
-    expect(findMenuActionAt("title", 960, 540, 687, 449)).toBe("betaInfo");
-    expect(findMenuActionAt("title", 960, 540, 236, 371)).toBe("story");
-    expect(findMenuActionAt("title", 960, 540, 480, 371)).toBe("start");
-    expect(findMenuActionAt("title", 960, 540, 724, 371)).toBe("practice");
-    expect(findMenuActionAt("title", 960, 540, 549, 449)).toBe("settings");
+    expect(findMenuActionAt("title", 960, 540, 687, 473)).toBe("betaInfo");
+    expect(findMenuActionAt("title", 960, 540, 480, 314)).toBe("story");
+    expect(findMenuActionAt("title", 960, 540, 360, 399)).toBe("start");
+    expect(findMenuActionAt("title", 960, 540, 600, 399)).toBe("practice");
+    expect(findMenuActionAt("title", 960, 540, 549, 473)).toBe("settings");
+  });
+
+  it("keeps one primary, two secondary, and four utility title targets distinct", () => {
+    const buttons = getMenuButtons("title", 960, 540);
+    const [story, endless, practice, ...utility] = buttons;
+
+    expect(story).toMatchObject({
+      action: "story",
+      label: "ストーリーを始める",
+      x: 290,
+      y: 278,
+      width: 380,
+      height: 72,
+    });
+    expect(endless).toMatchObject({
+      action: "start",
+      x: 250,
+      y: 374,
+      width: 220,
+      height: 50,
+    });
+    expect(practice).toMatchObject({
+      action: "practice",
+      x: 490,
+      y: 374,
+      width: 220,
+      height: 50,
+    });
+    expect(utility).toHaveLength(4);
+    expect(utility.every((button) => button.y === 454 && button.height === 38)).toBe(true);
+    expect(story!.width).toBeGreaterThan(endless!.width);
+    expect(story!.height).toBeGreaterThan(endless!.height);
+    expect(buttons.every(isInsideLogicalCanvas)).toBe(true);
+    expect(hasAnyOverlap(buttons)).toBe(false);
+    expect(buttons.map((button) => getTitleMenuTier(button.action))).toEqual([
+      "primary",
+      "secondary",
+      "secondary",
+      "utility",
+      "utility",
+      "utility",
+      "utility",
+    ]);
   });
 
   it("offers the opening operation and final expedition inside Story", () => {
@@ -173,3 +221,24 @@ describe("PhaserMenuLayout", () => {
     ]);
   });
 });
+
+function isInsideLogicalCanvas(button: MenuButton): boolean {
+  return (
+    button.x >= 0 &&
+    button.y >= 0 &&
+    button.x + button.width <= 960 &&
+    button.y + button.height <= 540
+  );
+}
+
+function hasAnyOverlap(buttons: readonly MenuButton[]): boolean {
+  return buttons.some((button, index) =>
+    buttons.slice(index + 1).some(
+      (other) =>
+        button.x < other.x + other.width &&
+        button.x + button.width > other.x &&
+        button.y < other.y + other.height &&
+        button.y + button.height > other.y,
+    ),
+  );
+}

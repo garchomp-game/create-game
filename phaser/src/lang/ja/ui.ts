@@ -47,7 +47,7 @@ export const uiText: UiText = {
     defeatCause: (cause) => `撃墜原因: ${cause}`,
   },
   menu: {
-    story: "ストーリー",
+    story: "ストーリーを始める",
     start: "エンドレス",
     startExpedition: "最終遠征に挑む",
     startTraining: "ストーリー開始",

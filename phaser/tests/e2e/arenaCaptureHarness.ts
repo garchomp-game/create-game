@@ -11,6 +11,22 @@ export const ARENA_CAPTURE_VIEWPORTS = [
   { id: "landscape-wide", width: 1365, height: 600 },
 ] as const;
 
+export const TITLE_MENU_POINTS = {
+  story: { x: 480, y: 314 },
+  endless: { x: 360, y: 399 },
+  practice: { x: 600, y: 399 },
+  ranking: { x: 273, y: 473 },
+  history: { x: 411, y: 473 },
+  settings: { x: 549, y: 473 },
+  betaInfo: { x: 687, y: 473 },
+} as const;
+
+export const STORY_MENU_POINTS = {
+  initialOperation: { x: 480, y: 217 },
+  finalExpedition: { x: 480, y: 319 },
+  backInDev: { x: 480, y: 456 },
+} as const;
+
 export type ArenaCaptureViewport =
   (typeof ARENA_CAPTURE_VIEWPORTS)[number];
 
@@ -26,10 +42,14 @@ export async function openArenaCaptureScenario(
     .toBe(true);
 
   if (ARENA_CAPTURE_SCENARIOS[scenarioId].expectedBoss) {
-    await clickCanvasLogical(page, 236, 371);
-    await clickCanvasLogical(page, 480, 319);
+    await clickCanvasLogical(page, TITLE_MENU_POINTS.story.x, TITLE_MENU_POINTS.story.y);
+    await clickCanvasLogical(
+      page,
+      STORY_MENU_POINTS.finalExpedition.x,
+      STORY_MENU_POINTS.finalExpedition.y,
+    );
   } else {
-    await clickCanvasLogical(page, 480, 371);
+    await clickCanvasLogical(page, TITLE_MENU_POINTS.endless.x, TITLE_MENU_POINTS.endless.y);
   }
   await page
     .locator("[data-choice-kind='weapon'][data-choice-id='pulse']")

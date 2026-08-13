@@ -34,4 +34,30 @@ describe("UI screen catalog", () => {
 
     expect(missing).toEqual([]);
   });
+
+  it("documents the title hierarchy and only the implemented information route", () => {
+    const title = UI_SCREEN_DEFINITIONS.find((screen) => screen.id === "title");
+    const outgoing = UI_SCREEN_TRANSITIONS.filter(
+      (transition) => transition.from === "title",
+    );
+
+    expect(title?.summary).toContain("唯一の主CTA");
+    expect(outgoing.filter((transition) => transition.to === "beta-info")).toEqual([
+      expect.objectContaining({ trigger: "情報" }),
+    ]);
+    expect(outgoing.some((transition) => String(transition.to) === "help")).toBe(false);
+    expect(
+      UI_SCREEN_TRANSITIONS.filter((transition) => transition.to === "help").map(
+        (transition) => transition.from,
+      ),
+    ).toEqual([
+      "training-active",
+      "gameplay-standard",
+      "gameplay-danger",
+      "gameplay-commander",
+      "gameplay-boss",
+      "paused",
+      "practice-settings",
+    ]);
+  });
 });

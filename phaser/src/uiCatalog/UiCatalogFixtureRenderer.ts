@@ -25,23 +25,75 @@ export function renderUiCatalogFixture(fixture: UiCatalogFixture): string {
 
 function renderTitle(model: ArenaScreenViewModel): string {
   return `
-    <div class="fixture-screen fixture-title">
-      <div class="fixture-title__brand">
-        <strong>${escapeHtml(model.statusText ?? "")}</strong>
-        ${renderTextLines(model.detailText)}
-      </div>
-      <div class="fixture-title__primary">
-        ${renderMenuButton(model, "story")}
-        ${renderMenuButton(model, "start")}
-        ${renderMenuButton(model, "practice")}
-      </div>
-      <div class="fixture-title__secondary">
-        ${renderMenuButton(model, "ranking", true)}
-        ${renderMenuButton(model, "history", true)}
-        ${renderMenuButton(model, "settings", true)}
-        ${renderMenuButton(model, "betaInfo", true)}
-      </div>
+    <div class="fixture-screen fixture-title-comparison">
+      ${renderTitleVariant(model, "baseline")}
+      ${renderTitleVariant(model, "candidate")}
     </div>
+  `;
+}
+
+function renderTitleVariant(
+  model: ArenaScreenViewModel,
+  variant: "baseline" | "candidate",
+): string {
+  const baseline = variant === "baseline";
+  return `
+    <figure class="fixture-title-option" data-title-variant="${variant}">
+      <figcaption>
+        <strong>${baseline ? "BEFORE / BASELINE" : "AFTER / CANDIDATE"}</strong>
+        <span>${baseline ? "3モード同格" : "主CTA 1 / 副導線 2 / 管理導線 4"}</span>
+      </figcaption>
+      <div class="fixture-title-stage fixture-title-stage--${variant}">
+        <div class="fixture-title__brand">
+          <strong>${escapeHtml(model.statusText ?? "")}</strong>
+          ${renderTextLines(model.detailText)}
+        </div>
+        ${
+          baseline
+            ? `
+              <div class="fixture-title__baseline-modes">
+                ${renderTitleMenuButton(model, "story", "secondary", "ストーリー")}
+                ${renderTitleMenuButton(model, "start", "secondary")}
+                ${renderTitleMenuButton(model, "practice", "secondary")}
+              </div>
+            `
+            : `
+              <div class="fixture-title__candidate-primary">
+                ${renderTitleMenuButton(model, "story", "primary")}
+              </div>
+              <div class="fixture-title__candidate-secondary">
+                ${renderTitleMenuButton(model, "start", "secondary")}
+                ${renderTitleMenuButton(model, "practice", "secondary")}
+              </div>
+            `
+        }
+        <div class="fixture-title__utilities">
+          ${renderTitleMenuButton(model, "ranking", "utility")}
+          ${renderTitleMenuButton(model, "history", "utility", "履歴")}
+          ${renderTitleMenuButton(model, "settings", "utility")}
+          ${renderTitleMenuButton(model, "betaInfo", "utility", "情報")}
+        </div>
+      </div>
+    </figure>
+  `;
+}
+
+function renderTitleMenuButton(
+  model: ArenaScreenViewModel,
+  action: MenuAction,
+  tier: "primary" | "secondary" | "utility",
+  labelOverride?: string,
+): string {
+  const label = labelOverride ?? model.menuLabels[action];
+  if (!label) return "";
+  const focused = action === model.focusedMenuAction;
+  return `
+    <button
+      type="button"
+      class="fixture-title__action fixture-title__action--${tier}"
+      data-fixture-action="${action}"
+      data-focused="${focused}"
+    >${escapeHtml(label)}</button>
   `;
 }
 

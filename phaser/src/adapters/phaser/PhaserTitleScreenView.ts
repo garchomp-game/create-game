@@ -5,14 +5,11 @@ import {
   ARENA_PHASER_COLORS as COLOR,
   ARENA_THEME,
 } from "../../presentation/ArenaTheme";
-import { getMenuButtons, type MenuButton } from "./PhaserMenuLayout";
-
-const UTILITY_ACTIONS = new Set<MenuAction>([
-  "ranking",
-  "history",
-  "settings",
-  "betaInfo",
-]);
+import {
+  getMenuButtons,
+  getTitleMenuTier,
+  type MenuButton,
+} from "./PhaserMenuLayout";
 
 const TITLE_UTILITY_LABELS: Partial<Record<MenuAction, string>> = {
   history: "履歴",
@@ -101,8 +98,8 @@ export class PhaserTitleScreenView {
     button: MenuButton,
     focused: boolean,
   ): void {
-    const utility = UTILITY_ACTIONS.has(button.action);
-    if (utility) {
+    const tier = getTitleMenuTier(button.action);
+    if (tier === "utility") {
       if (focused) {
         graphics.fillStyle(COLOR.surfaceFocused, 0.55);
         graphics.fillRoundedRect(
@@ -124,7 +121,11 @@ export class PhaserTitleScreenView {
       return;
     }
 
-    graphics.fillStyle(focused ? COLOR.surfaceFocused : COLOR.overlay, 0.48);
+    const primary = tier === "primary";
+    graphics.fillStyle(
+      focused ? COLOR.surfaceFocused : primary ? COLOR.surface : COLOR.overlay,
+      primary ? 0.82 : 0.48,
+    );
     graphics.fillRoundedRect(
       button.x,
       button.y,
@@ -133,7 +134,7 @@ export class PhaserTitleScreenView {
       ARENA_THEME.radii.control,
     );
     graphics.lineStyle(
-      focused ? 3 : 2,
+      focused ? 4 : primary ? 3 : 2,
       focused ? COLOR.focus : COLOR.accent,
       1,
     );
@@ -144,11 +145,22 @@ export class PhaserTitleScreenView {
       button.height,
       ARENA_THEME.radii.control,
     );
+    if (primary) {
+      graphics.fillStyle(focused ? COLOR.focus : COLOR.accent, 1);
+      graphics.fillRoundedRect(
+        button.x + 28,
+        button.y + 8,
+        button.width - 56,
+        4,
+        2,
+      );
+    }
   }
 
   private renderButtonText(button: MenuButton, index: number): void {
     const title = this.buttonTitleTexts[index]!;
-    const utility = UTILITY_ACTIONS.has(button.action);
+    const tier = getTitleMenuTier(button.action);
+    const utility = tier === "utility";
 
     title
       .setColor(
@@ -156,7 +168,8 @@ export class PhaserTitleScreenView {
           ? ARENA_THEME.colors.accent
           : ARENA_THEME.colors.textStrong,
       )
-      .setFontSize(utility ? 17 : 25)
+      .setFontSize(tier === "primary" ? 30 : utility ? 17 : 23)
+      .setFontStyle(tier === "primary" ? "bold" : "normal")
       .setPosition(
         button.x + button.width / 2,
         button.y + button.height / 2,

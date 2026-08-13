@@ -56,7 +56,8 @@ export const UI_SCREEN_DEFINITIONS = [
     id: "title",
     label: "タイトル",
     group: "entry",
-    summary: "Story、Endless、Practiceの3主導線と二次メニューを表示する。",
+    summary:
+      "Storyを唯一の主CTA、EndlessとPracticeを副導線、記録・設定・情報を管理導線として表示する。",
     screenKind: "title",
     owner: "ArenaScreenPresenter",
     recordEffect: "read-only",
@@ -320,8 +321,7 @@ export const UI_SCREEN_TRANSITIONS = [
   { from: "title", to: "history", trigger: "履歴" },
   { from: "title", to: "ranking", trigger: "ランキング" },
   { from: "title", to: "settings", trigger: "設定" },
-  { from: "title", to: "help", trigger: "情報 / H" },
-  { from: "title", to: "beta-info", trigger: "候補版情報" },
+  { from: "title", to: "beta-info", trigger: "情報" },
   {
     from: "story",
     to: "training-briefing",
@@ -360,6 +360,7 @@ export const UI_SCREEN_TRANSITIONS = [
     to: "training-complete",
     trigger: "全課題完了",
   },
+  { from: "training-active", to: "help", trigger: "H / ?" },
   {
     from: "training-complete",
     to: "weapon-select",
@@ -367,6 +368,7 @@ export const UI_SCREEN_TRANSITIONS = [
   },
   { from: "training-complete", to: "title", trigger: "タイトルへ" },
   { from: "gameplay-standard", to: "paused", trigger: "Escape" },
+  { from: "gameplay-standard", to: "help", trigger: "H / ?" },
   {
     from: "gameplay-standard",
     to: "upgrade-select",
@@ -407,6 +409,9 @@ export const UI_SCREEN_TRANSITIONS = [
     to: "result-expedition-loss",
     trigger: "遠征敗北",
   },
+  { from: "gameplay-danger", to: "help", trigger: "H / ?" },
+  { from: "gameplay-commander", to: "help", trigger: "H / ?" },
+  { from: "gameplay-boss", to: "help", trigger: "H / ?" },
   { from: "gameplay-danger", to: "gameplay-standard", trigger: "危険終了" },
   {
     from: "gameplay-commander",
@@ -416,8 +421,10 @@ export const UI_SCREEN_TRANSITIONS = [
   { from: "gameplay-boss", to: "result-expedition-win", trigger: "Boss撃破" },
   { from: "gameplay-boss", to: "result-expedition-loss", trigger: "HP 0" },
   { from: "paused", to: "gameplay-standard", trigger: "再開 / Escape" },
+  { from: "paused", to: "help", trigger: "H" },
   { from: "paused", to: "weapon-select", trigger: "再挑戦" },
   { from: "paused", to: "title", trigger: "タイトルへ" },
+  { from: "practice-settings", to: "help", trigger: "H" },
   { from: "upgrade-select", to: "gameplay-standard", trigger: "1..3 / click" },
   {
     from: "protocol-select",
@@ -453,7 +460,48 @@ export const UI_SCREEN_TRANSITIONS = [
   { from: "history", to: "title", trigger: "Escape / 戻る" },
   { from: "ranking", to: "title", trigger: "Escape / 戻る" },
   { from: "settings", to: "title", trigger: "Escape / 戻る" },
-  { from: "help", to: "title", trigger: "Escape / 閉じる" },
+  {
+    from: "help",
+    to: "training-active",
+    trigger: "H / Escape / 閉じる",
+    condition: "初期作戦の課題中に開いた場合",
+  },
+  {
+    from: "help",
+    to: "gameplay-standard",
+    trigger: "H / Escape / 閉じる",
+    condition: "通常戦闘から開いた場合",
+  },
+  {
+    from: "help",
+    to: "gameplay-danger",
+    trigger: "H / Escape / 閉じる",
+    condition: "危険予告中に開いた場合",
+  },
+  {
+    from: "help",
+    to: "gameplay-commander",
+    trigger: "H / Escape / 閉じる",
+    condition: "Commander戦から開いた場合",
+  },
+  {
+    from: "help",
+    to: "gameplay-boss",
+    trigger: "H / Escape / 閉じる",
+    condition: "Boss戦から開いた場合",
+  },
+  {
+    from: "help",
+    to: "paused",
+    trigger: "H / Escape / 閉じる",
+    condition: "一時停止から開いた場合",
+  },
+  {
+    from: "help",
+    to: "practice-settings",
+    trigger: "H / Escape / 閉じる",
+    condition: "Practice設定から開いた場合",
+  },
   { from: "beta-info", to: "title", trigger: "ゲームに戻る" },
 ] as const satisfies ReadonlyArray<UiScreenTransition>;
 

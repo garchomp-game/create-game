@@ -4,6 +4,7 @@ import {
   EX_PROTOCOLS_ENABLED,
   RELEASE_IDENTITY,
 } from "./releaseTestProfile";
+import { TITLE_MENU_POINTS } from "./arenaCaptureHarness";
 
 test.skip(
   !EX_PROTOCOLS_ENABLED,
@@ -202,7 +203,7 @@ test("removes candidate-only input hooks when Story onboarding starts", async ({
   await gotoCandidate(page);
   const canvas = page.locator("canvas");
   expect(await dispatchContextMenu(canvas)).toBe(false);
-  await clickCanvasLogical(canvas, 236, 371);
+  await clickCanvasLogical(canvas, TITLE_MENU_POINTS.story.x, TITLE_MENU_POINTS.story.y);
   await expect
     .poll(() =>
       page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),

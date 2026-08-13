@@ -9,6 +9,7 @@ import {
 } from "./releaseTestProfile";
 import type { RunRecord } from "../../src/domain/runRecords";
 import { probeVisibleCanvasSamples, probeWebglCanvas } from "./webglCanvasProbe";
+import { STORY_MENU_POINTS, TITLE_MENU_POINTS } from "./arenaCaptureHarness";
 
 async function gotoArena(page: Page, path = "/"): Promise<void> {
   await page.goto(path);
@@ -35,13 +36,17 @@ async function clickCanvasAt(page: Page, x: number, y: number): Promise<void> {
 }
 
 async function openFinalExpedition(page: Page): Promise<void> {
-  await clickCanvasAt(page, 236, 371);
+  await clickCanvasAt(page, TITLE_MENU_POINTS.story.x, TITLE_MENU_POINTS.story.y);
   await expect
     .poll(() =>
       page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
     )
     .toBe("story");
-  await clickCanvasAt(page, 480, 319);
+  await clickCanvasAt(
+    page,
+    STORY_MENU_POINTS.finalExpedition.x,
+    STORY_MENU_POINTS.finalExpedition.y,
+  );
 }
 
 async function moveMouseToCanvasAt(page: Page, x: number, y: number): Promise<void> {
@@ -77,6 +82,83 @@ async function holdKeyForFrame(
   await page.keyboard.up(code);
 }
 
+const TITLE_MODE_ROUTES = [
+  { mode: "story", focusMoves: 0 },
+  { mode: "endless", focusMoves: 1 },
+  { mode: "practice", focusMoves: 2 },
+] as const;
+
+for (const { mode, focusMoves } of TITLE_MODE_ROUTES) {
+  for (const inputMethod of ["keyboard", "pointer"] as const) {
+    test(`reaches ${mode} from the title with ${inputMethod}`, async ({ page }) => {
+      await gotoArena(page);
+
+      if (inputMethod === "keyboard") {
+        for (let index = 0; index < focusMoves; index += 1) {
+          await holdKeyForFrame(page, "ArrowDown");
+        }
+        await holdKeyForFrame(page, "Enter");
+      } else {
+        const target = TITLE_MENU_POINTS[mode];
+        await clickCanvasAt(page, target.x, target.y);
+      }
+
+      if (mode === "story") {
+        await expect
+          .poll(() =>
+            page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
+          )
+          .toBe("story");
+        await holdKeyForFrame(page, "Enter");
+        await expect
+          .poll(() =>
+            page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.stepId),
+          )
+          .toBe("move");
+        return;
+      }
+
+      await expect
+        .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+        .toBe("weaponSelect");
+      const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+      if (mode === "endless") {
+        expect(snapshot?.runContext?.modeId).toBe("endless");
+        expect(snapshot?.practice).toBeNull();
+      } else {
+        expect(snapshot?.runContext).toBeNull();
+        expect(snapshot?.practice).not.toBeNull();
+      }
+    });
+  }
+}
+
+test("returns from Story with Escape and the visible back target", async ({ page }) => {
+  await gotoArena(page);
+
+  await holdKeyForFrame(page, "Enter");
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
+    .toBe("story");
+  await holdKeyForFrame(page, "Escape");
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
+    .toBeNull();
+
+  await clickCanvasAt(page, TITLE_MENU_POINTS.story.x, TITLE_MENU_POINTS.story.y);
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
+    .toBe("story");
+  await clickCanvasAt(
+    page,
+    STORY_MENU_POINTS.backInDev.x,
+    STORY_MENU_POINTS.backInDev.y,
+  );
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
+    .toBeNull();
+});
+
 test("renders canvas and accepts movement and shooting input", async ({ page }) => {
   const consoleErrors: string[] = [];
   page.on("console", (message) => {
@@ -102,7 +184,7 @@ test("renders canvas and accepts movement and shooting input", async ({ page }) 
     "title",
   );
 
-  await clickCanvasAt(page, 480, 371);
+  await clickCanvasAt(page, TITLE_MENU_POINTS.endless.x, TITLE_MENU_POINTS.endless.y);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "weaponSelect",
   );
@@ -152,7 +234,7 @@ test("opens one help screen from play without advancing the run", async ({
   page,
 }) => {
   await gotoArena(page);
-  await clickCanvasAt(page, 480, 371);
+  await clickCanvasAt(page, TITLE_MENU_POINTS.endless.x, TITLE_MENU_POINTS.endless.y);
   await page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']").click();
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
@@ -212,7 +294,7 @@ test("starts Practice with chosen fixed conditions and no run record", async ({
 }) => {
   await gotoArena(page, "/?seed=20260724");
 
-  await clickCanvasAt(page, 724, 371);
+  await clickCanvasAt(page, TITLE_MENU_POINTS.practice.x, TITLE_MENU_POINTS.practice.y);
   await expect
     .poll(() =>
       page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status),
@@ -532,10 +614,10 @@ test("uses native cursor affordances outside active play", async ({ page }) => {
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "title",
   );
-  await moveMouseToCanvasAt(page, 480, 371);
+  await moveMouseToCanvasAt(page, TITLE_MENU_POINTS.endless.x, TITLE_MENU_POINTS.endless.y);
   await expect.poll(() => getCanvasCursor(page)).toBe("pointer");
 
-  await clickCanvasAt(page, 480, 371);
+  await clickCanvasAt(page, TITLE_MENU_POINTS.endless.x, TITLE_MENU_POINTS.endless.y);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "weaponSelect",
   );
@@ -1388,7 +1470,7 @@ test("loads local audio assets without page errors", async ({ page }) => {
     await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().music.loaded),
   ).toBe(true);
 
-  await clickCanvasAt(page, 480, 371);
+  await clickCanvasAt(page, TITLE_MENU_POINTS.endless.x, TITLE_MENU_POINTS.endless.y);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "weaponSelect",
   );
@@ -1442,7 +1524,7 @@ test("loads local audio assets without page errors", async ({ page }) => {
 test("selects spread as the run weapon and preserves it on restart", async ({ page }) => {
   await gotoArena(page, "/?seed=20260619");
 
-  await clickCanvasAt(page, 480, 371);
+  await clickCanvasAt(page, TITLE_MENU_POINTS.endless.x, TITLE_MENU_POINTS.endless.y);
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
     "weaponSelect",
   );

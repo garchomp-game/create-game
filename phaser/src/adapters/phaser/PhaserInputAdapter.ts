@@ -46,6 +46,7 @@ export class PhaserInputAdapter {
   private readonly keys: ArenaKeys;
   private exProtocolInputEnabled = false;
   private hasPointerAim = false;
+  private pointerMoved = false;
   private pointerPressed = false;
   private specialPointerPressed = false;
   private currentCursor = "";
@@ -56,6 +57,7 @@ export class PhaserInputAdapter {
 
   private readonly handlePointerMove = (): void => {
     this.hasPointerAim = true;
+    this.pointerMoved = true;
   };
 
   private readonly handlePointerDown = (
@@ -195,6 +197,7 @@ export class PhaserInputAdapter {
   ): InputSnapshot {
     this.pendingChoiceInputMethod = null;
     const pointer = this.scene.input.activePointer;
+    const pointerMoved = this.pointerMoved;
     const pointerPressed = this.pointerPressed;
     const specialPointerPressed = this.specialPointerPressed;
     const startJustDown = Phaser.Input.Keyboard.JustDown(this.keys.start);
@@ -221,6 +224,7 @@ export class PhaserInputAdapter {
         pointer.x,
         pointer.y,
       );
+    this.pointerMoved = false;
     this.pointerPressed = false;
     this.specialPointerPressed = false;
     this.syncCursor(
@@ -257,7 +261,7 @@ export class PhaserInputAdapter {
       pointer.y,
       secondaryMenu,
     );
-    if (hoveredAction) {
+    if ((pointerMoved || pointerPressed) && hoveredAction) {
       const focusAction = getSettingsFocusAction(hoveredAction);
       const hoveredIndex = menuButtons.findIndex(
         (button) => button.action === focusAction,
@@ -424,6 +428,7 @@ export class PhaserInputAdapter {
   }
 
   clearTransientInput(): void {
+    this.pointerMoved = false;
     this.pointerPressed = false;
     this.specialPointerPressed = false;
     this.keys.special?.reset();

@@ -88,7 +88,7 @@ function render(): void {
               <section class="catalog-fixture" aria-labelledby="fixture-heading">
                 <div class="section-heading">
                   <h2 id="fixture-heading">固定状態プレビュー</h2>
-                  <span>960 × 540 / ${fixture.source}</span>
+                  <span>${fixture.kind === "title" ? "同一固定ViewModel / before → after" : `960 × 540 / ${fixture.source}`}</span>
                 </div>
                 <div class="catalog-fixture__viewport">
                   ${renderUiCatalogFixture(fixture)}

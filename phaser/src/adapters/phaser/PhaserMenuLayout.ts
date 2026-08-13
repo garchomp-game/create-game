@@ -16,6 +16,8 @@ export type MenuButton = {
   height: number;
 };
 
+export type TitleMenuTier = "primary" | "secondary" | "utility";
+
 export type UpgradeChoiceButton = {
   index: number;
   x: number;
@@ -25,7 +27,7 @@ export type UpgradeChoiceButton = {
 };
 
 const DEFAULT_MENU_LABELS: Record<MenuAction, string> = {
-  story: "ストーリー",
+  story: "ストーリーを始める",
   start: "エンドレス",
   startExpedition: "最終遠征に挑む",
   startTraining: "基本訓練",
@@ -453,7 +455,6 @@ export function getMenuButtons(
   }
 
   if (status === "title") {
-    const modes: MenuAction[] = ["story", "start", "practice"];
     const utility: MenuAction[] = [
       "ranking",
       "history",
@@ -461,19 +462,35 @@ export function getMenuButtons(
       "betaInfo",
     ];
     return [
-      ...modes.map((action, index) => ({
-        action,
-        label: label(action),
-        x: 120 + index * 244,
-        y: 342,
-        width: 232,
-        height: 58,
-      })),
+      {
+        action: "story",
+        label: label("story"),
+        x: arenaWidth / 2 - 190,
+        y: 278,
+        width: 380,
+        height: 72,
+      },
+      {
+        action: "start",
+        label: label("start"),
+        x: arenaWidth / 2 - 230,
+        y: 374,
+        width: 220,
+        height: 50,
+      },
+      {
+        action: "practice",
+        label: label("practice"),
+        x: arenaWidth / 2 + 10,
+        y: 374,
+        width: 220,
+        height: 50,
+      },
       ...utility.map((action, index) => ({
         action,
         label: label(action),
-        x: 213 + index * 138,
-        y: 430,
+        x: arenaWidth / 2 - 267 + index * 138,
+        y: 454,
         width: 120,
         height: 38,
       })),
@@ -505,6 +522,12 @@ export function getMenuButtons(
   }
 
   return [];
+}
+
+export function getTitleMenuTier(action: MenuAction): TitleMenuTier {
+  if (action === "story") return "primary";
+  if (action === "start" || action === "practice") return "secondary";
+  return "utility";
 }
 
 export function getSettingsStepperButtons(

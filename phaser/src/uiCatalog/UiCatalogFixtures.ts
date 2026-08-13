@@ -95,7 +95,7 @@ function createTitleFixture(): UiCatalogFixture {
     model: createArenaScreenViewModel(
       world,
       SIMULATION_CONFIG,
-      createCatalogUiState(),
+      createCatalogUiState({ focusedMenuAction: "story" }),
     ),
   };
 }

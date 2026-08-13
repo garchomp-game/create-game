@@ -3,6 +3,7 @@ import { HUD_LEFT_PANEL_BOUNDS } from "../../src/adapters/phaser/PhaserHudLayout
 import { TUTORIAL_TRANSFER_CHECKLIST_BOUNDS } from "../../src/adapters/phaser/PhaserTutorialLayer";
 import { SIMULATION_CONFIG } from "../../src/config/gameConfig";
 import type { TutorialStepId } from "../../src/domain/tutorial";
+import { TITLE_MENU_POINTS } from "./arenaCaptureHarness";
 
 test.describe("Story onboarding", () => {
   test("completes through public inputs without changing local run data", async ({
@@ -264,7 +265,7 @@ async function gotoArena(page: Page): Promise<void> {
 }
 
 async function openStoryIntro(page: Page): Promise<void> {
-  await clickCanvasLogical(page, 236, 371);
+  await clickCanvasLogical(page, TITLE_MENU_POINTS.story.x, TITLE_MENU_POINTS.story.y);
   await expect
     .poll(() =>
       page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),

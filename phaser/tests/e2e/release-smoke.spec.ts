@@ -4,6 +4,7 @@ import {
   ACTIVE_ENDLESS_RULESET_PROFILE_ID,
   RELEASE_IDENTITY,
 } from "./releaseTestProfile";
+import { TITLE_MENU_POINTS } from "./arenaCaptureHarness";
 
 test("exposes the release identity and completes the primary input path", async ({ page }) => {
   const consoleErrors: string[] = [];
@@ -32,7 +33,7 @@ test("exposes the release identity and completes the primary input path", async 
   expect(await probeVisibleCanvasSamples(page, canvas)).toBeGreaterThan(0);
   expect(await hasHorizontalViewportOverflow(page)).toBe(false);
 
-  await clickCanvasLogical(page, 480, 371);
+  await clickCanvasLogical(page, TITLE_MENU_POINTS.endless.x, TITLE_MENU_POINTS.endless.y);
   const pulseChoice = page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']");
   await expect(pulseChoice).toBeVisible();
   await pulseChoice.click();
@@ -64,7 +65,7 @@ test("publishes privacy, feedback, licenses, and complete local-data deletion", 
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
     .toBe("title");
-  await clickCanvasLogical(page, 687, 449);
+  await clickCanvasLogical(page, TITLE_MENU_POINTS.betaInfo.x, TITLE_MENU_POINTS.betaInfo.y);
   await expect(page).toHaveURL(/\/beta-info\.html$/);
   await expect(page.getByRole("heading", { name: "ARENA CORE" })).toBeVisible();
   await expect(page.locator("#app-version")).toHaveText(RELEASE_IDENTITY.appVersion);
@@ -106,7 +107,7 @@ test("starts, advances, and exits Training without creating a run record", async
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
     .toBe("title");
 
-  await clickCanvasLogical(page, 236, 371);
+  await clickCanvasLogical(page, TITLE_MENU_POINTS.story.x, TITLE_MENU_POINTS.story.y);
   await clickCanvasLogical(page, 480, 217);
   await expect
     .poll(() =>

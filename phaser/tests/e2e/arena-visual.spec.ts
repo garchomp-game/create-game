@@ -4,6 +4,7 @@ import type { BossAttackId } from "../../src/domain/types";
 import type { TutorialStepId } from "../../src/domain/tutorial";
 import { probeWebglCanvas } from "./webglCanvasProbe";
 import { EX_PROTOCOLS_ENABLED } from "./releaseTestProfile";
+import { STORY_MENU_POINTS, TITLE_MENU_POINTS } from "./arenaCaptureHarness";
 
 const TRAINING_VISUAL_FIXTURES = [
   { stepId: "move", snapshotName: "move" },
@@ -50,13 +51,21 @@ async function clickCanvasLogical(
 }
 
 async function openStoryIntro(page: Page): Promise<void> {
-  await clickCanvasLogical(page, 236, 371);
-  await clickCanvasLogical(page, 480, 217);
+  await clickCanvasLogical(page, TITLE_MENU_POINTS.story.x, TITLE_MENU_POINTS.story.y);
+  await clickCanvasLogical(
+    page,
+    STORY_MENU_POINTS.initialOperation.x,
+    STORY_MENU_POINTS.initialOperation.y,
+  );
 }
 
 async function openFinalExpedition(page: Page): Promise<void> {
-  await clickCanvasLogical(page, 236, 371);
-  await clickCanvasLogical(page, 480, 319);
+  await clickCanvasLogical(page, TITLE_MENU_POINTS.story.x, TITLE_MENU_POINTS.story.y);
+  await clickCanvasLogical(
+    page,
+    STORY_MENU_POINTS.finalExpedition.x,
+    STORY_MENU_POINTS.finalExpedition.y,
+  );
 }
 
 async function showExpeditionCommanderPresentation(page: Page): Promise<void> {
@@ -367,11 +376,39 @@ test("matches the fixed title frame", async ({ page }) => {
   });
 });
 
+test("compares the fixed title baseline and candidate in the UI catalog", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1365, height: 900 });
+  await page.goto("/ui-catalog.html?screen=title");
+  const comparison = page.locator(".catalog-fixture__viewport");
+
+  await expect(comparison).toBeVisible();
+  await expect(comparison.locator('[data-title-variant="baseline"]')).toBeVisible();
+  await expect(comparison.locator('[data-title-variant="candidate"]')).toBeVisible();
+  const candidate = comparison.locator('[data-title-variant="candidate"]');
+  const primaryWidth = await candidate
+    .locator('[data-fixture-action="story"]')
+    .evaluate((element) => element.getBoundingClientRect().width);
+  const secondaryWidths = await candidate
+    .locator(
+      '[data-fixture-action="start"], [data-fixture-action="practice"]',
+    )
+    .evaluateAll((elements) =>
+      elements.map((element) => element.getBoundingClientRect().width),
+    );
+  expect(secondaryWidths).toHaveLength(2);
+  expect(secondaryWidths.every((width) => primaryWidth > width)).toBe(true);
+  await expect(comparison).toHaveScreenshot("ui-catalog-title-cta-comparison.png", {
+    maxDiffPixelRatio: 0,
+  });
+});
+
 test("matches the Story operation selection frame", async ({ page }) => {
   await gotoArena(page);
   const canvas = page.locator("canvas");
 
-  await clickCanvasLogical(page, 236, 371);
+  await clickCanvasLogical(page, TITLE_MENU_POINTS.story.x, TITLE_MENU_POINTS.story.y);
   await expect
     .poll(() =>
       page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
@@ -389,7 +426,7 @@ test("shows the Practice setup and fixed in-arena control guide", async ({
   await gotoArena(page);
   const canvas = page.locator("canvas");
 
-  await moveMouseToCanvasLogical(page, 724, 371);
+  await moveMouseToCanvasLogical(page, TITLE_MENU_POINTS.practice.x, TITLE_MENU_POINTS.practice.y);
   await page.mouse.down();
   await page.mouse.up();
   await expect
@@ -561,7 +598,7 @@ test("matches the starting weapon selection frame", async ({ page }) => {
   await gotoArena(page);
   const game = page.locator("#game");
 
-  await moveMouseToCanvasLogical(page, 480, 371);
+  await moveMouseToCanvasLogical(page, TITLE_MENU_POINTS.endless.x, TITLE_MENU_POINTS.endless.y);
   await page.mouse.down();
   await page.mouse.up();
   await expect.poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status)).toBe(
@@ -922,7 +959,7 @@ test("matches the fixed upgraded Spread split shot frame", async ({ page }) => {
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
-  await moveMouseToCanvasLogical(page, 480, 371);
+  await moveMouseToCanvasLogical(page, TITLE_MENU_POINTS.endless.x, TITLE_MENU_POINTS.endless.y);
   await page.mouse.down();
   await page.mouse.up();
   await page.locator("[data-choice-kind='weapon'][data-choice-id='spread']").click();
@@ -972,7 +1009,7 @@ test("matches the Pulse ricochet boundary field frame", async ({ page }) => {
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveCount(1);
 
-  await moveMouseToCanvasLogical(page, 480, 371);
+  await moveMouseToCanvasLogical(page, TITLE_MENU_POINTS.endless.x, TITLE_MENU_POINTS.endless.y);
   await page.mouse.down();
   await page.mouse.up();
   await page.locator("[data-choice-kind='weapon'][data-choice-id='pulse']").click();

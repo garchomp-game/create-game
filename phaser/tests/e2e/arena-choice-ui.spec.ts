@@ -1,5 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import { EX_PROTOCOLS_ENABLED } from "./releaseTestProfile";
+import { TITLE_MENU_POINTS } from "./arenaCaptureHarness";
 
 test.use({ deviceScaleFactor: 2 });
 
@@ -64,7 +65,7 @@ test("uses aligned semantic DOM controls at high pixel density", async ({
   await expect
     .poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__)))
     .toBe(true);
-  await clickCanvasLogical(page, 480, 371);
+  await clickCanvasLogical(page, TITLE_MENU_POINTS.endless.x, TITLE_MENU_POINTS.endless.y);
   await expect
     .poll(() =>
       page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status),
@@ -259,7 +260,7 @@ test("fits weapon and EX choices in portrait", async ({ page }) => {
     .poll(() => page.evaluate(() => Boolean(window.__ARENA_DEBUG__)))
     .toBe(true);
 
-  await clickCanvasLogical(page, 480, 371);
+  await clickCanvasLogical(page, TITLE_MENU_POINTS.endless.x, TITLE_MENU_POINTS.endless.y);
   await expect
     .poll(() =>
       page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status),

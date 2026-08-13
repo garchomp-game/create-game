@@ -10,7 +10,12 @@ describe("createUiCatalogFixture", () => {
     expect(title).toMatchObject({
       kind: "title",
       source: "ArenaScreenViewModel",
-      model: { kind: "title", status: "title" },
+      model: {
+        kind: "title",
+        status: "title",
+        focusedMenuAction: "story",
+        menuLabels: { story: "ストーリーを始める" },
+      },
     });
     expect(choice).toMatchObject({
       kind: "choice",
