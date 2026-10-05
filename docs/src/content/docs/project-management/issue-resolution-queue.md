@@ -14,13 +14,13 @@ D01は[#146](https://github.com/garchomp-game/create-game/issues/146)としてP1
 
 ## 2026-10-05の残タスクとNEXT
 
-CI接続を含む候補は`19da7b7`までmainへpush済みです。runtimeは`4ab2133`のままです。
+対象自動gateを通過した候補は`fcb156a`です。runtimeは`4ab2133`のままです。
 GitHub openは12件、P0は#138 / #81の2件、
 `status:next`は#138だけです。push、CI成功、Issue起票を人間採用やproduction反映と混同しません。
 
 | 対象 | 残タスク | NEXT / 着手条件 |
 | --- | --- | --- |
-| [#138 タイトル候補](https://github.com/garchomp-game/create-game/issues/138) | 対象E2Eは13 passed / 2 failedで未通過。初見1秒理解・実操作、人間採否も未実施 | traceでclick / Enter連打のevent間隔と処理frameを確認し、確定原因だけを修正。失敗2件＋対象回帰・独立監査後、初見人間gateへ。skipや許容緩和、未完close / #139昇格をしない |
+| [#138 タイトル候補](https://github.com/garchomp-game/create-game/issues/138) | 対象E2E 15件・既存release 9件・4 CI job・独立監査が通過。初見1秒理解・自宅PC実操作・人間採否は未実施 | [自宅PC手順](../../playtest/v08-title-cta-candidate/#自宅pcでの確認開始点)で実SHAを固定して確認し、事前説明なし初見gateを別途実施。人間採否前にclose / #139昇格をしない |
 | [#146 D01](https://github.com/garchomp-game/create-game/issues/146) | 有限作戦を第一検証にするか、未提供参照の扱い、正本・Issue依存同期 | queuedの判断候補。採用 / 修正 / 保留 / 棄却を明示するまで現行順序を維持 |
 | [#135内のB01残件](https://github.com/garchomp-game/create-game/issues/135) | 静止照準で停滞ヒントが抑止される再現済み不具合の修正・QA | 未起票。単一writerとopen上限の下で限定契約を作り、次の導入を使う初心者観察より前に解消。D01採否には依存しない |
 | #139 → #140 | 導入完了保存・階層、状態に沿う用語 | #138採否後、正式契約に沿って一件ずつ進める。D01の新文言は未適用 |
@@ -31,11 +31,17 @@ D01の提案順、S01の人間観察・受け渡し・最終close条件は
 [未採用移行候補](../finite-operation-ux-migration-candidate/)に分離します。
 枠確保だけの早期closeや、複数Issueの同時active化は行いません。
 
-[追加対象を初めて実行したCI](https://github.com/garchomp-game/create-game/actions/runs/37259047042)は全体failureです。
-Phaser quality、Starlight build、EX Protocol candidateは成功し、既存release stepは9 passedでした。
-追加対象15件の失敗は[タイトル候補の証拠と再開点](../../playtest/v08-title-cta-candidate/)へ記録しました。
+[最新CI（`fcb156a`）](https://github.com/garchomp-game/create-game/actions/runs/37267315505)は4 job成功です。
+旧`19da7b7`の2件失敗、`92eea35`で判明したnative入力間隔超過、test補修と最新の実測は
+[タイトル候補の証拠](../../playtest/v08-title-cta-candidate/)へ記録しました。runtimeや300ms閾値は変更していません。
+
 同CIのPhaser `npm ci`は脆弱性9件（low 1 / moderate 2 / high 6）を報告しています。
-開発用 / runtimeの区分と影響は未調査であり、別の限定調査が残ります。本作業では依存を更新しません。
+正確なadvisoryと影響は未確定です。標準のlockfile auditは`registry.npmjs.org`の
+名前解決失敗（ENOTFOUND）で取得できず、依存変更は行っていません。
+NEXTは通常接続環境で同じlockfileの`npm audit --json --package-lock-only --fetch-retries=0 --fetch-timeout=10000`
+を取得し、advisoryをbrowser runtime / build・開発server / testへ対応付け、必要最小限の変更を別契約にすることです。
+`dependencies`分類や`--omit=dev`だけでは本番露出を判定しません。Viteも依存に載っていますが、
+browser runtimeへ含まれることを意味しません。
 
 ## このページの役割
 
@@ -87,7 +93,7 @@ runtimeを変えずに閉じます。#145は現行Endlessの崩壊、PB、ラン
 | --- | --- | --- |
 | 文字中心で導入離脱しやすい | 戦闘object、背景、入力promptは改善。タイトルとStoryは文字中心 | #141、#142 |
 | 専門用語が多い | `REPAIR`を回復キット、`Protocol`を固有スキルへ変更済み。一部固有語と英語見出しが残る | #140 |
-| タイトルの選択肢が多く最初が不明 | 主CTA候補を実装・push済み。対象E2Eは13 passed / 2 failed、初見人間gate未実施で未採用 | #138 |
+| タイトルの選択肢が多く最初が不明 | 主CTA候補を実装・push済み。対象自動gate通過、初見人間gate未実施で未採用 | #138 |
 | 初回難度と成長が急 | Story初期作戦、段階的な敵導入、XP曲線、強化提示間隔を実装済み | #81で人間確認 |
 | チュートリアルが分かりにくい | Story内3任務10課題、即時key prompt、接触・回避・回復・強化を実装済み | #139、#81 |
 | PC専用だと分からない | mobile / touch-onlyを起動前に止め、PC・キーボード・マウスを案内済み | 完了 |

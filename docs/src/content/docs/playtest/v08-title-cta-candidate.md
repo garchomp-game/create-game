@@ -8,10 +8,11 @@ description: Issue #138のStory主CTA候補、比較条件、後続Issueへの�
 :::caution[候補であり未採用]
 本ページは[#138](https://github.com/garchomp-game/create-game/issues/138)の実装候補を記録します。
 旧レイアウトの固定画像と、入力補修のunit・build・独立コード監査は確認済みです。
-入力補修の対象E2EはCIで実行済みですが、**13 passed / 2 failedで未通過**です。
-失敗したclick / Enter連打の原因は未確定です。
-初見プレイヤーが1秒で主行動を理解するかも未確認です。
-対象E2Eと初見人間gateが済むまで採用済みとは扱いません。
+`fcb156a`の[Quality CI](https://github.com/garchomp-game/create-game/actions/runs/37267315505)は
+4 job成功、タイトル対象E2E 15件と既存release smoke 9件が通過しました。
+旧testの連打間隔が300msを超えていたため、runtimeを変えずにnative入力生成を補修しました。
+**自動確認済みの候補であり、初見1秒理解と自宅PCでの人間確認・採否は未完了**です。
+下記の手順で確認へ回せますが、人間gateが済むまで採用済みとは扱いません。
 :::
 
 ## 候補の識別
@@ -21,8 +22,8 @@ description: Issue #138のStory主CTA候補、比較条件、後続Issueへの�
 | Issue | `#138 [PH-V08-037] 初回タイトルの行動導線を1秒で理解できる階層へする` |
 | base SHA | `01ea914a0d24a65b136cf3804d453298fb57ef4e` |
 | runtime candidate SHA | `4ab2133eafa5d699dcf4ecefb5c8b00899744fdc` |
-| push済みCI候補SHA（2026-10-05） | `19da7b74dcb4e8866d4e5773aad349f96b6bd114`。docs / CI変更のみでruntimeは上記SHAのまま |
-| 状態 | 実装候補。対象E2E 13 passed / 2 failed、原因調査・初見人間gate待ちで未採用 |
+| 自動確認済みCI候補SHA（2026-10-05） | [`fcb156a5f5437fd8bb198e5d7d21312397d16d7c`](https://github.com/garchomp-game/create-game/commit/fcb156a5f5437fd8bb198e5d7d21312397d16d7c)。入力補修後のtest / docs候補。runtimeは上記SHAのまま |
+| 状態 | 対象E2E 15 passed、release 9 passed、独立監査pass。人間確認・採否待ちで未採用 |
 | 保存・戦闘ルール | 変更なし |
 
 ## 採用候補
@@ -118,8 +119,9 @@ E2Eには連続clickからkeyboardで初期作戦へ進む経路、pause / resum
 | 型・対象unit | typecheck成功、input 15件 + layout 10件成功 |
 | 配布build / artifact検査 | `VITE_GIT_COMMIT=4ab2133eafa5 npm run build:deploy`成功。42ファイル、2.99 MiB |
 | Starlight | `ASTRO_TELEMETRY_DISABLED=1 npm run build`成功、141ページ |
-| 独立コード監査 | 最終runtime SHAに修正必須の指摘なし |
-| Chrome対象E2E | ローカルは起動制限で未実施。後続CI `19da7b7`で実行し、**13 passed / 2 failed、未通過** |
+| 独立コード監査 | runtimeと後続test候補`fcb156a`の監査はpass、修正必須の指摘なし |
+| Chrome対象E2E | `fcb156a`のCIで15 passed。旧`19da7b7`の13 passed / 2 failedは下記の調査履歴 |
+| 既存release smoke | 同CIで9 passed（Chrome desktop / portrait、Firefox） |
 | 初見人間gate | 未実施、未採用のまま |
 
 build commitの自動取得はこの実行環境で`unknown`になり、最初のartifact検査は失敗しました。
@@ -128,8 +130,9 @@ Gitで読み取った実際の候補SHAを既存の`VITE_GIT_COMMIT`へ明示し
 
 当初のローカルPlaywrightは開発サーバーの起動前に停止しました。直接起動でも
 `listen EPERM: operation not permitted 0.0.0.0:5174`を確認し、テスト本体へ到達していません。
-パッケージ追加や権限・ネットワーク設定の変更は行っていません。待受を許可した環境で、
-同じruntime SHAに対して次を実行するのが再開点です（`phaser/`から実行）。
+パッケージ追加や権限・ネットワーク設定の変更は行っていません。
+次は当時記録した再開コマンドの履歴です（`phaser/`から実行）。現在の対象E2Eは後続CIで
+通過済みのため、このEPERMを現在のblockerとはしません。新規の人間確認は下記の自宅PC手順を使います。
 
 ```sh
 VITE_GIT_COMMIT=4ab2133eafa5 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome npm run test:e2e -- tests/e2e/arena.spec.ts tests/e2e/arena-tutorial.spec.ts tests/e2e/arena-visual.spec.ts tests/e2e/release-smoke.spec.ts --project=chrome --workers=1 --grep 'reaches .* from the title|returns from Story|ignores a title click burst|ignores an Enter burst|supports keyboard entry|supports keyboard navigation and Escape|changes and resets settings|runs the final expedition|can pause and resume|shows the Expedition Act, ingress|exposes the release identity|publishes privacy|starts, advances, and exits Training'
@@ -161,7 +164,7 @@ pause / resume、Expedition HUDを対象とし、release smokeにある3件は�
 新方針は[#146（D01）](https://github.com/garchomp-game/create-game/issues/146)としてqueuedです。
 起票は採用ではなく、CTA文言と現行順序を変更しません。productionへのdeployも行っていません。
 
-### 2026-10-05: 追加対象E2Eの失敗と再開点
+### 2026-10-05: 追加対象E2Eの失敗と当時の再開点（履歴）
 
 [Quality run 37259047042](https://github.com/garchomp-game/create-game/actions/runs/37259047042)は
 CI候補`19da7b74dcb4e8866d4e5773aad349f96b6bd114`で実行し、全体はfailureでした。
@@ -177,15 +180,16 @@ runtimeは`4ab2133`から変更していません。
 
 [失敗artifact](https://github.com/garchomp-game/create-game/actions/runs/37259047042/artifacts/11323179063)は
 7日間保存です。取得先のローカル名前解決制限により展開できず、**traceの内容は未確認**です。
-複数のブラウザ操作RPCと待機の間に300ms以上が経過した可能性、入力event時刻と
-Adapterの`performance.now()`読取frame時刻の差は、調査仮説であって原因の確定ではありません。
+この時点では、複数のブラウザ操作RPCと待機の間に300ms以上が経過した可能性や、
+入力event時刻とAdapterの読取frame時刻の差は、未確定の調査仮説でした。
+後述のnativeイベント計測で旧testの間隔超過を確認しました。traceを解析済みとは扱いません。
 
-NEXTはtraceを取得できる環境で、pointer / key event間隔と処理frame時刻を照合することです。
+当時のNEXTはtraceを取得できる環境で、pointer / key event間隔と処理frame時刻を照合することでした。
 確認した原因だけを限定修正し、testのskipや許容条件の緩和では通過扱いにしません。
 失敗2件を再現・再確認した上で、影響する対象回帰と独立監査を行い、新しいSHA / CIを記録します。
 対象E2E通過と初見人間gateが揃うまで#138をcloseせず、採用・production反映へ進みません。
 
-### 2026-10-05: native入力の実測とテスト補修候補
+### 2026-10-05: native入力の実測とテスト補修（履歴）
 
 診断候補`92eea35`の[CI run 37262096074](https://github.com/garchomp-game/create-game/actions/runs/37262096074)
 で、最初と次のnative down間隔を実測しました。mousedownの`event.timeStamp`は
@@ -202,9 +206,30 @@ Enterはnative pressを5回連続で送ります。途中のpoll / evaluate / �
 別frameに属することも要求します。不正な間隔や未観測はskipせず失敗とします。
 最後の標本後は既存の入力方式切替、Escape、pause / resume経路を確認します。
 
-この補修候補は**CI再検証前**です。runtime、300msの閾値、時計、CI設定、依存、
-snapshot画像は変更していません。過去の2件失敗を合格へ読み替えず、独立監査と
-新しいCI証拠を待ちます。初見人間gateと製品採用は引き続き未完了です。
+この補修候補を作成した時点ではCI再検証前でした。runtime、300msの閾値、時計、
+CI設定、依存、snapshot画像は変更していません。過去の2件失敗を合格へ読み替えず、
+以下の別SHAの独立監査・CIを最新証拠とします。初見人間gateと製品採用は未完了です。
+
+### 最新の自動確認: `fcb156a`（2026-10-05）
+
+[Quality run 37267315505](https://github.com/garchomp-game/create-game/actions/runs/37267315505)は
+Phaser quality、Starlight build、Browser release smoke、EX Protocol candidateの4 job成功です。
+[Phaser job](https://github.com/garchomp-game/create-game/actions/runs/37267315505/job/111626747367)で
+typecheck、120ファイルのunit 747 passed / 2 skipped、study contract、配布build / artifact検査が成功しました。
+[Browser job](https://github.com/garchomp-game/create-game/actions/runs/37267315505/job/111626747423)は
+既存release 9 passedとタイトル対象15 passedです。独立監査もpass、修正必須の指摘はありません。
+
+| 5回のnative down | event間隔 / 全体 | listener観測間隔 / 全体 |
+| --- | --- | --- |
+| pointer | 131.5〜169.3ms / 612.8ms | 130.2〜158.9ms / 585.4ms |
+| Enter | 208.5〜233.4ms / 874.8ms | 213〜227.9ms / 875.5ms |
+
+全イベントがtrusted、Enterは非repeat、欠落0件でした。各2回目rAF標本は次のdownより前で、
+title / Story / tutorialなしを維持しました。実間隔300ms未満、全体300ms超、別frame、
+各標本の状態をtest内の有効なassertionで検査しています。listener / rAFの時刻は
+Phaser内部の正確な処理時刻ではありません。後続の入力方式切替・Escape・pause / resumeは
+経路確認であり、「300ms未満の即時切替」の境界証明はunit側と区別します。
+これは対象自動gateの成功であり、全E2E、初見理解、製品採用、production deployの成功ではありません。
 
 固定画像は次のrepo pathで管理します。
 
@@ -212,8 +237,64 @@ snapshot画像は変更していません。過去の2件失敗を合格へ読�
 - `phaser/tests/e2e/arena-visual.spec.ts-snapshots/arena-title-portrait-chrome-linux.png`
 - `phaser/tests/e2e/arena-visual.spec.ts-snapshots/ui-catalog-title-cta-comparison-chrome-linux.png`
 
+## 自宅PCでの確認開始点
+
+対象はmainの`fcb156a5f5437fd8bb198e5d7d21312397d16d7c`、またはそこからdocsだけが変わった後続です。
+**productionと旧固定Previewには今回の変更をdeployしていません**。通常のローカルUIで確認します。
+説明を既に読んだ本人・開発者はUIと機能を確認できますが、下記の「事前説明なしの初見」には数えません。
+
+Node 24と既存npm依存が準備済みの開発環境で、repository rootから次を確認します。
+最初の`git status --short`に変更が出た場合や、fast-forwardできない場合は先へ進めず、
+手元の変更を保護してください。resetや記録削除は不要です。
+
+```sh
+git status --short
+git fetch origin
+git switch main
+git pull --ff-only
+git rev-parse HEAD
+git merge-base --is-ancestor fcb156a5f5437fd8bb198e5d7d21312397d16d7c HEAD
+git diff --name-only fcb156a5f5437fd8bb198e5d7d21312397d16d7c HEAD
+```
+
+ancestor検査が成功し、最後の差分が空または`docs/`だけなら、その実際のHEADを記録します。
+runtime / tests / CI等の後続差分があれば、この固定候補と混同せずPMへ確認します。
+`phaser/package.json`のdevが使う既存Viteを、外部公開しないloopback指定で起動します。
+依存の追加installは行いません。既存依存がない場合は起動せず、開発環境の準備を別途確認します。
+
+```sh
+cd phaser
+./node_modules/.bin/vite --host 127.0.0.1 --port 5174 --strictPort
+```
+
+別ブラウザprofileまたはprivate windowで`http://127.0.0.1:5174/`を開きます。
+既存profileの保存・PB・履歴を消さず、debug URL、autopilot、fixtureは使いません。
+port使用中なら別portへ自動移動せず停止します。旧serverの画面と取り違えないでください。
+開始前にGitの実SHAと、画面のbuild表示が一致することを確認します。不一致や`unknown`なら確認を中断します。
+依存の警告は[残タスク](../../project-management/issue-resolution-queue/)へ分離し、ここで自動更新しません。
+
+1. 960 x 540の表示領域と普段使うPCサイズで、主CTAの強弱、文字切れ、重なり、focusを確認する。
+2. keyboardとpointerでStory / Endless / Practiceへ入り、Escapeと可視の戻るで復帰する。
+3. タイトルの同位置click / Enterを短く連打し、意図せず武器選択や初期作戦まで二重遷移しないか確認する。
+   手動所感を300ms境界の精密測定とは扱わず、意図して次を選ぶ操作も試す。
+4. 初期作戦の案内からpause / resumeし、入力方式を切り替えて操作を継続できるか確認する。
+5. 設定変更・設定初期化、ランキング・履歴・情報への往復を確認する。保存データ全削除は実行しない。
+
+確認結果は次の短い形で#138の採否材料へ渡します。未確認の項目は未確認と記録します。
+
+```text
+実SHA / 画面build:
+OS・ブラウザ版 / 表示領域・倍率:
+入力方式 / 確認した経路:
+期待 / 実際の結果:
+再現手順・頻度 / 画像や短い動画（任意）:
+事前説明の有無 / 未確認項目:
+```
+
 ## 残る人間gate
 
+以下の手順は観察担当者向けです。初見参加者へ本ページや正解を先に見せず、
+最初の自由回答を記録してから追加質問・操作課題へ進みます。
 事前説明を読んでいない初見プレイヤーへタイトルを1秒だけ見せ、次を確認します。
 
 1. 「最初に何を押す画面か」を一つ答えられるか。

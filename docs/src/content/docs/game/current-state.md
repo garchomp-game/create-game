@@ -12,14 +12,15 @@ description: Arena Core Phaser版の実装状況、確認済み課題、次の�
 :::
 
 :::note[2026-10-05: push済み候補と未完了gate]
-#138のタイトル主CTA・画面跨ぎ連打の補修と対象E2EのCI接続候補を、`19da7b7`までmainへpushしました。
+#138のタイトル主CTA・画面跨ぎ連打の補修候補は、`fcb156a`で対象自動gateを通過しました。
 runtime候補は`4ab2133eafa5d699dcf4ecefb5c8b00899744fdc`です。
-追加対象15件を接続する前の`65c62e2`では[既存Quality CI](https://github.com/garchomp-game/create-game/actions/runs/37258569139)が4 job成功しました。
-追加後の[CI（`19da7b7`）](https://github.com/garchomp-game/create-game/actions/runs/37259047042)は、
-入力対象15件が**13 passed / 2 failedで未通過**です。他の3 jobと既存release stepの9件は成功しました。
-失敗したclick / Enter連打はtrace未確認・原因未確定で、初見人間gateも未実施です。
+[最新Quality CI](https://github.com/garchomp-game/create-game/actions/runs/37267315505)は4 job成功、
+タイトル対象E2E 15 passed、既存release 9 passed、unit 747 passed / 2 skippedです。
+独立監査はpass、修正必須の指摘なしです。旧2件の失敗はnative入力間隔が300msを超えた
+test fixtureの問題と確認し、runtimeではなく入力生成を補修しました。旧CIとEPERMは履歴として残します。
+自宅PCでのUI・機能確認と、事前説明なしの初見1秒理解・採否はまだ実施していません。
 **実装候補の公開であり、採用完了やproductionへのdeployではありません**。
-証拠と残条件は[タイトル主CTA候補](../../playtest/v08-title-cta-candidate/)を参照します。
+証拠と[自宅PCの確認手順](../../playtest/v08-title-cta-candidate/#自宅pcでの確認開始点)はタイトル主CTA候補を参照します。
 
 GitHub #138 / #135の進捗も同期済みです。有限作戦を第一検証にする案は
 [#146（D01）](https://github.com/garchomp-game/create-game/issues/146)のqueued判断候補として起票し、
@@ -262,7 +263,7 @@ v0.6.3の実時間ブラウザ耐久は15.1分完走しました。シミュレ�
 
 - Phaser表示、session / run lifecycle、debug / AI / performanceの分離は完了した。RC5現在は`ArenaScene` 653行、World View 863行、Screen View 241行、純粋Presenter 450行である。次は画面別Presenter、DOM選択のデータ整形、theme tokenを実変更に合わせて分ける。
 - Phaserを含むRC5の本番JSは約1.75MB、gzip約476KBで、Viteの500KB警告が残る。
-- `npm audit`はVite経由の`esbuild 0.27.7`に、Windows開発サーバー限定のLow 1件を報告する。公開成果物への直接影響はないが、互換範囲内の修正版が入る時点で更新する。
+- 旧監査の「Windows開発server限定のLow 1件・公開成果物へ直接影響なし」は当時の履歴で、現在の安全性判断には使わない。2026-10-05の`fcb156a` CIは脆弱性9件（low 1 / moderate 2 / high 6）を報告し、正確なadvisory・露出は未確定。lockfile auditは名前解決失敗で未取得のため、[課題解決キュー](../../project-management/issue-resolution-queue/)の限定調査へ残す。依存は変更していない。
 - 外部無料BGMの採用は必須ではない。追加選曲する場合は、現在の生成音源と比較し、再配布、加工、クレジット条件を資産台帳へ記録する。
 - 外部ログイン、オンラインランキング、クラウド同期は意図的に対象外である。
 - v0.6.6のPulse精密射撃調整は自動比較と92728点の手動採否を完了した。単発スコアを保証値にはせず、公開ベータでPulse / Spreadの複数ラン分布を観測する。
