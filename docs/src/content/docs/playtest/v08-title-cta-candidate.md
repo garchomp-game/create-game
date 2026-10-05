@@ -102,9 +102,40 @@ Checkpointでは、旧実装でdouble-click / keyboard切替前の誤focus / Ent
 E2Eには連続clickからkeyboardで初期作戦へ進む経路、pause / resume、Enter連打、Escape後の再選択を追加しました。
 通常のStory選択testは「一覧を確認してから意図的に次を選ぶ」300ms超の待ちを明示します。
 
-この追記時点では、新しい固定candidate SHAに対するE2E、独立監査、candidate-level QAは未実行です。
-従来の固定画像はレイアウト候補の証拠であり、この新しい連打境界のブラウザ確認を代替しません。
-候補は引き続き未採用で、下記の初見人間gateも残ります。
+### 補修候補の固定QA（2026-10-05）
+
+最終runtime candidateは`4ab2133eafa5d699dcf4ecefb5c8b00899744fdc`です。
+初回監査の「近接したpointerの戻るまで抑止する」P2を修正し、履歴`(400, 488)`から
+戻る`(400, 492)`への回帰unitを追加しました。再監査は修正必須の指摘なしです。
+
+| 確認 | 結果 |
+| --- | --- |
+| 全unit（`npm test`） | 120ファイル、747 passed / 2 skipped |
+| 型・対象unit | typecheck成功、input 15件 + layout 10件成功 |
+| 配布build / artifact検査 | `VITE_GIT_COMMIT=4ab2133eafa5 npm run build:deploy`成功。42ファイル、2.99 MiB |
+| Starlight | `ASTRO_TELEMETRY_DISABLED=1 npm run build`成功、141ページ |
+| 独立コード監査 | 最終runtime SHAに修正必須の指摘なし |
+| Chrome対象E2E | **未実施（環境起動制限）**。テスト本体の合否は未判定 |
+| 初見人間gate | 未実施、未採用のまま |
+
+build commitの自動取得はこの実行環境で`unknown`になり、最初のartifact検査は失敗しました。
+Gitで読み取った実際の候補SHAを既存の`VITE_GIT_COMMIT`へ明示したbuildで再確認しています。
+ソースの版識別処理や検査条件は緩めていません。既存の大きいchunk警告は残ります。
+
+Playwrightは開発サーバーの起動前に停止しました。直接起動でも
+`listen EPERM: operation not permitted 0.0.0.0:5174`を確認し、テスト本体へ到達していません。
+パッケージ追加や権限・ネットワーク設定の変更は行っていません。待受を許可した環境で、
+同じruntime SHAに対して次を実行するのが再開点です（`phaser/`から実行）。
+
+```sh
+VITE_GIT_COMMIT=4ab2133eafa5 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google-chrome npm run test:e2e -- tests/e2e/arena.spec.ts tests/e2e/arena-tutorial.spec.ts tests/e2e/arena-visual.spec.ts tests/e2e/release-smoke.spec.ts --project=chrome --workers=1 --grep 'reaches .* from the title|returns from Story|ignores a title click burst|ignores an Enter burst|supports keyboard entry|supports keyboard navigation and Escape|changes and resets settings|runs the final expedition|can pause and resume|shows the Expedition Act, ingress|exposes the release identity|publishes privacy|starts, advances, and exits Training'
+```
+
+このコマンドは対象smokeであり、全E2Eの合格を意味しません。旧候補の固定画像は
+レイアウトの証拠であり、新しい連打境界のブラウザ確認を代替しません。
+コード監査へは回せますが、E2Eと下記の初見人間gateが済むまで採用完了とはしません。
+push、GitHub Issue更新、公開反映は行っていません。以後の証跡のみのdocs commitでは
+runtimeを変えず、上記SHAのQAへ紐付けます。
 
 固定画像は次のrepo pathで管理します。
 

@@ -51,7 +51,8 @@ GitHub本文・ラベルの更新、push、公開反映は行っていません�
 
 - #138: 実Input AdapterとMenuControllerで、タイトルCTA座標`(480, 314)`への
   別frameの連続pointerdownが、Story選択を経て最終遠征の武器選択へ二重遷移した。
-  既存#138の入力契約内で限定修正する予定であり、修正完了とは扱わない。
+  これは`f230816`の修正前証拠。後続の限定補修とQA・未実施gateは
+  [タイトル主CTA候補](../../playtest/v08-title-cta-candidate/)へ記録する。
 - B01: 実TutorialControllerのStory / basic-training両flowで、無入力11秒ではH1 / H2、
   固定`aimWorld`ではH0・`noProgress = 0`を再現した。ブラウザ入力と修正後smokeは未実施。
 
