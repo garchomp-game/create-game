@@ -41,6 +41,16 @@ type ArenaKeys = {
   special?: Phaser.Input.Keyboard.Key;
 };
 
+const MENU_ACTIVATION_BURST_MS = 300;
+const MENU_ACTIVATION_POINTER_RADIUS = 8;
+
+type MenuActivation = {
+  context: string;
+  inputMethod: "pointer" | "keyboard";
+  time: number;
+  pointer: Vec2;
+};
+
 export class PhaserInputAdapter {
   private readonly scene: Phaser.Scene;
   private readonly keys: ArenaKeys;
@@ -54,10 +64,22 @@ export class PhaserInputAdapter {
   private pendingChoiceInputMethod: ChoiceInteractionInputMethod | null = null;
   private focusedMenuIndex = 0;
   private menuContextKey = "";
+  private lastMenuActivation: MenuActivation | null = null;
 
-  private readonly handlePointerMove = (): void => {
+  private readonly handlePointerMove = (pointer: Phaser.Input.Pointer): void => {
     this.hasPointerAim = true;
     this.pointerMoved = true;
+    // A deliberate excursion also rearms a click that returns to its origin
+    // before the next read. Tiny pointer jitter is still part of the burst.
+    if (
+      this.lastMenuActivation &&
+      Math.hypot(
+        pointer.x - this.lastMenuActivation.pointer.x,
+        pointer.y - this.lastMenuActivation.pointer.y,
+      ) > MENU_ACTIVATION_POINTER_RADIUS
+    ) {
+      this.lastMenuActivation = null;
+    }
   };
 
   private readonly handlePointerDown = (
@@ -253,6 +275,51 @@ export class PhaserInputAdapter {
       secondaryMenu,
     );
     this.syncMenuFocus(status, secondaryMenu, menuButtons.length);
+    const upPressed = menuButtons.length > 0 && (
+      Phaser.Input.Keyboard.JustDown(this.keys.up) ||
+      Phaser.Input.Keyboard.JustDown(this.keys.arrowUp)
+    );
+    const downPressed = menuButtons.length > 0 && (
+      Phaser.Input.Keyboard.JustDown(this.keys.down) ||
+      Phaser.Input.Keyboard.JustDown(this.keys.arrowDown)
+    );
+    const backActivated =
+      (secondaryMenu !== null ||
+        status === "weaponSelect" ||
+        status === "trainingComplete") &&
+      Phaser.Input.Keyboard.JustDown(this.keys.escape);
+    const menuTime = performance.now();
+    // Only title/paused canvas menus participate. DOM weapon/upgrade/contract
+    // choices and combat retain their existing input contracts.
+    const guardedMenu = status === "title" || status === "paused";
+    if (
+      !guardedMenu || upPressed || downPressed || backActivated ||
+      (this.lastMenuActivation &&
+        menuTime - this.lastMenuActivation.time >= MENU_ACTIVATION_BURST_MS)
+    ) {
+      this.lastMenuActivation = null;
+    }
+    const previousActivation = this.lastMenuActivation;
+    const crossContextBurst = previousActivation !== null &&
+      previousActivation.context !== this.menuContextKey;
+    const pointerBurstBlocked = crossContextBurst &&
+      previousActivation.inputMethod === "pointer" &&
+      Math.hypot(
+        pointer.x - previousActivation.pointer.x,
+        pointer.y - previousActivation.pointer.y,
+      ) <= MENU_ACTIVATION_POINTER_RADIUS;
+    const keyboardBurstBlocked = crossContextBurst &&
+      previousActivation.inputMethod === "keyboard";
+    const menuPointerPressed = pointerPressed && !pointerBurstBlocked;
+    if (previousActivation && (
+      (pointerBurstBlocked && pointerPressed) ||
+      (keyboardBurstBlocked && (startJustDown ||
+        (status === "title" && secondaryMenu === null && shootJustDown)))
+    )) {
+      // Rearm after a quiet interval, not in the middle of a continuing burst.
+      // Hover alone must never extend the activation window.
+      previousActivation.time = menuTime;
+    }
     const hoveredAction = findMenuActionAt(
       status,
       this.scene.scale.gameSize.width,
@@ -261,7 +328,7 @@ export class PhaserInputAdapter {
       pointer.y,
       secondaryMenu,
     );
-    if ((pointerMoved || pointerPressed) && hoveredAction) {
+    if (!pointerBurstBlocked && (pointerMoved || pointerPressed) && hoveredAction) {
       const focusAction = getSettingsFocusAction(hoveredAction);
       const hoveredIndex = menuButtons.findIndex(
         (button) => button.action === focusAction,
@@ -269,17 +336,11 @@ export class PhaserInputAdapter {
       if (hoveredIndex >= 0) this.focusedMenuIndex = hoveredIndex;
     }
     if (menuButtons.length > 0) {
-      if (
-        Phaser.Input.Keyboard.JustDown(this.keys.up) ||
-        Phaser.Input.Keyboard.JustDown(this.keys.arrowUp)
-      ) {
+      if (upPressed) {
         this.focusedMenuIndex =
           (this.focusedMenuIndex - 1 + menuButtons.length) % menuButtons.length;
       }
-      if (
-        Phaser.Input.Keyboard.JustDown(this.keys.down) ||
-        Phaser.Input.Keyboard.JustDown(this.keys.arrowDown)
-      ) {
+      if (downPressed) {
         this.focusedMenuIndex = (this.focusedMenuIndex + 1) % menuButtons.length;
       }
     }
@@ -295,13 +356,9 @@ export class PhaserInputAdapter {
         : null;
     const keyboardActivated =
       menuButtons.length > 0 &&
+      !keyboardBurstBlocked &&
       (startJustDown ||
         (status === "title" && secondaryMenu === null && shootJustDown));
-    const backActivated =
-      (secondaryMenu !== null ||
-        status === "weaponSelect" ||
-        status === "trainingComplete") &&
-      Phaser.Input.Keyboard.JustDown(this.keys.escape);
     const helpAvailable =
       secondaryMenu === "help" || status === "playing" || status === "paused";
     const helpAction =
@@ -315,12 +372,22 @@ export class PhaserInputAdapter {
       helpAction ??
       (backActivated
         ? "back"
-        : pointerPressed
+        : menuPointerPressed
           ? hoveredAction
           : settingsAdjustmentAction ??
             (keyboardActivated
               ? menuButtons[this.focusedMenuIndex]?.action ?? null
               : null));
+    if (menuAction === "back") {
+      this.lastMenuActivation = null;
+    } else if (guardedMenu && menuAction && (menuPointerPressed || keyboardActivated)) {
+      this.lastMenuActivation = {
+        context: this.menuContextKey,
+        inputMethod: menuPointerPressed ? "pointer" : "keyboard",
+        time: menuTime,
+        pointer: { x: pointer.x, y: pointer.y },
+      };
+    }
     this.pendingMenuAction = menuAction;
     const clickedUpgradeChoice =
       pointerPressed && status === "upgradeSelect"
@@ -428,6 +495,7 @@ export class PhaserInputAdapter {
   }
 
   clearTransientInput(): void {
+    this.lastMenuActivation = null;
     this.pointerMoved = false;
     this.pointerPressed = false;
     this.specialPointerPressed = false;

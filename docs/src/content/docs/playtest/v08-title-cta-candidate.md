@@ -3,7 +3,7 @@ title: v0.8 タイトル主CTA候補
 description: Issue #138のStory主CTA候補、比較条件、後続Issueへの契約、残る人間確認。
 ---
 
-最終更新日: 2026-08-13
+最終更新日: 2026-10-05
 
 :::caution[候補であり未採用]
 本ページは[#138](https://github.com/garchomp-game/create-game/issues/138)の実装候補を記録します。
@@ -74,6 +74,37 @@ UI Catalogのtitle固定fixtureは、同じ`ArenaScreenViewModel`とStory focus�
 - manifest unit: titleの`情報`は`beta-info`への1経路だけ。Helpは実装済みの戦闘、pause、Practice設定経路だけ。
 - Playwright: Story / Endless / Practiceのkeyboard・pointer 6経路、StoryのEscape・戻る。
 - 固定画像: title 960 x 540、portrait、UI Catalogのbefore / after。
+
+### 2026-10-05: 画面を跨ぐ連打の補修候補
+
+既存候補`f230816`では、タイトル主CTAを押した座標にStoryの最終遠征が重なり、
+別frameの2回目のclickで最終遠征の武器選択へ進むことを実Adapter / Controllerの
+隔離再現で確認しました。静止pointerによるfocus奪取対策だけでは、この入力を防げません。
+
+本補修は`b4c34559b6d84097a56742cbd81bf1b8254b85e5`を基点に、#138の入力境界だけを変更します。
+2026-10-05のD01草案にある`初期作戦を始める`への文言変更や方向の採用は含めません。
+タイトル文言、レイアウト、routing、導入ヒント、保存、simulationは従来の候補のままです。
+
+- 対象はtitle / pause状態のcanvas menu間で、同じ入力方式が続く選択だけ。
+- 前のmenu activationから300ms未満で、別contextへ同位置のpointer選択が続く場合は抑止する。
+  同位置の許容範囲は最初の選択座標から8論理px以内。抑止clickでfocusだけが移ることも防ぐ。
+- Enter等のkeyboard menu選択も同じcontext間の連打規則に従う。押し続けたキーのnative repeatは
+  Phaserの`JustDown`で再選択にしない。
+- 抑止した同位置click / keyboard選択ごとに300ms窓を更新し、**最後の連打から300ms入力が途切れた後**に
+  同位置・同方式での次の選択を許可する。hoverだけでは窓を延長しない。
+- 8pxを超えるpointer移動、上下キーによるfocus移動、pointer / keyboardの切替、Escape / 戻るは即時に使える。
+  pointerを一度8px超動かして元へ戻した場合も、明確な移動として扱う。
+- 同じmenu内の設定連打、戦闘射撃、DOMの武器 / 強化 / contract選択は変更しない。
+  run reset等でtransient inputをclearしたときは、この連打状態も破棄する。
+
+Checkpointでは、旧実装でdouble-click / keyboard切替前の誤focus / Enter連打の3 regression unitが
+失敗することを先に確認しました。修正後はinput 14件とlayout 10件の対象unit、typecheck、diff checkが通過しています。
+E2Eには連続clickからkeyboardで初期作戦へ進む経路、pause / resume、Enter連打、Escape後の再選択を追加しました。
+通常のStory選択testは「一覧を確認してから意図的に次を選ぶ」300ms超の待ちを明示します。
+
+この追記時点では、新しい固定candidate SHAに対するE2E、独立監査、candidate-level QAは未実行です。
+従来の固定画像はレイアウト候補の証拠であり、この新しい連打境界のブラウザ確認を代替しません。
+候補は引き続き未採用で、下記の初見人間gateも残ります。
 
 固定画像は次のrepo pathで管理します。
 

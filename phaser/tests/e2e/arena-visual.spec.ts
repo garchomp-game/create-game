@@ -61,6 +61,11 @@ async function openStoryIntro(page: Page): Promise<void> {
 
 async function openFinalExpedition(page: Page): Promise<void> {
   await clickCanvasLogical(page, TITLE_MENU_POINTS.story.x, TITLE_MENU_POINTS.story.y);
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
+    .toBe("story");
+  // Read Story before selecting its overlapping target; not a title double click.
+  await page.waitForTimeout(350);
   await clickCanvasLogical(
     page,
     STORY_MENU_POINTS.finalExpedition.x,

@@ -42,6 +42,8 @@ async function openFinalExpedition(page: Page): Promise<void> {
       page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
     )
     .toBe("story");
+  // Read the new menu before intentionally selecting its overlapping target.
+  await page.waitForTimeout(350);
   await clickCanvasAt(
     page,
     STORY_MENU_POINTS.finalExpedition.x,
@@ -109,6 +111,10 @@ for (const { mode, focusMoves } of TITLE_MODE_ROUTES) {
             page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu),
           )
           .toBe("story");
+        if (inputMethod === "keyboard") {
+          // A fresh choice follows the 300ms cross-menu Enter burst window.
+          await page.waitForTimeout(350);
+        }
         await holdKeyForFrame(page, "Enter");
         await expect
           .poll(() =>
@@ -157,6 +163,75 @@ test("returns from Story with Escape and the visible back target", async ({ page
   await expect
     .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
     .toBeNull();
+});
+
+test("ignores a title click burst and accepts deliberate keyboard selection and pause resume", async ({ page }) => {
+  await gotoArena(page);
+  await clickCanvasAt(page, TITLE_MENU_POINTS.story.x, TITLE_MENU_POINTS.story.y);
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
+    .toBe("story");
+
+  // Distinct frames, spanning more than 300ms overall: every press must keep
+  // extending the quiet interval without changing the initial Story focus.
+  for (let index = 0; index < 4; index += 1) {
+    await page.waitForTimeout(90);
+    await clickCanvasAt(page, TITLE_MENU_POINTS.story.x, TITLE_MENU_POINTS.story.y);
+    await page.waitForTimeout(30);
+    const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+    expect(snapshot?.status).toBe("title");
+    expect(snapshot?.secondaryMenu).toBe("story");
+    expect(snapshot?.tutorial).toBeNull();
+  }
+
+  // Switching input method is intentional and needs no cooldown. This also
+  // proves blocked clicks did not move focus to Final Expedition.
+  await holdKeyForFrame(page, "Enter", 60);
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.stepId))
+    .toBe("move");
+  await holdKeyForFrame(page, "Escape", 60);
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+    .toBe("paused");
+  await holdKeyForFrame(page, "ArrowDown", 60);
+  await holdKeyForFrame(page, "ArrowUp", 60);
+  await holdKeyForFrame(page, "Enter", 60);
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+    .toBe("trainingBriefing");
+});
+
+test("ignores an Enter burst while allowing Escape and immediate pointer selection", async ({ page }) => {
+  await gotoArena(page);
+  await holdKeyForFrame(page, "Enter", 60);
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
+    .toBe("story");
+
+  for (let index = 0; index < 4; index += 1) {
+    await page.waitForTimeout(40);
+    await holdKeyForFrame(page, "Enter", 60);
+    const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+    expect(snapshot?.status).toBe("title");
+    expect(snapshot?.secondaryMenu).toBe("story");
+    expect(snapshot?.tutorial).toBeNull();
+  }
+
+  await holdKeyForFrame(page, "Escape", 60);
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
+    .toBeNull();
+  await holdKeyForFrame(page, "Enter", 60);
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
+    .toBe("story");
+  await clickCanvasAt(page, STORY_MENU_POINTS.finalExpedition.x, STORY_MENU_POINTS.finalExpedition.y);
+  await expect
+    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+    .toBe("weaponSelect");
+  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().runContext?.modeId))
+    .toBe("expedition");
 });
 
 test("renders canvas and accepts movement and shooting input", async ({ page }) => {

@@ -223,6 +223,11 @@ test.describe("Story onboarding", () => {
     const before = await readLocalState(page);
 
     await holdKey(page, "Enter", 120);
+    await expect
+      .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
+      .toBe("story");
+    // Intentionally choose after reading Story, beyond the 300ms Enter burst.
+    await page.waitForTimeout(350);
     await holdKey(page, "Enter", 120);
     await expectTrainingStep(page, "move");
 
