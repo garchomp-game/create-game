@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Page, test, type TestInfo } from "@playwright/test";
 import {
   ACTIVE_CONFIG_VERSION,
   ACTIVE_ENDLESS_RULESET_VERSION,
@@ -84,6 +84,121 @@ async function holdKeyForFrame(
   await page.keyboard.up(code);
 }
 
+// Temporary diagnosis for the two burst regressions; never changes input or game time.
+async function withMenuBurstTiming(
+  page: Page,
+  testInfo: TestInfo,
+  action: () => Promise<void>,
+): Promise<void> {
+  const timing = await page.evaluateHandle(() => {
+    const state = () => {
+      const snapshot = window.__ARENA_DEBUG__?.getSnapshot();
+      return {
+        status: snapshot?.status ?? null,
+        secondaryMenu: snapshot?.secondaryMenu ?? null,
+        tutorialStep: snapshot?.tutorial?.stepId ?? null,
+      };
+    };
+    type FrameObservation = {
+      frameTimeMs: number;
+      observedAtMs: number;
+      sinceEventMs: number;
+      state: ReturnType<typeof state>;
+    };
+    const records: Array<{
+      type: string;
+      code: string | null;
+      button: number | null;
+      clientX: number | null;
+      clientY: number | null;
+      repeat: boolean | null;
+      isTrusted: boolean;
+      nowMs: number;
+      timeStampMs: number;
+      deltaMs: number | null;
+      timeStampDeltaMs: number | null;
+      sameInputDeltaMs: number | null;
+      sameInputTimeStampDeltaMs: number | null;
+      state: ReturnType<typeof state>;
+      firstAnimationFrame: FrameObservation | null;
+    }> = [];
+    const pendingFrames = new Set<number>();
+    const previousInputs = new Map<string, { nowMs: number; timeStampMs: number }>();
+    let droppedEvents = 0;
+    const capture = (event: Event) => {
+      if (records.length >= 30) {
+        droppedEvents += 1;
+        return;
+      }
+      const nowMs = performance.now();
+      const previous = records.at(-1);
+      const code = event instanceof KeyboardEvent ? event.code : null;
+      const button = event instanceof MouseEvent ? event.button : null;
+      // Separate native mousedown from pointerdown and each keyboard code.
+      const inputId = `${event.type}:${code ?? button ?? ""}`;
+      const previousInput = previousInputs.get(inputId);
+      const record: (typeof records)[number] = {
+        type: event.type,
+        code,
+        button,
+        clientX: event instanceof MouseEvent ? event.clientX : null,
+        clientY: event instanceof MouseEvent ? event.clientY : null,
+        repeat: event instanceof KeyboardEvent ? event.repeat : null,
+        isTrusted: event.isTrusted,
+        nowMs,
+        timeStampMs: event.timeStamp,
+        deltaMs: previous ? nowMs - previous.nowMs : null,
+        timeStampDeltaMs: previous ? event.timeStamp - previous.timeStampMs : null,
+        sameInputDeltaMs: previousInput ? nowMs - previousInput.nowMs : null,
+        sameInputTimeStampDeltaMs: previousInput ? event.timeStamp - previousInput.timeStampMs : null,
+        state: state(),
+        firstAnimationFrame: null,
+      };
+      records.push(record);
+      previousInputs.set(inputId, { nowMs, timeStampMs: event.timeStamp });
+      // First browser rAF after the event, not a claim that Phaser has processed it.
+      const frame = requestAnimationFrame((frameTimeMs) => {
+        pendingFrames.delete(frame);
+        const observedAtMs = performance.now();
+        record.firstAnimationFrame = {
+          frameTimeMs,
+          observedAtMs,
+          sinceEventMs: observedAtMs - nowMs,
+          state: state(),
+        };
+      });
+      pendingFrames.add(frame);
+    };
+    const eventTypes = ["pointerdown", "mousedown", "mouseup", "mousemove", "keydown", "keyup"];
+    for (const type of eventTypes) {
+      window.addEventListener(type, capture, { capture: true, passive: true });
+    }
+    return {
+      stop() {
+        for (const type of eventTypes) window.removeEventListener(type, capture, true);
+        for (const frame of pendingFrames) cancelAnimationFrame(frame);
+        return { recordCount: records.length, droppedEvents, records };
+      },
+    };
+  });
+
+  try {
+    await action();
+  } finally {
+    try {
+      const result = await timing.evaluate((capture) => capture.stop());
+      const body = JSON.stringify({ test: testInfo.title, ...result });
+      console.log(`[menu-burst-timing] ${body}`);
+      await testInfo.attach("menu-burst-timing", { body, contentType: "application/json" });
+    } catch {
+      // A closed context must not replace the original assertion failure.
+      console.log("[menu-burst-timing] unavailable: diagnostic collection failed");
+    } finally {
+      await timing.dispose().catch(() => {});
+    }
+  }
+}
+
 const TITLE_MODE_ROUTES = [
   { mode: "story", focusMoves: 0 },
   { mode: "endless", focusMoves: 1 },
@@ -165,73 +280,77 @@ test("returns from Story with Escape and the visible back target", async ({ page
     .toBeNull();
 });
 
-test("ignores a title click burst and accepts deliberate keyboard selection and pause resume", async ({ page }) => {
+test("ignores a title click burst and accepts deliberate keyboard selection and pause resume", async ({ page }, testInfo) => {
   await gotoArena(page);
-  await clickCanvasAt(page, TITLE_MENU_POINTS.story.x, TITLE_MENU_POINTS.story.y);
-  await expect
-    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
-    .toBe("story");
-
-  // Distinct frames, spanning more than 300ms overall: every press must keep
-  // extending the quiet interval without changing the initial Story focus.
-  for (let index = 0; index < 4; index += 1) {
-    await page.waitForTimeout(90);
+  await withMenuBurstTiming(page, testInfo, async () => {
     await clickCanvasAt(page, TITLE_MENU_POINTS.story.x, TITLE_MENU_POINTS.story.y);
-    await page.waitForTimeout(30);
-    const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
-    expect(snapshot?.status).toBe("title");
-    expect(snapshot?.secondaryMenu).toBe("story");
-    expect(snapshot?.tutorial).toBeNull();
-  }
+    await expect
+      .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
+      .toBe("story");
 
-  // Switching input method is intentional and needs no cooldown. This also
-  // proves blocked clicks did not move focus to Final Expedition.
-  await holdKeyForFrame(page, "Enter", 60);
-  await expect
-    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.stepId))
-    .toBe("move");
-  await holdKeyForFrame(page, "Escape", 60);
-  await expect
-    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
-    .toBe("paused");
-  await holdKeyForFrame(page, "ArrowDown", 60);
-  await holdKeyForFrame(page, "ArrowUp", 60);
-  await holdKeyForFrame(page, "Enter", 60);
-  await expect
-    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
-    .toBe("trainingBriefing");
+    // Distinct frames, spanning more than 300ms overall: every press must keep
+    // extending the quiet interval without changing the initial Story focus.
+    for (let index = 0; index < 4; index += 1) {
+      await page.waitForTimeout(90);
+      await clickCanvasAt(page, TITLE_MENU_POINTS.story.x, TITLE_MENU_POINTS.story.y);
+      await page.waitForTimeout(30);
+      const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+      expect(snapshot?.status).toBe("title");
+      expect(snapshot?.secondaryMenu).toBe("story");
+      expect(snapshot?.tutorial).toBeNull();
+    }
+
+    // Switching input method is intentional and needs no cooldown. This also
+    // proves blocked clicks did not move focus to Final Expedition.
+    await holdKeyForFrame(page, "Enter", 60);
+    await expect
+      .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().tutorial?.stepId))
+      .toBe("move");
+    await holdKeyForFrame(page, "Escape", 60);
+    await expect
+      .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+      .toBe("paused");
+    await holdKeyForFrame(page, "ArrowDown", 60);
+    await holdKeyForFrame(page, "ArrowUp", 60);
+    await holdKeyForFrame(page, "Enter", 60);
+    await expect
+      .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+      .toBe("trainingBriefing");
+  });
 });
 
-test("ignores an Enter burst while allowing Escape and immediate pointer selection", async ({ page }) => {
+test("ignores an Enter burst while allowing Escape and immediate pointer selection", async ({ page }, testInfo) => {
   await gotoArena(page);
-  await holdKeyForFrame(page, "Enter", 60);
-  await expect
-    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
-    .toBe("story");
-
-  for (let index = 0; index < 4; index += 1) {
-    await page.waitForTimeout(40);
+  await withMenuBurstTiming(page, testInfo, async () => {
     await holdKeyForFrame(page, "Enter", 60);
-    const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
-    expect(snapshot?.status).toBe("title");
-    expect(snapshot?.secondaryMenu).toBe("story");
-    expect(snapshot?.tutorial).toBeNull();
-  }
+    await expect
+      .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
+      .toBe("story");
 
-  await holdKeyForFrame(page, "Escape", 60);
-  await expect
-    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
-    .toBeNull();
-  await holdKeyForFrame(page, "Enter", 60);
-  await expect
-    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
-    .toBe("story");
-  await clickCanvasAt(page, STORY_MENU_POINTS.finalExpedition.x, STORY_MENU_POINTS.finalExpedition.y);
-  await expect
-    .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
-    .toBe("weaponSelect");
-  expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().runContext?.modeId))
-    .toBe("expedition");
+    for (let index = 0; index < 4; index += 1) {
+      await page.waitForTimeout(40);
+      await holdKeyForFrame(page, "Enter", 60);
+      const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
+      expect(snapshot?.status).toBe("title");
+      expect(snapshot?.secondaryMenu).toBe("story");
+      expect(snapshot?.tutorial).toBeNull();
+    }
+
+    await holdKeyForFrame(page, "Escape", 60);
+    await expect
+      .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
+      .toBeNull();
+    await holdKeyForFrame(page, "Enter", 60);
+    await expect
+      .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
+      .toBe("story");
+    await clickCanvasAt(page, STORY_MENU_POINTS.finalExpedition.x, STORY_MENU_POINTS.finalExpedition.y);
+    await expect
+      .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().status))
+      .toBe("weaponSelect");
+    expect(await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().runContext?.modeId))
+      .toBe("expedition");
+  });
 });
 
 test("renders canvas and accepts movement and shooting input", async ({ page }) => {
