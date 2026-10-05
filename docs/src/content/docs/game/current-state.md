@@ -12,10 +12,12 @@ description: Arena Core Phaser版の実装状況、確認済み課題、次の�
 :::
 
 :::note[2026-10-05: push済み候補と未完了gate]
-#138のタイトル主CTA・画面跨ぎ連打の補修候補を、証拠HEAD `65c62e2`までmainへpushしました。
+#138のタイトル主CTA・画面跨ぎ連打の補修と対象E2EのCI接続候補を、`19da7b7`までmainへpushしました。
 runtime候補は`4ab2133eafa5d699dcf4ecefb5c8b00899744fdc`です。
-[既存Quality CI](https://github.com/garchomp-game/create-game/actions/runs/37258569139)は4 job成功ですが、
-追加の入力対象15件を接続する前の結果です。対象E2EのCI結果と初見人間gateは未取得で、
+追加対象15件を接続する前の`65c62e2`では[既存Quality CI](https://github.com/garchomp-game/create-game/actions/runs/37258569139)が4 job成功しました。
+追加後の[CI（`19da7b7`）](https://github.com/garchomp-game/create-game/actions/runs/37259047042)は、
+入力対象15件が**13 passed / 2 failedで未通過**です。他の3 jobと既存release stepの9件は成功しました。
+失敗したclick / Enter連打はtrace未確認・原因未確定で、初見人間gateも未実施です。
 **実装候補の公開であり、採用完了やproductionへのdeployではありません**。
 証拠と残条件は[タイトル主CTA候補](../../playtest/v08-title-cta-candidate/)を参照します。
 

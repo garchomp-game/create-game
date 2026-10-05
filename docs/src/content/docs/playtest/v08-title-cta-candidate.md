@@ -8,7 +8,8 @@ description: Issue #138のStory主CTA候補、比較条件、後続Issueへの�
 :::caution[候補であり未採用]
 本ページは[#138](https://github.com/garchomp-game/create-game/issues/138)の実装候補を記録します。
 旧レイアウトの固定画像と、入力補修のunit・build・独立コード監査は確認済みです。
-入力補修の対象E2Eはローカル環境制限で未実施のためCIへ接続し、結果待ちです。
+入力補修の対象E2EはCIで実行済みですが、**13 passed / 2 failedで未通過**です。
+失敗したclick / Enter連打の原因は未確定です。
 初見プレイヤーが1秒で主行動を理解するかも未確認です。
 対象E2Eと初見人間gateが済むまで採用済みとは扱いません。
 :::
@@ -20,8 +21,8 @@ description: Issue #138のStory主CTA候補、比較条件、後続Issueへの�
 | Issue | `#138 [PH-V08-037] 初回タイトルの行動導線を1秒で理解できる階層へする` |
 | base SHA | `01ea914a0d24a65b136cf3804d453298fb57ef4e` |
 | runtime candidate SHA | `4ab2133eafa5d699dcf4ecefb5c8b00899744fdc` |
-| push済み証拠HEAD（2026-10-05） | `65c62e225f3f7fa6ca8bfcea83c416912aed7e9e`。後続のdocs / CI変更とruntimeを区別する |
-| 状態 | 実装候補。未採用、入力補修E2E・初見人間gate待ち |
+| push済みCI候補SHA（2026-10-05） | `19da7b74dcb4e8866d4e5773aad349f96b6bd114`。docs / CI変更のみでruntimeは上記SHAのまま |
+| 状態 | 実装候補。対象E2E 13 passed / 2 failed、原因調査・初見人間gate待ちで未採用 |
 | 保存・戦闘ルール | 変更なし |
 
 ## 採用候補
@@ -118,14 +119,14 @@ E2Eには連続clickからkeyboardで初期作戦へ進む経路、pause / resum
 | 配布build / artifact検査 | `VITE_GIT_COMMIT=4ab2133eafa5 npm run build:deploy`成功。42ファイル、2.99 MiB |
 | Starlight | `ASTRO_TELEMETRY_DISABLED=1 npm run build`成功、141ページ |
 | 独立コード監査 | 最終runtime SHAに修正必須の指摘なし |
-| Chrome対象E2E | **未実施（環境起動制限）**。テスト本体の合否は未判定 |
+| Chrome対象E2E | ローカルは起動制限で未実施。後続CI `19da7b7`で実行し、**13 passed / 2 failed、未通過** |
 | 初見人間gate | 未実施、未採用のまま |
 
 build commitの自動取得はこの実行環境で`unknown`になり、最初のartifact検査は失敗しました。
 Gitで読み取った実際の候補SHAを既存の`VITE_GIT_COMMIT`へ明示したbuildで再確認しています。
 ソースの版識別処理や検査条件は緩めていません。既存の大きいchunk警告は残ります。
 
-Playwrightは開発サーバーの起動前に停止しました。直接起動でも
+当初のローカルPlaywrightは開発サーバーの起動前に停止しました。直接起動でも
 `listen EPERM: operation not permitted 0.0.0.0:5174`を確認し、テスト本体へ到達していません。
 パッケージ追加や権限・ネットワーク設定の変更は行っていません。待受を許可した環境で、
 同じruntime SHAに対して次を実行するのが再開点です（`phaser/`から実行）。
@@ -154,11 +155,35 @@ Phaser quality、Starlight build、Browser release smoke、EX Protocol candidate
 pause / resume、Expedition HUDを対象とし、release smokeにある3件は重複追加しません。
 既存EX jobと同じ日本語fixture font、Xvfb、software rendering、単一workerを使い、
 失敗成果物は`phaser/test-results/title-input/`へ分離します。
-この追加を含む候補のCI結果はまだ未取得です。ローカルの`EPERM`は過去の起動失敗として残し、
-CI成功時に対象SHAとrunを別途追記します。全E2Eや人間gateの代替にはしません。
+この追加を含む候補`19da7b7`をpushし、以下のCI結果を取得しました。
+ローカルの`EPERM`は過去の起動失敗として残します。全E2Eや人間gateの代替にはしません。
 
 新方針は[#146（D01）](https://github.com/garchomp-game/create-game/issues/146)としてqueuedです。
 起票は採用ではなく、CTA文言と現行順序を変更しません。productionへのdeployも行っていません。
+
+### 2026-10-05: 追加対象E2Eの失敗と再開点
+
+[Quality run 37259047042](https://github.com/garchomp-game/create-game/actions/runs/37259047042)は
+CI候補`19da7b74dcb4e8866d4e5773aad349f96b6bd114`で実行し、全体はfailureでした。
+Phaser quality、Starlight build、EX Protocol candidateの3 jobは成功、
+Browser release smoke job内の既存release stepは9 passedです。
+追加したChromeのタイトル入力対象15件は**13 passed / 2 failed**でした。
+runtimeは`4ab2133`から変更していません。
+
+| 失敗test（`tests/e2e/arena.spec.ts`） | CIが記録した不一致 |
+| --- | --- |
+| line 168: `ignores a title click burst and accepts deliberate keyboard selection and pause resume` | line 182で`title`を期待、実際は`weaponSelect` |
+| line 205: `ignores an Enter burst while allowing Escape and immediate pointer selection` | line 216で`title`を期待、実際は`trainingBriefing` |
+
+[失敗artifact](https://github.com/garchomp-game/create-game/actions/runs/37259047042/artifacts/11323179063)は
+7日間保存です。取得先のローカル名前解決制限により展開できず、**traceの内容は未確認**です。
+複数のブラウザ操作RPCと待機の間に300ms以上が経過した可能性、入力event時刻と
+Adapterの`performance.now()`読取frame時刻の差は、調査仮説であって原因の確定ではありません。
+
+NEXTはtraceを取得できる環境で、pointer / key event間隔と処理frame時刻を照合することです。
+確認した原因だけを限定修正し、testのskipや許容条件の緩和では通過扱いにしません。
+失敗2件を再現・再確認した上で、影響する対象回帰と独立監査を行い、新しいSHA / CIを記録します。
+対象E2E通過と初見人間gateが揃うまで#138をcloseせず、採用・production反映へ進みません。
 
 固定画像は次のrepo pathで管理します。
 
