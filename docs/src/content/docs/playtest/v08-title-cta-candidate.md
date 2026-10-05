@@ -98,7 +98,7 @@ UI Catalogのtitle固定fixtureは、同じ`ArenaScreenViewModel`とStory focus�
   run reset等でtransient inputをclearしたときは、この連打状態も破棄する。
 
 Checkpointでは、旧実装でdouble-click / keyboard切替前の誤focus / Enter連打の3 regression unitが
-失敗することを先に確認しました。修正後はinput 14件とlayout 10件の対象unit、typecheck、diff checkが通過しています。
+失敗することを先に確認しました。修正後はinput 15件とlayout 10件の対象unit、typecheck、diff checkが通過しています。
 E2Eには連続clickからkeyboardで初期作戦へ進む経路、pause / resume、Enter連打、Escape後の再選択を追加しました。
 通常のStory選択testは「一覧を確認してから意図的に次を選ぶ」300ms超の待ちを明示します。
 

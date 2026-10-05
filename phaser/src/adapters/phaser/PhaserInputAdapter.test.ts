@@ -213,6 +213,27 @@ describe("PhaserInputAdapter cross-menu activation bursts", () => {
     expect(adapter.consumeMenuAction()).toBe("story");
   });
 
+  it("allows a nearby Back click during a burst and rearms the returned menu", () => {
+    const fake = createFakeScene();
+    const adapter = new PhaserInputAdapter(fake.scene);
+    fake.movePointer(400, 488);
+    fake.pressPointer();
+    adapter.read("title", 0);
+    expect(adapter.consumeMenuAction()).toBe("history");
+
+    now = 100;
+    fake.movePointer(400, 492);
+    fake.pressPointer();
+    adapter.read("title", 0, true, "history");
+    expect(adapter.getFocusedMenuAction("title", "history")).toBe("back");
+    expect(adapter.consumeMenuAction()).toBe("back");
+
+    fake.movePointer(400, 488);
+    fake.pressPointer();
+    adapter.read("title", 0);
+    expect(adapter.consumeMenuAction()).toBe("history");
+  });
+
   it("preserves repeated settings actions within the same context", () => {
     const fake = createFakeScene();
     const adapter = new PhaserInputAdapter(fake.scene);

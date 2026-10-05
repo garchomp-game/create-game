@@ -299,10 +299,20 @@ export class PhaserInputAdapter {
     ) {
       this.lastMenuActivation = null;
     }
+    const hoveredAction = findMenuActionAt(
+      status,
+      this.scene.scale.gameSize.width,
+      this.scene.scale.gameSize.height,
+      pointer.x,
+      pointer.y,
+      secondaryMenu,
+    );
     const previousActivation = this.lastMenuActivation;
     const crossContextBurst = previousActivation !== null &&
       previousActivation.context !== this.menuContextKey;
-    const pointerBurstBlocked = crossContextBurst &&
+    // Back remains immediately available even when its target overlaps the
+    // preceding menu's activation point.
+    const pointerBurstBlocked = hoveredAction !== "back" && crossContextBurst &&
       previousActivation.inputMethod === "pointer" &&
       Math.hypot(
         pointer.x - previousActivation.pointer.x,
@@ -320,14 +330,6 @@ export class PhaserInputAdapter {
       // Hover alone must never extend the activation window.
       previousActivation.time = menuTime;
     }
-    const hoveredAction = findMenuActionAt(
-      status,
-      this.scene.scale.gameSize.width,
-      this.scene.scale.gameSize.height,
-      pointer.x,
-      pointer.y,
-      secondaryMenu,
-    );
     if (!pointerBurstBlocked && (pointerMoved || pointerPressed) && hoveredAction) {
       const focusAction = getSettingsFocusAction(hoveredAction);
       const hoveredIndex = menuButtons.findIndex(
