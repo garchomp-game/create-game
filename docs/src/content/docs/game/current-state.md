@@ -3,12 +3,25 @@ title: 現在地
 description: Arena Core Phaser版の実装状況、確認済み課題、次の作業。
 ---
 
-最終整理日: 2026-07-31
+最終整理日: 2026-10-05（候補公開の進捗追記。既存の採用履歴は維持）
 
 :::note[現在の単一Next]
 実装済み機能の追加より先に、[#138](https://github.com/garchomp-game/create-game/issues/138)
 で初回タイトルの主CTAとモード階層を決めます。以降の順序と旧Issueの終了理由は
 [課題解決キュー](../../project-management/issue-resolution-queue/)を正本とします。
+:::
+
+:::note[2026-10-05: push済み候補と未完了gate]
+#138のタイトル主CTA・画面跨ぎ連打の補修候補を、証拠HEAD `65c62e2`までmainへpushしました。
+runtime候補は`4ab2133eafa5d699dcf4ecefb5c8b00899744fdc`です。
+[既存Quality CI](https://github.com/garchomp-game/create-game/actions/runs/37258569139)は4 job成功ですが、
+追加の入力対象15件を接続する前の結果です。対象E2EのCI結果と初見人間gateは未取得で、
+**実装候補の公開であり、採用完了やproductionへのdeployではありません**。
+証拠と残条件は[タイトル主CTA候補](../../playtest/v08-title-cta-candidate/)を参照します。
+
+GitHub #138 / #135の進捗も同期済みです。有限作戦を第一検証にする案は
+[#146（D01）](https://github.com/garchomp-game/create-game/issues/146)のqueued判断候補として起票し、
+下記の採用済みコンセプトや現行依存順を置換していません。
 :::
 
 :::note[採用した次フェーズ軸]

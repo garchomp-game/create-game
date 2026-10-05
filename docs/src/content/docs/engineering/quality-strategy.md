@@ -21,7 +21,7 @@ npm run build
 | --- | --- |
 | `Phaser quality` | `npm ci`、型検査、unit / simulation、production build、配布artifact検査 |
 | `Starlight build` | `npm ci`、telemetry無効の静的build |
-| `Browser release smoke` | Playwright同梱ChromiumとFirefoxによる公開経路、desktop / portrait、WebGL、版情報、ローカルデータ削除 |
+| `Browser release smoke` | 既存release: Playwright同梱ChromiumとFirefoxによる公開経路、desktop / portrait、WebGL、版情報、ローカルデータ削除。追加#138候補: Chromeだけのタイトル入力・Story / 最終遠征・pause / HUD対象15件（releaseと別step） |
 | `EX Protocol candidate` | 型付きreplay、保存migration、短いbalance probe、Chromiumの候補critical E2E |
 
 CIはNode 24を使い、repository内容の読取権限だけを持ちます。Cloudflare secret、deploy、production trafficは扱いません。同じbranchで新しいcommitがpushされた場合は古いrunをcancelします。ブラウザ失敗時だけtraceとscreenshotを7日間artifactへ残します。

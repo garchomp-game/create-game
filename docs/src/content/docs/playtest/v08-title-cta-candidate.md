@@ -8,8 +8,9 @@ description: Issue #138のStory主CTA候補、比較条件、後続Issueへの�
 :::caution[候補であり未採用]
 本ページは[#138](https://github.com/garchomp-game/create-game/issues/138)の実装候補を記録します。
 旧レイアウトの固定画像と、入力補修のunit・build・独立コード監査は確認済みです。
-入力補修のE2Eは環境制限で未実施、初見プレイヤーが1秒で主行動を理解するかも
-未確認です。E2Eと初見人間gateが済むまで採用済みとは扱いません。
+入力補修の対象E2Eはローカル環境制限で未実施のためCIへ接続し、結果待ちです。
+初見プレイヤーが1秒で主行動を理解するかも未確認です。
+対象E2Eと初見人間gateが済むまで採用済みとは扱いません。
 :::
 
 ## 候補の識別
@@ -18,7 +19,8 @@ description: Issue #138のStory主CTA候補、比較条件、後続Issueへの�
 | --- | --- |
 | Issue | `#138 [PH-V08-037] 初回タイトルの行動導線を1秒で理解できる階層へする` |
 | base SHA | `01ea914a0d24a65b136cf3804d453298fb57ef4e` |
-| candidate SHA | 本ページを含むローカルcandidate commitとして固定し、レビュー報告で明示 |
+| runtime candidate SHA | `4ab2133eafa5d699dcf4ecefb5c8b00899744fdc` |
+| push済み証拠HEAD（2026-10-05） | `65c62e225f3f7fa6ca8bfcea83c416912aed7e9e`。後続のdocs / CI変更とruntimeを区別する |
 | 状態 | 実装候補。未採用、入力補修E2E・初見人間gate待ち |
 | 保存・戦闘ルール | 変更なし |
 
@@ -135,8 +137,28 @@ VITE_GIT_COMMIT=4ab2133eafa5 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/google
 このコマンドは対象smokeであり、全E2Eの合格を意味しません。旧候補の固定画像は
 レイアウトの証拠であり、新しい連打境界のブラウザ確認を代替しません。
 コード監査へは回せますが、E2Eと下記の初見人間gateが済むまで採用完了とはしません。
-push、GitHub Issue更新、公開反映は行っていません。以後の証跡のみのdocs commitでは
-runtimeを変えず、上記SHAのQAへ紐付けます。
+このローカルQAを取得した時点では、push、GitHub Issue更新、公開反映は未実施でした。
+以後の証跡のみのdocs / CI commitではruntimeを変えず、上記SHAのQAへ紐付けます。
+
+### 2026-10-05: GitHub同期と対象E2EのCI接続
+
+既存6コミットをmainへpushし、証拠HEAD `65c62e2`をGitHubで確認しました。
+[#138](https://github.com/garchomp-game/create-game/issues/138)と
+[#135](https://github.com/garchomp-game/create-game/issues/135)へ進捗・残gateを同期済みです。
+[このHEADのQuality run](https://github.com/garchomp-game/create-game/actions/runs/37258569139)は
+Phaser quality、Starlight build、Browser release smoke、EX Protocol candidateの4 jobが成功しました。
+ただし、これは**入力補修の対象15件を追加する前のCI**であり、その合格証拠ではありません。
+
+既存`Browser release smoke` jobへ、release smoke後のChrome対象15件を追加しました。
+タイトル6入口、Storyの戻る、click / Enter連打、keyboard操作、設定、最終遠征、
+pause / resume、Expedition HUDを対象とし、release smokeにある3件は重複追加しません。
+既存EX jobと同じ日本語fixture font、Xvfb、software rendering、単一workerを使い、
+失敗成果物は`phaser/test-results/title-input/`へ分離します。
+この追加を含む候補のCI結果はまだ未取得です。ローカルの`EPERM`は過去の起動失敗として残し、
+CI成功時に対象SHAとrunを別途追記します。全E2Eや人間gateの代替にはしません。
+
+新方針は[#146（D01）](https://github.com/garchomp-game/create-game/issues/146)としてqueuedです。
+起票は採用ではなく、CTA文言と現行順序を変更しません。productionへのdeployも行っていません。
 
 固定画像は次のrepo pathで管理します。
 

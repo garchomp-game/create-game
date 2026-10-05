@@ -78,6 +78,16 @@ jobs:
         env:
           ARENA_FIREFOX_HEADED: "1"
           LIBGL_ALWAYS_SOFTWARE: "1"
+      - name: Install deterministic Japanese fixture font
+        run: sudo apt-get install --yes fonts-noto-cjk
+      - name: Run title input candidate smoke
+        run: >-
+          xvfb-run --auto-servernum npm run test:e2e --
+          tests/e2e/arena.spec.ts tests/e2e/arena-tutorial.spec.ts tests/e2e/arena-visual.spec.ts
+          --project=chrome --workers=1 --output=test-results/title-input
+          --grep 'reaches .* from the title|returns from Story|ignores a title click burst|ignores an Enter burst|supports keyboard entry|supports keyboard navigation and Escape|changes and resets settings|runs the final expedition|can pause and resume|shows the Expedition Act, ingress'
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
       - name: Upload browser failure evidence
         if: failure()
         uses: actions/upload-artifact@v7
