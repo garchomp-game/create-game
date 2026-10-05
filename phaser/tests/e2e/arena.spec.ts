@@ -84,11 +84,12 @@ async function holdKeyForFrame(
   await page.keyboard.up(code);
 }
 
-// Temporary diagnosis for the two burst regressions; never changes input or game time.
+// Validate native burst timing as well as the menu outcome; never changes game time.
 async function withMenuBurstTiming(
   page: Page,
   testInfo: TestInfo,
-  action: () => Promise<void>,
+  inputMethod: "pointer" | "keyboard",
+  action: (verifyBurst: () => Promise<void>) => Promise<void>,
 ): Promise<void> {
   const timing = await page.evaluateHandle(() => {
     const state = () => {
@@ -121,6 +122,7 @@ async function withMenuBurstTiming(
       sameInputTimeStampDeltaMs: number | null;
       state: ReturnType<typeof state>;
       firstAnimationFrame: FrameObservation | null;
+      secondAnimationFrame: FrameObservation | null;
     }> = [];
     const pendingFrames = new Set<number>();
     const previousInputs = new Map<string, { nowMs: number; timeStampMs: number }>();
@@ -153,10 +155,14 @@ async function withMenuBurstTiming(
         sameInputTimeStampDeltaMs: previousInput ? event.timeStamp - previousInput.timeStampMs : null,
         state: state(),
         firstAnimationFrame: null,
+        secondAnimationFrame: null,
       };
       records.push(record);
       previousInputs.set(inputId, { nowMs, timeStampMs: event.timeStamp });
-      // First browser rAF after the event, not a claim that Phaser has processed it.
+      // Only down events need frame samples; no continuously sampled snapshots.
+      if (event.type !== "mousedown" && event.type !== "keydown") return;
+      // Two distinct rAFs allow the frame already scheduled by Phaser to run.
+      // Assertions below also reject a sample taken after the next native down.
       const frame = requestAnimationFrame((frameTimeMs) => {
         pendingFrames.delete(frame);
         const observedAtMs = performance.now();
@@ -166,6 +172,17 @@ async function withMenuBurstTiming(
           sinceEventMs: observedAtMs - nowMs,
           state: state(),
         };
+        const secondFrame = requestAnimationFrame((secondFrameTimeMs) => {
+          pendingFrames.delete(secondFrame);
+          const secondObservedAtMs = performance.now();
+          record.secondAnimationFrame = {
+            frameTimeMs: secondFrameTimeMs,
+            observedAtMs: secondObservedAtMs,
+            sinceEventMs: secondObservedAtMs - nowMs,
+            state: state(),
+          };
+        });
+        pendingFrames.add(secondFrame);
       });
       pendingFrames.add(frame);
     };
@@ -174,6 +191,9 @@ async function withMenuBurstTiming(
       window.addEventListener(type, capture, { capture: true, passive: true });
     }
     return {
+      read() {
+        return { recordCount: records.length, droppedEvents, records };
+      },
       stop() {
         for (const type of eventTypes) window.removeEventListener(type, capture, true);
         for (const frame of pendingFrames) cancelAnimationFrame(frame);
@@ -183,7 +203,50 @@ async function withMenuBurstTiming(
   });
 
   try {
-    await action();
+    await action(async () => {
+      const readBurst = async () => {
+        const result = await timing.evaluate((capture) => capture.read());
+        const downs = result.records.filter((record) => inputMethod === "pointer"
+          ? record.type === "mousedown" && record.button === 0
+          : record.type === "keydown" && record.code === "Enter");
+        return { ...result, downs };
+      };
+      // Native generation has finished; only now may an RPC wait for the last sample.
+      await expect.poll(async () => (await readBurst()).downs.filter(
+        (record) => record.secondAnimationFrame !== null,
+      ).length).toBe(5);
+      const { downs, droppedEvents } = await readBurst();
+      expect(droppedEvents, "burst observation must not be truncated").toBe(0);
+      expect(downs, "exactly five native down events").toHaveLength(5);
+      expect(downs[0]!.state).toEqual({ status: "title", secondaryMenu: null, tutorialStep: null });
+      expect(downs[4]!.timeStampMs - downs[0]!.timeStampMs, "native burst spans more than the guard window").toBeGreaterThan(300);
+      expect(downs[4]!.nowMs - downs[0]!.nowMs).toBeGreaterThan(300);
+      for (const [index, down] of downs.entries()) {
+        expect(down.isTrusted).toBe(true);
+        expect(down.repeat).toBe(inputMethod === "keyboard" ? false : null);
+        const firstFrame = down.firstAnimationFrame!;
+        const sample = down.secondAnimationFrame!;
+        expect(firstFrame.observedAtMs).toBeGreaterThan(down.nowMs);
+        expect(sample.frameTimeMs).toBeGreaterThan(firstFrame.frameTimeMs);
+        expect(sample.observedAtMs).toBeGreaterThan(firstFrame.observedAtMs);
+        expect(sample.state, `down ${index + 1}: Story entered once, then four blocked activations`).toEqual({
+          status: "title", secondaryMenu: "story", tutorialStep: null,
+        });
+        const previous = downs[index - 1];
+        if (previous) {
+          expect(down.sameInputTimeStampDeltaMs, `down ${index + 1}: actual native gap`).toBeGreaterThan(0);
+          expect(down.sameInputTimeStampDeltaMs).toBeLessThan(300);
+          expect(down.sameInputDeltaMs).toBeGreaterThan(0);
+          expect(down.sameInputDeltaMs).toBeLessThan(300);
+          expect(sample.frameTimeMs).toBeGreaterThan(previous.secondAnimationFrame!.frameTimeMs);
+        }
+        const next = downs[index + 1];
+        if (next) {
+          expect(sample.observedAtMs, `down ${index + 1}: sample must precede the next native event`).toBeLessThan(next.timeStampMs);
+          expect(sample.observedAtMs).toBeLessThan(next.nowMs);
+        }
+      }
+    });
   } finally {
     try {
       const result = await timing.evaluate((capture) => capture.stop());
@@ -282,23 +345,18 @@ test("returns from Story with Escape and the visible back target", async ({ page
 
 test("ignores a title click burst and accepts deliberate keyboard selection and pause resume", async ({ page }, testInfo) => {
   await gotoArena(page);
-  await withMenuBurstTiming(page, testInfo, async () => {
-    await clickCanvasAt(page, TITLE_MENU_POINTS.story.x, TITLE_MENU_POINTS.story.y);
-    await expect
-      .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
-      .toBe("story");
-
-    // Distinct frames, spanning more than 300ms overall: every press must keep
-    // extending the quiet interval without changing the initial Story focus.
-    for (let index = 0; index < 4; index += 1) {
-      await page.waitForTimeout(90);
-      await clickCanvasAt(page, TITLE_MENU_POINTS.story.x, TITLE_MENU_POINTS.story.y);
-      await page.waitForTimeout(30);
-      const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
-      expect(snapshot?.status).toBe("title");
-      expect(snapshot?.secondaryMenu).toBe("story");
-      expect(snapshot?.tutorial).toBeNull();
-    }
+  const target = await page.locator("canvas").evaluate((node, point) => {
+    const canvas = node as HTMLCanvasElement;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: rect.left + (point.x / canvas.width) * rect.width,
+      y: rect.top + (point.y / canvas.height) * rect.height,
+    };
+  }, TITLE_MENU_POINTS.story);
+  await withMenuBurstTiming(page, testInfo, "pointer", async (verifyBurst) => {
+    // One native API call: no locator / poll / evaluation RPCs between clicks.
+    await page.mouse.click(target.x, target.y, { clickCount: 5, delay: 60 });
+    await verifyBurst();
 
     // Switching input method is intentional and needs no cooldown. This also
     // proves blocked clicks did not move focus to Final Expedition.
@@ -321,20 +379,12 @@ test("ignores a title click burst and accepts deliberate keyboard selection and 
 
 test("ignores an Enter burst while allowing Escape and immediate pointer selection", async ({ page }, testInfo) => {
   await gotoArena(page);
-  await withMenuBurstTiming(page, testInfo, async () => {
-    await holdKeyForFrame(page, "Enter", 60);
-    await expect
-      .poll(() => page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot().secondaryMenu))
-      .toBe("story");
-
-    for (let index = 0; index < 4; index += 1) {
-      await page.waitForTimeout(40);
-      await holdKeyForFrame(page, "Enter", 60);
-      const snapshot = await page.evaluate(() => window.__ARENA_DEBUG__?.getSnapshot());
-      expect(snapshot?.status).toBe("title");
-      expect(snapshot?.secondaryMenu).toBe("story");
-      expect(snapshot?.tutorial).toBeNull();
+  await withMenuBurstTiming(page, testInfo, "keyboard", async (verifyBurst) => {
+    // Only native key calls until all five presses have been sent.
+    for (let index = 0; index < 5; index += 1) {
+      await page.keyboard.press("Enter", { delay: 100 });
     }
+    await verifyBurst();
 
     await holdKeyForFrame(page, "Escape", 60);
     await expect

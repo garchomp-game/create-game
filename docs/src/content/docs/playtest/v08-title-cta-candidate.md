@@ -185,6 +185,27 @@ NEXTはtraceを取得できる環境で、pointer / key event間隔と処理fram
 失敗2件を再現・再確認した上で、影響する対象回帰と独立監査を行い、新しいSHA / CIを記録します。
 対象E2E通過と初見人間gateが揃うまで#138をcloseせず、採用・production反映へ進みません。
 
+### 2026-10-05: native入力の実測とテスト補修候補
+
+診断候補`92eea35`の[CI run 37262096074](https://github.com/garchomp-game/create-game/actions/runs/37262096074)
+で、最初と次のnative down間隔を実測しました。mousedownの`event.timeStamp`は
+3091.4 → 3697.5ms（606.1ms、listenerの`performance.now()`差は604.1ms）、
+Enterは3017.5 → 3565.1ms（547.6ms、listener時刻差は550.1ms）でした。
+イベントはtrusted、Enterのrepeatはfalseで、最初のrAF標本はStory、次は
+それぞれweaponSelect / trainingBriefingでした。旧testは300ms未満の連打を作れておらず、
+この失敗をruntimeの300ms抑止違反の証拠にはできません。
+
+テスト補修候補はpointer座標を事前計算して5回のnative clickを一つのAPIで送り、
+Enterはnative pressを5回連続で送ります。途中のpoll / evaluate / 待機RPCを除き、
+5 down・trusted・Enter非repeat・各実間隔300ms未満・全体300ms超をtest自身で検査します。
+各down後の2回目rAFでtitle / Story / tutorialなしを確認し、標本が次のdownより前で
+別frameに属することも要求します。不正な間隔や未観測はskipせず失敗とします。
+最後の標本後は既存の入力方式切替、Escape、pause / resume経路を確認します。
+
+この補修候補は**CI再検証前**です。runtime、300msの閾値、時計、CI設定、依存、
+snapshot画像は変更していません。過去の2件失敗を合格へ読み替えず、独立監査と
+新しいCI証拠を待ちます。初見人間gateと製品採用は引き続き未完了です。
+
 固定画像は次のrepo pathで管理します。
 
 - `phaser/tests/e2e/arena-visual.spec.ts-snapshots/arena-title-chrome-linux.png`
